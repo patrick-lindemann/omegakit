@@ -4,6 +4,7 @@ __pycache__/
 .ruff_cache/
 .coverage
 dist/
+docs/_build/
 *.egg-info/
 plans/
 AGENTS.md

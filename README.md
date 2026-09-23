@@ -55,7 +55,8 @@ accessed or instantiated if still missing. Overrides accept dictionaries, DictCo
 or OmegaConf `key=value` dotlists; they do not rerun structural assembly.
 
 Errors raised by a constructor or `from_config` keep their type and get a note naming
-the failing node. The complete rules are in [docs/contracts.md](docs/contracts.md).
+the failing node. The complete rules are in the
+[configuration contracts](https://omegakit.readthedocs.io/en/latest/contracts.html).
 
 `Configurable` provides a default `from_config` implementation. `walk` traverses
 mapping nodes depth-first, parents before children. The optional `expected` argument
@@ -105,6 +106,7 @@ uv run ruff check
 uv run ruff format --check
 uv run pydoclint src
 uv run pyright
+uv run sphinx-build -W docs docs/_build
 uv build
 ```
 
