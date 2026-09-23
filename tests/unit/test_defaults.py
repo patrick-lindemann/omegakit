@@ -140,3 +140,16 @@ def test_load_defaults_absolute_interpolation_resolves_from_root(write_yaml):
 def test_load_defaults_dropped_from_output(write_yaml):
     cfg = load_config(write_yaml("c.yaml", "node:\n  $defaults: {p: 1}\n  a: {}\n"))
     assert "$defaults" not in cfg.node
+
+
+def test_defaults_do_not_reach_grandchildren(write_yaml):
+    cfg = load_config(write_yaml("c.yaml", "$defaults: {k: 1}\nm:\n  i: {}\n"))
+    assert cfg.m.k == 1
+    assert "k" not in cfg.m.i
+
+
+def test_defaults_interpolated_value(write_yaml):
+    cfg = load_config(
+        write_yaml("c.yaml", "d: {k: 1}\nnode:\n  $defaults: ${d}\n  x: {}\n")
+    )
+    assert cfg.node.x.k == 1

@@ -1,5 +1,8 @@
+from omegakit import instantiate
 from tests.helpers import (
+    DOUBLED_POINT,
     ConfigurablePoint,
+    DoubledPoint,
 )
 
 
@@ -12,3 +15,9 @@ def test_from_config_returns_instance():
     assert isinstance(
         ConfigurablePoint.from_config({"x": 0, "y": 0}), ConfigurablePoint
     )
+
+
+def test_instantiate_uses_custom_from_config():
+    obj = instantiate({"$class": DOUBLED_POINT, "x": 1, "y": 2})
+    assert isinstance(obj, DoubledPoint)
+    assert (obj.x, obj.y) == (2, 2)

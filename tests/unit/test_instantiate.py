@@ -6,6 +6,7 @@ from tests.helpers import (
     CONFIGURABLE_POINT,
     CONTAINER,
     POINT,
+    RECORDER,
     ConfigurablePoint,
     Container,
     Point,
@@ -57,3 +58,49 @@ def test_class_override_selects_new_class():
     obj = instantiate(cfg, overrides={"$class": POINT})
     assert isinstance(obj, Point)
     assert cfg["$class"] == "missing.Original"
+
+
+def test_instantiate_does_not_mutate_input():
+    config = OmegaConf.create({"$class": POINT, "x": "${y}", "y": 2})
+    before = OmegaConf.to_yaml(config)
+    instantiate(config)
+    instantiate(config, overrides=["y=3"])
+    assert OmegaConf.to_yaml(config) == before
+
+
+def test_instantiate_resolves_interpolation():
+    obj = instantiate(OmegaConf.create({"$class": POINT, "x": "${y}", "y": 2}))
+    assert obj.x == 2
+
+
+def test_instantiate_never_passes_meta():
+    obj = instantiate(
+        {
+            "$class": CONTAINER,
+            "$meta": {"a": 1},
+            "name": "c",
+            "point": {"$class": POINT, "$meta": 1, "x": 1, "y": 2},
+        }
+    )
+    assert isinstance(obj.point, Point)
+
+
+def test_instantiate_builds_classes_in_lists():
+    obj = instantiate(
+        {"$class": CONTAINER, "name": "c", "point": [{"$class": POINT, "x": 1, "y": 2}]}
+    )
+    assert isinstance(obj.point[0], Point)
+
+
+def test_instantiate_duck_typed_from_config_receives_built_children():
+    config, kwargs = instantiate(
+        {"$class": RECORDER, "a": 1, "child": {"$class": POINT, "x": 1, "y": 2}}
+    )
+    assert config["a"] == 1
+    assert isinstance(config["child"], Point)
+    assert kwargs == {}
+
+
+def test_instantiate_unknown_module_raises():
+    with pytest.raises(ModuleNotFoundError):
+        instantiate({"$class": "tests.does_not_exist.Thing"})

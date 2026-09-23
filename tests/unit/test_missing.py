@@ -4,6 +4,7 @@ from omegaconf.errors import MissingMandatoryValue
 
 from omegakit import instantiate, load_config
 from tests.helpers import (
+    CONTAINER,
     POINT,
 )
 
@@ -58,4 +59,17 @@ def test_instantiate_raises_on_missing_value():
     # literal string "???" to the constructor.
     config = OmegaConf.create({"$class": POINT, "x": "???", "y": 2})
     with pytest.raises(MissingMandatoryValue):
+        instantiate(config)
+
+
+def test_missing_filled_by_dotlist_override(write_yaml):
+    cfg = load_config(write_yaml("c.yaml", "a: ???\n"), overrides=["a=3"])
+    assert cfg.a == 3
+
+
+def test_missing_nested_at_instantiate_names_full_key():
+    config = OmegaConf.create(
+        {"$class": CONTAINER, "name": "c", "point": {"$class": POINT, "x": "???"}}
+    )
+    with pytest.raises(MissingMandatoryValue, match=r"point\.x"):
         instantiate(config)

@@ -1,7 +1,8 @@
 from pathlib import Path
 
 import pytest
-from omegaconf.errors import InterpolationResolutionError
+from omegaconf import OmegaConf
+from omegaconf.errors import InterpolationKeyError, InterpolationResolutionError
 
 from omegakit import load_config
 
@@ -123,3 +124,104 @@ def test_load_leaf_import_resolves_against_root(write_yaml):
         write_yaml("main.yaml", 'leaf: "~import base.yaml#q"\np: root_p\n')
     )
     assert cfg.leaf == "root_p"
+
+
+def test_import_selects_list_index(write_yaml):
+    write_yaml("lib.yaml", "a:\n  b:\n    - {v: 0}\n    - {v: 1}\n")
+    cfg = load_config(write_yaml("main.yaml", 'n: "~import lib.yaml#a.b.1"\n'))
+    assert cfg.n.v == 1
+
+
+def test_import_whole_list_file(write_yaml):
+    write_yaml("items.yaml", "- 1\n- 2\n")
+    cfg = load_config(write_yaml("main.yaml", "n: ~import items.yaml\n"))
+    assert list(cfg.n) == [1, 2]
+
+
+def test_import_ignores_surrounding_whitespace(write_yaml):
+    write_yaml("lib.yaml", "c: 3\n")
+    cfg = load_config(write_yaml("main.yaml", 'n: "~import   lib.yaml#  c  "\n'))
+    assert cfg.n == 3
+
+
+def test_import_prefix_only_counts_at_the_start(write_yaml):
+    cfg = load_config(write_yaml("main.yaml", 'n: "see ~import lib.yaml"\n'))
+    assert cfg.n == "see ~import lib.yaml"
+
+
+def test_import_missing_node_raises(write_yaml):
+    write_yaml("lib.yaml", "a: 1\n")
+    with pytest.raises(ValueError, match="selects node"):
+        load_config(write_yaml("main.yaml", 'n: "~import lib.yaml#b"\n'))
+
+
+def test_import_missing_file_raises(write_yaml):
+    with pytest.raises(FileNotFoundError):
+        load_config(write_yaml("main.yaml", "n: ~import missing.yaml\n"))
+
+
+def test_import_self_raises(write_yaml):
+    with pytest.raises(ValueError, match="Circular import"):
+        load_config(write_yaml("main.yaml", "n: ~import main.yaml\n"))
+
+
+def test_import_diamond_is_not_a_cycle(write_yaml):
+    write_yaml("leaf.yaml", "v: 1\n")
+    write_yaml("left.yaml", "x: ~import leaf.yaml\n")
+    write_yaml("right.yaml", "x: ~import leaf.yaml\n")
+    cfg = load_config(
+        write_yaml("main.yaml", "l: ~import left.yaml\nr: ~import right.yaml\n")
+    )
+    assert (cfg.l.x.v, cfg.r.x.v) == (1, 1)
+
+
+def test_import_repeated_file_gives_independent_copies(write_yaml):
+    write_yaml("leaf.yaml", "v: 1\n")
+    cfg = load_config(
+        write_yaml("main.yaml", "a: ~import leaf.yaml\nb: ~import leaf.yaml\n")
+    )
+    cfg.a.v = 99
+    assert cfg.b.v == 1
+
+
+def test_import_repeated_file_in_list_gives_independent_copies(write_yaml):
+    write_yaml("leaf.yaml", "v: 1\n")
+    cfg = load_config(
+        write_yaml("main.yaml", "l:\n  - ~import leaf.yaml\n  - ~import leaf.yaml\n")
+    )
+    cfg.l[0].v = 99
+    assert cfg.l[1].v == 1
+
+
+def test_import_repeated_subnode_gives_independent_copies(write_yaml):
+    write_yaml("lib.yaml", "a:\n  items: [{v: 1}]\n")
+    cfg = load_config(
+        write_yaml("main.yaml", 'a: "~import lib.yaml#a"\nb: "~import lib.yaml#a"\n')
+    )
+    cfg.a["items"][0].v = 99
+    assert cfg.b["items"][0].v == 1
+
+
+def test_import_path_does_not_see_base_keys(write_yaml):
+    # contracts §3: an `~import` path sees only keys literally present in its file
+    write_yaml("leaf.yaml", "v: 1\n")
+    with pytest.raises(InterpolationKeyError):
+        load_config(
+            write_yaml("main.yaml", "$base: {name: leaf}\nn: ~import ${name}.yaml\n")
+        )
+
+
+def test_import_path_does_not_see_overrides(write_yaml):
+    write_yaml("leaf.yaml", "v: 1\n")
+    with pytest.raises(InterpolationKeyError):
+        load_config(
+            write_yaml("main.yaml", "n: ~import ${name}.yaml\n"),
+            overrides=["name=leaf"],
+        )
+
+
+def test_import_interpolation_resolves_at_final_position(write_yaml):
+    write_yaml("lib.yaml", "own: 1\ncopy: ${.own}\n")
+    cfg = load_config(write_yaml("main.yaml", "n: ~import lib.yaml\n"))
+    cfg.n.own = 2
+    assert OmegaConf.to_container(cfg, resolve=True) == {"n": {"own": 2, "copy": 2}}

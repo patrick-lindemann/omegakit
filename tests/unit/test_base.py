@@ -95,3 +95,30 @@ def test_load_top_level_interpolation_under_base_is_lazy(write_yaml):
     assert cfg.node.b == "from_root"
     cfg.target = "changed"
     assert cfg.node.b == "changed"
+
+
+def test_base_is_dropped_from_output(write_yaml):
+    cfg = load_config(write_yaml("c.yaml", "n:\n  $base: {a: 1}\n"))
+    assert "$base" not in cfg.n
+
+
+def test_base_nested_merged_before_parent(write_yaml):
+    cfg = load_config(
+        write_yaml(
+            "c.yaml",
+            "n:\n  $base:\n    child: {a: 1, b: 1}\n  child:\n    $base: {b: 2}\n",
+        )
+    )
+    assert dict(cfg.n.child) == {"a": 1, "b": 2}
+
+
+def test_base_interpolation_to_earlier_sibling(write_yaml):
+    cfg = load_config(
+        write_yaml("c.yaml", "_common: {lr: 1}\nm:\n  $base: ${_common}\n  x: 2\n")
+    )
+    assert (cfg.m.lr, cfg.m.x) == (1, 2)
+
+
+def test_base_relative_interpolation_resolves_at_final_position(write_yaml):
+    cfg = load_config(write_yaml("c.yaml", "n:\n  $base: {b: '${.a}'}\n  a: 7\n"))
+    assert cfg.n.b == 7
