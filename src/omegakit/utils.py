@@ -7,10 +7,10 @@ def walk(config: DictConfig | ListConfig) -> Iterator[DictConfig]:
     """Walk along every mapping node in `config` depth-first.
 
     Args:
-        config (DictConfig | ListConfig): The config to traverse.
+        config: The config to traverse.
 
     Yields:
-        DictConfig: Each mapping node, parents before children.
+        Each mapping node, parents before children.
     """
     if OmegaConf.is_dict(config):
         yield config

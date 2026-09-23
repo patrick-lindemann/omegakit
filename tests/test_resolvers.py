@@ -55,7 +55,7 @@ def test_paths_snapshot_and_unknown_key(tmp_path):
 
 def test_paths_replacement_is_explicit():
     register_paths_resolver({"data": "old"})
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="already registered"):
         register_paths_resolver({"data": "new"})
     register_paths_resolver({"data": "new"}, replace=True)
     assert OmegaConf.create({"path": "${paths:data}"}).path == "new"
@@ -86,7 +86,7 @@ def test_real_torch_resolvers():
     for invalid in ("not_a_dtype", "pi"):
         with pytest.raises(ValueError, match="Invalid torch dtype"):
             _resolve_dtype(invalid)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="already registered"):
         register_torch_resolvers()
     register_torch_resolvers(replace=True)
 
@@ -94,6 +94,6 @@ def test_real_torch_resolvers():
 def test_torch_conflict_does_not_partially_register():
     pytest.importorskip("torch")
     OmegaConf.register_new_resolver("cuda_available", lambda: False)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="already registered"):
         register_torch_resolvers()
     assert not OmegaConf.has_resolver("dtype")

@@ -3,23 +3,46 @@ name = "omegakit"
 version = "0.1.0"
 description = "Composable YAML configuration and Python object construction."
 readme = "README.md"
-requires-python = ">=3.13"
-dependencies = ["omegaconf>=2.3,<2.4"]
+requires-python = ">=3.12"
+dependencies = ["omegaconf>=2.3,<2.4", "typing_extensions>=4.12"]
 
 [build-system]
-requires = ["uv_build>=0.9,<0.10"]
+requires = ["uv_build>=0.11,<0.12"]
 build-backend = "uv_build"
 
 [dependency-groups]
-dev = ["pytest>=8.4,<9", "ruff>=0.14,<0.15"]
+dev = ["pytest>=8.4,<9", "pytest-cov", "ruff>=0.14,<0.15", "pyright", "pydoclint"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--import-mode=importlib"
 
 [tool.ruff]
-target-version = "py313"
+target-version = "py312"
 line-length = 88
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "B"]
+select = ["E", "W", "F", "I", "B", "UP", "A", "D", "SIM", "RUF", "PT", "TID"]
+ignore = ["D100", "D104", "D105"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"typing.TYPE_CHECKING".msg = "Import at runtime; TYPE_CHECKING only when functionally necessary."
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D"]
+
+[tool.pydoclint]
+style = "google"
+arg-type-hints-in-docstring = false
+check-return-types = false
+check-yield-types = false
+
+[tool.pyright]
+include = ["src", "tests"]
+pythonVersion = "3.12"            # the floor; development runs on 3.13
+typeCheckingMode = "standard"
+reportImplicitOverride = "error"
+reportUnnecessaryTypeIgnoreComment = "error"

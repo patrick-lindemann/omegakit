@@ -21,8 +21,8 @@ __all__ = [
     "PARTIAL_KEY",
     "REF_KEY",
     "Configurable",
-    "load_config",
     "instantiate",
+    "load_config",
     "prepare",
     "walk",
 ]

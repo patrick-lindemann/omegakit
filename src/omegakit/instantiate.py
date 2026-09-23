@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import functools
 import importlib
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
@@ -17,29 +18,29 @@ from .config import (
 
 def instantiate[T](
     config: DictConfig | dict[str, Any],
-    type: type[T] = Any,
+    type: type[T] = Any,  # noqa: A002 (renamed to `expected` in stage 6)
     overrides: DictConfig | dict[str, Any] | list[str] | None = None,
 ) -> T:
     """Instantiate an object from a configuration.
 
     Args:
-        type (type[T]): The expected type of the instantiated object. This is used for
-            type checking and does not affect the instantiation process.
-        config (DictConfig | dict[str, Any]): The configuration.
-        overrides (DictConfig | dict | list[str], optional): Additional argument
-            overrides. Can be provided as a DictConfig, a regular dictionary, or a list
-            of `key=value` strings (e.g. `["foo=1.0", "bar=baz"]`).
-            Defaults to `None`.
+        config: The configuration.
+        type: The expected type of the instantiated object. This is used for type
+            checking and does not affect the instantiation process. Defaults to
+            `Any`.
+        overrides: Additional argument overrides. Can be provided as a DictConfig, a
+            regular dictionary, or a list of `key=value` strings (e.g.
+            `["foo=1.0", "bar=baz"]`). Defaults to `None`.
 
     Returns:
-        T: The instantiated object.
+        The instantiated object.
     """
     return _instantiate(config, overrides)
 
 
 def prepare[T](
     config: DictConfig | dict[str, Any],
-    type: type[T] = Any,
+    type: type[T] = Any,  # noqa: A002 (renamed to `expected` in stage 6)
     overrides: DictConfig | dict[str, Any] | list[str] | None = None,
 ) -> functools.partial[T]:
     """Prepare an object for instantiation from a configuration.
@@ -48,16 +49,16 @@ def prepare[T](
     extra arguments.
 
     Args:
-        type (type[T]): The expected type of the instantiated object. This is used for
-            type checking and does not affect the instantiation process.
-        config (DictConfig | dict[str, Any]): The configuration.
-        overrides (DictConfig | dict | list[str], optional): Additional argument
-            overrides. Can be provided as a DictConfig, a regular dictionary, or a list
-            of `key=value` strings (e.g. `["foo=1.0", "bar=baz"]`).
-            Defaults to `None`.
+        config: The configuration.
+        type: The expected type of the instantiated object. This is used for type
+            checking and does not affect the instantiation process. Defaults to
+            `Any`.
+        overrides: Additional argument overrides. Can be provided as a DictConfig, a
+            regular dictionary, or a list of `key=value` strings (e.g.
+            `["foo=1.0", "bar=baz"]`). Defaults to `None`.
 
     Returns:
-        functools.partial[T]: The instantiating function.
+        The instantiating function.
     """
     return _instantiate(config, overrides, wrap=functools.partial)
 

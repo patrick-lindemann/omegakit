@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import Any, Generic
 
 from omegaconf import DictConfig, ListConfig, OmegaConf
+from typing_extensions import TypeVar
 
 type PathLike = Path | str
+
+TConfig = TypeVar("TConfig", default=DictConfig)
 
 
 META_KEY = "$meta"
@@ -79,13 +82,23 @@ instead of the constructed object, so remaining arguments can be supplied at cal
 """
 
 
-class Configurable[TConfig = DictConfig]:
+class Configurable(Generic[TConfig]):
     """A class that can be instantiated from a config."""
 
     @classmethod
     def from_config(
         cls, config: TConfig | DictConfig | dict[str, Any], **kwargs
     ) -> Any:
+        """Create an instance from a materialized config.
+
+        Args:
+            config: The constructor arguments, keyed by parameter name.
+            **kwargs: Extra arguments for subclasses. The default implementation
+                ignores them.
+
+        Returns:
+            The created instance.
+        """
         return cls(**config)
 
 
@@ -99,18 +112,17 @@ def load_config(
     """Load a YAML configuration file from a given file path.
 
     Args:
-        file_path (PathLike): The path to the configuration file.
-        overrides (DictConfig | dict | list[str], optional): Additional configuration
-            overrides. Can be provided as a DictConfig, a regular dictionary, or a list
-            of `key=value` strings (e.g. `["foo=1.0", "bar=baz"]`).
-            Defaults to None.
-        keep_targets (bool, optional): Whether to keep target fields needed for
-            instantiation in the parsed config. Defaults to True.
-        keep_meta (bool, optional): Whether to keep metadata fields in the parsed
-            config. Defaults to False.
+        file_path: The path to the configuration file.
+        overrides: Additional configuration overrides. Can be provided as a
+            DictConfig, a regular dictionary, or a list of `key=value` strings (e.g.
+            `["foo=1.0", "bar=baz"]`). Defaults to `None`.
+        keep_targets: Whether to keep target fields needed for instantiation in the
+            parsed config. Defaults to `True`.
+        keep_meta: Whether to keep metadata fields in the parsed config. Defaults to
+            `False`.
 
     Returns:
-        TConfig: The parsed configuration.
+        The parsed configuration.
     """
     file_path = Path(file_path).resolve()
     config = OmegaConf.load(file_path)

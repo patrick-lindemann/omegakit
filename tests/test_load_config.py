@@ -68,7 +68,7 @@ def test_load_resolves_import(tmp_path: Path):
 def test_load_circular_import_raises(tmp_path: Path):
     write_text(tmp_path / "a.yaml", "foo: ~import b.yaml\n")
     write_text(tmp_path / "b.yaml", "bar: ~import a.yaml\n")
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Circular import"):
         load_config(tmp_path / "a.yaml")
 
 
@@ -223,7 +223,7 @@ def test_load_base_populated_by_import(tmp_path: Path):
 
 
 def test_load_base_non_dict_raises(tmp_path: Path):
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="is not a dictionary or a list"):
         load_config(write_text(tmp_path / "c.yaml", "$base: 5\na: 1\n"))
 
 
@@ -254,7 +254,7 @@ def test_load_merges_list_base_from_imports(tmp_path: Path):
 
 
 def test_load_list_base_non_dict_element_raises(tmp_path: Path):
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="must contain only dictionaries"):
         load_config(write_text(tmp_path / "c.yaml", "$base:\n  - { a: 1 }\n  - 5\n"))
 
 
@@ -383,7 +383,7 @@ def test_load_defaults_skips_special_keys(tmp_path: Path):
 
 
 def test_load_defaults_non_dict_raises(tmp_path: Path):
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="is not a dictionary"):
         load_config(write_text(tmp_path / "c.yaml", "node:\n  $defaults: 5\n  a: {}\n"))
 
 

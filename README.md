@@ -1,7 +1,8 @@
 # omegakit
 
 Composable YAML configuration and Python object construction, powered by OmegaConf.
-Requires Python 3.13 or newer. OmegaConf is the only runtime dependency.
+Requires Python 3.12 or newer. The runtime dependencies are OmegaConf and
+typing_extensions.
 
 Install with `pip install omegakit`. omegakit builds on OmegaConf but is not affiliated
 with or endorsed by the OmegaConf project.
@@ -95,6 +96,8 @@ uv sync
 uv run pytest
 uv run ruff check
 uv run ruff format --check
+uv run pydoclint src
+uv run pyright
 uv build
 ```
 
