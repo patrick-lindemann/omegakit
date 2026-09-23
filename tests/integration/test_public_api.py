@@ -2,7 +2,28 @@ import subprocess
 import sys
 from types import ModuleType
 
+import omegakit
 import omegakit.resolvers
+
+# Contracts: §9 Environment.
+
+
+def test_public_api_exports():
+    assert sorted(omegakit.__all__) == [
+        "BASE_KEY",
+        "CLASS_KEY",
+        "Configurable",
+        "DEFAULTS_KEY",
+        "IMPORT_KEY",
+        "META_KEY",
+        "PARTIAL_KEY",
+        "REF_KEY",
+        "instantiate",
+        "load_config",
+        "prepare",
+        "walk",
+    ]
+    assert all(hasattr(omegakit, name) for name in omegakit.__all__)
 
 
 def test_import_has_no_side_effects():
@@ -13,6 +34,7 @@ def test_import_has_no_side_effects():
             """
 import sys
 import omegakit
+import omegakit.resolvers.paths
 import omegakit.resolvers.torch
 from omegaconf import OmegaConf
 assert 'torch' not in sys.modules

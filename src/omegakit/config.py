@@ -93,13 +93,13 @@ class Configurable(Generic[TConfig]):
 
         Args:
             config: The constructor arguments, keyed by parameter name.
-            **kwargs: Extra arguments for subclasses. The default implementation
-                ignores them.
+            **kwargs: Call-time arguments from a partial. They win over `config`
+                arguments of the same name.
 
         Returns:
             The created instance.
         """
-        return cls(**config)
+        return cls(**{**config, **kwargs})
 
 
 def load_config(
@@ -126,7 +126,7 @@ def load_config(
     """
     file_path = Path(file_path).resolve()
     config = OmegaConf.load(file_path)
-    _resolve_imports(config, file_path, visited_paths={file_path})
+    _resolve_imports(config, file_path, visited_paths={file_path}, cache={})
     _merge_base_recursive(config)
     _resolve_defaults_recursive(config)
     if overrides is not None:
@@ -161,14 +161,16 @@ def _cast_overrides(
 
 
 def _resolve_imports(
-    config: DictConfig | ListConfig, config_path: Path, visited_paths: set[Path]
+    config: DictConfig | ListConfig,
+    config_path: Path,
+    visited_paths: set[Path],
+    cache: dict[Path, DictConfig | ListConfig],
 ) -> None:
-    cache: dict[Path, DictConfig | ListConfig] = {}
     if OmegaConf.is_list(config):
         for index in range(len(config)):
             node = config._get_node(index)
             if OmegaConf.is_config(node):
-                _resolve_imports(node, config_path, visited_paths)
+                _resolve_imports(node, config_path, visited_paths, cache)
             else:
                 value = node._value() if node is not None else None
                 if isinstance(value, str) and value.startswith(IMPORT_KEY):
@@ -178,7 +180,7 @@ def _resolve_imports(
         return
     for key, value in config.items_ex(resolve=False):
         if OmegaConf.is_config(value):
-            _resolve_imports(value, config_path, visited_paths)
+            _resolve_imports(value, config_path, visited_paths, cache)
         elif isinstance(value, str) and value.startswith(IMPORT_KEY):
             config[key] = _import_node(config[key], config_path, visited_paths, cache)
 
@@ -191,6 +193,11 @@ def _import_node(
 ) -> Any:
     # Match the pattern ~import <file_path>[#<node_path>]
     args = statement[len(IMPORT_KEY) :].strip().split("#")
+    if len(args) > 2:
+        raise ValueError(
+            f"Import `{statement}` contains more than one `#`. Use `#` only to "
+            "separate the file path from the node path."
+        )
     file_path = Path(args[0])
     if not file_path.is_absolute():
         file_path = Path(config_path.parent, file_path)
@@ -209,17 +216,23 @@ def _import_node(
             imported_config,
             file_path,
             visited_paths={*visited_paths, file_path},
+            cache=cache,
         )
         cache[file_path] = imported_config
     node = imported_config
     for part in filter(None, node_path.split(".")):
+        if OmegaConf.is_dict(node):
+            node = node._get_node(part)
+        elif (
+            OmegaConf.is_list(node)
+            and part.lstrip("-").isdigit()
+            and -len(node) <= int(part) < len(node)
+        ):
+            node = node._get_node(int(part))
+        else:
+            node = None
         if node is None:
             break
-        node = (
-            node._get_node(int(part))
-            if OmegaConf.is_list(node)
-            else node._get_node(part)
-        )
     if node is None:
         raise ValueError(
             f"Import `{statement}` selects node `{node_path}`, which does not exist in "

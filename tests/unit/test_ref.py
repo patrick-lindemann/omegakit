@@ -1,9 +1,9 @@
 import pytest
 
 from omegakit import instantiate
-from tests.helpers import (
-    POINT,
-)
+from tests.helpers import POINT
+
+# Contracts: §5 Instantiation.
 
 
 def test_instantiate_ref_imports_object():

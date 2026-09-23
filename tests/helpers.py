@@ -6,6 +6,7 @@ POINT = "tests.helpers.Point"
 CONFIGURABLE_POINT = "tests.helpers.ConfigurablePoint"
 CONTAINER = "tests.helpers.Container"
 DOUBLED_POINT = "tests.helpers.DoubledPoint"
+FAILING = "tests.helpers.Failing"
 RECORDER = "tests.helpers.Recorder"
 
 
@@ -50,3 +51,10 @@ class Recorder:
         cls, config: dict[str, Any], **kwargs: Any
     ) -> tuple[dict[str, Any], dict[str, Any]]:
         return config, kwargs
+
+
+class Failing:
+    """Raises an exception whose constructor takes several arguments."""
+
+    def __init__(self) -> None:
+        raise UnicodeDecodeError("utf-8", b"\xff", 0, 1, "invalid start byte")

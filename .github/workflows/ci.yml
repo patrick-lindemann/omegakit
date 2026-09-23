@@ -30,7 +30,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - run: uv sync --locked
-      - run: uv run pytest
+      - run: uv run pytest --cov
 
   test-lowest:
     runs-on: ubuntu-latest
@@ -40,4 +40,4 @@ jobs:
         with:
           python-version: "3.12"
       - run: uv sync --resolution lowest-direct
-      - run: uv run --resolution lowest-direct pytest
+      - run: uv run --resolution lowest-direct pytest --cov

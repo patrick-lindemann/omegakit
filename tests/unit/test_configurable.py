@@ -1,9 +1,7 @@
 from omegakit import instantiate
-from tests.helpers import (
-    DOUBLED_POINT,
-    ConfigurablePoint,
-    DoubledPoint,
-)
+from tests.helpers import DOUBLED_POINT, ConfigurablePoint, DoubledPoint
+
+# Contracts: §5 Instantiation.
 
 
 def test_from_config_builds_from_mapping():

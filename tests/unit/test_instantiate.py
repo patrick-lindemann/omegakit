@@ -1,16 +1,20 @@
 import pytest
 from omegaconf import OmegaConf
+from omegaconf.errors import UnsupportedValueType
 
 from omegakit import instantiate
 from tests.helpers import (
     CONFIGURABLE_POINT,
     CONTAINER,
+    FAILING,
     POINT,
     RECORDER,
     ConfigurablePoint,
     Container,
     Point,
 )
+
+# Contracts: §5 Instantiation, §6 Key namespace, §8 Error model.
 
 
 def test_instantiate_builds_object():
@@ -104,3 +108,80 @@ def test_instantiate_duck_typed_from_config_receives_built_children():
 def test_instantiate_unknown_module_raises():
     with pytest.raises(ModuleNotFoundError):
         instantiate({"$class": "tests.does_not_exist.Thing"})
+
+
+@pytest.mark.parametrize("wrap", [dict, OmegaConf.create])
+def test_instantiate_raw_dict_resolves_like_dict_config(wrap):
+    obj = instantiate(wrap({"$class": POINT, "x": "${y}", "y": 2}))
+    assert obj.x == 2
+
+
+def test_instantiate_raw_dict_rejects_unsupported_values():
+    with pytest.raises(UnsupportedValueType):
+        instantiate({"$class": POINT, "x": object(), "y": 2})
+
+
+def test_instantiate_resolves_nested_escaped_interpolation_once():
+    obj = instantiate(
+        {
+            "$class": CONTAINER,
+            "name": "c",
+            "point": {"$class": POINT, "x": r"\${y}", "y": 1},
+        }
+    )
+    assert obj.point.x == "${y}"
+
+
+def test_instantiate_error_keeps_type_and_message():
+    with pytest.raises(TypeError) as info:
+        instantiate({"$class": POINT, "x": 1})
+    assert type(info.value) is TypeError
+    assert str(info.value).startswith("Point.__init__()")
+
+
+def test_instantiate_error_with_multi_argument_constructor_propagates():
+    with pytest.raises(UnicodeDecodeError):
+        instantiate({"$class": FAILING})
+
+
+def test_instantiate_error_note_names_root():
+    with pytest.raises(UnicodeDecodeError) as info:
+        instantiate({"$class": FAILING})
+    assert info.value.__notes__ == [f"while instantiating <root> ({FAILING})"]
+
+
+def test_instantiate_error_note_names_nested_path():
+    with pytest.raises(UnicodeDecodeError) as info:
+        instantiate({"$class": CONTAINER, "name": "c", "point": {"$class": FAILING}})
+    assert info.value.__notes__ == [f"while instantiating point ({FAILING})"]
+
+
+def test_instantiate_error_note_names_list_index():
+    with pytest.raises(UnicodeDecodeError) as info:
+        instantiate(
+            {"$class": CONTAINER, "name": "c", "point": [{"a": {"$class": FAILING}}]}
+        )
+    assert info.value.__notes__ == [f"while instantiating point.0.a ({FAILING})"]
+
+
+def test_instantiate_error_from_from_config_gets_note():
+    with pytest.raises(TypeError) as info:
+        instantiate({"$class": CONFIGURABLE_POINT, "x": 1})
+    assert info.value.__notes__ == [
+        f"while instantiating <root> ({CONFIGURABLE_POINT})"
+    ]
+
+
+def test_instantiate_unknown_reserved_key_raises():
+    with pytest.raises(ValueError, match="reserved"):
+        instantiate({"$class": POINT, "$foo": 1, "x": 1, "y": 2})
+
+
+def test_instantiate_class_with_ref_raises():
+    with pytest.raises(ValueError, match="reserved"):
+        instantiate({"$class": POINT, "$ref": "builtins.int", "x": 1, "y": 2})
+
+
+def test_instantiate_unknown_reserved_key_in_plain_mapping_raises():
+    with pytest.raises(ValueError, match="reserved"):
+        instantiate({"$class": POINT, "x": {"$foo": 1}, "y": 2})

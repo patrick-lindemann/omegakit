@@ -3,10 +3,9 @@ from omegaconf import OmegaConf
 from omegaconf.errors import MissingMandatoryValue
 
 from omegakit import instantiate, load_config
-from tests.helpers import (
-    CONTAINER,
-    POINT,
-)
+from tests.helpers import CONTAINER, POINT
+
+# Contracts: §4 `???` lifecycle.
 
 
 def test_load_top_level_missing_under_base_survives_load(write_yaml):
@@ -73,3 +72,8 @@ def test_missing_nested_at_instantiate_names_full_key():
     )
     with pytest.raises(MissingMandatoryValue, match=r"point\.x"):
         instantiate(config)
+
+
+def test_missing_in_raw_dict_raises_at_instantiate():
+    with pytest.raises(MissingMandatoryValue):
+        instantiate({"$class": POINT, "x": "???", "y": 2})

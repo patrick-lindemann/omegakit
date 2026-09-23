@@ -11,11 +11,25 @@ requires = ["uv_build>=0.11,<0.12"]
 build-backend = "uv_build"
 
 [dependency-groups]
-dev = ["pytest>=8.4,<9", "pytest-cov", "ruff>=0.14,<0.15", "pyright", "pydoclint"]
+dev = [
+    "pytest>=8.4,<9",
+    "pytest-cov>=7.1,<8",
+    "ruff>=0.14,<0.15",
+    "pyright>=1.1.414,<1.2",
+    "pydoclint>=0.9.1,<0.10",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--import-mode=importlib"
+
+[tool.coverage.run]
+source = ["omegakit"]
+branch = true
+
+[tool.coverage.report]
+fail_under = 90
+show_missing = true
 
 [tool.ruff]
 target-version = "py312"

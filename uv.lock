@@ -191,10 +191,10 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "pydoclint" },
-    { name = "pyright" },
+    { name = "pydoclint", specifier = ">=0.9.1,<0.10" },
+    { name = "pyright", specifier = ">=1.1.414,<1.2" },
     { name = "pytest", specifier = ">=8.4,<9" },
-    { name = "pytest-cov" },
+    { name = "pytest-cov", specifier = ">=7.1,<8" },
     { name = "ruff", specifier = ">=0.14,<0.15" },
 ]
 

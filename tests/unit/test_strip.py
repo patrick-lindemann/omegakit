@@ -1,5 +1,7 @@
 from omegakit import load_config
 
+# Contracts: §1 Pipeline order.
+
 
 def test_load_drops_meta_by_default(write_yaml):
     cfg = load_config(write_yaml("c.yaml", "$meta:\n  author: x\na: 1\n"))

@@ -4,9 +4,6 @@ This page is the normative description of the omegakit configuration language. C
 tests and the README follow it. A change to the language changes this page in the
 same commit.
 
-Items marked **Changes in stage 3** describe decided behaviour that the code does
-not implement yet. Everything else describes the code as it is.
-
 ## 1. Pipeline order
 
 `load_config` assembles a file in this order:
@@ -109,32 +106,24 @@ such as `${.id}` resolves at the node's final position.
     value wins over a config value of the same name.
   - For a class with `from_config`, they reach `from_config` as `**kwargs`. The
     arguments mapping stays the first positional argument.
-  - **Changes in stage 3 (finding 13):** the default `Configurable.from_config`
-    forwards `**kwargs` to the constructor, calling `cls(**{**config, **kwargs})`,
-    so a call-time value wins as it does for plain classes. Today it drops them.
-- `$partial` values (**Changes in stage 3, finding 11**):
-  - `true` makes the node partial, and `false` does not.
-  - Any other value, including the string `"true"` and `1`, raises `ValueError`.
-    Today every value except `True` is silently treated as `false`.
-- Raw dicts (**Changes in stage 3, finding 5**):
-  - A raw `dict` is resolved exactly like a `DictConfig`: `${…}` is resolved, and
-    `???` raises `MissingMandatoryValue`.
-  - It is converted with `OmegaConf.create`, so its values must be types OmegaConf
-    supports. A value such as an arbitrary Python object raises
-    `UnsupportedValueType`, with or without overrides.
-  - Today, a raw dict without overrides is passed through unresolved. `${…}`
-    arrives as a literal string, `???` as `"???"`, and any Python object is
-    accepted. With overrides, it is already converted and resolved.
-- Error notes (**Changes in stage 3, finding 6**):
-  - An exception raised by the constructor or by `from_config` propagates
-    unchanged, with the same type, arguments and traceback.
+  - The default `Configurable.from_config` forwards `**kwargs` to the constructor,
+    calling `cls(**{**config, **kwargs})`, so a call-time value wins as it does for
+    plain classes.
+- `$partial: true` makes a node partial, and `$partial: false` does not. Any other
+  value, including the string `"true"` and `1`, raises `ValueError`.
+- A raw `dict` is resolved exactly like a `DictConfig`: `${…}` is resolved, and
+  `???` raises `MissingMandatoryValue`. It is converted with `OmegaConf.create`, so
+  its values must be types OmegaConf supports. A value such as an arbitrary Python
+  object raises `UnsupportedValueType`.
+- Errors from a constructor or `from_config`:
+  - Any `Exception` raised by the call propagates unchanged, with the same type,
+    arguments and traceback.
   - It gets one note, `while instantiating <path> (<class>)`. `<path>` is the
     dotted key path of the failing node from the config passed to `instantiate`,
-    or `<root>` for the top node. `<class>` is the `$class` value.
-  - Today, `ValueError` and `TypeError` are rebuilt as `type(error)(message)`, with
-    the original chained as `__cause__`. This crashes for exception types whose
-    constructors need other arguments (such as `UnicodeDecodeError`). Other
-    exception types propagate unchanged, without context.
+    with list indices as segments (`items.0.model`), or `<root>` for the top node.
+    `<class>` is the `$class` value.
+  - A partial from `prepare` or `$partial` is called outside omegakit, so its errors
+    get no note.
 
 ## 6. Key namespace
 
@@ -143,9 +132,10 @@ such as `${.id}` resolves at the node's final position.
 - `~import` is a value prefix, not a key. Only a string value that starts with
   `~import` is an import. Elsewhere in a string it is literal text.
 - `load_config` keeps unknown `$` keys untouched.
-- **Changes in stage 3:** when instantiating, a node with an unknown `$` key, or a
-  node with both `$class` and `$ref`, raises `ValueError`. Today, unknown `$` keys
-  (and `$ref` next to `$class`) are passed to the constructor as keyword arguments.
+- When instantiating, any mapping with a `$` key that is not allowed there raises
+  `ValueError`. A `$class` node allows `$meta` and `$partial`, a `$ref` node allows
+  `$meta`, and a plain mapping allows only `$meta`. In particular, `$class` and
+  `$ref` cannot be combined.
 
 ## 7. Import semantics
 
@@ -155,25 +145,20 @@ such as `${.id}` resolves at the node's final position.
 - A relative path is resolved against the directory of the importing file. An
   absolute path is used as is.
 - `<node>` is a dot-separated path from the root of the imported file. A segment
-  selects a key in a mapping or an integer index in a list (`#a.b.0`). An empty
-  `<node>` selects the whole file.
+  selects a key in a mapping or an integer index in a list (`#a.b.0`). A negative
+  index counts from the end (`#a.b.-1`). An empty `<node>` selects the whole file.
 - An import can replace a mapping value or a list item. The imported file may be a
   mapping or a list.
 - Cycles are detected per import chain: a file that imports itself, directly or
   through other files, raises `ValueError`. Importing the same file from two
   branches (a diamond) is not a cycle.
 - Every import produces an independent copy. Changing one imported node never
-  changes another import of the same file or node (finding 9: this is current
-  behaviour, and it stays).
-- **Changes in stage 3 (finding 9):** the file cache is shared across one
-  `load_config` call, instead of being recreated for every mapping. This changes no
-  observable result.
-- **Changes in stage 3 (finding 10):** a statement with more than one `#` raises
-  `ValueError`. Today, everything after the second `#` is silently ignored. File
-  names containing `#` cannot be imported.
-- **Changes in stage 3:** a `<node>` segment that walks through a scalar, or a
-  non-integer segment on a list, raises the same `ValueError` as a missing node.
-  Today they raise `AttributeError` and a bare `int()` `ValueError`.
+  changes another import of the same file or node.
+- Each imported file is read once per `load_config` call.
+- A statement with more than one `#` raises `ValueError`. File names containing
+  `#` cannot be imported.
+- A `<node>` segment that walks through a scalar, a non-integer segment on a list,
+  or an out-of-range index raises the same `ValueError` as a missing node.
 
 ## 8. Error model
 
@@ -182,8 +167,8 @@ such as `${.id}` resolves at the node's final position.
 | Circular `~import` | `ValueError` | `Circular import detected` and the path |
 | `~import` of a missing file | `FileNotFoundError` | the resolved path |
 | `~import` of a missing node | `ValueError` | `selects node`, the node and the file |
-| `~import` selector through a scalar or bad list index | `ValueError` | as missing node (**stage 3**) |
-| `~import` with more than one `#` | `ValueError` | (**stage 3**) |
+| `~import` selector through a scalar, or a bad or out-of-range list index | `ValueError` | as missing node |
+| `~import` with more than one `#` | `ValueError` | `more than one` `#` |
 | `~import` path with an unknown interpolation key | `InterpolationKeyError` | the key |
 | `$base` not a mapping or list of mappings | `ValueError` | `$base` |
 | `$defaults` not a mapping | `ValueError` | `$defaults` |
@@ -192,12 +177,12 @@ such as `${.id}` resolves at the node's final position.
 | `$class`/`$ref` module not found | `ModuleNotFoundError` | the module |
 | `$class`/`$ref` attribute not found | `ImportError` | `Could not import`, attribute and module |
 | `$ref` with sibling keys other than `$meta` | `ValueError` | `cannot contain any other keys` |
-| Raw dict value that OmegaConf does not support | `UnsupportedValueType` | the key (**stage 3**) |
-| Unknown `$` key, or `$class` with `$ref`, at instantiation | `ValueError` | the key (**stage 3**) |
-| `$partial` not a boolean | `ValueError` | `$partial` (**stage 3**) |
+| Raw dict value that OmegaConf does not support | `UnsupportedValueType` | the key |
+| Unknown `$` key, or `$class` with `$ref`, at instantiation | `ValueError` | the key and `reserved` |
+| `$partial` not a boolean | `ValueError` | `$partial` |
 | `???` accessed or instantiated | `MissingMandatoryValue` | the full key |
 | Unresolvable `${…}` accessed or instantiated | `InterpolationKeyError` (or another OmegaConf error) | the key |
-| Exception from a constructor or `from_config` | unchanged | original message, plus the note from §5 (**stage 3**) |
+| Exception from a constructor or `from_config` | unchanged | original message, plus the note from §5 |
 | Resolver registered twice without `replace=True` | `ValueError` | `already registered` |
 | Torch resolver without PyTorch installed | `ImportError` | `require PyTorch` |
 
@@ -216,19 +201,3 @@ A malformed dotlist override such as `["a"]` is not an error: OmegaConf sets `a`
 - OmegaConf is pinned to 2.3.x, because assembly uses private OmegaConf node APIs.
 - Configs import and call arbitrary Python objects. Load them only from trusted
   sources.
-
-## Behaviour changes for stage 3
-
-Each item is implemented test-first in stage 3.
-
-1. Raw dicts are resolved like `DictConfig`s, and they accept only values that
-   OmegaConf supports (finding 5).
-2. Constructor errors keep their type and get a note (finding 6).
-3. One `~import` cache per `load_config` call (finding 9, no observable change).
-4. More than one `#` in an `~import` raises (finding 10).
-5. Import selectors through scalars or with bad list indices raise the missing-node
-   error.
-6. `$partial` accepts only booleans (finding 11).
-7. The default `Configurable.from_config` forwards call-time arguments, and they win
-   (finding 13).
-8. Unknown `$` keys, and `$class` with `$ref`, raise at instantiation.

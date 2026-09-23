@@ -86,20 +86,21 @@ def _instantiate(
             f"Cannot instantiate config with no `{CLASS_KEY}` key:"
             f"\n{OmegaConf.to_yaml(config)}"
         )
-    if OmegaConf.is_config(config) or overrides is not None:
-        if not OmegaConf.is_config(config):
-            config = OmegaConf.create(config)
-        if overrides is not None:
-            config = config.copy()
-            overrides = _cast_overrides(overrides)
-            config.merge_with(overrides)
+    if not OmegaConf.is_config(config):
+        config = OmegaConf.create(config)
+    if overrides is not None:
+        config = config.copy()
+        overrides = _cast_overrides(overrides)
+        config.merge_with(overrides)
+    plain_config = OmegaConf.to_container(config, resolve=True, throw_on_missing=True)
+    return _build(plain_config, wrap)
 
-        plain_config = OmegaConf.to_container(
-            config, resolve=True, throw_on_missing=True
-        )
-    else:
-        # A plain dict arriving from `_materialize` is already fully resolved
-        plain_config = config
+
+def _build(
+    plain_config: dict[str, Any],
+    wrap: Callable | None = None,
+    path: tuple[str | int, ...] = (),
+) -> Any:
     cls = _import_object(plain_config[CLASS_KEY])
     # Recursively materialize the nested config: Instantiating all children containing
     # the class key
@@ -107,11 +108,20 @@ def _instantiate(
     for key, value in plain_config.items():
         if key in (CLASS_KEY, META_KEY):
             continue
+        if isinstance(key, str) and key.startswith("$") and key != PARTIAL_KEY:
+            raise ValueError(
+                f"Invalid config node with `{CLASS_KEY}` key: {plain_config}. Key "
+                f"`{key}` is not supported here; keys starting with `$` are reserved."
+            )
         if key == PARTIAL_KEY:
-            if value is True:
+            if not isinstance(value, bool):
+                raise ValueError(
+                    f"`{PARTIAL_KEY}` must be `true` or `false`, got `{value!r}`."
+                )
+            if value:
                 wrap = functools.partial
             continue
-        kwargs[key] = _materialize(value)
+        kwargs[key] = _materialize(value, (*path, key))
     # Final instantiation
     try:
         if hasattr(cls, "from_config"):
@@ -121,18 +131,17 @@ def _instantiate(
                 else cls.from_config(kwargs)
             )
         return wrap(cls, **kwargs) if wrap is not None else cls(**kwargs)
-    except (ValueError, TypeError) as error:
-        raise type(error)(
-            f"An error occurred while instantiating `{cls.__name__}` from config: "
-            f"{error}"
-        ) from error
+    except Exception as error:
+        location = ".".join(map(str, path)) or "<root>"
+        error.add_note(f"while instantiating {location} ({plain_config[CLASS_KEY]})")
+        raise
 
 
-def _materialize(node: Any) -> Any:
+def _materialize(node: Any, path: tuple[str | int, ...]) -> Any:
     if isinstance(node, (dict, DictConfig)):
         node = {k: v for k, v in node.items() if k != META_KEY}
         if CLASS_KEY in node:
-            return _instantiate(node)
+            return _build(node, path=path)
         if REF_KEY in node:
             if len(node) > 1:
                 raise ValueError(
@@ -140,7 +149,13 @@ def _materialize(node: Any) -> Any:
                     f"`{REF_KEY}` cannot contain any other keys."
                 )
             return _import_object(node[REF_KEY])
-        return {k: _materialize(v) for k, v in node.items()}
+        for key in node:
+            if isinstance(key, str) and key.startswith("$"):
+                raise ValueError(
+                    f"Invalid config node: {node}. Key `{key}` is not supported here; "
+                    "keys starting with `$` are reserved."
+                )
+        return {k: _materialize(v, (*path, k)) for k, v in node.items()}
     if isinstance(node, (list, ListConfig)):
-        return [_materialize(v) for v in node]
+        return [_materialize(v, (*path, index)) for index, v in enumerate(node)]
     return node

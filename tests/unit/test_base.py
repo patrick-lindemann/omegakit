@@ -2,6 +2,8 @@ import pytest
 
 from omegakit import load_config
 
+# Contracts: §1 Pipeline order, §2 Precedence, §3 Resolution timing.
+
 
 def test_load_merges_base_with_node_winning(write_yaml):
     cfg = load_config(write_yaml("c.yaml", "$base:\n  a: 1\n  b: 2\nb: 20\n"))

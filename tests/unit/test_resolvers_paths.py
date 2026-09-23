@@ -6,6 +6,8 @@ from omegaconf import OmegaConf
 from omegakit import load_config
 from omegakit.resolvers.paths import register_paths_resolver
 
+# Contracts: §9 Environment.
+
 
 def test_load_resolves_paths(tmp_path: Path, write_yaml):
     register_paths_resolver({"root_dir": tmp_path})

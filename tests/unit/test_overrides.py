@@ -3,6 +3,8 @@ from omegaconf import OmegaConf
 
 from omegakit import load_config
 
+# Contracts: §1 Pipeline order, §2 Precedence, §8 Error model.
+
 
 def test_load_applies_list_overrides(write_yaml):
     cfg = load_config(write_yaml("c.yaml", "a: 1\n"), overrides=["a=5"])

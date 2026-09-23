@@ -40,16 +40,22 @@ worker:
   receives the materialized argument mapping instead of constructor keyword arguments.
 - `$ref` imports an object without calling it. It is supported inside an instantiated
   tree and cannot have sibling arguments (except `$meta`).
-- `$partial: true` returns a `functools.partial`. `prepare(config)` also defers the
-  top-level call; nested objects are still built during preparation.
+- `$partial: true` returns a `functools.partial`; the value must be `true` or
+  `false`. `prepare(config)` also defers the top-level call; nested objects are still
+  built during preparation. Call-time arguments win over config arguments.
 - `$meta` is removed by default; `load_config(..., keep_meta=True)` preserves it.
   Instantiation always ignores metadata. `keep_targets=False` removes construction keys.
+- Every `$`-prefixed key is reserved. Loading keeps unknown ones, but instantiating a
+  node with a `$` key that is not allowed there raises.
 
 Assembly runs imports, bases, and defaults, then applies overrides. Only structural
 references are resolved during assembly; other interpolations stay lazy and resolve
 against the assembled configuration. `???` can be filled by consumers and fails when
 accessed or instantiated if still missing. Overrides accept dictionaries, DictConfig,
 or OmegaConf `key=value` dotlists; they do not rerun structural assembly.
+
+Errors raised by a constructor or `from_config` keep their type and get a note naming
+the failing node. The complete rules are in [docs/contracts.md](docs/contracts.md).
 
 `Configurable` provides a default `from_config` implementation. `walk` traverses
 mapping nodes depth-first, parents before children. The optional `type` argument to

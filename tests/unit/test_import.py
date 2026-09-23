@@ -1,10 +1,13 @@
 from pathlib import Path
+from unittest.mock import Mock
 
 import pytest
 from omegaconf import OmegaConf
 from omegaconf.errors import InterpolationKeyError, InterpolationResolutionError
 
 from omegakit import load_config
+
+# Contracts: §3 Resolution timing, §7 Import semantics, §8 Error model.
 
 
 def test_load_resolves_import(write_yaml):
@@ -225,3 +228,36 @@ def test_import_interpolation_resolves_at_final_position(write_yaml):
     cfg = load_config(write_yaml("main.yaml", "n: ~import lib.yaml\n"))
     cfg.n.own = 2
     assert OmegaConf.to_container(cfg, resolve=True) == {"n": {"own": 2, "copy": 2}}
+
+
+def test_import_reads_each_file_once_per_load(write_yaml, monkeypatch):
+    write_yaml("leaf.yaml", "v: 1\n")
+    path = write_yaml(
+        "main.yaml", "a:\n  x: ~import leaf.yaml\nb:\n  y: ~import leaf.yaml\n"
+    )
+    load = Mock(wraps=OmegaConf.load)
+    monkeypatch.setattr(OmegaConf, "load", load)
+    load_config(path)
+    assert sorted(Path(call.args[0]).name for call in load.call_args_list) == [
+        "leaf.yaml",
+        "main.yaml",
+    ]
+
+
+def test_import_with_more_than_one_hash_raises(write_yaml):
+    write_yaml("lib.yaml", "a:\n  b: 1\n")
+    with pytest.raises(ValueError, match="more than one `#`"):
+        load_config(write_yaml("main.yaml", 'n: "~import lib.yaml#a#b"\n'))
+
+
+@pytest.mark.parametrize("selector", ["c.d", "a.b.x", "a.b.5"])
+def test_import_invalid_selector_raises_missing_node(write_yaml, selector):
+    write_yaml("lib.yaml", "a:\n  b: [0, 1]\nc: 3\n")
+    with pytest.raises(ValueError, match="selects node"):
+        load_config(write_yaml("main.yaml", f'n: "~import lib.yaml#{selector}"\n'))
+
+
+def test_import_selects_negative_list_index(write_yaml):
+    write_yaml("lib.yaml", "a: [0, 1]\n")
+    cfg = load_config(write_yaml("main.yaml", 'n: "~import lib.yaml#a.-1"\n'))
+    assert cfg.n == 1
