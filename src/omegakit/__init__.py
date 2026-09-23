@@ -1,4 +1,6 @@
-from .config import (
+from .configurable import Configurable
+from .instantiate import instantiate, prepare
+from .keys import (
     BASE_KEY,
     CLASS_KEY,
     DEFAULTS_KEY,
@@ -6,10 +8,8 @@ from .config import (
     META_KEY,
     PARTIAL_KEY,
     REF_KEY,
-    Configurable,
-    load_config,
 )
-from .instantiate import instantiate, prepare
+from .loading import load_config
 from .utils import walk
 
 __all__ = [

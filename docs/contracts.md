@@ -107,7 +107,7 @@ such as `${.id}` resolves at the node's final position.
   - For a class with `from_config`, they reach `from_config` as `**kwargs`. The
     arguments mapping stays the first positional argument.
   - The default `Configurable.from_config` forwards `**kwargs` to the constructor,
-    calling `cls(**{**config, **kwargs})`, so a call-time value wins as it does for
+    calling `cls(**dict(config, **kwargs))`, so a call-time value wins as it does for
     plain classes.
 - `$partial: true` makes a node partial, and `$partial: false` does not. Any other
   value, including the string `"true"` and `1`, raises `ValueError`.

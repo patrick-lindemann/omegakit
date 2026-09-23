@@ -15,8 +15,6 @@ jobs:
       - run: uv run ruff format --check
       - run: uv run pydoclint src
       - run: uv run pyright
-        # Non-blocking until the existing errors are fixed (stage 4).
-        continue-on-error: true
 
   test:
     runs-on: ubuntu-latest

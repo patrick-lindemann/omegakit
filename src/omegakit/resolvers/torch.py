@@ -1,5 +1,6 @@
 """Optional Torch resolvers. Torch is needed only when registering or resolving."""
 
+import importlib
 from typing import Any
 
 from omegaconf import OmegaConf
@@ -7,7 +8,7 @@ from omegaconf import OmegaConf
 
 def _require_torch() -> Any:
     try:
-        import torch
+        torch = importlib.import_module("torch")
     except ModuleNotFoundError as error:
         if error.name != "torch":
             raise

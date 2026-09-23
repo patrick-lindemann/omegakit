@@ -1,33 +1,45 @@
 from __future__ import annotations
 
 import functools
-import importlib
 from collections.abc import Callable
-from typing import Any
+from typing import Any, cast, overload
 
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
-from .config import (
-    CLASS_KEY,
-    META_KEY,
-    PARTIAL_KEY,
-    REF_KEY,
-    _cast_overrides,
-)
+from .keys import CLASS_KEY, META_KEY, PARTIAL_KEY, REF_KEY
+from .loading import cast_overrides
+from .utils import import_object
 
 
+@overload
+def instantiate(
+    config: DictConfig | dict[str, Any],
+    *,
+    overrides: DictConfig | dict[str, Any] | list[str] | None = None,
+) -> Any: ...
+
+
+@overload
 def instantiate[T](
     config: DictConfig | dict[str, Any],
-    type: type[T] = Any,  # noqa: A002 (renamed to `expected` in stage 6)
+    expected: type[T],
+    *,
     overrides: DictConfig | dict[str, Any] | list[str] | None = None,
-) -> T:
+) -> T: ...
+
+
+def instantiate(
+    config: DictConfig | dict[str, Any],
+    expected: type[Any] | None = None,
+    *,
+    overrides: DictConfig | dict[str, Any] | list[str] | None = None,
+) -> Any:
     """Instantiate an object from a configuration.
 
     Args:
         config: The configuration.
-        type: The expected type of the instantiated object. This is used for type
-            checking and does not affect the instantiation process. Defaults to
-            `Any`.
+        expected: The expected type of the instantiated object. It is a static typing
+            hint only and is not checked at runtime. Defaults to `None`.
         overrides: Additional argument overrides. Can be provided as a DictConfig, a
             regular dictionary, or a list of `key=value` strings (e.g.
             `["foo=1.0", "bar=baz"]`). Defaults to `None`.
@@ -38,11 +50,29 @@ def instantiate[T](
     return _instantiate(config, overrides)
 
 
+@overload
+def prepare(
+    config: DictConfig | dict[str, Any],
+    *,
+    overrides: DictConfig | dict[str, Any] | list[str] | None = None,
+) -> functools.partial[Any]: ...
+
+
+@overload
 def prepare[T](
     config: DictConfig | dict[str, Any],
-    type: type[T] = Any,  # noqa: A002 (renamed to `expected` in stage 6)
+    expected: type[T],
+    *,
     overrides: DictConfig | dict[str, Any] | list[str] | None = None,
-) -> functools.partial[T]:
+) -> functools.partial[T]: ...
+
+
+def prepare(
+    config: DictConfig | dict[str, Any],
+    expected: type[Any] | None = None,
+    *,
+    overrides: DictConfig | dict[str, Any] | list[str] | None = None,
+) -> functools.partial[Any]:
     """Prepare an object for instantiation from a configuration.
 
     The resulting function can be called later to perform the actual instantiation with
@@ -50,9 +80,8 @@ def prepare[T](
 
     Args:
         config: The configuration.
-        type: The expected type of the instantiated object. This is used for type
-            checking and does not affect the instantiation process. Defaults to
-            `Any`.
+        expected: The expected type of the instantiated object. It is a static typing
+            hint only and is not checked at runtime. Defaults to `None`.
         overrides: Additional argument overrides. Can be provided as a DictConfig, a
             regular dictionary, or a list of `key=value` strings (e.g.
             `["foo=1.0", "bar=baz"]`). Defaults to `None`.
@@ -63,22 +92,9 @@ def prepare[T](
     return _instantiate(config, overrides, wrap=functools.partial)
 
 
-def _import_object(import_path: str) -> Any:
-    module_path, _, attr_name = import_path.rpartition(".")
-    module = importlib.import_module(module_path)
-    try:
-        return getattr(module, attr_name)
-    except AttributeError as error:
-        raise ImportError(
-            f"Could not import `{attr_name}` from module `{module_path}`. Make sure "
-            "the import name is correct, and that dependencies are installed, if "
-            "necessary."
-        ) from error
-
-
 def _instantiate(
     config: DictConfig | dict[str, Any],
-    overrides: dict[str, Any] | None = None,
+    overrides: DictConfig | dict[str, Any] | list[str] | None = None,
     wrap: Callable | None = None,
 ) -> Any:
     if CLASS_KEY not in config:
@@ -86,13 +102,16 @@ def _instantiate(
             f"Cannot instantiate config with no `{CLASS_KEY}` key:"
             f"\n{OmegaConf.to_yaml(config)}"
         )
-    if not OmegaConf.is_config(config):
+    if not isinstance(config, DictConfig):
         config = OmegaConf.create(config)
     if overrides is not None:
         config = config.copy()
-        overrides = _cast_overrides(overrides)
+        overrides = cast_overrides(overrides)
         config.merge_with(overrides)
-    plain_config = OmegaConf.to_container(config, resolve=True, throw_on_missing=True)
+    plain_config = cast(
+        dict[str, Any],
+        OmegaConf.to_container(config, resolve=True, throw_on_missing=True),
+    )
     return _build(plain_config, wrap)
 
 
@@ -101,7 +120,7 @@ def _build(
     wrap: Callable | None = None,
     path: tuple[str | int, ...] = (),
 ) -> Any:
-    cls = _import_object(plain_config[CLASS_KEY])
+    cls = import_object(plain_config[CLASS_KEY])
     # Recursively materialize the nested config: Instantiating all children containing
     # the class key
     kwargs = {}
@@ -148,7 +167,7 @@ def _materialize(node: Any, path: tuple[str | int, ...]) -> Any:
                     f"Invalid config node with `{REF_KEY}` key: {node}. A node using "
                     f"`{REF_KEY}` cannot contain any other keys."
                 )
-            return _import_object(node[REF_KEY])
+            return import_object(node[REF_KEY])
         for key in node:
             if isinstance(key, str) and key.startswith("$"):
                 raise ValueError(

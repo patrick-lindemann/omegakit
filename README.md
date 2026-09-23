@@ -58,8 +58,9 @@ Errors raised by a constructor or `from_config` keep their type and get a note n
 the failing node. The complete rules are in [docs/contracts.md](docs/contracts.md).
 
 `Configurable` provides a default `from_config` implementation. `walk` traverses
-mapping nodes depth-first, parents before children. The optional `type` argument to
-`instantiate` and `prepare` is a typing hint, not runtime validation.
+mapping nodes depth-first, parents before children. The optional `expected` argument
+to `instantiate` and `prepare` is a typing hint, not runtime validation: with it, the
+result is typed as that class, and without it as `Any`. `overrides` is keyword-only.
 
 ## Optional resolvers
 
