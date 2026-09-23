@@ -1,7 +1,8 @@
-from pathlib import Path
-from textwrap import dedent
-
 from omegakit import Configurable
+
+POINT = "tests.helpers.Point"
+CONFIGURABLE_POINT = "tests.helpers.ConfigurablePoint"
+CONTAINER = "tests.helpers.Container"
 
 
 class Point:
@@ -26,8 +27,3 @@ class Container:
     def __init__(self, name: str, point: Point) -> None:
         self.name = name
         self.point = point
-
-
-def write_text(path: Path, text: str) -> Path:
-    path.write_text(dedent(text))
-    return path

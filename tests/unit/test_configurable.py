@@ -1,4 +1,6 @@
-from tests.helpers import ConfigurablePoint
+from tests.helpers import (
+    ConfigurablePoint,
+)
 
 
 def test_from_config_builds_from_mapping():
