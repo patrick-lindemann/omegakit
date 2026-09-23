@@ -1,10 +1,13 @@
-# config-compose
+# omegakit
 
 Composable YAML configuration and Python object construction, powered by OmegaConf.
 Requires Python 3.13 or newer. OmegaConf is the only runtime dependency.
 
+Install with `pip install omegakit`. omegakit builds on OmegaConf but is not affiliated
+with or endorsed by the OmegaConf project.
+
 ```python
-from config_compose import instantiate, load_config
+from omegakit import instantiate, load_config
 
 config = load_config("app.yaml", overrides=["worker.timeout=30"])
 worker = instantiate(config.worker)
@@ -57,7 +60,7 @@ Nothing is registered on import, and this library does not load `.env` files.
 
 ```python
 from pathlib import Path
-from config_compose.resolvers import register_paths_resolver
+from omegakit.resolvers import register_paths_resolver
 
 register_paths_resolver({"data_dir": Path("/srv/data")})
 # YAML: dataset: ${paths:data_dir}/training
@@ -67,7 +70,7 @@ Paths are copied as strings; relative paths remain relative and unknown keys ret
 None. The caller defines the project layout.
 
 ```python
-from config_compose.resolvers.torch import register_torch_resolvers
+from omegakit.resolvers.torch import register_torch_resolvers
 
 register_torch_resolvers()
 # YAML: dtype: ${dtype:float32}
@@ -89,10 +92,10 @@ This directory is a member of the parent uv workspace and shares its lockfile.
 From the repository root:
 
 ```sh
-uv sync --package config-compose
-uv run --package config-compose pytest -c workspace/config-compose/pyproject.toml --confcutdir=workspace/config-compose workspace/config-compose/tests
-uv run --package config-compose ruff check workspace/config-compose
-uv build --package config-compose
+uv sync --package omegakit
+uv run --package omegakit pytest -c workspace/omegakit/pyproject.toml --confcutdir=workspace/omegakit workspace/omegakit/tests
+uv run --package omegakit ruff check workspace/omegakit
+uv build --package omegakit
 ```
 
 Workspace sync changes the shared environment. The package can also be copied into

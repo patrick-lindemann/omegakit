@@ -4,7 +4,7 @@ import pytest
 from omegaconf import OmegaConf
 from omegaconf.errors import MissingMandatoryValue
 
-from config_compose import instantiate, prepare
+from omegakit import instantiate, prepare
 from tests.helpers import ConfigurablePoint, Container, Point
 
 POINT = "tests.helpers.Point"

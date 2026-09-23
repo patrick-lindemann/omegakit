@@ -1,5 +1,5 @@
 [project]
-name = "config-compose"
+name = "omegakit"
 version = "0.1.0"
 description = "Composable YAML configuration and Python object construction."
 readme = "README.md"

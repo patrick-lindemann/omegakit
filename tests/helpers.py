@@ -1,7 +1,7 @@
 from pathlib import Path
 from textwrap import dedent
 
-from config_compose import Configurable
+from omegakit import Configurable
 
 
 class Point:

@@ -1,6 +1,6 @@
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
-from config_compose import walk
+from omegakit import walk
 
 
 def test_walk_yields_the_root():

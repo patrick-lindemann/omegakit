@@ -4,8 +4,8 @@ import sys
 import pytest
 from omegaconf import OmegaConf
 
-from config_compose.resolvers import register_paths_resolver
-from config_compose.resolvers.torch import (
+from omegakit.resolvers import register_paths_resolver
+from omegakit.resolvers.torch import (
     _resolve_dtype,
     register_cuda_available_resolver,
     register_torch_dtype_resolver,
@@ -20,8 +20,8 @@ def test_import_has_no_side_effects():
             "-c",
             """
 import sys
-import config_compose
-import config_compose.resolvers.torch
+import omegakit
+import omegakit.resolvers.torch
 from omegaconf import OmegaConf
 assert 'torch' not in sys.modules
 assert 'dotenv' not in sys.modules

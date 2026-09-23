@@ -3,8 +3,8 @@ from pathlib import Path
 import pytest
 from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
 
-from config_compose import load_config
-from config_compose.resolvers import register_paths_resolver
+from omegakit import load_config
+from omegakit.resolvers import register_paths_resolver
 from tests.helpers import write_text
 
 
