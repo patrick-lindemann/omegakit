@@ -1,10 +1,12 @@
 import subprocess
 import sys
+from types import ModuleType
 
 import pytest
 from omegaconf import OmegaConf
 
-from omegakit.resolvers import register_paths_resolver
+import omegakit.resolvers
+from omegakit.resolvers.paths import register_paths_resolver
 from omegakit.resolvers.torch import (
     _resolve_dtype,
     register_cuda_available_resolver,
@@ -31,6 +33,15 @@ assert not any(OmegaConf.has_resolver(n) for n in ('paths', 'dtype', 'cuda_avail
         ],
         check=True,
     )
+
+
+def test_resolvers_package_exports_nothing():
+    exports = [
+        name
+        for name, value in vars(omegakit.resolvers).items()
+        if not name.startswith("_") and not isinstance(value, ModuleType)
+    ]
+    assert exports == []
 
 
 def test_paths_snapshot_and_unknown_key(tmp_path):

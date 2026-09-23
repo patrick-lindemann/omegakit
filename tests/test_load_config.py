@@ -4,7 +4,7 @@ import pytest
 from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
 
 from omegakit import load_config
-from omegakit.resolvers import register_paths_resolver
+from omegakit.resolvers.paths import register_paths_resolver
 from tests.helpers import write_text
 
 

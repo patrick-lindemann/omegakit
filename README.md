@@ -56,11 +56,13 @@ mapping nodes depth-first, parents before children. The optional `type` argument
 
 ## Optional resolvers
 
-Nothing is registered on import, and this library does not load `.env` files.
+Nothing is registered on import, and this library does not load `.env` files. Each
+resolver module carries its own dependencies, so `omegakit.resolvers` itself exports
+nothing; import from the module, such as `omegakit.resolvers.paths`.
 
 ```python
 from pathlib import Path
-from omegakit.resolvers import register_paths_resolver
+from omegakit.resolvers.paths import register_paths_resolver
 
 register_paths_resolver({"data_dir": Path("/srv/data")})
 # YAML: dataset: ${paths:data_dir}/training
@@ -88,21 +90,16 @@ per config; replacing a resolver does not clear caches on existing configs.
 
 ## Development
 
-This directory is a member of the parent uv workspace and shares its lockfile.
-From the repository root:
-
 ```sh
-uv sync --package omegakit
-uv run --package omegakit pytest -c workspace/omegakit/pyproject.toml --confcutdir=workspace/omegakit workspace/omegakit/tests
-uv run --package omegakit ruff check workspace/omegakit
-uv build --package omegakit
+uv sync
+uv run pytest
+uv run ruff check
+uv run ruff format --check
+uv build
 ```
 
-Workspace sync changes the shared environment. The package can also be copied into
-its own repository and developed with `uv sync`, `uv run pytest`, and `uv build`.
 Tests that require a real Torch installation skip when it is absent.
 
-GraspDiff's original implementation and imports remain intact; migration is separate.
 This package imports and calls Python objects specified by configs, so configs must
 come from trusted sources. Assembly currently relies on private OmegaConf node APIs;
 the supported OmegaConf range is intentionally constrained to 2.3.x.
