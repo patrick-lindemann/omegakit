@@ -1,6 +1,6 @@
 [project]
 name = "omegakit"
-version = "0.1.0"
+version = "0.2.0"
 description = "Composable YAML configuration and Python object construction."
 readme = "README.md"
 license = "MIT"
@@ -73,6 +73,7 @@ convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["D"]
+"docs/examples/**" = ["D", "PT"]
 
 [tool.pydoclint]
 style = "google"
@@ -81,7 +82,7 @@ check-return-types = false
 check-yield-types = false
 
 [tool.pyright]
-include = ["src", "tests"]
+include = ["src", "tests", "docs/examples"]
 pythonVersion = "3.12"            # the floor; development runs on 3.13
 typeCheckingMode = "standard"
 reportImplicitOverride = "error"
