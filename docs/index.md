@@ -4,6 +4,7 @@
 ```{toctree}
 :hidden:
 
+guide/typed-configs
 contracts
 api
 ```

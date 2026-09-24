@@ -58,7 +58,10 @@ Errors raised by a constructor or `from_config` keep their type and get a note n
 the failing node. The complete rules are in the
 [configuration contracts](https://omegakit.readthedocs.io/en/latest/contracts.html).
 
-`Configurable` provides a default `from_config` implementation. `walk` traverses
+`Configurable` provides a default `from_config` implementation. With a dataclass
+schema, `class Model(Configurable[ModelConfig])`, the config is validated and typed
+before `from_config` receives it; see the
+[typed-configs guide](https://omegakit.readthedocs.io/en/latest/guide/typed-configs.html). `walk` traverses
 mapping nodes depth-first, parents before children. The optional `expected` argument
 to `instantiate` and `prepare` is a typing hint, not runtime validation: with it, the
 result is typed as that class, and without it as `Any`. `overrides` is keyword-only.

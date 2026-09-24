@@ -10,7 +10,8 @@ from .keys import (
     REF_KEY,
 )
 from .loading import load_config
-from .utils import walk
+from .schema import ConfigValidationError, check_schema
+from .utils import node, walk
 
 __all__ = [
     "BASE_KEY",
@@ -20,9 +21,12 @@ __all__ = [
     "META_KEY",
     "PARTIAL_KEY",
     "REF_KEY",
+    "ConfigValidationError",
     "Configurable",
+    "check_schema",
     "instantiate",
     "load_config",
+    "node",
     "prepare",
     "walk",
 ]

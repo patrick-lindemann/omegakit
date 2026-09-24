@@ -8,7 +8,14 @@ from omegaconf import DictConfig, ListConfig, OmegaConf
 
 from .keys import CLASS_KEY, META_KEY, PARTIAL_KEY, REF_KEY
 from .loading import cast_overrides
-from .utils import import_object
+from .schema import (
+    check_object,
+    check_schema,
+    find_schema,
+    schema_fields,
+    validate_native,
+)
+from .utils import format_path, import_object
 
 
 @overload
@@ -121,9 +128,10 @@ def _build(
     path: tuple[str | int, ...] = (),
 ) -> Any:
     cls = import_object(plain_config[CLASS_KEY])
-    # Recursively materialize the nested config: Instantiating all children containing
-    # the class key
-    kwargs = {}
+    schema = find_schema(cls) if isinstance(cls, type) else None
+    if schema is not None:
+        check_schema(cls)
+    values = {}
     for key, value in plain_config.items():
         if key in (CLASS_KEY, META_KEY):
             continue
@@ -140,20 +148,39 @@ def _build(
             if value:
                 wrap = functools.partial
             continue
-        kwargs[key] = _materialize(value, (*path, key))
-    # Final instantiation
+        values[key] = value
+    if schema is None:
+        config = {
+            key: _materialize(value, (*path, key)) for key, value in values.items()
+        }
+    else:
+        config = _typed_config(schema, values, path)
     try:
         if hasattr(cls, "from_config"):
             return (
-                wrap(cls.from_config, kwargs)
+                wrap(cls.from_config, config)
                 if wrap is not None
-                else cls.from_config(kwargs)
+                else cls.from_config(config)
             )
-        return wrap(cls, **kwargs) if wrap is not None else cls(**kwargs)
+        return wrap(cls, **config) if wrap is not None else cls(**config)
     except Exception as error:
-        location = ".".join(map(str, path)) or "<root>"
-        error.add_note(f"while instantiating {location} ({plain_config[CLASS_KEY]})")
+        error.add_note(
+            f"while instantiating {format_path(path)} ({plain_config[CLASS_KEY]})"
+        )
         raise
+
+
+def _typed_config(
+    schema: type, values: dict[str, Any], path: tuple[str | int, ...]
+) -> Any:
+    fields = validate_native(schema, values, path)
+    for name, (kind, annotation) in schema_fields(schema).items():
+        if kind == "native" or name not in values:
+            continue
+        fields[name] = _materialize(values[name], (*path, name))
+        if kind == "object":
+            check_object(fields[name], annotation, values[name], (*path, name), schema)
+    return schema(**fields)
 
 
 def _materialize(node: Any, path: tuple[str | int, ...]) -> Any:

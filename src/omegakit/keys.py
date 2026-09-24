@@ -1,73 +1,43 @@
 META_KEY = "$meta"
-"""Arbitrary metadata attached to any node.
+"""Metadata attached to a node, dropped on load unless `keep_meta=True`.
 
-For example `$meta: {author: myname}`. Preserved on load only when
-`load_config(..., keep_meta=True)`, and always ignored by `instantiate` (never passed
-to a constructor).
+For example `$meta: {author: myname}`. It is never passed to a constructor.
 """
 
 IMPORT_KEY = "~import"
-"""String value replacing a node with another config file, `~import <path>[#<node>]`.
+"""Value prefix that replaces a node with another config file or one of its nodes.
 
-A relative path is resolved against the importing file, an absolute path is used as-is;
-the optional `#<node>` selects a subnode of the imported config (e.g. `~import
-models/base.yaml#optimizer`). Circular imports raise a `ValueError`.
-
-The statement may contain `${...}` interpolations (e.g. `~import
-${paths:config_dir}/models/base.yaml`). Being part of the reference itself, they are
-resolved eagerly at assembly time — per file, before any `$base` merge — so resolvers
-are always available, but config-value references only see keys literally present in
-the importing file at that point.
+For example `~import models/base.yaml#optimizer`. See §7 of the configuration
+contracts.
 """
 
 BASE_KEY = "$base"
-"""Defaults merged into the current node.
+"""A mapping, or a list of mappings, merged underneath the node.
 
-For example `$base: {lr: 0.1, steps: 100}`. The `$base` mapping is merged underneath
-the node (the node's own keys win) before instantiation. Bases are merged bottom-up,
-so nested nodes resolve their own `$base` first. Typically populated via `~import` or
-an interpolation (`$base: ${..._common}`).
-
-Resolution contract: assembly (`~import` + `$base` merge) is structural and resolves
-nothing except the `$base`/`~import` reference itself (it decides what to merge).
-Every `${...}` interpolation and `???` mandatory-missing value is carried through
-untouched and resolved once, later — lazily on access, or when `instantiate` builds the
-object tree — against the fully-assembled config. So a `???` means "a `$base` consumer
-must supply this key"; unfilled, it errors at use time (naming the key), never during
-assembly.
+For example `$base: ~import defaults.yaml`. See §2 of the configuration contracts.
 """
 
 DEFAULTS_KEY = "$defaults"
-"""Defaults merged underneath every dict-valued sibling of the containing mapping.
+"""A mapping merged underneath every dict-valued sibling.
 
-Scalar and list-valued siblings and `$`-keys are untouched. Item keys win, and passes
-run bottom-up, so an inner `$defaults` wins over an outer one.
-
-Follows the `$base` resolution contract: only the `$defaults` reference itself is
-resolved eagerly; every `${...}` inside the values is carried through and resolved
-lazily at the item's final position — relative interpolations (`${.id}`) are written
-as-if already inside an item, absolute ones resolve from the config root.
+For example `$defaults: {path: data/${.id}.h5}`. See §2 of the configuration
+contracts.
 """
 
 CLASS_KEY = "$class"
-"""Import path of the class to build from a node.
+"""Import path of the class or function a node is built with.
 
-For example `$class: myapp.models.Foo`. Its presence marks a node as instantiable:
-`instantiate` imports the class and calls it (or its `from_config`) with the node's
-other keys as keyword arguments.
+For example `$class: myapp.models.Model`. See §5 of the configuration contracts.
 """
 
 REF_KEY = "$ref"
-"""Import path resolved to the referenced object itself.
+"""Import path of an object that replaces the node without being called.
 
-For example `$ref: torch.float32`. Unlike `$class` the object is imported but not
-called. A `$ref` node must contain no other keys (`$meta` aside).
+For example `$ref: torch.float32`.
 """
 
 PARTIAL_KEY = "$partial"
-"""Flag deferring instantiation of a `$class` node.
+"""Flag that builds a `functools.partial` instead of calling the class.
 
-For example `$partial: true`. When true, `instantiate` returns a `functools.partial`
-bound to the resolved arguments instead of the constructed object, so remaining
-arguments can be supplied at call time.
+For example `$partial: true`.
 """

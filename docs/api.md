@@ -13,6 +13,14 @@
 .. autofunction:: omegakit.prepare
 .. autoclass:: omegakit.Configurable
    :members: from_config
+.. autofunction:: omegakit.node
+```
+
+## Typed configs
+
+```{eval-rst}
+.. autofunction:: omegakit.check_schema
+.. autoexception:: omegakit.ConfigValidationError
 ```
 
 ## Traversal

@@ -2,10 +2,14 @@ import pytest
 from omegaconf import OmegaConf
 from omegaconf.errors import MissingMandatoryValue
 
-from omegakit import instantiate, load_config
+from omegakit import ConfigValidationError, instantiate, load_config, prepare
+from tests import schemas
 from tests.helpers import POINT, RECORDER, Point
 
-# Contracts: §3 Resolution timing, §4 `???` lifecycle, §5 Instantiation.
+# Contracts: §3 Resolution timing, §4 `???` lifecycle, §5 Instantiation, §10 Typed
+# configs.
+
+MODEL_YAML = "model:\n  $class: tests.schemas.Model\n  kind: A\n  depth: ???\n"
 
 
 def test_scenario_defaults_give_every_item_the_same_class(write_yaml):
@@ -95,3 +99,59 @@ def test_scenario_golden_dataset_manifest(write_yaml):
         {"id": "sphere", "path": "/data/sphere.h5", "scale": 1.0},
         {"id": "cube", "path": "/data/cube.h5", "scale": 2.0},
     ]
+
+
+def test_scenario_missing_filled_by_override_passes_schema(write_yaml):
+    """`???` + overrides + schema: the filled value is validated and coerced."""
+    cfg = load_config(write_yaml("main.yaml", MODEL_YAML), overrides=["model.depth=3"])
+    assert instantiate(cfg.model, schemas.Model).depth == 3
+
+
+def test_scenario_prepare_with_runtime_only_argument(write_yaml):
+    """`prepare` + schema: runtime-only arguments pass through `**kwargs`."""
+    cfg = load_config(write_yaml("main.yaml", MODEL_YAML), overrides=["model.depth=1"])
+    params = [object()]
+    model = prepare(cfg.model, schemas.Model)(params=params)
+    assert model.extra["params"] is params
+
+
+def test_scenario_enum_override_mapped_to_class(write_yaml):
+    """Overrides + Enum field + custom `from_config`: `kind=B` selects class `B`."""
+    cfg = load_config(
+        write_yaml("main.yaml", MODEL_YAML), overrides=["model.kind=B", "model.depth=1"]
+    )
+    assert isinstance(instantiate(cfg.model, schemas.Model).kind, schemas.B)
+
+
+def test_scenario_node_child_validated_against_its_schema():
+    """`node()` + schema: a code-chosen child is validated by its own schema."""
+    wrapper = instantiate({"$class": "tests.schemas.Wrapper", "width": "4"})
+    assert wrapper.inner.width == 4
+    with pytest.raises(ConfigValidationError, match="EncoderConfig"):
+        instantiate({"$class": "tests.schemas.Wrapper", "width": "wide"})
+
+
+def test_scenario_object_field_of_wrong_class(write_yaml):
+    """Loaded config + object field: a wrong `$class` fails with the node path."""
+    cfg = load_config(
+        write_yaml(
+            "main.yaml",
+            MODEL_YAML + "  encoder:\n    $class: tests.schemas.Decoder\n",
+        ),
+        overrides=["model.depth=1"],
+    )
+    with pytest.raises(ConfigValidationError, match=r"`encoder`.*Decoder"):
+        instantiate(cfg.model)
+
+
+def test_scenario_resolver_object_in_any_field(write_yaml):
+    """Resolver + `Any` field: an object returned by a resolver is passed through."""
+    encoder = schemas.Encoder(9)
+    OmegaConf.register_new_resolver("encoder", lambda: encoder)
+    cfg = load_config(
+        write_yaml(
+            "main.yaml",
+            "fields:\n  $class: tests.schemas.Fields\n  anything: ${encoder:}\n",
+        )
+    )
+    assert instantiate(cfg.fields).fields["anything"] is encoder

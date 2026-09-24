@@ -89,7 +89,7 @@ such as `${.id}` resolves at the node's final position.
 - If the imported object has a `from_config` attribute, `from_config(arguments)` is
   called instead of the object. This is duck-typed: `Configurable` is one
   implementation, not a requirement. `arguments` is a plain `dict` of the
-  materialized arguments.
+  materialized arguments, or the typed config when the class has a schema (§10).
 - Nested instantiable nodes, in mappings and lists, are built before their parent,
   and the parent receives the built objects.
 - `$meta` is never passed to a constructor or to `from_config`.
@@ -106,9 +106,10 @@ such as `${.id}` resolves at the node's final position.
     value wins over a config value of the same name.
   - For a class with `from_config`, they reach `from_config` as `**kwargs`. The
     arguments mapping stays the first positional argument.
-  - The default `Configurable.from_config` forwards `**kwargs` to the constructor,
-    calling `cls(**dict(config, **kwargs))`, so a call-time value wins as it does for
-    plain classes.
+  - The default `Configurable.from_config` forwards `**kwargs` to the constructor:
+    it calls `cls(**fields, **kwargs)`, where `fields` are the typed config's fields
+    (shallow) or the arguments mapping. A call-time value wins over a field of the
+    same name, as it does for plain classes.
 - `$partial: true` makes a node partial, and `$partial: false` does not. Any other
   value, including the string `"true"` and `1`, raises `ValueError`.
 - A raw `dict` is resolved exactly like a `DictConfig`: `${…}` is resolved, and
@@ -183,6 +184,12 @@ such as `${.id}` resolves at the node's final position.
 | `???` accessed or instantiated | `MissingMandatoryValue` | the full key |
 | Unresolvable `${…}` accessed or instantiated | `InterpolationKeyError` (or another OmegaConf error) | the key |
 | Exception from a constructor or `from_config` | unchanged | original message, plus the note from §5 |
+| Schema outside the supported subset (§10) | `ConfigValidationError` | the field and the fix |
+| Schema that does not match `__init__` (§10) | `ConfigValidationError` | the field or parameter |
+| Unknown field, missing required field, or invalid native value | `ConfigValidationError` | the node path and the schema |
+| Object field built with the wrong class | `ConfigValidationError` | the field path, expected and actual class |
+| `node()` for a class or function not defined at module level | `ValueError` | `module level` |
+| Type variable in a `Configurable` base that cannot be substituted | `TypeError` | `Cannot resolve type variable` |
 | Resolver registered twice without `replace=True` | `ValueError` | `already registered` |
 | Torch resolver without PyTorch installed | `ImportError` | `require PyTorch` |
 
@@ -201,3 +208,82 @@ A malformed dotlist override such as `["a"]` is not an error: OmegaConf sets `a`
 - OmegaConf is pinned to 2.3.x, because assembly uses private OmegaConf node APIs.
 - Configs import and call arbitrary Python objects. Load them only from trusted
   sources.
+
+## 10. Typed configs
+
+A class that subclasses `Configurable[TConfig]` with a dataclass `TConfig` has a
+**schema**. Its config is validated and built into a `TConfig` instance, the typed
+config, which `from_config` receives. Every other class, including a bare
+`Configurable` and a `TypedDict` or `Mapping` `TConfig`, behaves as in §5.
+`ConfigValidationError` is a `ValueError`.
+
+**Schema lookup.** The schema is the `TConfig` argument found by walking the
+original bases of the `$class` and substituting type variables, so
+`class Sub(Mixin[int], Model)` and `class Leaf(Mid[Config])` find it. An
+unparametrized generic class (`$class: Mid`) uses its type variable's default, or
+has no schema. A type variable that cannot be substituted raises `TypeError`.
+
+**Field kinds:**
+
+| Annotation | Config value | Validated by | The typed config holds |
+|---|---|---|---|
+| **native**: `int`, `float`, `bool`, `str`, `bytes`, `Path`, `Enum`, dataclasses whose fields are all native, `list`/`dict` of these, unions of these, and these or `None` | plain values | OmegaConf | the coerced value |
+| **object**: any other class, a generic class, a union of classes, and these or `None`, also through a `type` alias | a `$class` or `$ref` node, or `null` if optional | its own class, then `isinstance` | the built object |
+| **`Any`** | anything | nothing | the value, with `$class` nodes inside built |
+
+- Enums are given by member **name** (`kind: B`); member values are rejected.
+- Unions of plain values are accepted, but OmegaConf does not coerce them.
+- Missing fields take their dataclass defaults. A field without a default is
+  required.
+- Schema defaults win over constructor defaults, because the default `from_config`
+  passes every field.
+
+**Supported subset.** The lookup raises `ConfigValidationError`, naming the field
+and the fix, for:
+
+- fields with `init=False`, `InitVar` fields and keyword-only fields
+- `tuple`, `set`, `frozenset` and the abstract containers (`Sequence`, `Mapping`,
+  …); use `list`, `dict` or `Any`
+- `list` or `dict` of objects; use `Any`
+- unions that mix plain values and classes, `Literal` and `TypedDict` fields
+- annotations that `get_type_hints` cannot resolve, such as names imported under
+  `TYPE_CHECKING`
+
+**Per node, in order:**
+
+1. **Lookup** of the schema, as above. Results are cached per class.
+2. **Consistency check** (`check_schema`), only when no class in the MRO below
+   `Configurable` overrides `from_config`. It runs before any child is built, and a
+   successful check is cached:
+   - every required `__init__` parameter has a field
+   - every field is a keyword parameter, unless `__init__` takes `**kwargs`
+   - every field annotation is assignable to its parameter's annotation (`int` to
+     `float`, a subclass to its base, unions member by member). Generic and
+     unresolvable annotations are skipped.
+3. **Native validation** (parent before children): unknown keys and missing required
+   non-native fields raise. The native values are merged onto an OmegaConf schema of
+   the native fields and converted with `to_object`. Object and `Any` values never
+   enter OmegaConf, so resolver-returned objects and object defaults work.
+4. **Object and `Any` fields** (children before parent) are built as in §5. A built
+   object field must be an instance of its annotation. The check is skipped for a
+   child with `$partial: true`, for generic annotations, and when `isinstance` raises
+   `TypeError` (protocols that are not runtime-checkable).
+5. **Assembly:** `TConfig(**fields)`, so `__post_init__` runs. Nested native
+   dataclasses, including those in `list` and `dict` fields, are the user's classes.
+6. **Call:** `from_config(typed_config)`, or a partial of it for `prepare` and
+   `$partial` that passes call-time arguments as `**kwargs`. Validation happens when
+   the partial is created; a `???` never reaches it.
+
+Validation errors name the node path and the schema class. Children are built before
+the parent's constructor runs, so an expensive child is wasted if the parent fails;
+the consistency check catches the most common mismatch first.
+
+**`from_config` contract.** It receives the typed config with its children built,
+plus `**kwargs` from a partial or a direct caller. It returns `Self`, or is
+annotated with a base class when it returns a subclass instance (a factory). Direct
+calls with a raw mapping still work, but are outside the contract.
+
+**`node(target, **kwargs)`** returns `{"$class": "<module>.<qualname>", **kwargs}`
+for a class or function defined at module level, for children that code chooses
+inside `from_config`. Such children cannot be reached by overrides. Children that
+users should configure belong in object fields.

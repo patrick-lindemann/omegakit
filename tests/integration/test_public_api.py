@@ -12,14 +12,17 @@ def test_public_api_exports():
     assert sorted(omegakit.__all__) == [
         "BASE_KEY",
         "CLASS_KEY",
+        "ConfigValidationError",
         "Configurable",
         "DEFAULTS_KEY",
         "IMPORT_KEY",
         "META_KEY",
         "PARTIAL_KEY",
         "REF_KEY",
+        "check_schema",
         "instantiate",
         "load_config",
+        "node",
         "prepare",
         "walk",
     ]
