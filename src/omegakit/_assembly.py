@@ -12,6 +12,8 @@ from ._keys import BASE_KEY, DEFAULTS_KEY, IMPORT_KEY
 from ._schema import ConfigValidationError
 from ._utils import describe_error, walk
 
+_NULL_TAG = "tag:yaml.org,2002:null"
+
 
 def load_file(file_path: Path) -> DictConfig | ListConfig:
     """Load one YAML file.
@@ -23,10 +25,19 @@ def load_file(file_path: Path) -> DictConfig | ListConfig:
         The file's content.
 
     Raises:
-        ConfigValidationError: If the file is not valid YAML or not UTF-8, or holds
-            a value that OmegaConf rejects.
+        ConfigValidationError: If the file is not valid YAML or not UTF-8, holds a
+            single value instead of a mapping or a list, or holds a value that
+            OmegaConf rejects.
     """
     try:
+        # `OmegaConf.load` turns a single string into a mapping and fails on other
+        # single values with an `OSError`, so look at the document first.
+        document = yaml.compose(file_path.read_text("utf-8"), Loader=yaml.SafeLoader)
+        if isinstance(document, yaml.ScalarNode) and document.tag != _NULL_TAG:
+            raise ConfigValidationError(
+                f"Cannot load `{file_path}`: it holds a single value, not a mapping "
+                "or a list."
+            )
         return OmegaConf.load(file_path)
     except (yaml.YAMLError, UnicodeDecodeError, OmegaConfBaseException) as error:
         raise ConfigValidationError(

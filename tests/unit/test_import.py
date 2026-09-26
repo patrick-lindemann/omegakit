@@ -172,6 +172,20 @@ def test_import_missing_file_raises(write_yaml):
     assert isinstance(info.value.__cause__, FileNotFoundError)
 
 
+def test_import_rejects_a_file_with_a_single_value(write_yaml):
+    write_yaml("lib.yaml", "hello\n")
+    path = write_yaml("main.yaml", "n: ~import lib.yaml\n")
+    with pytest.raises(ConfigValidationError, match="single value") as info:
+        load_config(path)
+    assert str(path) in str(info.value)
+
+
+@pytest.mark.parametrize("text", ["", "null\n", "~\n"])
+def test_import_of_an_empty_file_is_an_empty_mapping(write_yaml, text):
+    write_yaml("lib.yaml", text)
+    assert load_config(write_yaml("main.yaml", "n: ~import lib.yaml\n")).n == {}
+
+
 def test_import_of_invalid_yaml_names_the_importing_file(write_yaml):
     write_yaml("lib.yaml", "a: [1\n")
     path = write_yaml("main.yaml", "n: ~import lib.yaml\n")

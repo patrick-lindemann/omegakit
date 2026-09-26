@@ -44,3 +44,14 @@ def test_load_rejects_a_file_that_is_not_utf8(tmp_path):
 def test_load_missing_root_file_raises_file_not_found(tmp_path):
     with pytest.raises(FileNotFoundError):
         load_config(tmp_path / "missing.yaml")
+
+
+@pytest.mark.parametrize("text", ["hello\n", "5\n", '"a: 1"\n'])
+def test_load_rejects_a_file_with_a_single_value(write_yaml, text):
+    with pytest.raises(ConfigValidationError, match="single value"):
+        load_config(write_yaml("c.yaml", text))
+
+
+@pytest.mark.parametrize("text", ["", "null\n", "~\n", "---\n"])
+def test_load_empty_files_are_empty_mappings(write_yaml, text):
+    assert load_config(write_yaml("c.yaml", text)) == {}
