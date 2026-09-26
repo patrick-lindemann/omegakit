@@ -176,17 +176,17 @@ def test_instantiate_error_from_from_config_gets_note():
 
 
 def test_instantiate_unknown_reserved_key_raises():
-    with pytest.raises(ValueError, match="reserved"):
+    with pytest.raises(ConfigValidationError, match="reserved"):
         instantiate({"$class": POINT, "$foo": 1, "x": 1, "y": 2})
 
 
 def test_instantiate_class_with_ref_raises():
-    with pytest.raises(ValueError, match="reserved"):
+    with pytest.raises(ConfigValidationError, match="reserved"):
         instantiate({"$class": POINT, "$ref": "builtins.int", "x": 1, "y": 2})
 
 
 def test_instantiate_unknown_reserved_key_in_plain_mapping_raises():
-    with pytest.raises(ValueError, match="reserved"):
+    with pytest.raises(ConfigValidationError, match="reserved"):
         instantiate({"$class": POINT, "x": {"$foo": 1}, "y": 2})
 
 

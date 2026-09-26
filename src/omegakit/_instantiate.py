@@ -139,16 +139,7 @@ def _build(
     for key, value in plain_config.items():
         if key in (CLASS_KEY, META_KEY):
             continue
-        if isinstance(key, str) and key.startswith("$") and key != PARTIAL_KEY:
-            raise ValueError(
-                f"Invalid config node with `{CLASS_KEY}` key: {plain_config}. Key "
-                f"`{key}` is not supported here; keys starting with `$` are reserved."
-            )
         if key == PARTIAL_KEY:
-            if not isinstance(value, bool):
-                raise ValueError(
-                    f"`{PARTIAL_KEY}` must be `true` or `false`, got `{value!r}`."
-                )
             if value:
                 wrap = functools.partial
             continue
@@ -233,18 +224,7 @@ def _materialize(node: Any, path: tuple[str | int, ...]) -> Any:
         if CLASS_KEY in node:
             return _build(node, path=path)
         if REF_KEY in node:
-            if len(node) > 1:
-                raise ValueError(
-                    f"Invalid config node with `{REF_KEY}` key: {node}. A node using "
-                    f"`{REF_KEY}` cannot contain any other keys."
-                )
             return import_object(node[REF_KEY])
-        for key in node:
-            if isinstance(key, str) and key.startswith("$"):
-                raise ValueError(
-                    f"Invalid config node: {node}. Key `{key}` is not supported here; "
-                    "keys starting with `$` are reserved."
-                )
         return {k: _materialize(v, (*path, k)) for k, v in node.items()}
     if isinstance(node, (list, ListConfig)):
         return [_materialize(v, (*path, index)) for index, v in enumerate(node)]

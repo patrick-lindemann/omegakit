@@ -2,7 +2,7 @@ import functools
 
 import pytest
 
-from omegakit import instantiate, prepare
+from omegakit import ConfigValidationError, instantiate, prepare
 from tests.helpers import CONFIGURABLE_POINT, CONTAINER, POINT, RECORDER, Point
 
 # Contracts: §5 Instantiation.
@@ -52,7 +52,7 @@ def test_partial_call_time_arguments_reach_duck_typed_from_config():
 
 @pytest.mark.parametrize("value", ["true", 1, 0, None])
 def test_partial_non_boolean_raises(value):
-    with pytest.raises(ValueError, match=r"\$partial"):
+    with pytest.raises(ConfigValidationError, match=r"\$partial"):
         instantiate({"$class": POINT, "$partial": value, "x": 1, "y": 2})
 
 

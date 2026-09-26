@@ -119,7 +119,7 @@ such as `${.id}` resolves at the node's final position.
     (shallow) or the arguments mapping. A call-time value wins over a field of the
     same name, as it does for plain classes.
 - `$partial: true` makes a node partial, and `$partial: false` does not. Any other
-  value, including the string `"true"` and `1`, raises `ValueError`.
+  value, including the string `"true"` and `1`, raises `ConfigValidationError`.
 - A raw `dict` is resolved exactly like a `DictConfig`: `${…}` is resolved, and
   `???` raises `MissingMandatoryValue`. It is converted with `OmegaConf.create`, so
   its values must be types OmegaConf supports. A value such as an arbitrary Python
@@ -141,8 +141,8 @@ such as `${.id}` resolves at the node's final position.
 - `~import` is a value prefix, not a key. Only a string value that starts with
   `~import` is an import. Elsewhere in a string it is literal text.
 - `load_config` keeps unknown `$` keys untouched.
-- When instantiating, any mapping with a `$` key that is not allowed there raises
-  `ValueError`. A `$class` node allows `$meta` and `$partial`, a `$ref` node allows
+- When validating or instantiating, any mapping with a `$` key that is not allowed
+  there raises `ConfigValidationError`. A `$class` node allows `$meta` and `$partial`, a `$ref` node allows
   `$meta`, and a plain mapping allows only `$meta`. In particular, `$class` and
   `$ref` cannot be combined.
 
@@ -186,10 +186,10 @@ such as `${.id}` resolves at the node's final position.
 | `instantiate`/`prepare` on a node without `$class` | `ValueError` | `Cannot instantiate config with no` `$class` |
 | `$class`/`$ref` module not found | `ConfigValidationError`, caused by `ModuleNotFoundError` | `Cannot import`, the node path and the module |
 | `$class`/`$ref` attribute not found | `ConfigValidationError`, caused by `ImportError` | `Cannot import`, the node path, `Could not import` |
-| `$ref` with sibling keys other than `$meta` | `ValueError` | `cannot contain any other keys` |
+| `$ref` with sibling keys other than `$meta` | `ConfigValidationError` | `cannot contain any other keys` |
 | Raw dict value that OmegaConf does not support | `UnsupportedValueType` | the key |
-| Unknown `$` key, or `$class` with `$ref`, at instantiation | `ValueError` | the key and `reserved` |
-| `$partial` not a boolean | `ValueError` | `$partial` |
+| Unknown `$` key, or `$class` with `$ref`, at validation or instantiation | `ConfigValidationError` | the key and `reserved` |
+| `$partial` not a boolean | `ConfigValidationError` | `$partial` |
 | `???` accessed or instantiated | `MissingMandatoryValue` | the full key |
 | Unresolvable `${…}` accessed or instantiated | `InterpolationKeyError` (or another OmegaConf error) | the key |
 | Exception from a constructor or `from_config` | unchanged | original message, plus the note from §5 |

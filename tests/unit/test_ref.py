@@ -12,7 +12,7 @@ def test_instantiate_ref_imports_object():
 
 
 def test_instantiate_ref_with_extra_keys_raises():
-    with pytest.raises(ValueError, match="cannot contain any other keys"):
+    with pytest.raises(ConfigValidationError, match="cannot contain any other keys"):
         instantiate(
             {"$class": POINT, "x": {"$ref": "builtins.int", "extra": 1}, "y": 2}
         )
