@@ -40,7 +40,10 @@ def run(arguments: argparse.Namespace) -> None:
     """
     parser: argparse.ArgumentParser = arguments.parser
     output: Path | None = arguments.output
-    schema = generate_json_schema(import_object(arguments.schema))
+    try:
+        schema = generate_json_schema(import_object(arguments.schema))
+    except ImportError as error:
+        parser.error(f"cannot import {arguments.schema}: {error}")
     if arguments.check:
         if output is None:
             parser.error("--check needs -o/--output")

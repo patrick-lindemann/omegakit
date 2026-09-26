@@ -207,6 +207,14 @@ def test_cli_show_errors(write_yaml, capsys):
     assert "no node `b`" in capsys.readouterr().out
 
 
+@pytest.mark.parametrize(
+    "import_path", ["tests.schemas.Nope", "tests.no_such_module.X", "nodots"]
+)
+def test_cli_json_schema_reports_import_failures(capsys, import_path):
+    assert _exit_code(["json-schema", import_path]) == 2
+    assert "cannot import" in capsys.readouterr().err
+
+
 def test_cli_json_schema_check(tmp_path):
     output = tmp_path / "schema.json"
     arguments = ["json-schema", "tests.schemas.TypedEncoder", "-o", str(output)]

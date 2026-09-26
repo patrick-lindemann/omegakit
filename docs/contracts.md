@@ -453,8 +453,8 @@ contains `=`. Otherwise it is an override if it has a `=` with no `/` before it,
 a config file (which then fails to load) if not. Overrides apply to every file.
 
 **Exit codes.** 0 on success, 1 when a config is invalid or cannot be loaded, 2 for
-usage errors (a missing config file, an unknown option, an `--schema` that cannot be
-imported).
+usage errors (a missing config file, an unknown option, an `--schema` or
+`json-schema` import path that cannot be imported).
 
 - `omegakit check CONFIG... [KEY=VALUE...] [--schema IMPORT_PATH] [--allow-missing]`
   loads each file with the overrides and validates it (§11). It prints one line per
