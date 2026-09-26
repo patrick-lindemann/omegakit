@@ -14,9 +14,15 @@ def check_instantiate_overloads(config: DictConfig) -> None:
     assert_type(instantiate(config, Point), Point)
     assert_type(instantiate(config, Point, overrides=["x=1"]), Point)
     assert_type(instantiate({"$class": "a.B"}, overrides={"x": 1}), Any)
+    assert_type(instantiate(config, allowed_modules=["tests"]), Any)
+    assert_type(instantiate(config, Point, allowed_modules=("tests",)), Point)
 
 
 def check_prepare_overloads(config: DictConfig) -> None:
     assert_type(prepare(config), functools.partial[Any])
     assert_type(prepare(config, Point), functools.partial[Point])
     assert_type(prepare(config, Point, overrides=["x=1"]), functools.partial[Point])
+    assert_type(prepare(config, allowed_modules=["tests"]), functools.partial[Any])
+    assert_type(
+        prepare(config, Point, allowed_modules=["tests"]), functools.partial[Point]
+    )

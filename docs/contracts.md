@@ -92,7 +92,7 @@ such as `${.id}` resolves at the node's final position.
 - A mapping with `$class` is instantiable. `$class` is a dotted import path
   `module.attribute`; the attribute is imported and called.
 - `instantiate` and `prepare` resolve the node (after `overrides`), then validate it
-  as `validate` does (§11), then build it. A config error therefore raises
+  as `validate` does (§11), with the same `allowed_modules`, then build it. A config error therefore raises
   `ConfigValidationError` before any constructor or `from_config` is called. So
   does a resolution error: a `???`, an interpolation that fails, or an exception
   from a resolver, which OmegaConf wraps in `InterpolationResolutionError`.
@@ -212,6 +212,8 @@ or the file system, is its `__cause__`. Only a missing root file passed to
 | `$class`/`$ref` module not found | `ConfigValidationError`, caused by `ModuleNotFoundError` | `Cannot import`, the node path and the module |
 | `$class`/`$ref` attribute not found | `ConfigValidationError`, caused by `ImportError` | `Cannot import`, the node path, `Could not import` |
 | `$ref` with sibling keys other than `$meta` | `ConfigValidationError` | `cannot contain any other keys` |
+| `$class`/`$ref` in a module that `allowed_modules` does not allow (§11) | `ConfigValidationError` | the path, the node and `allowed_modules` |
+| `allowed_modules` given as a string | `TypeError` | `not the string` |
 | Raw dict value that OmegaConf does not support | `UnsupportedValueType` | the key |
 | Unknown `$` key, or `$class` with `$ref`, at validation or instantiation | `ConfigValidationError` | the key and `reserved` |
 | `$partial` not a boolean | `ConfigValidationError` | `$partial` |
@@ -364,7 +366,8 @@ users should configure belong in object fields.
 
 ## 11. Validation
 
-`validate(config, *, schema=None, allow_missing=False)` checks a config that
+`validate(config, *, schema=None, allow_missing=False, allowed_modules=None)`
+checks a config that
 `load_config` has assembled. It returns nothing and raises `ConfigValidationError`
 at the first problem.
 
@@ -426,6 +429,35 @@ building. Code still runs:
 - every `default_factory` of a schema runs, possibly several times and even for
   fields that the config sets, together with the hooks of whatever it constructs.
   An exception from a factory propagates with its own type.
+
+### Allowed modules
+
+`validate`, `instantiate` and `prepare` take `allowed_modules`, which limits the
+modules that `$class` and `$ref` may name. It is not a sandbox.
+
+- `None`, the default, allows every module. `[]` allows none. Any iterable of
+  module names is accepted and read once; a plain string raises `TypeError`.
+- An entry allows that module and its submodules: `["webapp", "torch.optim"]`
+  allows `webapp.db.Postgres` and `torch.optim.Adam`, but not `webapp_evil.X` or
+  `torch.load`. An entry that names a class does not allow it. A `$ref` to a
+  value such as `math.pi` needs `"math"`.
+- Two checks, for `$class` and `$ref` alike, on every node that the validation walk
+  reaches, including nodes under `Any`, `Callable`, `list` and `dict` fields:
+  1. Before the import, the module part of the path must be allowed, so a module
+     that is not allowed is never imported. The parent packages of an allowed
+     module are still imported: `torch.optim` imports `torch`.
+  2. After the import, the object's `__module__`, when it has one, must be
+     allowed. This rejects a name that an allowed module imported from elsewhere,
+     such as `pkgx.db.run` for `from subprocess import run`, and accepts
+     re-exports inside an allowed package. An instance reports the module of its
+     class.
+- A path that fails either check raises `ConfigValidationError`, naming the path
+  and the node.
+- Allowing `builtins`, `importlib`, `os`, `subprocess`, `shutil` or `pickle` is
+  the same as no restriction: `$class: builtins.__import__` imports any module, and
+  `builtins.open` truncates files.
+- Not covered: resolvers, the `schema` argument and `--schema`, `json-schema`
+  import paths, and `instantiate` calls made inside your own `from_config`.
 
 ## 12. Editor schemas
 

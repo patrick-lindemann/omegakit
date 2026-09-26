@@ -3,7 +3,7 @@ from __future__ import annotations
 import functools
 import types
 import typing
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from typing import Any, TypeAliasType, cast, get_args, get_origin, overload
 
 from omegaconf import DictConfig, ListConfig, OmegaConf
@@ -27,6 +27,7 @@ def instantiate(
     config: DictConfig | dict[str, Any],
     *,
     overrides: DictConfig | dict[str, Any] | list[str] | None = None,
+    allowed_modules: Iterable[str] | None = None,
 ) -> Any: ...
 
 
@@ -36,6 +37,7 @@ def instantiate[T](
     expected: type[T],
     *,
     overrides: DictConfig | dict[str, Any] | list[str] | None = None,
+    allowed_modules: Iterable[str] | None = None,
 ) -> T: ...
 
 
@@ -44,6 +46,7 @@ def instantiate(
     expected: type[Any] | None = None,
     *,
     overrides: DictConfig | dict[str, Any] | list[str] | None = None,
+    allowed_modules: Iterable[str] | None = None,
 ) -> Any:
     """Instantiate an object from a configuration.
 
@@ -54,11 +57,13 @@ def instantiate(
         overrides: Additional argument overrides. Can be provided as a DictConfig, a
             regular dictionary, or a list of `key=value` strings (e.g.
             `["foo=1.0", "bar=baz"]`). Defaults to `None`.
+        allowed_modules: The modules that `$class` and `$ref` may name, as in
+            `validate`. Defaults to `None`, which allows every module.
 
     Returns:
         The instantiated object.
     """
-    return _instantiate(config, overrides)
+    return _instantiate(config, overrides, allowed_modules)
 
 
 @overload
@@ -66,6 +71,7 @@ def prepare(
     config: DictConfig | dict[str, Any],
     *,
     overrides: DictConfig | dict[str, Any] | list[str] | None = None,
+    allowed_modules: Iterable[str] | None = None,
 ) -> functools.partial[Any]: ...
 
 
@@ -75,6 +81,7 @@ def prepare[T](
     expected: type[T],
     *,
     overrides: DictConfig | dict[str, Any] | list[str] | None = None,
+    allowed_modules: Iterable[str] | None = None,
 ) -> functools.partial[T]: ...
 
 
@@ -83,6 +90,7 @@ def prepare(
     expected: type[Any] | None = None,
     *,
     overrides: DictConfig | dict[str, Any] | list[str] | None = None,
+    allowed_modules: Iterable[str] | None = None,
 ) -> functools.partial[Any]:
     """Prepare an object for instantiation from a configuration.
 
@@ -96,16 +104,19 @@ def prepare(
         overrides: Additional argument overrides. Can be provided as a DictConfig, a
             regular dictionary, or a list of `key=value` strings (e.g.
             `["foo=1.0", "bar=baz"]`). Defaults to `None`.
+        allowed_modules: The modules that `$class` and `$ref` may name, as in
+            `validate`. Defaults to `None`, which allows every module.
 
     Returns:
         The instantiating function.
     """
-    return _instantiate(config, overrides, wrap=functools.partial)
+    return _instantiate(config, overrides, allowed_modules, wrap=functools.partial)
 
 
 def _instantiate(
     config: DictConfig | dict[str, Any],
-    overrides: DictConfig | dict[str, Any] | list[str] | None = None,
+    overrides: DictConfig | dict[str, Any] | list[str] | None,
+    allowed_modules: Iterable[str] | None,
     wrap: Callable | None = None,
 ) -> Any:
     if CLASS_KEY not in config:
@@ -119,7 +130,7 @@ def _instantiate(
         config = config.copy()
         merge_overrides(config, overrides)
     plain_config = cast(dict[str, Any], resolve_config(config))
-    check_resolved(plain_config)
+    check_resolved(plain_config, allowed_modules=allowed_modules)
     return _build(plain_config, wrap)
 
 

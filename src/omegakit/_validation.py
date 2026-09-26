@@ -1,7 +1,7 @@
 import dataclasses
 import types
 import typing
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from typing import Any, TypeAliasType, get_args, get_origin
 
 from omegaconf import MISSING, DictConfig, ListConfig, OmegaConf
@@ -29,6 +29,7 @@ def validate(
     *,
     schema: type | None = None,
     allow_missing: bool = False,
+    allowed_modules: Iterable[str] | None = None,
 ) -> None:
     """Check a loaded config against the schemas of the classes it names.
 
@@ -52,16 +53,26 @@ def validate(
         allow_missing: Accept missing values: `???`, required fields that are not
             given, and interpolations to missing or unknown keys, as in a library
             file that its consumers complete. Defaults to `False`.
+        allowed_modules: The modules that `$class` and `$ref` may name. An entry
+            allows that module and its submodules, and an object is also checked
+            against the module it is defined in. `[]` allows none. It limits which
+            modules a config can name; it is not a sandbox. Defaults to `None`,
+            which allows every module.
 
     Raises:
-        ConfigValidationError: If the config cannot be resolved or does not match a
-            schema.
-        TypeError: If `schema` is not a class.
+        ConfigValidationError: If the config cannot be resolved, does not match a
+            schema, or names a module that is not allowed.
+        TypeError: If `schema` is not a class, or `allowed_modules` is a string.
     """  # noqa: DOC502
     if not isinstance(config, DictConfig):
         config = OmegaConf.create(config)
     plain_config = resolve_config(config, allow_missing=allow_missing)
-    check_resolved(plain_config, schema=schema, allow_missing=allow_missing)
+    check_resolved(
+        plain_config,
+        schema=schema,
+        allow_missing=allow_missing,
+        allowed_modules=allowed_modules,
+    )
 
 
 def resolve_config(
@@ -93,7 +104,11 @@ def resolve_config(
 
 
 def check_resolved(
-    config: Any, *, schema: type | None = None, allow_missing: bool = False
+    config: Any,
+    *,
+    schema: type | None = None,
+    allow_missing: bool = False,
+    allowed_modules: Iterable[str] | None = None,
 ) -> None:
     """Check a resolved config, the plain containers of `resolve_config`.
 
@@ -101,13 +116,22 @@ def check_resolved(
         config: The resolved config.
         schema: The class the root must match, as in `validate`. Defaults to `None`.
         allow_missing: Accept missing values, as in `validate`. Defaults to `False`.
+        allowed_modules: The modules that `$class` and `$ref` may name, as in
+            `validate`. Defaults to `None`.
 
     Raises:
-        TypeError: If `schema` is not a class.
+        TypeError: If `schema` is not a class, or `allowed_modules` is a string.
         ConfigValidationError: If the config does not match a schema.
     """
+    if isinstance(allowed_modules, str):
+        raise TypeError(
+            f"`allowed_modules` must be a list of module names, not the string "
+            f"`{allowed_modules!r}`."
+        )
+    if allowed_modules is not None:
+        allowed_modules = tuple(allowed_modules)
     if schema is None:
-        _check_untyped(config, (), allow_missing)
+        _check_untyped(config, (), allow_missing, allowed_modules)
         return
     if not isinstance(schema, type):
         raise TypeError(f"`{schema!r}` is not a class.")
@@ -122,9 +146,9 @@ def check_resolved(
                 f"The root has no `{CLASS_KEY}`, and `{schema.__qualname__}` has no "
                 "dataclass schema to check it against."
             )
-        _check_target(schema, config, (), allow_missing)
+        _check_target(schema, config, (), allow_missing, allowed_modules)
         return
-    _check_object(config, schema, (), allow_missing)
+    _check_object(config, schema, (), allow_missing, allowed_modules)
 
 
 def _resolve_allowing_missing(container: DictConfig | ListConfig) -> Any:
@@ -158,19 +182,22 @@ def resolve_item(container: Any, key: Any) -> Any:
 
 
 def _check_untyped(
-    value: Any, path: tuple[str | int, ...], allow_missing: bool
+    value: Any,
+    path: tuple[str | int, ...],
+    allow_missing: bool,
+    allowed_modules: tuple[str, ...] | None,
 ) -> None:
     if isinstance(value, list):
         for index, item in enumerate(value):
-            _check_untyped(item, (*path, index), allow_missing)
+            _check_untyped(item, (*path, index), allow_missing, allowed_modules)
         return
     if not isinstance(value, dict):
         return
     value = {key: item for key, item in value.items() if key != META_KEY}
     if CLASS_KEY in value:
-        _check_class_node(value, path, allow_missing)
+        _check_class_node(value, path, allow_missing, allowed_modules)
     elif REF_KEY in value:
-        _import_ref(value, path)
+        _import_ref(value, path, allowed_modules)
     else:
         for key, item in value.items():
             if isinstance(key, str) and key.startswith("$"):
@@ -178,25 +205,32 @@ def _check_untyped(
                     f"Key `{key}` in `{format_path(path)}` is not supported here; keys "
                     "starting with `$` are reserved."
                 )
-            _check_untyped(item, (*path, key), allow_missing)
+            _check_untyped(item, (*path, key), allow_missing, allowed_modules)
 
 
 def _check_class_node(
-    node: dict[str, Any], path: tuple[str | int, ...], allow_missing: bool
+    node: dict[str, Any],
+    path: tuple[str | int, ...],
+    allow_missing: bool,
+    allowed_modules: tuple[str, ...] | None,
 ) -> Any:
-    target = _import(node, CLASS_KEY, path)
+    target = _import(node, CLASS_KEY, path, allowed_modules)
     if not (callable(target) or hasattr(target, "from_config")):
         raise ConfigValidationError(
             f"`{CLASS_KEY}: {node[CLASS_KEY]}` in `{format_path(path)}` is neither "
             f"callable nor has `from_config`. Use `{REF_KEY}` for an object that is "
             "used as it is."
         )
-    _check_target(target, node, path, allow_missing)
+    _check_target(target, node, path, allow_missing, allowed_modules)
     return target
 
 
 def _check_target(
-    target: Any, node: dict[str, Any], path: tuple[str | int, ...], allow_missing: bool
+    target: Any,
+    node: dict[str, Any],
+    path: tuple[str | int, ...],
+    allow_missing: bool,
+    allowed_modules: tuple[str, ...] | None,
 ) -> None:
     values = {}
     for key, value in node.items():
@@ -218,10 +252,10 @@ def _check_target(
     schema = find_schema(target) if isinstance(target, type) else None
     if schema is None:
         for key, value in values.items():
-            _check_untyped(value, (*path, key), allow_missing)
+            _check_untyped(value, (*path, key), allow_missing, allowed_modules)
     else:
         check_schema(target)
-        _check_section(schema, values, path, allow_missing)
+        _check_section(schema, values, path, allow_missing, allowed_modules)
 
 
 def _check_section(
@@ -229,19 +263,26 @@ def _check_section(
     values: dict[str, Any],
     path: tuple[str | int, ...],
     allow_missing: bool,
+    allowed_modules: tuple[str, ...] | None,
 ) -> None:
     for name, (kind, annotation) in classify_fields(schema).items():
         if name not in values or kind == "native":
             continue
         if kind == "any":
-            _check_untyped(values[name], (*path, name), allow_missing)
+            _check_untyped(values[name], (*path, name), allow_missing, allowed_modules)
         else:
-            _check_object(values[name], annotation, (*path, name), allow_missing)
+            _check_object(
+                values[name], annotation, (*path, name), allow_missing, allowed_modules
+            )
     validate_native(schema, values, path, allow_missing)
 
 
 def _check_object(
-    value: Any, annotation: Any, path: tuple[str | int, ...], allow_missing: bool
+    value: Any,
+    annotation: Any,
+    path: tuple[str | int, ...],
+    allow_missing: bool,
+    allowed_modules: tuple[str, ...] | None,
 ) -> None:
     if allow_missing and value == MISSING:
         return
@@ -265,7 +306,13 @@ def _check_object(
         item_annotation = get_args(classes[0])[-1]
         if get_origin(classes[0]) is list and isinstance(value, list):
             for index, item in enumerate(value):
-                _check_object(item, item_annotation, (*path, index), allow_missing)
+                _check_object(
+                    item,
+                    item_annotation,
+                    (*path, index),
+                    allow_missing,
+                    allowed_modules,
+                )
             return
         if (
             get_origin(classes[0]) is dict
@@ -273,10 +320,18 @@ def _check_object(
             and CLASS_KEY not in value
             and REF_KEY not in value
         ):
-            _check_untyped({key: None for key in value}, path, allow_missing)
+            _check_untyped(
+                {key: None for key in value}, path, allow_missing, allowed_modules
+            )
             for key, item in value.items():
                 if key != META_KEY:
-                    _check_object(item, item_annotation, (*path, key), allow_missing)
+                    _check_object(
+                        item,
+                        item_annotation,
+                        (*path, key),
+                        allow_missing,
+                        allowed_modules,
+                    )
             return
         raise ConfigValidationError(
             f"`{format_path(path)}` expects `{classes[0]}`, but the config gives "
@@ -285,25 +340,25 @@ def _check_object(
     if isinstance(value, dict):
         value = {key: item for key, item in value.items() if key != META_KEY}
         if CLASS_KEY in value:
-            target = _check_class_node(value, path, allow_missing)
+            target = _check_class_node(value, path, allow_missing, allowed_modules)
             if value.get(PARTIAL_KEY) is not True and isinstance(target, type):
                 _check_type(
                     issubclass, target, classes, path, f"`$class: {value[CLASS_KEY]}`"
                 )
             return
         if REF_KEY in value:
-            target = _import_ref(value, path)
+            target = _import_ref(value, path, allowed_modules)
             _check_type(isinstance, target, classes, path, f"`$ref: {value[REF_KEY]}`")
             return
         section = find_section(annotation)
         if section is not None:
-            _check_section(section, value, path, allow_missing)
+            _check_section(section, value, path, allow_missing, allowed_modules)
             return
         _check_type(isinstance, value, classes, path, "a mapping without `$class`")
-        _check_untyped(value, path, allow_missing)
+        _check_untyped(value, path, allow_missing, allowed_modules)
         return
     _check_type(isinstance, value, classes, path, f"`{value!r}`")
-    _check_untyped(value, path, allow_missing)
+    _check_untyped(value, path, allow_missing, allowed_modules)
 
 
 def _check_type(
@@ -326,24 +381,39 @@ def _check_type(
         )
 
 
-def _import_ref(node: dict[str, Any], path: tuple[str | int, ...]) -> Any:
+def _import_ref(
+    node: dict[str, Any],
+    path: tuple[str | int, ...],
+    allowed_modules: tuple[str, ...] | None,
+) -> Any:
     if len(node) > 1:
         raise ConfigValidationError(
             f"A node using `{REF_KEY}` cannot contain any other keys, but "
             f"`{format_path(path)}` has {', '.join(map(repr, node))}."
         )
-    return _import(node, REF_KEY, path)
+    return _import(node, REF_KEY, path, allowed_modules)
 
 
-def _import(node: dict[str, Any], key: str, path: tuple[str | int, ...]) -> Any:
+def _import(
+    node: dict[str, Any],
+    key: str,
+    path: tuple[str | int, ...],
+    allowed_modules: tuple[str, ...] | None,
+) -> Any:
     import_path = node[key]
     if not isinstance(import_path, str):
         raise ConfigValidationError(
             f"`{key}` in `{format_path(path)}` must be an import path, such as "
             f"`package.module.Name`, but the config gives `{import_path!r}`."
         )
+    # Checked before the import, so that a module that is not allowed never runs.
+    if not _is_allowed(import_path.rpartition(".")[0], allowed_modules):
+        raise ConfigValidationError(
+            f"`{key}: {import_path}` in `{format_path(path)}` names a module that "
+            "is not in `allowed_modules`."
+        )
     try:
-        return import_object(import_path)
+        target = import_object(import_path)
     except ImportError as error:
         # A module that the target's own module fails to import is a missing
         # dependency, not a mistake in the config.
@@ -356,3 +426,18 @@ def _import(node: dict[str, Any], key: str, path: tuple[str | int, ...]) -> Any:
         raise ConfigValidationError(
             f"Cannot import `{import_path}` in `{format_path(path)}`: {error}"
         ) from error
+    # An allowed module can import a name from a module that is not allowed.
+    module = getattr(target, "__module__", None)
+    if isinstance(module, str) and not _is_allowed(module, allowed_modules):
+        raise ConfigValidationError(
+            f"`{key}: {import_path}` in `{format_path(path)}` is defined in "
+            f"`{module}`, which is not in `allowed_modules`."
+        )
+    return target
+
+
+def _is_allowed(module: str, allowed_modules: tuple[str, ...] | None) -> bool:
+    return allowed_modules is None or any(
+        module == allowed or module.startswith(f"{allowed}.")
+        for allowed in allowed_modules
+    )
