@@ -218,6 +218,46 @@ def test_cli_show_reports_resolution_errors(write_yaml, capsys, arguments):
     assert capsys.readouterr().out.startswith(f"{path}: ")
 
 
+SECRETS = """\
+db:
+  password: ${oc.env:OMEGAKIT_TEST_PASSWORD}
+  url: postgres://u:${.password}@h/db
+  user: ${oc.env:OMEGAKIT_TEST_USER}
+tokens:
+  api: literal-token
+"""
+
+
+@pytest.mark.parametrize(
+    ("arguments", "output"),
+    [
+        (
+            [],
+            "db:\n  password: '***'\n  url: postgres://u:${.password}@h/db\n"
+            "  user: ${oc.env:OMEGAKIT_TEST_USER}\ntokens:\n  api: '***'\n",
+        ),
+        (
+            ["--resolve"],
+            "db:\n  password: '***'\n  url: postgres://u:***@h/db\n  user: app\n"
+            "tokens:\n  api: '***'\n",
+        ),
+        (["--node", "db.url", "--resolve"], "postgres://u:***@h/db\n"),
+        (["--node", "db.password"], "***\n"),
+        (["--node", "tokens.api"], "***\n"),
+        (["--node", "tokens"], "api: '***'\n"),
+        (
+            ["--node", "db.url", "--resolve", "--show-secrets"],
+            "postgres://u:correct-horse@h/db\n",
+        ),
+    ],
+)
+def test_cli_show_masks_secrets(write_yaml, capsys, monkeypatch, arguments, output):
+    monkeypatch.setenv("OMEGAKIT_TEST_PASSWORD", "correct-horse")
+    monkeypatch.setenv("OMEGAKIT_TEST_USER", "app")
+    main(["show", str(write_yaml("app.yaml", SECRETS)), *arguments])
+    assert capsys.readouterr().out == output
+
+
 def test_cli_show_errors(write_yaml, capsys):
     path = write_yaml("app.yaml", "a: 1\n")
     assert _exit_code(["show", str(path), "--node", "b"]) == 1

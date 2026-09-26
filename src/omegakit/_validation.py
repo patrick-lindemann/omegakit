@@ -4,7 +4,7 @@ import re
 import types
 import typing
 from collections.abc import Callable, Iterable
-from typing import Any, TypeAliasType, get_args, get_origin
+from typing import Any, TypeAliasType, cast, get_args, get_origin
 
 from omegaconf import MISSING, DictConfig, ListConfig, Node, OmegaConf
 from omegaconf.errors import (
@@ -25,7 +25,7 @@ from ._schema import (
 )
 from ._utils import format_path, import_object
 
-_SECRET_WORDS = (
+SECRET_WORDS = (
     ("password",),
     ("passwd",),
     ("pass",),
@@ -155,20 +155,56 @@ def mask_secrets(config: DictConfig, *, keys: Iterable[str] = ()) -> Any:
 
     Raises:
         ConfigValidationError: If an interpolation outside the masked values fails.
-    """
+    """  # noqa: DOC502
     words = (
-        *_SECRET_WORDS,
+        *SECRET_WORDS,
         *(tuple(key.lower().split()) for key in keys if key.strip()),
     )
+    return mask_node(config, words, resolve=True)
+
+
+def mask_node(node: Node, words: tuple[tuple[str, ...], ...], *, resolve: bool) -> Any:
+    """Mask the secrets in one node of a config, as `mask_secrets` does.
+
+    The secrets are found in the whole config, and the keys above `node` count, but
+    only `node` is resolved.
+
+    Args:
+        node: The node, in the unresolved config.
+        words: The secret words, each a tuple of lowercase words.
+        resolve: Resolve `node`, mask by environment variable and by value. Without
+            it, only keys are checked and interpolations stay as written.
+
+    Returns:
+        The node as plain dictionaries, lists and values, with secrets masked.
+
+    Raises:
+        ConfigValidationError: If an interpolation outside the masked values fails.
+    """
     secrets: set[str] = set()
+    masked = False
+    current: Any = node
+    while current is not None:
+        key = current._key()
+        masked = masked or (isinstance(key, str) and _is_secret(key, words))
+        current = current._get_parent()
     try:
-        masked = _mask(config, words, False, secrets)
+        if resolve:
+            _collect(cast(Any, node._get_root()), words, False, secrets)
+        if isinstance(node, (DictConfig, ListConfig)) and not (
+            node._is_missing() or node._is_interpolation()
+        ):
+            value = _view(node, words, masked, resolve)
+        else:
+            value = _leaf(
+                node._get_parent_container(), node._key(), words, masked, resolve
+            )
     except OmegaConfBaseException as error:
         location = f" `{error.full_key}`" if error.full_key else " the config"
         raise ConfigValidationError(
             f"Cannot resolve{location}: {str(error).splitlines()[0]}"
         ) from error
-    return _replace(masked, sorted(secrets, key=len, reverse=True))
+    return _replace(value, sorted(secrets, key=len, reverse=True))
 
 
 def check_resolved(
@@ -249,11 +285,11 @@ def resolve_item(container: Any, key: Any) -> Any:
     return value
 
 
-def _mask(
+def _view(
     container: DictConfig | ListConfig,
     words: tuple[tuple[str, ...], ...],
     masked: bool,
-    secrets: set[str],
+    resolve: bool,
 ) -> Any:
     key: Any
     result = {}
@@ -265,23 +301,57 @@ def _mask(
         if isinstance(node, (DictConfig, ListConfig)) and not (
             node._is_missing() or node._is_interpolation()
         ):
-            result[key] = _mask(node, words, secret, secrets)
-            continue
-        raw = node._value() if isinstance(node, Node) else None
-        if isinstance(raw, str) and not secret:
-            secret = any(_is_secret(name, words) for name in _ENV_NAME.findall(raw))
-        if raw == MISSING:
-            result[key] = MISSING
-        elif not secret:
-            result[key] = resolve_item(container, key)
+            result[key] = _view(node, words, secret, resolve)
         else:
-            result[key] = _MASK
-            # Only to collect the value; a secret that cannot be resolved is hidden.
+            result[key] = _leaf(container, key, words, secret, resolve)
+    return list(result.values()) if isinstance(container, ListConfig) else result
+
+
+def _leaf(
+    container: Any,
+    key: Any,
+    words: tuple[tuple[str, ...], ...],
+    secret: bool,
+    resolve: bool,
+) -> Any:
+    raw = container._get_node(key)._value()
+    if raw == MISSING:
+        return MISSING
+    if resolve and _reads_secret(raw, words):
+        secret = True
+    if secret:
+        return _MASK
+    return resolve_item(container, key) if resolve else raw
+
+
+def _collect(
+    container: DictConfig | ListConfig,
+    words: tuple[tuple[str, ...], ...],
+    masked: bool,
+    secrets: set[str],
+) -> None:
+    key: Any
+    for key in (
+        range(len(container)) if isinstance(container, ListConfig) else container
+    ):
+        node = container._get_node(key)
+        secret = masked or (isinstance(key, str) and _is_secret(key, words))
+        if isinstance(node, (DictConfig, ListConfig)) and not (
+            node._is_missing() or node._is_interpolation()
+        ):
+            _collect(node, words, secret, secrets)
+        elif secret or (isinstance(node, Node) and _reads_secret(node._value(), words)):
+            # A secret that cannot be resolved is masked all the same.
             with contextlib.suppress(OmegaConfBaseException):
                 value = resolve_item(container, key)
                 if isinstance(value, str) and len(value) >= 8:
                     secrets.add(value)
-    return list(result.values()) if isinstance(container, ListConfig) else result
+
+
+def _reads_secret(raw: Any, words: tuple[tuple[str, ...], ...]) -> bool:
+    return isinstance(raw, str) and any(
+        _is_secret(name, words) for name in _ENV_NAME.findall(raw)
+    )
 
 
 def _is_secret(key: str, words: tuple[tuple[str, ...], ...]) -> bool:

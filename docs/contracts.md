@@ -534,7 +534,7 @@ directory).
   so does a `SystemExit` raised by a module that is imported; the other files are
   still checked. `KeyboardInterrupt` stops the command.
 - `omegakit show CONFIG [KEY=VALUE...] [--node KEY] [--resolve] [--keep-meta]
-  [--import-root DIR]`
+  [--show-secrets] [--import-root DIR]`
   prints the assembled config as YAML, or the node at `KEY`. `KEY` is a dotted path
   with the same syntax and walk as `~import file#node` (§7): `items.0.name`, and
   `items.-1` from the end. The node is printed unresolved: an interpolation prints
@@ -543,6 +543,9 @@ directory).
   interpolations on the path, and resolves only the selected node (the whole config
   without `--node`); missing values print as `???`, and any other resolution error
   exits with 1 and one line, like a load error. A scalar node prints as its value.
+  Secrets are masked as by `mask_secrets` (§9), with the secrets of the whole
+  config, even with `--node`: by key in every mode, and by environment variable and
+  by value with `--resolve`. `--show-secrets` turns masking off.
 - `omegakit json-schema IMPORT_PATH [-o FILE] [--check]` prints or writes the JSON
   Schema (§12). With `--check`, which needs `-o`, it writes nothing and exits with 1
   if `FILE` is missing or differs from the generated schema (compared as JSON).

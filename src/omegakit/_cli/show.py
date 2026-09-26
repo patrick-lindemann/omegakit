@@ -7,7 +7,7 @@ from omegaconf import DictConfig, ListConfig, OmegaConf
 from omegakit._assembly import select_node
 from omegakit._cli.arguments import split_arguments
 from omegakit._loading import load_config
-from omegakit._validation import resolve_config, resolve_item
+from omegakit._validation import SECRET_WORDS, mask_node
 
 
 def register(commands: argparse._SubParsersAction) -> None:
@@ -41,6 +41,13 @@ def register(commands: argparse._SubParsersAction) -> None:
     )
     parser.add_argument(
         "--keep-meta", action="store_true", help="keep $meta keys in the output"
+    )
+    parser.add_argument(
+        "--show-secrets",
+        action="store_true",
+        help="do not mask secrets: values under keys such as password or token, "
+        "and with --resolve, secret environment variables and their values in "
+        "other strings",
     )
     parser.add_argument(
         "--import-root",
@@ -83,14 +90,8 @@ def run(arguments: argparse.Namespace) -> None:
         if node is None:
             print(f"{paths[0]}: no node `{arguments.node}`")
             raise SystemExit(1)
-        if isinstance(node, (DictConfig, ListConfig)):
-            value = (
-                resolve_config(node, allow_missing=True) if arguments.resolve else node
-            )
-        elif arguments.resolve:
-            value = resolve_item(node._get_parent_container(), node._key())
-        else:
-            value = node._value()
+        words = () if arguments.show_secrets else SECRET_WORDS
+        value = mask_node(node, words, resolve=arguments.resolve)
     except Exception as error:
         # Without --resolve, the only error here is a path through an interpolation.
         _fail(
