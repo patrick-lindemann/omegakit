@@ -103,7 +103,7 @@ def _load_import(
             f"Import `{statement}` in `{config_path}` contains more than one `#`. Use "
             "`#` only to separate the file path from the node path."
         )
-    file_path = Path(args[0])
+    file_path = Path(args[0].strip())
     if not file_path.is_absolute():
         file_path = Path(config_path.parent, file_path)
     file_path = file_path.resolve()

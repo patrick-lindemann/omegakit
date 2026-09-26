@@ -151,9 +151,8 @@ such as `${.id}` resolves at the node's final position.
 
 ## 7. Import semantics
 
-- The syntax is `~import <path>[#<node>]`. Whitespace before `<path>`, after the
-  statement and around `<node>` is ignored. Whitespace before `#` is part of the
-  path.
+- The syntax is `~import <path>[#<node>]`. Whitespace around `<path>` and around
+  `<node>` is ignored.
 - A relative path is resolved against the directory of the importing file. An
   absolute path is used as is.
 - `<node>` is a dot-separated path from the root of the imported file. A segment

@@ -275,6 +275,12 @@ def test_import_reads_each_file_once_per_load(write_yaml, monkeypatch):
     ]
 
 
+def test_import_ignores_whitespace_around_the_hash(write_yaml):
+    write_yaml("lib.yaml", "a:\n  b: 1\n")
+    cfg = load_config(write_yaml("main.yaml", 'n: "~import  lib.yaml  #  a "\n'))
+    assert cfg.n.b == 1
+
+
 def test_import_with_more_than_one_hash_raises(write_yaml):
     write_yaml("lib.yaml", "a:\n  b: 1\n")
     with pytest.raises(ConfigValidationError, match="more than one `#`"):
