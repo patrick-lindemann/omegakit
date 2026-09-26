@@ -19,7 +19,7 @@ values such as `"64"` are coerced, unknown keys and wrong types raise
 `ConfigValidationError`, and `check_schema` verifies that the schema matches
 `__init__`:
 
-```{literalinclude} ../examples/default_from_config.py
+```{literalinclude} ../examples/default-from-config/main.py
 :language: python
 ```
 
@@ -47,7 +47,7 @@ A custom `from_config` receives the typed config, with object fields already bui
 and calls the constructor itself. Pyright checks that call. Children chosen by code
 rather than by the user are created with `make_node`:
 
-```{literalinclude} ../examples/typed_model.py
+```{literalinclude} ../examples/typed-model/main.py
 :language: python
 ```
 
@@ -60,7 +60,7 @@ rather than by the user are created with `make_node`:
 A `from_config` that returns an instance of a subclass must annotate the base class
 as its return type. `-> Self` with a subclass return is a pyright error:
 
-```{literalinclude} ../examples/factory.py
+```{literalinclude} ../examples/factory/main.py
 :language: python
 ```
 
@@ -76,7 +76,7 @@ Nothing is validated in these cases:
   schema fields. Pass them to the partial from `prepare`; they reach `from_config`
   through `**kwargs`.
 
-```{literalinclude} ../examples/escape_hatches.py
+```{literalinclude} ../examples/escape-hatches/main.py
 :language: python
 ```
 

@@ -10,7 +10,11 @@ The three steps are separate. `load_config` assembles the full config (imports,
 bases, defaults, overrides) without checking schemas, `validate` checks it, and
 `instantiate` builds the objects:
 
-```{literalinclude} ../examples/editor_app.py
+```{literalinclude} ../examples/editor/editor_app.py
+:language: python
+```
+
+```{literalinclude} ../examples/editor/main.py
 :language: python
 ```
 

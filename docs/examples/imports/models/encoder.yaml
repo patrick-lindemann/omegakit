@@ -1,0 +1,6 @@
+small:
+  width: 8
+  layers: [conv, pool]
+large:
+  width: 64
+  layers: [conv, conv, pool]

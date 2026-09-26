@@ -1,0 +1,9 @@
+api:
+  $base: ~import library/service.yaml
+  name: api
+  version: "1.4"
+  resources:
+    memory_gb: 4
+worker:
+  $base: ~import library/service.yaml
+  name: worker

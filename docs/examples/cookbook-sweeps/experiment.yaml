@@ -1,0 +1,6 @@
+name: baseline
+optimizer:
+  lr: 0.001
+  momentum: 0.9
+batch_size: 32
+run_name: ${name}-lr${optimizer.lr}-bs${batch_size}

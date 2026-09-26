@@ -1,0 +1,5 @@
+worker:
+  $base: ~import defaults.yaml
+  $class: app.Worker
+  name: indexer
+  timeout: 20

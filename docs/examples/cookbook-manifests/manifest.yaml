@@ -1,0 +1,15 @@
+datasets:
+  $defaults:
+    $class: data.Dataset
+    split: train
+    shuffle: true
+    cache: false
+  cifar:
+    root: /data/cifar
+  cifar_test:
+    $base: ${datasets.cifar}
+    split: test
+    shuffle: false
+  imagenet:
+    root: /data/imagenet
+    cache: true

@@ -8,7 +8,7 @@ TConfig = TypeVar("TConfig", default=Mapping[str, Any])
 
 
 class Configurable(Generic[TConfig]):
-    """A class that can be instantiated from a config."""
+    """A class with a typed config schema and a `from_config` hook."""
 
     @classmethod
     def from_config(cls, config: TConfig, **kwargs: Any) -> Self:

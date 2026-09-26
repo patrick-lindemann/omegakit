@@ -1,0 +1,8 @@
+$meta:
+  description: Nightly export job
+exporter:
+  $class: builtins.dict
+  $meta:
+    owner: data-team
+    reviewed: 2026-09-01
+  format: parquet

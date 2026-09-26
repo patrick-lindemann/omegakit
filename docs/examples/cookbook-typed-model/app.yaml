@@ -1,0 +1,11 @@
+encoder_choice: conv
+encoders:
+  conv:
+    $class: model.ConvEncoder
+    kernel: 5
+  mlp:
+    $class: model.MlpEncoder
+    hidden: [128, 64]
+model:
+  $class: model.Model
+  encoder: ${encoders.${encoder_choice}}

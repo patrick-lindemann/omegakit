@@ -1,0 +1,4 @@
+connection:
+  host: ???
+  port: 5432
+  url: postgres://${.host}:${.port}/${database}

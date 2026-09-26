@@ -16,6 +16,7 @@ extensions = [
 # Markdown-style backticks in docstrings render as inline code.
 default_role = "code"
 exclude_patterns = ["_build"]
+myst_heading_anchors = 2
 intersphinx_mapping = {"python": ("https://docs.python.org/3", None)}
 napoleon_google_docstring = True
 napoleon_numpy_docstring = False

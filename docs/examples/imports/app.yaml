@@ -1,0 +1,6 @@
+encoder: ~import models/encoder.yaml#large
+first_layer: ~import models/encoder.yaml#small.layers.0
+decoder: ~import models/decoder.yaml
+stages:
+  - ~import models/decoder.yaml
+  - width: 16

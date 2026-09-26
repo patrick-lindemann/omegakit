@@ -1,0 +1,11 @@
+_fast:
+  epochs: 2
+  lr: 0.01
+
+short_run:
+  $base: [~import common.yaml, "${_fast}"]
+  lr: 0.005
+
+long_run:
+  $base: ~import common.yaml
+  epochs: 100

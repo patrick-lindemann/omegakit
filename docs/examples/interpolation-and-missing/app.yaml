@@ -1,0 +1,6 @@
+database: orders
+primary:
+  $base: ~import library.yaml#connection
+  host: db.internal
+replica:
+  $base: ~import library.yaml#connection

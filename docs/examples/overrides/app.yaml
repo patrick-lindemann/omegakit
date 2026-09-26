@@ -1,0 +1,6 @@
+seed: 0
+trainer:
+  epochs: 10
+  optimizer:
+    name: adam
+    lr: 0.001

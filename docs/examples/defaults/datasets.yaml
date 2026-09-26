@@ -1,0 +1,14 @@
+datasets:
+  $defaults:
+    split: train
+    shuffle: true
+  cifar:
+    path: data/cifar
+  imagenet:
+    path: data/imagenet
+    shuffle: false
+  test_set:
+    path: data/test
+    split: test
+    shuffle: false
+  version: 3

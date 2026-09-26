@@ -5,7 +5,7 @@ from typing import Literal
 
 from omegaconf import MISSING
 
-from omegakit import Configurable, instantiate, load_config, validate
+from omegakit import Configurable
 
 
 class Kind(Enum):
@@ -55,17 +55,3 @@ class AppConfig:
     training: TrainingConfig
     seed: int = 0
     data: DataConfig = field(default_factory=DataConfig)
-
-
-if __name__ == "__main__":
-    # The YAML names `editor_app.Model`; running this file defines `__main__.Model`.
-    import editor_app
-
-    cfg = load_config(Path(__file__).parent / "editor" / "app.yaml")
-    validate(cfg, schema=editor_app.AppConfig)
-    model = instantiate(cfg.training.model, editor_app.Model)
-    assert cfg.data.batch_size == 64
-    assert model.depth == 7
-    assert model.kind.name == "B"
-    assert model.encoder is not None
-    assert model.encoder.width == 8

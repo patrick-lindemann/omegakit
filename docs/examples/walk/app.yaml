@@ -1,0 +1,11 @@
+model:
+  $class: myapp.Model
+  encoder:
+    $class: myapp.Encoder
+    width: 8
+callbacks:
+  - $class: myapp.EarlyStopping
+    patience: 3
+  - $class: myapp.Checkpoint
+    every: 100
+seed: 0

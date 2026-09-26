@@ -1,0 +1,7 @@
+# A reusable service config. Consumers must fill the `???` slots.
+name: ???
+image: registry.example.com/${.name}:${.version}
+version: latest
+resources:
+  cpu: 1
+  memory_gb: ???

@@ -1,0 +1,15 @@
+cart:
+  $class: shop.Cart
+  pricing:
+    $ref: shop.tax_free
+  items:
+    - $class: shop.Item
+      name: book
+      price: 12.5
+    - $class: shop.Item
+      name: pen
+      price: 1.5
+half_price:
+  $class: shop.discounted
+  $partial: true
+  rate: 0.5

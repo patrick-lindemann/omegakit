@@ -1,0 +1,12 @@
+default:
+  $class: pipeline.Pipeline
+  retries: 2
+  steps:
+    - {$class: pipeline.Step, name: load}
+    - {$class: pipeline.Step, name: train}
+named:
+  $class: pipeline.NamedPipeline
+  step_names: [load, evaluate]
+registry:
+  $class: pipeline.Registry
+  names: [zeta, alpha]

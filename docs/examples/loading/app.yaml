@@ -1,0 +1,6 @@
+$meta:
+  owner: data-team
+server:
+  $class: http.server.HTTPServer
+  host: localhost
+  port: 8080
