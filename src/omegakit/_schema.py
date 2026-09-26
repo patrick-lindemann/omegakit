@@ -320,11 +320,12 @@ def generate_json_schema(schema: type) -> dict[str, Any]:
         TypeError: If `schema` is neither a dataclass nor a `Configurable` with a
             dataclass schema.
     """
-    root = find_schema(schema) or schema
-    if not dataclasses.is_dataclass(root):
+    root = (find_schema(schema) or schema) if isinstance(schema, type) else None
+    if not (isinstance(root, type) and dataclasses.is_dataclass(root)):
+        name = getattr(schema, "__qualname__", repr(schema))
         raise TypeError(
-            f"`{schema.__qualname__}` is neither a dataclass nor a `Configurable` with "
-            "a dataclass schema."
+            f"`{name}` is neither a dataclass nor a `Configurable` with a dataclass "
+            "schema."
         )
     definitions: dict[str, Any] = {}
     return {

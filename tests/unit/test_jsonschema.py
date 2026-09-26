@@ -111,3 +111,9 @@ def test_json_schema_for_a_configurable_describes_a_fragment():
 def test_json_schema_rejects_classes_without_schema():
     with pytest.raises(TypeError, match="neither a dataclass"):
         generate_json_schema(schemas.Encoder)
+
+
+@pytest.mark.parametrize("schema", [3, schemas.make_encoder])
+def test_json_schema_rejects_objects_that_are_not_classes(schema):
+    with pytest.raises(TypeError, match="neither a dataclass"):
+        generate_json_schema(schema)
