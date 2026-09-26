@@ -15,9 +15,12 @@ def register(commands: argparse._SubParsersAction) -> None:
     """
     parser = commands.add_parser(
         "check",
-        help="load and validate config files without building anything",
-        description="Load and validate config files without building anything. "
-        "Prints one line per invalid file and exits with 1 if any is invalid.",
+        help="load and validate config files",
+        description="Load and validate config files. Validation calls no configured "
+        "class, but it imports the modules that $class and $ref name, and runs "
+        "resolvers and default factories, so check only trusted files; "
+        "--allow-module and --import-root limit what a file can reach. Prints one "
+        "line per invalid file and exits with 1 if any is invalid.",
     )
     parser.add_argument(
         "arguments",

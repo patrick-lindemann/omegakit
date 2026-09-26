@@ -1,8 +1,9 @@
 # Validation
 
-`validate` checks a loaded config against the schemas of its classes, without
-building anything. `instantiate` runs the same check before it builds, so a config
-error never leaves objects half-built.
+`validate` checks a loaded config against the schemas of its classes. It calls no
+configured class, but it imports the modules that `$class` and `$ref` name and runs
+resolvers, so validate only configs you trust. `instantiate` runs the same check
+before it builds, so a config error never leaves objects partly built.
 
 ## Load, validate, instantiate
 

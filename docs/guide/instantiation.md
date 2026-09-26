@@ -49,8 +49,8 @@ constant. It allows no other keys except `$meta`.
 
 `instantiate` and `prepare` resolve the node, then check it as
 [`validate`](validation.md) does, and only then build it. A mistake anywhere in the
-node raises `ConfigValidationError` before any constructor runs, so no object is
-half-built. Error paths start at the node passed to `instantiate`.
+node raises `ConfigValidationError` before any configured class is called, so no
+object is left partly built. Error paths start at the node passed to `instantiate`.
 
 ## Typing
 

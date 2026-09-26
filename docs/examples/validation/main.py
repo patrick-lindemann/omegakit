@@ -10,7 +10,7 @@ config = load_config(here / "app.yaml")
 validate(config)
 assert instantiate(config.encoder, Encoder).layers == 4
 
-# A mistake is reported with its key before anything is built. `instantiate` runs
+# A mistake is reported with its key before any object is built. `instantiate` runs
 # the same check first; its paths start at the node it builds.
 config = load_config(here / "app.yaml", overrides=["encoder.width=wide"])
 try:

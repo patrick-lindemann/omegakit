@@ -5,7 +5,7 @@ from the directory whose modules your configs import, such as your project root.
 
 | Command | What it does |
 |---|---|
-| `omegakit check CONFIG... [KEY=VALUE...]` | Load and validate files without building anything |
+| `omegakit check CONFIG... [KEY=VALUE...]` | Load and validate files; imports the modules they name |
 | `omegakit show CONFIG [KEY=VALUE...]` | Print a config as `load_config` assembles it |
 | `omegakit json-schema IMPORT_PATH [-o FILE]` | Write a JSON Schema for YAML editors ([Editor schemas](editor-schemas.md)) |
 

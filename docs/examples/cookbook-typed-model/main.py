@@ -18,7 +18,7 @@ model = instantiate(config.model, Model)
 assert isinstance(model.encoder, MlpEncoder)
 assert model.encoder.hidden == [128, 64]
 
-# `validate` finds mistakes before anything is built.
+# `validate` finds mistakes before any object is built.
 config = load_config(path, overrides=["encoders.conv.kernel=4"])
 try:
     validate(config)

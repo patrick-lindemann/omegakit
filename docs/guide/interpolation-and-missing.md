@@ -39,4 +39,4 @@ A library file leaves `host` open with `???` and builds `url` from interpolation
   full key. Reading an interpolation that points at it raises
   `InterpolationToMissingValueError`.
 - `instantiate` raises for any `???` in the node it builds, and `validate` reports it
-  without building anything.
+  too.

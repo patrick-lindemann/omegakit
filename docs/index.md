@@ -8,7 +8,7 @@ Composable YAML configuration and Python object construction, built on
   with `$defaults`.
 - **Construct** objects from them: `$class` builds a class or calls a function,
   `$ref` imports an object, and `$partial` defers the call.
-- **Check** them: dataclass schemas validate configs before anything is built, and
+- **Check** them: dataclass schemas validate configs before any object is built, and
   the same schemas give YAML editors completion and error highlighting.
 
 ```sh

@@ -93,7 +93,7 @@ such as `${.id}` resolves at the node's final position.
   `module.attribute`; the attribute is imported and called.
 - `instantiate` and `prepare` resolve the node (after `overrides`), then validate it
   as `validate` does (§11), with the same `allowed_modules`, then build it. A config error therefore raises
-  `ConfigValidationError` before any constructor or `from_config` is called. So
+  `ConfigValidationError` before any configured target or `from_config` is called. So
   does a resolution error: a `???`, an interpolation that fails, or an exception
   from a resolver, which OmegaConf wraps in `InterpolationResolutionError`.
   OmegaConf's error is the `__cause__`, and the message names the full key.
@@ -414,8 +414,8 @@ and the fix, for:
    the partial is created; a `???` never reaches it.
 
 Validation errors name the node path and the schema class. The whole node is
-validated before anything is built (§5), so a config error never leaves some
-children built.
+validated before any configured target is built (§5), so a config error never
+leaves some children built.
 
 **`from_config` contract.** It receives the typed config with its children built,
 plus `**kwargs` from a partial or a direct caller. It returns `Self`, or is
