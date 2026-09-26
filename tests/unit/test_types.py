@@ -81,6 +81,14 @@ def test_types_union_scalars_need_an_exact_type(value):
         _fields(sub_or_int=value)
 
 
+def test_types_union_rejects_null_without_none():
+    assert _fields(maybe_sub=None)["maybe_sub"] is None
+    with pytest.raises(ConfigValidationError, match="`sub_or_int`"):
+        validate({"$class": TYPES, "sub_or_int": None})
+    with pytest.raises(ConfigValidationError, match="`sub_or_int`"):
+        _fields(sub_or_int=None)
+
+
 def test_types_union_with_a_list():
     assert _fields(list_or_int=["1", 2])["list_or_int"] == [1, 2]
     assert _fields(list_or_int=3)["list_or_int"] == 3

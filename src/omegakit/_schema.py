@@ -674,7 +674,7 @@ def _build_native_value(
 
 def _build_union_value(value: Any, annotation: Any, path: tuple[str | int, ...]) -> Any:
     members = [member for member in get_args(annotation) if member is not type(None)]
-    if value is None:
+    if value is None and len(members) < len(get_args(annotation)):
         return None
     if len(members) == 1:
         return _build_native_value(value, members[0], path)
