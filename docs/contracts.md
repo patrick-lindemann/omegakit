@@ -456,18 +456,22 @@ puts the working directory on the import path, so `$class`, `--schema` and
 any order. An argument that names an existing file is a config file, even if it
 contains `=`. Otherwise it is an override if it has a `=` with no `/` before it, and
 a config file (which then fails to load) if not. Overrides apply to every file.
+Their `--import-root DIR` passes `import_root` to `load_config` (§7).
 
 **Exit codes.** 0 on success, 1 when a config is invalid or cannot be loaded, 2 for
 usage errors (a missing config file, an unknown option, an `--schema` or
-`json-schema` import path that cannot be imported).
+`json-schema` import path that cannot be imported, an `--import-root` that is not a
+directory).
 
-- `omegakit check CONFIG... [KEY=VALUE...] [--schema IMPORT_PATH] [--allow-missing]`
+- `omegakit check CONFIG... [KEY=VALUE...] [--schema IMPORT_PATH] [--allow-missing]
+  [--import-root DIR]`
   loads each file with the overrides and validates it (§11). It prints one line per
   failing file, `<file>: <exception type>: <message>`, and nothing for valid files.
   Every exception from loading or validating counts as a failure of that file, and
   so does a `SystemExit` raised by a module that is imported; the other files are
   still checked. `KeyboardInterrupt` stops the command.
-- `omegakit show CONFIG [KEY=VALUE...] [--node KEY] [--resolve] [--keep-meta]`
+- `omegakit show CONFIG [KEY=VALUE...] [--node KEY] [--resolve] [--keep-meta]
+  [--import-root DIR]`
   prints the assembled config as YAML, or the node at `KEY`. `KEY` is a dotted path
   with the same syntax and walk as `~import file#node` (§7): `items.0.name`, and
   `items.-1` from the end. The node is printed unresolved: an interpolation prints

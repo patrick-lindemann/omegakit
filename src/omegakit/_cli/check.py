@@ -1,4 +1,5 @@
 import argparse
+from pathlib import Path
 
 from omegakit._cli.arguments import split_arguments
 from omegakit._loading import load_config
@@ -34,6 +35,12 @@ def register(commands: argparse._SubParsersAction) -> None:
         action="store_true",
         help="accept ??? and other missing values, as in library files",
     )
+    parser.add_argument(
+        "--import-root",
+        type=Path,
+        metavar="DIR",
+        help="reject any ~import of a file outside DIR",
+    )
     parser.set_defaults(run=run, parser=parser)
 
 
@@ -50,6 +57,8 @@ def run(arguments: argparse.Namespace) -> None:
     paths, overrides = split_arguments(arguments.arguments)
     if not paths:
         parser.error("no config file given")
+    if arguments.import_root is not None and not arguments.import_root.is_dir():
+        parser.error(f"--import-root {arguments.import_root} is not a directory")
     schema = None
     if arguments.schema is not None:
         try:
@@ -59,7 +68,9 @@ def run(arguments: argparse.Namespace) -> None:
     invalid = 0
     for path in paths:
         try:
-            config = load_config(path, overrides=overrides or None)
+            config = load_config(
+                path, overrides=overrides or None, import_root=arguments.import_root
+            )
             validate(config, schema=schema, allow_missing=arguments.allow_missing)
         # A module that exits while it is imported must not pass the check.
         except (Exception, SystemExit) as error:

@@ -111,6 +111,19 @@ def test_cli_check_rejects_a_malformed_schema_path(write_yaml, capsys, import_pa
     assert "is not an import path" in capsys.readouterr().err
 
 
+@pytest.mark.parametrize("command", ["check", "show"])
+def test_cli_import_root(write_yaml, tmp_path, capsys, command):
+    write_yaml("outside.yaml", "a: 1\n")
+    path = write_yaml("configs/app.yaml", "n: ~import ../outside.yaml\n")
+    main([command, str(path)])
+    capsys.readouterr()
+    root = str(tmp_path / "configs")
+    assert _exit_code([command, str(path), "--import-root", root]) == 1
+    assert "outside the import root" in capsys.readouterr().out
+    missing = str(tmp_path / "missing")
+    assert _exit_code([command, str(path), "--import-root", missing]) == 2
+
+
 def test_cli_check_needs_a_config_file():
     assert _exit_code(["check", "a=1"]) == 2
 

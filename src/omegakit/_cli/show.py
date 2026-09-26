@@ -42,6 +42,12 @@ def register(commands: argparse._SubParsersAction) -> None:
     parser.add_argument(
         "--keep-meta", action="store_true", help="keep $meta keys in the output"
     )
+    parser.add_argument(
+        "--import-root",
+        type=Path,
+        metavar="DIR",
+        help="reject any ~import of a file outside DIR",
+    )
     parser.set_defaults(run=run, parser=parser)
 
 
@@ -59,9 +65,14 @@ def run(arguments: argparse.Namespace) -> None:
     paths, overrides = split_arguments(arguments.arguments)
     if len(paths) != 1:
         parser.error("give exactly one config file")
+    if arguments.import_root is not None and not arguments.import_root.is_dir():
+        parser.error(f"--import-root {arguments.import_root} is not a directory")
     try:
         config = load_config(
-            paths[0], overrides=overrides or None, keep_meta=arguments.keep_meta
+            paths[0],
+            overrides=overrides or None,
+            keep_meta=arguments.keep_meta,
+            import_root=arguments.import_root,
         )
     except Exception as error:
         _fail(paths[0], error)
