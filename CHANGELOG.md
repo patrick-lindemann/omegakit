@@ -4,6 +4,47 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.5.0] - 2026-09-26
+
+### Added
+
+- `omegakit check CONFIG... [KEY=VALUE...] [--schema IMPORT_PATH] [--allow-missing]`
+  validates config files without building anything, for terminals, pre-commit
+  hooks and CI.
+- `omegakit show CONFIG [KEY=VALUE...] [--node KEY] [--resolve] [--keep-meta]`
+  prints a config as it is assembled.
+- `omegakit json-schema ... -o FILE --check` fails when a committed schema is out of
+  date.
+- `validate(..., allow_missing=True)` and `is_valid(..., allow_missing=True)` accept
+  missing values, for library files and fragments.
+- `validate(..., schema=...)` accepts any class: a `Configurable` checks a root that
+  builds it, or a fragment without `$class` against its schema.
+- Schemas support enums by value, unions with dataclasses, lists and dicts,
+  `tuple[int, ...]` and fixed-length tuples, `Sequence` and `Mapping`, `TypedDict`
+  fields, `init=False` fields (not configurable), `InitVar` fields with a default,
+  keyword-only dataclasses, and `list`/`dict` object fields such as
+  `list[Encoder]`. The behaviour is the same on OmegaConf 2.3 and 2.4.
+- A plain mapping in a schema field typed as a dataclass with object fields is
+  built as that dataclass.
+
+### Changed
+
+- `instantiate` and `prepare` validate the node before building anything. Config
+  errors raise `ConfigValidationError` before any constructor runs.
+- A `$class` or `$ref` that cannot be imported raises `ConfigValidationError`
+  (caused by the `ImportError`) instead of `ImportError`.
+- An object field's `$class` must be the annotated class or a subclass; the type of
+  the built object is no longer checked after building.
+- Scalars in unions must match a member's type exactly.
+- OmegaConf 2.4 is supported: `omegaconf>=2.3,<2.5`. Resolvers register through
+  OmegaConf 2.4's `register_resolver` when available, without deprecation warnings.
+
+### Fixed
+
+- `$base` and `$defaults` interpolations to a node later in the file that has its
+  own `$base` or `$defaults` now see it merged. References that form a cycle raise
+  `ValueError` instead of leaving literal keys.
+
 ## [0.4.0] - 2026-09-26
 
 ### Added
@@ -94,6 +135,7 @@ First release. The configuration language is specified in the
   such as `omegakit.resolvers.paths`.
 - Python 3.12 is supported.
 
+[0.5.0]: https://github.com/patrick-lindemann/omegakit/releases/tag/v0.5.0
 [0.4.0]: https://github.com/patrick-lindemann/omegakit/releases/tag/v0.4.0
 [0.3.0]: https://github.com/patrick-lindemann/omegakit/releases/tag/v0.3.0
 [0.2.0]: https://github.com/patrick-lindemann/omegakit/releases/tag/v0.2.0
