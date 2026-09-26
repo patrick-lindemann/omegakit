@@ -245,7 +245,9 @@ def validate_native(
         ) from error
     merged = typing.cast(dict[str, Any], merged)
     return {
-        name: _build_native_value(merged[name], annotation, (*path, name))
+        name: _build_native_value(
+            merged[name], annotation, (*path, name), allow_missing
+        )
         for name, (kind, annotation) in fields.items()
         if kind == "native"
     }
@@ -589,7 +591,9 @@ def _normalize_enums(value: Any, annotation: Any) -> Any:
     return value
 
 
-def _coerce(value: Any, annotation: Any, path: tuple[str | int, ...]) -> Any:
+def _coerce(
+    value: Any, annotation: Any, path: tuple[str | int, ...], allow_missing: bool
+) -> Any:
     # Validates one value against an annotation through OmegaConf, as a field would.
     try:
         merged = OmegaConf.to_container(
@@ -598,14 +602,14 @@ def _coerce(value: Any, annotation: Any, path: tuple[str | int, ...]) -> Any:
                 {"value": _normalize_enums(value, annotation)},
             ),
             resolve=True,
-            throw_on_missing=True,
+            throw_on_missing=not allow_missing,
         )
     except OmegaConfBaseException as error:
         raise ConfigValidationError(
             f"Invalid config in `{format_path(path)}`: {str(error).splitlines()[0]}"
         ) from error
     return _build_native_value(
-        typing.cast(dict[str, Any], merged)["value"], annotation, path
+        typing.cast(dict[str, Any], merged)["value"], annotation, path, allow_missing
     )
 
 
@@ -617,7 +621,7 @@ def _value_structure(annotation: Any) -> type:
 
 
 def _build_native_value(
-    value: Any, annotation: Any, path: tuple[str | int, ...]
+    value: Any, annotation: Any, path: tuple[str | int, ...], allow_missing: bool
 ) -> Any:
     if value == MISSING:
         return value
@@ -633,15 +637,15 @@ def _build_native_value(
             )
         return value
     if origin in (typing.Union, types.UnionType):
-        return _build_union_value(value, annotation, path)
+        return _build_union_value(value, annotation, path, allow_missing)
     if origin in (list, collections.abc.Sequence):
         return [
-            _build_native_value(item, arguments[0], (*path, index))
+            _build_native_value(item, arguments[0], (*path, index), allow_missing)
             for index, item in enumerate(value)
         ]
     if origin is tuple and len(arguments) == 2 and arguments[1] is Ellipsis:
         return tuple(
-            _build_native_value(item, arguments[0], (*path, index))
+            _build_native_value(item, arguments[0], (*path, index), allow_missing)
             for index, item in enumerate(value)
         )
     if origin is tuple:
@@ -651,41 +655,45 @@ def _build_native_value(
                 f"`{annotation}`, but the config gives {value!r}."
             )
         return tuple(
-            _coerce(item, item_annotation, (*path, index))
+            _coerce(item, item_annotation, (*path, index), allow_missing)
             for index, (item, item_annotation) in enumerate(
                 zip(value, arguments, strict=True)
             )
         )
     if origin in (dict, collections.abc.Mapping):
         return {
-            key: _build_native_value(item, arguments[1], (*path, key))
+            key: _build_native_value(item, arguments[1], (*path, key), allow_missing)
             for key, item in value.items()
         }
     if isinstance(annotation, type) and dataclasses.is_dataclass(annotation):
         fields = classify_fields(annotation)
         return annotation(
             **{
-                name: _build_native_value(item, fields[name][1], (*path, name))
+                name: _build_native_value(
+                    item, fields[name][1], (*path, name), allow_missing
+                )
                 for name, item in value.items()
             }
         )
     return value
 
 
-def _build_union_value(value: Any, annotation: Any, path: tuple[str | int, ...]) -> Any:
+def _build_union_value(
+    value: Any, annotation: Any, path: tuple[str | int, ...], allow_missing: bool
+) -> Any:
     members = [member for member in get_args(annotation) if member is not type(None)]
     if value is None and len(members) < len(get_args(annotation)):
         return None
     if len(members) == 1:
-        return _build_native_value(value, members[0], path)
+        return _build_native_value(value, members[0], path, allow_missing)
     if isinstance(value, dict):
         for member in members:
             if _is_mapping_type(member):
-                return _coerce(value, member, path)
+                return _coerce(value, member, path, allow_missing)
     elif isinstance(value, (list, tuple)):
         for member in members:
             if _is_sequence_type(member):
-                return _coerce(value, member, path)
+                return _coerce(value, member, path, allow_missing)
     elif any(_is_match(value, member) for member in members):
         return value
     raise ConfigValidationError(

@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 import pytest
 from omegaconf import OmegaConf
 
@@ -222,6 +224,25 @@ def test_validate_allow_missing_still_checks_given_values():
             schema=schemas.LiteralConfig,
             allow_missing=True,
         )
+
+
+@dataclass
+class Required:
+    x: int
+
+
+@dataclass
+class Fragment:
+    pair: tuple[int, int] = (0, 0)
+    inner: Required | int = 0
+
+
+def test_validate_allow_missing_inside_tuples_and_union_members():
+    validate({"pair": ["???", 2], "inner": {}}, schema=Fragment, allow_missing=True)
+    with pytest.raises(ConfigValidationError, match=r"`pair\.1`"):
+        validate({"pair": ["???", "x"]}, schema=Fragment, allow_missing=True)
+    with pytest.raises(ConfigValidationError, match="`inner`"):
+        validate({"inner": {"x": "y"}}, schema=Fragment, allow_missing=True)
 
 
 def test_validate_allow_missing_keeps_defaults_for_missing_values():
