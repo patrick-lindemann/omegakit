@@ -61,7 +61,8 @@ def run(arguments: argparse.Namespace) -> None:
         try:
             config = load_config(path, overrides=overrides or None)
             validate(config, schema=schema, allow_missing=arguments.allow_missing)
-        except Exception as error:
+        # A module that exits while it is imported must not pass the check.
+        except (Exception, SystemExit) as error:
             invalid += 1
             message = str(error).splitlines()[0] if str(error) else ""
             print(f"{path}: {type(error).__name__}: {message}")

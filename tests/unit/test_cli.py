@@ -71,6 +71,20 @@ def test_cli_check_reports_every_invalid_file(write_yaml, capsys):
     assert len(lines) == 2
 
 
+def test_cli_check_counts_a_module_that_exits_as_invalid(
+    write_yaml, tmp_path, monkeypatch, capsys
+):
+    (tmp_path / "exiting_module.py").write_text("import sys\nsys.exit(0)\n")
+    monkeypatch.syspath_prepend(tmp_path)
+    monkeypatch.delitem(sys.modules, "exiting_module", raising=False)
+    exiting = write_yaml("a.yaml", "x:\n  $class: exiting_module.Main\n")
+    invalid = write_yaml("b.yaml", MODEL.replace("2", "deep"))
+    assert _exit_code(["check", str(exiting), str(invalid)]) == 1
+    lines = capsys.readouterr().out.splitlines()
+    assert lines[0].startswith(f"{exiting}: SystemExit")
+    assert lines[1].startswith(f"{invalid}: ConfigValidationError")
+
+
 def test_cli_check_applies_overrides_in_any_position(write_yaml):
     path = write_yaml("a.yaml", "model:\n  $class: tests.schemas.Model\n  depth: ???\n")
     assert _exit_code(["check", str(path)]) == 1

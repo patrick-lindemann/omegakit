@@ -458,7 +458,9 @@ imported).
 - `omegakit check CONFIG... [KEY=VALUE...] [--schema IMPORT_PATH] [--allow-missing]`
   loads each file with the overrides and validates it (§11). It prints one line per
   failing file, `<file>: <exception type>: <message>`, and nothing for valid files.
-  Every exception from loading or validating counts as a failure of that file.
+  Every exception from loading or validating counts as a failure of that file, and
+  so does a `SystemExit` raised by a module that is imported; the other files are
+  still checked. `KeyboardInterrupt` stops the command.
 - `omegakit show CONFIG [KEY=VALUE...] [--node KEY] [--resolve] [--keep-meta]`
   prints the assembled config as YAML, or the node at `KEY`. `--resolve` resolves
   interpolations and prints missing values as `???`. A scalar node prints as its
