@@ -222,8 +222,9 @@ def merge_bases(config: DictConfig | ListConfig) -> None:
     """
     cycle = _merge_in_dependency_order(config, BASE_KEY, _merge_base)
     if cycle:
+        nodes = ", ".join(f"`{_node_path(node)}`" for node in cycle)
         raise ConfigValidationError(
-            f"`{BASE_KEY}` references form a cycle between {cycle}."
+            f"`{BASE_KEY}` references form a cycle between {nodes}."
         )
 
 
@@ -242,8 +243,9 @@ def apply_defaults(config: DictConfig | ListConfig) -> None:
     """
     cycle = _merge_in_dependency_order(config, DEFAULTS_KEY, _merge_defaults)
     if cycle:
+        nodes = ", ".join(f"`{_node_path(node)}`" for node in cycle)
         raise ConfigValidationError(
-            f"`{DEFAULTS_KEY}` references form a cycle between {cycle}."
+            f"`{DEFAULTS_KEY}` references form a cycle between {nodes}."
         )
 
 
@@ -277,49 +279,66 @@ def _merge_in_dependency_order(
     config: DictConfig | ListConfig,
     key: str,
     merge: Callable[[DictConfig, Any], None],
-) -> str:
-    # Returns the nodes that form a cycle, or "" once everything is merged. A node
-    # waits while its value refers to a node that still holds `key`, or to a key that
-    # does not exist yet. Ancestors of a waiting node wait too, because merging
-    # replaces their children. A pass without progress is a cycle, or a reference
-    # that will never resolve.
+) -> list[DictConfig]:
+    """Merge every node that holds `key`, children first, in dependency order.
+
+    A node waits while its value refers to a node that still holds `key`, or to a key
+    that does not exist yet. Ancestors of a waiting node wait too, because merging
+    replaces their children. Passes repeat until nothing waits. A pass without
+    progress is a cycle, or a reference that will never resolve.
+
+    Args:
+        config: The config to process.
+        key: `$base` or `$defaults`.
+        merge: Merges a node's value of `key` into the node.
+
+    Returns:
+        The nodes that still wait after a pass without progress, which form a cycle,
+        or an empty list once everything is merged.
+
+    Raises:
+        ConfigValidationError: If a value refers to a key that never appears.
+    """
     while True:
         waiting: list[DictConfig] = []
+        blocked: set[int] = set()
         first_error: OmegaConfBaseException | None = None
         merged = False
-        for node in _walk_post_order(config):
+        for node in list(_walk_post_order(config)):
             if node._get_node(key) is None:
                 continue
-            if any(_is_ancestor(node, other) for other in waiting):
-                waiting.append(node)
-                continue
-            try:
-                value = node[key]
-                referenced = (
-                    [value] if not isinstance(value, ListConfig) else list(value)
-                )
-            except InterpolationKeyError as error:
-                first_error = first_error or error
-                waiting.append(node)
-                continue
-            if any(
-                isinstance(item, DictConfig)
-                and any(inner._get_node(key) is not None for inner in walk(item))
-                for item in referenced
-            ):
-                waiting.append(node)
-                continue
-            merge(node, value)
-            merged = True
+            if id(node) not in blocked:
+                try:
+                    value = node[key]
+                except InterpolationKeyError as error:
+                    if first_error is None:
+                        first_error = error
+                else:
+                    referenced = value if isinstance(value, ListConfig) else [value]
+                    if not any(
+                        isinstance(item, DictConfig)
+                        and any(
+                            inner._get_node(key) is not None for inner in walk(item)
+                        )
+                        for item in referenced
+                    ):
+                        merge(node, value)
+                        merged = True
+                        continue
+            waiting.append(node)
+            parent = node._get_parent()
+            while parent is not None and id(parent) not in blocked:
+                blocked.add(id(parent))
+                parent = parent._get_parent()
         if not waiting:
-            return ""
+            return []
         if not merged:
             if first_error is not None:
                 raise ConfigValidationError(
                     f"Cannot resolve `{first_error.full_key or key}`: "
                     f"{str(first_error).splitlines()[0]}"
                 ) from first_error
-            return ", ".join(f"`{_node_path(node)}`" for node in waiting)
+            return waiting
 
 
 def _merge_base(node: DictConfig, base: Any) -> None:
@@ -361,12 +380,3 @@ def _merge_defaults(node: DictConfig, defaults: Any) -> None:
 
 def _node_path(node: DictConfig) -> str:
     return node._get_full_key(None) or "<root>"
-
-
-def _is_ancestor(node: DictConfig, other: DictConfig) -> bool:
-    parent = other._get_parent()
-    while parent is not None:
-        if parent is node:
-            return True
-        parent = parent._get_parent()
-    return False

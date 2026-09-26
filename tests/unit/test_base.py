@@ -1,4 +1,5 @@
 import pytest
+from omegaconf import OmegaConf
 from omegaconf.errors import InterpolationKeyError
 
 from omegakit import ConfigValidationError, load_config
@@ -171,6 +172,21 @@ def test_base_parent_waits_for_a_waiting_child(write_yaml):
     )
     assert dict(cfg.outer.inner) == {"a": 1}
     assert cfg.outer.q == 1
+
+
+def test_base_ancestor_with_its_own_base_waits_for_its_children(write_yaml):
+    cfg = load_config(
+        write_yaml(
+            "c.yaml",
+            "outer:\n  $base: ${template}\n  inner:\n    $base: ${late}\n"
+            "late:\n  $base: {x: 1}\n"
+            "template:\n  t: 1\n  inner: {y: 2}\n",
+        )
+    )
+    assert OmegaConf.to_container(cfg.outer, resolve=True) == {
+        "t": 1,
+        "inner": {"y": 2, "x": 1},
+    }
 
 
 def test_base_cycle_raises(write_yaml):
