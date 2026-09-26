@@ -4,8 +4,7 @@ updates:
     directory: /
     schedule:
       interval: weekly
-    # Updates merge automatically once CI passes, so give new releases time to be
-    # yanked or fixed first.
+    # Give new releases time to be yanked or fixed before they are proposed.
     cooldown:
       default-days: 7
     groups:

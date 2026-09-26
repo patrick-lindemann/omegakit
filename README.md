@@ -129,6 +129,6 @@ come from trusted sources. Assembly currently relies on private OmegaConf node A
 the supported OmegaConf range is `>=2.3,<2.5`, and CI also tests the newest OmegaConf
 pre-release in that range.
 
-Dependabot proposes dependency and GitHub Actions updates weekly, and patch and minor
-updates merge automatically once CI passes. The runtime bounds in `pyproject.toml` are
-changed by hand.
+Dependabot proposes dependency and GitHub Actions updates weekly, and they are
+reviewed and merged by hand. The runtime bounds in `pyproject.toml` are changed by
+hand too.
