@@ -25,7 +25,7 @@ def _resolve_dtype(dtype_str: str) -> Any:
     torch = _import_torch()
     dtype = getattr(torch, dtype_str, None)
     if not isinstance(dtype, torch.dtype):
-        raise ValueError(f"Invalid torch dtype: {dtype_str}")
+        raise ValueError(f"Invalid torch dtype `{dtype_str}`.")
     return dtype
 
 
@@ -51,6 +51,6 @@ def register_torch_resolvers(*, replace: bool = False) -> None:
     if not replace:
         for name in ("dtype", "cuda_available"):
             if OmegaConf.has_resolver(name):
-                raise ValueError(f"Resolver '{name}' is already registered")
+                raise ValueError(f"Resolver `{name}` is already registered.")
     register_torch_dtype_resolver(replace=replace)
     register_cuda_available_resolver(replace=replace)

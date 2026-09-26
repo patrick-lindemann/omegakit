@@ -83,7 +83,7 @@ def test_torch_resolvers_resolve_with_fake_torch(fake_torch):
 def test_torch_dtype_resolver_rejects_non_dtypes(fake_torch, name):
     register_torch_dtype_resolver()
     cfg = OmegaConf.create({"dtype": f"${{dtype:{name}}}"})
-    with pytest.raises(InterpolationResolutionError, match="Invalid torch dtype"):
+    with pytest.raises(InterpolationResolutionError, match="Invalid torch dtype `"):
         _ = cfg.dtype
 
 
@@ -97,7 +97,7 @@ def test_torch_individual_resolvers_register_one_name(fake_torch):
 
 def test_torch_conflict_does_not_partially_register_with_fake_torch(fake_torch):
     register_resolver("cuda_available", lambda: True)
-    with pytest.raises(ValueError, match="already registered"):
+    with pytest.raises(ValueError, match="`cuda_available` is already registered"):
         register_torch_resolvers()
     assert not OmegaConf.has_resolver("dtype")
 
