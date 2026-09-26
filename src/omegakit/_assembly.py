@@ -10,7 +10,7 @@ from omegaconf.errors import InterpolationKeyError, OmegaConfBaseException
 
 from ._keys import BASE_KEY, DEFAULTS_KEY, IMPORT_KEY
 from ._schema import ConfigValidationError
-from ._utils import walk
+from ._utils import describe_error, walk
 
 
 def load_file(file_path: Path) -> DictConfig | ListConfig:
@@ -28,16 +28,9 @@ def load_file(file_path: Path) -> DictConfig | ListConfig:
     """
     try:
         return OmegaConf.load(file_path)
-    except yaml.MarkedYAMLError as error:
-        context = f"{error.context}: " if error.context else ""
-        mark = error.problem_mark
-        position = f" (line {mark.line + 1}, column {mark.column + 1})" if mark else ""
-        raise ConfigValidationError(
-            f"Cannot load `{file_path}`: {context}{error.problem}{position}"
-        ) from error
     except (yaml.YAMLError, UnicodeDecodeError, OmegaConfBaseException) as error:
         raise ConfigValidationError(
-            f"Cannot load `{file_path}`: {str(error).splitlines()[0]}"
+            f"Cannot load `{file_path}`: {describe_error(error)}"
         ) from error
 
 

@@ -9,7 +9,7 @@ from typing import Any, TypeAliasType, cast, get_args, get_origin, overload
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
 from ._keys import CLASS_KEY, META_KEY, PARTIAL_KEY, REF_KEY
-from ._loading import parse_overrides
+from ._loading import merge_overrides
 from ._schema import (
     ConfigValidationError,
     check_schema,
@@ -117,8 +117,7 @@ def _instantiate(
         config = OmegaConf.create(config)
     if overrides is not None:
         config = config.copy()
-        overrides = parse_overrides(overrides)
-        config.merge_with(overrides)
+        merge_overrides(config, overrides)
     plain_config = cast(dict[str, Any], resolve_config(config))
     check_resolved(plain_config)
     return _build(plain_config, wrap)

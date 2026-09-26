@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, cast
 
+import yaml
 from omegaconf import DictConfig, ListConfig, OmegaConf
 from omegaconf.errors import OmegaConfBaseException
 
@@ -15,6 +16,7 @@ from ._assembly import (
 )
 from ._keys import CLASS_KEY, META_KEY, PARTIAL_KEY, REF_KEY
 from ._schema import ConfigValidationError
+from ._utils import describe_error
 
 type PathLike = Path | str
 
@@ -56,8 +58,7 @@ def load_config(
             f"Cannot load `{file_path}`: {str(error).splitlines()[0]}"
         ) from error
     if overrides is not None:
-        overrides = parse_overrides(overrides)
-        config.merge_with(overrides)
+        merge_overrides(config, overrides)
     if keep_meta and keep_targets:
         return config
     exclude_keys = set()
@@ -71,26 +72,45 @@ def load_config(
     return config
 
 
-def parse_overrides(
-    overrides: DictConfig | dict[str, Any] | list[str],
-) -> DictConfig:
-    """Convert overrides into a `DictConfig`.
+def merge_overrides(
+    config: DictConfig, overrides: DictConfig | dict[str, Any] | list[str]
+) -> None:
+    """Merge overrides into a config in place.
 
     Args:
+        config: The config to change.
         overrides: A `DictConfig`, a dictionary, or a list of `key=value` strings.
 
-    Returns:
-        The overrides as a `DictConfig`.
-
     Raises:
-        ValueError: If `overrides` has another type.
+        ConfigValidationError: If an override does not parse, has a value of an
+            unsupported type, or is rejected by `config`.
     """
+    try:
+        config.merge_with(_parse_overrides(overrides))
+    except OmegaConfBaseException as error:
+        location = f" `{error.full_key}`" if error.full_key else ""
+        raise ConfigValidationError(
+            f"Cannot apply the override{location}: {describe_error(error)}"
+        ) from error
+
+
+def _parse_overrides(
+    overrides: DictConfig | dict[str, Any] | list[str],
+) -> DictConfig:
     if isinstance(overrides, (DictConfig, ListConfig)):
         return cast(DictConfig, overrides)
     elif isinstance(overrides, dict):
         return OmegaConf.create(overrides)
     elif isinstance(overrides, list):
-        return OmegaConf.from_dotlist(overrides)
+        parsed = OmegaConf.create()
+        for override in overrides:
+            try:
+                parsed.merge_with_dotlist([override])
+            except (yaml.YAMLError, OmegaConfBaseException) as error:
+                raise ConfigValidationError(
+                    f"Cannot parse the override `{override}`: {describe_error(error)}"
+                ) from error
+        return parsed
     raise ValueError(
         f"Unsupported overrides type: {type(overrides)}. Expected `Config`, `dict` "
         "or `list` of `key=value` string pairs."

@@ -3,6 +3,7 @@ import inspect
 from collections.abc import Callable, Iterator
 from typing import Any
 
+import yaml
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
 from ._keys import CLASS_KEY
@@ -63,6 +64,25 @@ def format_path(path: tuple[str | int, ...]) -> str:
         The dotted path, or `<root>` for the root itself.
     """
     return ".".join(map(str, path)) or "<root>"
+
+
+def describe_error(error: Exception) -> str:
+    """Describe an error from PyYAML, OmegaConf or Python in one line.
+
+    Args:
+        error: The error.
+
+    Returns:
+        PyYAML's problem with its context and position, or the first line of the
+        message of any other error.
+    """
+    if isinstance(error, yaml.MarkedYAMLError):
+        context = f"{error.context}: " if error.context else ""
+        mark = error.problem_mark
+        position = f" (line {mark.line + 1}, column {mark.column + 1})" if mark else ""
+        return f"{context}{error.problem}{position}"
+    lines = str(error).splitlines()
+    return lines[0] if lines else type(error).__name__
 
 
 def import_object(import_path: str) -> Any:

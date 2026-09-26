@@ -1,7 +1,7 @@
 import pytest
 from omegaconf import OmegaConf
 
-from omegakit import load_config
+from omegakit import ConfigValidationError, instantiate, load_config, prepare
 
 # Contracts: §1 Pipeline order, §2 Precedence, §8 Error model.
 
@@ -27,6 +27,30 @@ def test_overrides_accept_dict_config(write_yaml):
 def test_overrides_invalid_type_raises(write_yaml, overrides):
     with pytest.raises(ValueError, match="Unsupported overrides type"):
         load_config(write_yaml("c.yaml", "a: 1\n"), overrides=overrides)
+
+
+@pytest.mark.parametrize(
+    ("overrides", "match"),
+    [
+        (["a=[1"], r"a=\[1"),
+        (["a=${"], "a"),
+        ({"a": object()}, "a"),
+    ],
+)
+def test_overrides_invalid_values_raise(write_yaml, overrides, match):
+    path = write_yaml("c.yaml", "a: 1\n")
+    with pytest.raises(ConfigValidationError, match=match):
+        load_config(path, overrides=overrides)
+    for build in (instantiate, prepare):
+        with pytest.raises(ConfigValidationError, match=match):
+            build({"$class": "tests.helpers.Recorder"}, overrides=overrides)
+
+
+def test_overrides_rejected_by_a_struct_config_raise():
+    config = OmegaConf.create({"$class": "tests.helpers.Recorder", "a": 1})
+    OmegaConf.set_struct(config, True)
+    with pytest.raises(ConfigValidationError, match="`b`"):
+        instantiate(config, overrides=["b=2"])
 
 
 def test_overrides_win_over_base(write_yaml):
