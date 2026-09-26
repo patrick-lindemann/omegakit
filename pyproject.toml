@@ -52,6 +52,9 @@ default-groups = ["dev", "docs"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--import-mode=importlib"
+markers = [
+    "distribution: builds the wheel and tests it installed in a fresh environment",
+]
 
 [tool.coverage.run]
 source = ["omegakit"]

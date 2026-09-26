@@ -46,7 +46,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: uv sync --resolution lowest-direct
-      - run: uv run --resolution lowest-direct pytest --cov
+      - run: uv run --resolution lowest-direct pytest --cov -m "not distribution"
 
   test-omegaconf-next:
     # The newest OmegaConf pre-release in the supported range, so that a change in
@@ -60,4 +60,4 @@ jobs:
       - run: uv sync --locked
       - run: uv pip install --prerelease allow "omegaconf>=2.4.0.dev0,<2.5"
       - run: uv run --no-sync python -c "import omegaconf; print(omegaconf.__version__)"
-      - run: uv run --no-sync pytest -W error::UserWarning
+      - run: uv run --no-sync pytest -W error::UserWarning -m "not distribution"
