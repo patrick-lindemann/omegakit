@@ -1,7 +1,10 @@
+from dataclasses import dataclass
+from typing import Any
+
 import pytest
 from omegaconf import OmegaConf
 
-from omegakit import ConfigValidationError, instantiate, validate
+from omegakit import Configurable, ConfigValidationError, instantiate, validate
 from tests import schemas
 
 # Contracts: §10 Typed configs (field kinds), §11 Validation.
@@ -122,3 +125,49 @@ def test_types_behave_the_same_through_validate():
     validate(OmegaConf.create({"$class": TYPES, "color": "blue", "pair": [1, "a"]}))
     with pytest.raises(ConfigValidationError, match="`sub_or_int`"):
         validate({"$class": TYPES, "sub_or_int": "5"})
+
+
+@dataclass
+class OptionalsConfig:
+    numbers: list[int] | None = None
+    counts: dict[str, int] | None = None
+    sub: schemas.Sub | None = None
+
+
+class Optionals(Configurable[OptionalsConfig]):
+    def __init__(self, **fields: Any) -> None:
+        self.fields = fields
+
+
+OPTIONALS = f"{__name__}.Optionals"
+
+
+def test_types_optional_containers_and_dataclasses():
+    fields = instantiate(
+        {"$class": OPTIONALS, "numbers": ["1"], "counts": {"a": "2"}, "sub": {}}
+    ).fields
+    assert fields == {"numbers": [1], "counts": {"a": 2}, "sub": schemas.Sub()}
+    assert instantiate({"$class": OPTIONALS, "numbers": None}).fields["numbers"] is None
+
+
+# OmegaConf 2.4 does not name the field when a dataclass gets a scalar.
+@pytest.mark.parametrize(
+    ("key", "value", "match"),
+    [
+        ("numbers", "abc", "`numbers"),
+        ("numbers", 5, "`numbers"),
+        ("numbers", ["x"], "`numbers"),
+        ("counts", "abc", "`counts"),
+        ("counts", {"a": "x"}, "`counts"),
+        ("sub", 5, "Sub"),
+        ("sub", {"value": "x"}, "`sub"),
+    ],
+)
+def test_types_optional_containers_and_dataclasses_reject_other_values(
+    key, value, match
+):
+    config = {"$class": OPTIONALS, key: value}
+    with pytest.raises(ConfigValidationError, match=match):
+        validate(config)
+    with pytest.raises(ConfigValidationError, match=match):
+        instantiate(config)

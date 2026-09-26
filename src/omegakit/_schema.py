@@ -501,6 +501,9 @@ def _structure_type(annotation: Any) -> Any:
             operator.or_, dict.fromkeys(type(value) for value in arguments)
         )
     if origin in (typing.Union, types.UnionType):
+        members = [member for member in arguments if member is not type(None)]
+        if len(members) == 1:
+            return _structure_type(members[0]) | None
         if any(
             _is_mapping_type(member) or _is_sequence_type(member)
             for member in arguments
