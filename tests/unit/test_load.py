@@ -55,3 +55,14 @@ def test_load_rejects_a_file_with_a_single_value(write_yaml, text):
 @pytest.mark.parametrize("text", ["", "null\n", "~\n", "---\n"])
 def test_load_empty_files_are_empty_mappings(write_yaml, text):
     assert load_config(write_yaml("c.yaml", text)) == {}
+
+
+def test_load_rejects_a_list_at_the_root(write_yaml):
+    with pytest.raises(ConfigValidationError, match="root is a list"):
+        load_config(write_yaml("c.yaml", "- a\n- b\n"))
+
+
+def test_load_imports_a_file_whose_root_is_a_list(write_yaml):
+    write_yaml("items.yaml", "- a\n- b\n")
+    cfg = load_config(write_yaml("c.yaml", "items: ~import items.yaml\n"))
+    assert list(cfg["items"]) == ["a", "b"]

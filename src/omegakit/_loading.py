@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 import yaml
 from omegaconf import DictConfig, OmegaConf
@@ -48,7 +48,12 @@ def load_config(
             value is invalid. A missing root file raises `FileNotFoundError`.
     """
     file_path = Path(file_path).resolve()
-    config = cast(DictConfig, load_file(file_path))
+    config = load_file(file_path)
+    if not isinstance(config, DictConfig):
+        raise ConfigValidationError(
+            f"Cannot load `{file_path}`: its root is a list, but the root of a config "
+            "must be a mapping."
+        )
     try:
         resolve_imports(config, file_path, visited_paths={file_path}, cache={})
         merge_bases(config)

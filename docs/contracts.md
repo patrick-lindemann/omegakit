@@ -162,7 +162,8 @@ such as `${.id}` resolves at the node's final position.
 - An import can replace a mapping value or a list item. The imported file may be a
   mapping or a list.
 - A file that holds a single value (`hello`, `5`) raises `ConfigValidationError`,
-  whether it is the root or imported. An empty file, and a document that is only
+  whether it is the root or imported. A list is allowed in an imported file, but not
+  at the root of the file passed to `load_config`. An empty file, and a document that is only
   `null` or `~`, is an empty mapping.
 - Cycles are detected per import chain: a file that imports itself, directly or
   through other files, raises `ConfigValidationError`. Importing the same file from
@@ -188,6 +189,7 @@ or the file system, is its `__cause__`. Only a missing root file passed to
 | Root file passed to `load_config` does not exist | `FileNotFoundError` | the path |
 | A file that is not valid YAML, has duplicate keys or unknown tags, or is not UTF-8 | `ConfigValidationError`, caused by PyYAML's error or `UnicodeDecodeError` | `Cannot load`, the file, the line and column |
 | A file that holds a single value, not a mapping or a list | `ConfigValidationError` | `single value` and the file |
+| A root file passed to `load_config` that holds a list | `ConfigValidationError` | `root is a list` and the file |
 | Circular `~import` | `ConfigValidationError` | `Circular import detected`, the statement and the files |
 | `~import` of a missing or unreadable file, or of an invalid file | `ConfigValidationError`, caused by the `OSError` or the load error | `Cannot import`, the statement and the importing file |
 | `~import` of a missing node | `ConfigValidationError` | `selects node`, the node and the files |
