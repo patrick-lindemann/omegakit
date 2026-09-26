@@ -1,3 +1,5 @@
+from omegaconf import OmegaConf
+
 from omegakit import load_config
 
 # Contracts: §1 Pipeline order.
@@ -76,3 +78,16 @@ def test_strip_meta_and_targets_together(write_yaml):
         keep_targets=False,
     )
     assert dict(cfg) == {"v": 1}
+
+
+def test_load_keeps_meta_and_drops_targets(write_yaml):
+    path = write_yaml(
+        "c.yaml",
+        "$meta: {author: x}\n$class: some.Thing\n$partial: true\n"
+        "child:\n  $ref: some.value\n  $meta: {note: y}\n",
+    )
+    cfg = load_config(path, keep_meta=True, keep_targets=False)
+    assert OmegaConf.to_container(cfg) == {
+        "$meta": {"author": "x"},
+        "child": {"$meta": {"note": "y"}},
+    }
