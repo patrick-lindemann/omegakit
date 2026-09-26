@@ -27,8 +27,15 @@ subclass in `$class`, and it is checked against `ModelConfig`, the schema of
 `Model`.
 
 `validate` returns nothing and raises `ConfigValidationError` at the first problem,
-with the key path of the node. `is_valid` takes the same arguments and returns a
-boolean.
+with the key path of the node. To test a config without handling the error
+elsewhere, catch it:
+
+```python
+try:
+    validate(config, schema=AppConfig)
+except ConfigValidationError as error:
+    print(f"invalid config: {error}")
+```
 
 ## Fragments and library files
 

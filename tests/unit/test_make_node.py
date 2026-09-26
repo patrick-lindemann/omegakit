@@ -25,7 +25,7 @@ def test_node_is_instantiable():
     )
 
 
-def test_node_child_is_validated_against_its_schema():
+def test_node_child_is_checked_against_its_schema():
     assert instantiate(make_node(schemas.TypedEncoder, width="3")).width == 3
 
 

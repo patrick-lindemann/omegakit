@@ -5,7 +5,7 @@ Complete patterns, each a runnable example.
 ## Reusable library configs
 
 A library file defines a service with `???` slots. Each consumer imports it as a
-`$base` and fills the slots; `is_valid` reports a slot that is still open.
+`$base` and fills the slots; `validate` reports a slot that is still open.
 
 ```{literalinclude} examples/cookbook-library-slots/library/service.yaml
 :language: yaml

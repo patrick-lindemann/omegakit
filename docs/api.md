@@ -27,7 +27,6 @@
 
 ```{eval-rst}
 .. autofunction:: omegakit.validate
-.. autofunction:: omegakit.is_valid
 ```
 
 ## Editor schemas

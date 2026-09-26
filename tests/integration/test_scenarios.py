@@ -12,7 +12,6 @@ from omegakit import (
     ConfigValidationError,
     generate_json_schema,
     instantiate,
-    is_valid,
     load_config,
     prepare,
     validate,
@@ -176,7 +175,8 @@ def test_scenario_validate_before_instantiating(write_yaml):
     """`~import` + `???` + overrides + `validate`: check the full config, then build."""
     write_yaml("model.yaml", "$class: tests.schemas.Model\nkind: B\ndepth: ???\n")
     path = write_yaml("main.yaml", "seed: 4\ntraining:\n  model: ~import model.yaml\n")
-    assert not is_valid(load_config(path), schema=schemas.AppConfig)
+    with pytest.raises(ConfigValidationError, match="depth"):
+        validate(load_config(path), schema=schemas.AppConfig)
     cfg = load_config(path, overrides=["training.model.depth=${seed}"])
     validate(cfg, schema=schemas.AppConfig)
     assert instantiate(cfg.training.model, schemas.Model).depth == 4

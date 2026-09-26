@@ -63,30 +63,6 @@ def validate(
     check_resolved(plain_config, schema=schema, allow_missing=allow_missing)
 
 
-def is_valid(
-    config: DictConfig | dict[str, Any],
-    *,
-    schema: type | None = None,
-    allow_missing: bool = False,
-) -> bool:
-    """Check a loaded config like `validate`, without raising.
-
-    Args:
-        config: The assembled config, such as the result of `load_config`.
-        schema: The class the root of the config must match, as in `validate`.
-            Defaults to `None`.
-        allow_missing: Accept missing values, as in `validate`. Defaults to `False`.
-
-    Returns:
-        `True` if `validate` accepts the config, `False` otherwise.
-    """
-    try:
-        validate(config, schema=schema, allow_missing=allow_missing)
-    except ConfigValidationError:
-        return False
-    return True
-
-
 def resolve_config(
     config: DictConfig | ListConfig, *, allow_missing: bool = False
 ) -> Any:

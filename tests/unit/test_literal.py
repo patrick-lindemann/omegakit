@@ -4,7 +4,6 @@ from omegakit import (
     ConfigValidationError,
     generate_json_schema,
     instantiate,
-    is_valid,
     validate,
 )
 from tests import schemas
@@ -55,7 +54,6 @@ def test_literal_accepts_allowed_values():
 def test_literal_rejects_other_values_with_their_path(values, key):
     with pytest.raises(ConfigValidationError, match=rf"`{key}`"):
         _fields(**values)
-    assert not is_valid({"$class": LITERALS, **values})
 
 
 def test_literal_values_are_converted_like_their_type_first():

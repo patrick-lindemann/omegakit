@@ -22,7 +22,6 @@ def test_public_api_exports():
         "check_schema",
         "generate_json_schema",
         "instantiate",
-        "is_valid",
         "load_config",
         "make_node",
         "prepare",

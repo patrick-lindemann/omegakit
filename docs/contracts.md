@@ -334,8 +334,7 @@ users should configure belong in object fields.
 
 `validate(config, *, schema=None, allow_missing=False)` checks a config that
 `load_config` has assembled, without building anything. It returns nothing and
-raises `ConfigValidationError` at the first problem. `is_valid` takes the same
-arguments, runs the same check and returns `False` in place of raising.
+raises `ConfigValidationError` at the first problem.
 
 1. `load_config` assembles the full config (§1). It checks no schema.
 2. `validate` checks the assembled config, or any node of it.

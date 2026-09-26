@@ -12,7 +12,7 @@ from ._keys import (
 from ._loading import load_config
 from ._schema import ConfigValidationError, check_schema, generate_json_schema
 from ._utils import make_node, walk
-from ._validation import is_valid, validate
+from ._validation import validate
 
 __all__ = [
     "BASE_KEY",
@@ -27,7 +27,6 @@ __all__ = [
     "check_schema",
     "generate_json_schema",
     "instantiate",
-    "is_valid",
     "load_config",
     "make_node",
     "prepare",

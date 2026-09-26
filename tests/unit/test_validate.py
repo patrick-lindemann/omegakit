@@ -1,7 +1,7 @@
 import pytest
 from omegaconf import OmegaConf
 
-from omegakit import ConfigValidationError, is_valid, load_config, validate
+from omegakit import ConfigValidationError, load_config, validate
 from tests import schemas
 from tests.helpers import FAILING
 
@@ -32,7 +32,6 @@ def _model(**fields):
 def test_validate_accepts_a_loaded_config(write_yaml):
     cfg = load_config(write_yaml("app.yaml", APP))
     validate(cfg, schema=schemas.AppConfig)
-    assert is_valid(cfg, schema=schemas.AppConfig)
 
 
 def test_validate_returns_nothing_and_leaves_the_config_unchanged(write_yaml):
@@ -50,7 +49,6 @@ def test_validate_checks_root_values_against_the_schema(write_yaml):
     cfg = load_config(write_yaml("app.yaml", APP.replace('"64"', "many")))
     with pytest.raises(ConfigValidationError, match=r"Value .many. of type"):
         validate(cfg, schema=schemas.AppConfig)
-    assert not is_valid(cfg, schema=schemas.AppConfig)
 
 
 @pytest.mark.parametrize("key", ["sed", "data.batch", "training.epoch"])
@@ -202,9 +200,9 @@ def test_validate_allow_missing_accepts_open_slots_and_their_interpolations(
     write_yaml,
 ):
     cfg = load_config(write_yaml("library.yaml", LIBRARY))
-    assert not is_valid(cfg)
+    with pytest.raises(ConfigValidationError):
+        validate(cfg)
     validate(cfg, allow_missing=True)
-    assert is_valid(cfg, allow_missing=True)
 
 
 def test_validate_allow_missing_accepts_missing_schema_fields():
