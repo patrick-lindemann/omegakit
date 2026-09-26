@@ -1,8 +1,9 @@
 import sys
 import types
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from decimal import Decimal
 from pathlib import Path
+from typing import ClassVar
 
 import pytest
 from omegaconf import OmegaConf
@@ -253,3 +254,33 @@ def test_schema_recursive_dataclasses_raise(schema, cycle):
 def test_schema_recursive_schema_of_a_class_raises():
     with pytest.raises(ConfigValidationError, match="Tree -> Tree"):
         check_schema(WithTree)
+
+
+@dataclass
+class Later:
+    value: int = 0
+
+
+@dataclass
+class ForwardReferences:
+    count: int = 0
+    later: "Later" = field(default_factory=Later)
+    missing: "Missing" = 0  # noqa: F821  # pyright: ignore[reportUndefinedVariable]
+
+
+@dataclass
+class UnresolvableClassVar:
+    registry: ClassVar["Missing"]  # noqa: F821  # pyright: ignore[reportUndefinedVariable]
+    count: int = 0
+
+
+def test_schema_forward_reference_that_does_not_resolve_names_its_field():
+    with pytest.raises(
+        ConfigValidationError, match=r"field `missing`.*Import the type at module level"
+    ):
+        validate({}, schema=ForwardReferences)
+
+
+def test_schema_annotation_outside_the_fields_that_does_not_resolve_raises():
+    with pytest.raises(ConfigValidationError, match="Cannot resolve the annotations"):
+        validate({}, schema=UnresolvableClassVar)
