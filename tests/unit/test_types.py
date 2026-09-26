@@ -34,6 +34,13 @@ def test_types_tuples():
         _fields(pair=["x", "y"])
 
 
+def test_types_tuples_reject_extra_items():
+    with pytest.raises(ConfigValidationError, match=r"`pair` expects a list of 2"):
+        validate({"$class": TYPES, "pair": [1, "a", 3]})
+    with pytest.raises(ConfigValidationError, match=r"`pair` expects a list of 2"):
+        _fields(pair=[1, "a", 3])
+
+
 def test_types_abstract_containers_give_lists_and_dicts():
     fields = _fields(sequence=["1"], mapping={"a": "2"})
     assert (fields["sequence"], fields["mapping"]) == ([1], {"a": 2})

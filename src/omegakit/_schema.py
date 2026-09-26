@@ -564,9 +564,11 @@ def _normalize_enums(value: Any, annotation: Any) -> Any:
         return _normalize_enums(value, members[0]) if len(members) == 1 else value
     if origin in (list, tuple, collections.abc.Sequence) and isinstance(value, list):
         if origin is tuple and not (len(arguments) == 2 and arguments[1] is Ellipsis):
+            if len(value) != len(arguments):
+                return value
             return [
                 _normalize_enums(item, item_annotation)
-                for item, item_annotation in zip(value, arguments, strict=False)
+                for item, item_annotation in zip(value, arguments, strict=True)
             ]
         return [_normalize_enums(item, arguments[0]) for item in value]
     if origin in (dict, collections.abc.Mapping) and isinstance(value, dict):
