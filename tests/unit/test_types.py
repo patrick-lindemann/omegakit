@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 import pytest
@@ -213,3 +213,41 @@ def test_types_list_union_rejects_other_scalars(value):
         validate({"$class": LIST_UNION, "value": value})
     with pytest.raises(ConfigValidationError, match="`value`"):
         instantiate({"$class": LIST_UNION, "value": value})
+
+
+@dataclass
+class Doubling:
+    x: int = 1
+
+    def __post_init__(self) -> None:
+        self.x *= 2
+
+
+@dataclass
+class DoublingHolder:
+    doubling: Doubling = field(default_factory=Doubling)
+
+
+@dataclass
+class DefaultsConfig:
+    doubling: Doubling = field(default_factory=Doubling)
+    holder: DoublingHolder = field(default_factory=DoublingHolder)
+
+
+class Defaults(Configurable[DefaultsConfig]):
+    def __init__(self, **fields: Any) -> None:
+        self.fields = fields
+
+
+DEFAULTS = f"{__name__}.Defaults"
+
+
+def test_types_default_dataclasses_are_built_once():
+    fields = instantiate({"$class": DEFAULTS}).fields
+    assert fields["doubling"].x == 2
+    assert fields["holder"].doubling.x == 2
+    assert instantiate({"$class": DEFAULTS, "holder": {}}).fields["holder"] == (
+        DoublingHolder()
+    )
+    given = {"$class": DEFAULTS, "holder": {"doubling": {"x": 3}}}
+    assert instantiate(given).fields["holder"].doubling.x == 6

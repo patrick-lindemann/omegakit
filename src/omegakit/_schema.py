@@ -197,7 +197,8 @@ def validate_native(
             required fields that are not given. Defaults to `False`.
 
     Returns:
-        The coerced native fields, including defaults for absent ones.
+        The coerced native fields. Absent fields with a default are left out, so
+        that the dataclass fills them in itself.
 
     Raises:
         ConfigValidationError: If a key is not a field, a required field is missing,
@@ -246,10 +247,10 @@ def validate_native(
     merged = typing.cast(dict[str, Any], merged)
     return {
         name: _build_native_value(
-            merged[name], annotation, (*path, name), allow_missing
+            merged[name], native.get(name), annotation, (*path, name), allow_missing
         )
         for name, (kind, annotation) in fields.items()
-        if kind == "native"
+        if kind == "native" and (name in native or name not in _defaulted(schema))
     }
 
 
@@ -609,7 +610,11 @@ def _coerce(
             f"Invalid config in `{format_path(path)}`: {str(error).splitlines()[0]}"
         ) from error
     return _build_native_value(
-        typing.cast(dict[str, Any], merged)["value"], annotation, path, allow_missing
+        typing.cast(dict[str, Any], merged)["value"],
+        value,
+        annotation,
+        path,
+        allow_missing,
     )
 
 
@@ -621,8 +626,15 @@ def _value_structure(annotation: Any) -> type:
 
 
 def _build_native_value(
-    value: Any, annotation: Any, path: tuple[str | int, ...], allow_missing: bool
+    value: Any,
+    given: Any,
+    annotation: Any,
+    path: tuple[str | int, ...],
+    allow_missing: bool,
 ) -> Any:
+    # `given` is the value as the config gave it, before OmegaConf filled in the
+    # defaults. A dataclass default is not rebuilt from its own fields, because its
+    # `__post_init__` has already run on them.
     if value == MISSING:
         return value
     while isinstance(annotation, TypeAliasType):
@@ -637,15 +649,27 @@ def _build_native_value(
             )
         return value
     if origin in (typing.Union, types.UnionType):
-        return _build_union_value(value, annotation, path, allow_missing)
+        return _build_union_value(value, given, annotation, path, allow_missing)
     if origin in (list, collections.abc.Sequence):
         return [
-            _build_native_value(item, arguments[0], (*path, index), allow_missing)
+            _build_native_value(
+                item,
+                given[index] if isinstance(given, list) else None,
+                arguments[0],
+                (*path, index),
+                allow_missing,
+            )
             for index, item in enumerate(value)
         ]
     if origin is tuple and len(arguments) == 2 and arguments[1] is Ellipsis:
         return tuple(
-            _build_native_value(item, arguments[0], (*path, index), allow_missing)
+            _build_native_value(
+                item,
+                given[index] if isinstance(given, list) else None,
+                arguments[0],
+                (*path, index),
+                allow_missing,
+            )
             for index, item in enumerate(value)
         )
     if origin is tuple:
@@ -662,30 +686,42 @@ def _build_native_value(
         )
     if origin in (dict, collections.abc.Mapping):
         return {
-            key: _build_native_value(item, arguments[1], (*path, key), allow_missing)
+            key: _build_native_value(
+                item,
+                given.get(key) if isinstance(given, dict) else None,
+                arguments[1],
+                (*path, key),
+                allow_missing,
+            )
             for key, item in value.items()
         }
     if isinstance(annotation, type) and dataclasses.is_dataclass(annotation):
         fields = classify_fields(annotation)
+        given = given if isinstance(given, dict) else value
         return annotation(
             **{
                 name: _build_native_value(
-                    item, fields[name][1], (*path, name), allow_missing
+                    item, given.get(name), fields[name][1], (*path, name), allow_missing
                 )
                 for name, item in value.items()
+                if name in given or name not in _defaulted(annotation)
             }
         )
     return value
 
 
 def _build_union_value(
-    value: Any, annotation: Any, path: tuple[str | int, ...], allow_missing: bool
+    value: Any,
+    given: Any,
+    annotation: Any,
+    path: tuple[str | int, ...],
+    allow_missing: bool,
 ) -> Any:
     members = [member for member in get_args(annotation) if member is not type(None)]
     if value is None and len(members) < len(get_args(annotation)):
         return None
     if len(members) == 1:
-        return _build_native_value(value, members[0], path, allow_missing)
+        return _build_native_value(value, given, members[0], path, allow_missing)
     if isinstance(value, dict):
         for member in members:
             if _is_mapping_type(member):
@@ -698,6 +734,16 @@ def _build_union_value(
         return value
     raise ConfigValidationError(
         f"`{format_path(path)}` expects `{annotation}`, but the config gives {value!r}."
+    )
+
+
+@functools.cache
+def _defaulted(schema: type) -> frozenset[str]:
+    return frozenset(
+        field.name
+        for field in dataclasses.fields(schema)
+        if field.default is not dataclasses.MISSING
+        or field.default_factory is not dataclasses.MISSING
     )
 
 
