@@ -50,6 +50,7 @@ def resolve_imports(
     config_path: Path,
     visited_paths: set[Path],
     cache: dict[Path, DictConfig | ListConfig],
+    import_root: Path | None,
 ) -> None:
     """Replace every `~import` value in `config` in place, depth-first.
 
@@ -59,25 +60,33 @@ def resolve_imports(
             against its directory.
         visited_paths: The files in the current import chain, for cycle detection.
         cache: Imported files already loaded during this `load_config` call.
+        import_root: The resolved directory that every imported file must be in, or
+            `None` for no restriction.
     """
     if isinstance(config, ListConfig):
         for index in range(len(config)):
             node = config._get_node(index)
             if isinstance(node, (DictConfig, ListConfig)):
-                resolve_imports(node, config_path, visited_paths, cache)
+                resolve_imports(node, config_path, visited_paths, cache, import_root)
             else:
                 value = node._value() if isinstance(node, Node) else None
                 if isinstance(value, str) and value.startswith(IMPORT_KEY):
                     config[index] = _load_import(
-                        config, index, value, config_path, visited_paths, cache
+                        config,
+                        index,
+                        value,
+                        config_path,
+                        visited_paths,
+                        cache,
+                        import_root,
                     )
         return
     for key, value in config.items_ex(resolve=False):
         if isinstance(value, (DictConfig, ListConfig)):
-            resolve_imports(value, config_path, visited_paths, cache)
+            resolve_imports(value, config_path, visited_paths, cache, import_root)
         elif isinstance(value, str) and value.startswith(IMPORT_KEY):
             config[key] = _load_import(
-                config, key, value, config_path, visited_paths, cache
+                config, key, value, config_path, visited_paths, cache, import_root
             )
 
 
@@ -88,6 +97,7 @@ def _load_import(
     config_path: Path,
     visited_paths: set[Path],
     cache: dict[Path, DictConfig | ListConfig],
+    import_root: Path | None,
 ) -> Any:
     try:
         statement = container[key]
@@ -107,6 +117,11 @@ def _load_import(
     if not file_path.is_absolute():
         file_path = Path(config_path.parent, file_path)
     file_path = file_path.resolve()
+    if import_root is not None and not file_path.is_relative_to(import_root):
+        raise ConfigValidationError(
+            f"Import `{statement}` in `{config_path}` reads `{file_path}`, which is "
+            f"outside the import root `{import_root}`."
+        )
     node_path = args[1].strip() if len(args) > 1 else ""
     # Load the imported config file and resolve its own imports first
     if file_path in visited_paths:
@@ -128,6 +143,7 @@ def _load_import(
             file_path,
             visited_paths={*visited_paths, file_path},
             cache=cache,
+            import_root=import_root,
         )
         cache[file_path] = imported_config
     try:

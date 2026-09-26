@@ -305,3 +305,44 @@ def test_import_selects_negative_list_index(write_yaml):
     write_yaml("lib.yaml", "a: [0, 1]\n")
     cfg = load_config(write_yaml("main.yaml", 'n: "~import lib.yaml#a.-1"\n'))
     assert cfg.n == 1
+
+
+@pytest.fixture
+def outside(tmp_path: Path) -> Path:
+    path = tmp_path / "outside.yaml"
+    path.write_text("secret: 1\n")
+    return path
+
+
+@pytest.mark.parametrize(
+    "statement",
+    [
+        "~import ../outside.yaml",
+        "~import {outside}",
+        "~import link.yaml",
+        "~import ${{dir}}/../outside.yaml",
+    ],
+)
+def test_import_root_rejects_files_outside_it(tmp_path, outside, statement):
+    root = tmp_path / "configs"
+    root.mkdir()
+    (root / "link.yaml").symlink_to(outside)
+    path = root / "main.yaml"
+    path.write_text(f'dir: {root}\nn: "{statement.format(outside=outside)}"\n')
+    with pytest.raises(ConfigValidationError, match="outside the import root"):
+        load_config(path, import_root=root)
+    assert load_config(path).n.secret == 1
+
+
+def test_import_root_allows_files_inside_it(write_yaml, tmp_path):
+    write_yaml("sub/lib.yaml", "a: 1\n")
+    path = write_yaml("main.yaml", "n: ~import sub/lib.yaml\n")
+    assert load_config(path, import_root=str(tmp_path)).n.a == 1
+
+
+def test_import_root_must_be_an_existing_directory(write_yaml, tmp_path):
+    path = write_yaml("main.yaml", "a: 1\n")
+    with pytest.raises(FileNotFoundError):
+        load_config(path, import_root=tmp_path / "missing")
+    with pytest.raises(NotADirectoryError):
+        load_config(path, import_root=path)

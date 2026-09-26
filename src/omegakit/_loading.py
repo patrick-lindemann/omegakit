@@ -27,6 +27,7 @@ def load_config(
     overrides: DictConfig | dict[str, Any] | list[str] | None = None,
     keep_targets: bool = True,
     keep_meta: bool = False,
+    import_root: Path | str | None = None,
 ) -> DictConfig:
     """Load a YAML configuration file from a given file path.
 
@@ -39,6 +40,10 @@ def load_config(
             parsed config. Defaults to `True`.
         keep_meta: Whether to keep metadata fields in the parsed config. Defaults to
             `False`.
+        import_root: A directory that every `~import` must stay in, after
+            interpolations and symbolic links are resolved. An import outside it
+            raises `ConfigValidationError`, and a directory that does not exist
+            raises `FileNotFoundError`. Defaults to `None`, which allows any file.
 
     Returns:
         The parsed configuration.
@@ -46,7 +51,12 @@ def load_config(
     Raises:
         ConfigValidationError: If a file, an import or a `$base` or `$defaults`
             value is invalid. A missing root file raises `FileNotFoundError`.
+        NotADirectoryError: If `import_root` is not a directory.
     """
+    if import_root is not None:
+        import_root = Path(import_root).resolve(strict=True)
+        if not import_root.is_dir():
+            raise NotADirectoryError(f"`{import_root}` is not a directory.")
     file_path = Path(file_path).resolve()
     config = load_file(file_path)
     if not isinstance(config, DictConfig):
@@ -55,7 +65,13 @@ def load_config(
             "must be a mapping."
         )
     try:
-        resolve_imports(config, file_path, visited_paths={file_path}, cache={})
+        resolve_imports(
+            config,
+            file_path,
+            visited_paths={file_path},
+            cache={},
+            import_root=import_root,
+        )
         merge_bases(config)
         apply_defaults(config)
     except OmegaConfBaseException as error:

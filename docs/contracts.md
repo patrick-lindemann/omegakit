@@ -155,6 +155,11 @@ such as `${.id}` resolves at the node's final position.
   `<node>` is ignored.
 - A relative path is resolved against the directory of the importing file. An
   absolute path is used as is.
+- By default an import may read any file the process can read.
+  `load_config(..., import_root=DIR)` rejects an import whose path, after
+  interpolations and symbolic links are resolved, is not inside `DIR`. An
+  `import_root` that does not exist raises `FileNotFoundError`, and one that is not
+  a directory raises `NotADirectoryError`. The root file itself is not checked.
 - `<node>` is a dot-separated path from the root of the imported file. A segment
   selects a key in a mapping or an integer index in a list (`#a.b.0`). A negative
   index counts from the end (`#a.b.-1`). An empty `<node>` selects the whole file.
@@ -195,6 +200,7 @@ or the file system, is its `__cause__`. Only a missing root file passed to
 | `~import` of a missing node | `ConfigValidationError` | `selects node`, the node and the files |
 | `~import` selector through a scalar, or a bad or out-of-range list index | `ConfigValidationError` | as missing node |
 | `~import` with more than one `#` | `ConfigValidationError` | `more than one` `#` |
+| `~import` of a file outside `import_root` | `ConfigValidationError` | `outside the import root`, the statement and both paths |
 | `~import` path with an interpolation that fails | `ConfigValidationError`, caused by OmegaConf's error | `Cannot resolve`, the statement and the importing file |
 | `$base` not a mapping or list of mappings | `ConfigValidationError` | `$base` |
 | `$base` or `$defaults` interpolation to a key that never appears | `ConfigValidationError`, caused by OmegaConf's error | `Cannot resolve` and the full key |
