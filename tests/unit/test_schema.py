@@ -4,7 +4,7 @@ import pytest
 from omegaconf import OmegaConf
 
 from omegakit import ConfigValidationError, check_schema, instantiate, prepare
-from omegakit.utils import register_resolver
+from omegakit._utils import register_resolver
 from tests import schemas
 
 # Contracts: §10 Typed configs (field kinds, supported subset, validation).

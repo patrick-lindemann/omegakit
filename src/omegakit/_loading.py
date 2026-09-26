@@ -5,13 +5,13 @@ from typing import Any, cast
 
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
-from .assembly import (
+from ._assembly import (
     apply_defaults,
     merge_bases,
     resolve_imports,
     strip_keys,
 )
-from .keys import CLASS_KEY, META_KEY, PARTIAL_KEY, REF_KEY
+from ._keys import CLASS_KEY, META_KEY, PARTIAL_KEY, REF_KEY
 
 type PathLike = Path | str
 

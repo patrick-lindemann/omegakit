@@ -2,9 +2,9 @@ import argparse
 
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
-from omegakit.cli.arguments import split_arguments
-from omegakit.loading import load_config
-from omegakit.validation import resolve_config
+from omegakit._cli.arguments import split_arguments
+from omegakit._loading import load_config
+from omegakit._validation import resolve_config
 
 
 def register(commands: argparse._SubParsersAction) -> None:

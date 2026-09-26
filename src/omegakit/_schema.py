@@ -16,8 +16,8 @@ from omegaconf import MISSING, OmegaConf
 from omegaconf.errors import OmegaConfBaseException
 from typing_extensions import NoDefault
 
-from .configurable import Configurable
-from .utils import format_path
+from ._configurable import Configurable
+from ._utils import format_path
 
 type FieldKind = Literal["native", "object", "any"]
 
@@ -41,6 +41,8 @@ _PLACEHOLDER = {"type": "string", "pattern": r"^(\?\?\?$|~import\s|.*\$\{)"}
 
 class ConfigValidationError(ValueError):
     """A config does not match the schema of the class it builds."""
+
+    __module__ = "omegakit"
 
 
 @functools.cache

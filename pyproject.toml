@@ -18,7 +18,7 @@ requires-python = ">=3.12"
 dependencies = ["omegaconf>=2.3,<2.5", "typing_extensions>=4.12"]
 
 [project.scripts]
-omegakit = "omegakit.cli:main"
+omegakit = "omegakit._cli:main"
 
 [project.urls]
 Homepage = "https://github.com/patrick-lindemann/omegakit"

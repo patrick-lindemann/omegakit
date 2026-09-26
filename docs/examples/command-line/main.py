@@ -3,7 +3,7 @@ import io
 import os
 from pathlib import Path
 
-from omegakit.cli import main
+from omegakit._cli import main
 
 # The same as running `omegakit ...` in this directory.
 os.chdir(Path(__file__).parent)

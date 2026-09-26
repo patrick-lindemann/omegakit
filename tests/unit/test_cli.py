@@ -5,7 +5,7 @@ import sys
 import pytest
 
 from omegakit import generate_json_schema
-from omegakit.cli import main
+from omegakit._cli import main
 from tests import schemas
 
 # Contracts: §12 Editor schemas, §13 Command line.

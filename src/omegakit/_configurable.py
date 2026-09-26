@@ -10,6 +10,8 @@ TConfig = TypeVar("TConfig", default=Mapping[str, Any])
 class Configurable(Generic[TConfig]):
     """A class with a typed config schema and a `from_config` hook."""
 
+    __module__ = "omegakit"
+
     @classmethod
     def from_config(cls, config: TConfig, **kwargs: Any) -> Self:
         """Create an instance from a validated config.

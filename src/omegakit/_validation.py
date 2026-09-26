@@ -12,8 +12,8 @@ from omegaconf.errors import (
     OmegaConfBaseException,
 )
 
-from .keys import CLASS_KEY, META_KEY, PARTIAL_KEY, REF_KEY
-from .schema import (
+from ._keys import CLASS_KEY, META_KEY, PARTIAL_KEY, REF_KEY
+from ._schema import (
     ConfigValidationError,
     check_schema,
     classify_fields,
@@ -21,7 +21,7 @@ from .schema import (
     find_section,
     validate_native,
 )
-from .utils import format_path, import_object
+from ._utils import format_path, import_object
 
 
 def validate(

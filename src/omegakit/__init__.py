@@ -1,6 +1,6 @@
-from .configurable import Configurable
-from .instantiate import instantiate, prepare
-from .keys import (
+from ._configurable import Configurable
+from ._instantiate import instantiate, prepare
+from ._keys import (
     BASE_KEY,
     CLASS_KEY,
     DEFAULTS_KEY,
@@ -9,10 +9,10 @@ from .keys import (
     PARTIAL_KEY,
     REF_KEY,
 )
-from .loading import load_config
-from .schema import ConfigValidationError, check_schema, generate_json_schema
-from .utils import make_node, walk
-from .validation import is_valid, validate
+from ._loading import load_config
+from ._schema import ConfigValidationError, check_schema, generate_json_schema
+from ._utils import make_node, walk
+from ._validation import is_valid, validate
 
 __all__ = [
     "BASE_KEY",

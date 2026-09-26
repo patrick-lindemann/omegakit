@@ -8,17 +8,17 @@ from typing import Any, TypeAliasType, cast, get_args, get_origin, overload
 
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
-from .keys import CLASS_KEY, META_KEY, PARTIAL_KEY, REF_KEY
-from .loading import parse_overrides
-from .schema import (
+from ._keys import CLASS_KEY, META_KEY, PARTIAL_KEY, REF_KEY
+from ._loading import parse_overrides
+from ._schema import (
     check_schema,
     classify_fields,
     find_schema,
     find_section,
     validate_native,
 )
-from .utils import format_path, import_object
-from .validation import check_resolved
+from ._utils import format_path, import_object
+from ._validation import check_resolved
 
 
 @overload

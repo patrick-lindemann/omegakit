@@ -5,7 +5,7 @@ from typing import Any
 
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
-from .keys import CLASS_KEY
+from ._keys import CLASS_KEY
 
 
 def walk(config: DictConfig | ListConfig) -> Iterator[DictConfig]:

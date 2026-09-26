@@ -17,7 +17,7 @@ from omegakit import (
     prepare,
     validate,
 )
-from omegakit.utils import register_resolver
+from omegakit._utils import register_resolver
 from tests import schemas
 from tests.helpers import POINT, RECORDER, Point
 

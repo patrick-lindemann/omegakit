@@ -7,8 +7,8 @@ from typing import Any, cast
 from omegaconf import DictConfig, ListConfig, Node, OmegaConf
 from omegaconf.errors import InterpolationKeyError, OmegaConfBaseException
 
-from .keys import BASE_KEY, DEFAULTS_KEY, IMPORT_KEY
-from .utils import walk
+from ._keys import BASE_KEY, DEFAULTS_KEY, IMPORT_KEY
+from ._utils import walk
 
 
 def resolve_imports(
