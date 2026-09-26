@@ -186,7 +186,7 @@ such as `${.id}` resolves at the node's final position.
 | `$base` or `$defaults` interpolations that refer to each other | `ValueError` | `references form a cycle` and the nodes |
 | `$defaults` not a mapping | `ValueError` | `$defaults` |
 | Overrides of another type than `DictConfig`, `dict` or `list` | `ValueError` | `Unsupported overrides type` |
-| `instantiate`/`prepare` on a node without `$class` | `ValueError` | `Cannot instantiate config with no` `$class` |
+| `instantiate`/`prepare` on a node without `$class` | `ConfigValidationError` | `<root>` and `has no` `$class` |
 | `$class`/`$ref` module not found | `ConfigValidationError`, caused by `ModuleNotFoundError` | `Cannot import`, the node path and the module |
 | `$class`/`$ref` attribute not found | `ConfigValidationError`, caused by `ImportError` | `Cannot import`, the node path, `Could not import` |
 | `$ref` with sibling keys other than `$meta` | `ConfigValidationError` | `cannot contain any other keys` |

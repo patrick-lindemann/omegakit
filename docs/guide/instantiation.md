@@ -62,7 +62,7 @@ for pyright and editors. It is not checked at runtime. Without it the result is
 
 | Problem | Exception |
 |---|---|
-| Top-level node without `$class` | `ValueError` |
+| Top-level node without `$class` | `ConfigValidationError` |
 | Module or attribute not found | `ConfigValidationError` (`Cannot import`), caused by the `ImportError` |
 | `$ref` with other keys | `ConfigValidationError` |
 | An unknown `$` key, or `$class` with `$ref` | `ConfigValidationError` (`reserved`) |

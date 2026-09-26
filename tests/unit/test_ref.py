@@ -31,7 +31,7 @@ def test_ref_in_list():
 
 
 def test_ref_at_top_level_is_not_instantiable():
-    with pytest.raises(ValueError, match="Cannot instantiate config with no"):
+    with pytest.raises(ConfigValidationError, match=r"`<root>` has no `\$class`"):
         instantiate({"$ref": "builtins.int"})
 
 

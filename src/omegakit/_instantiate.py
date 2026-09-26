@@ -11,6 +11,7 @@ from omegaconf import DictConfig, ListConfig, OmegaConf
 from ._keys import CLASS_KEY, META_KEY, PARTIAL_KEY, REF_KEY
 from ._loading import parse_overrides
 from ._schema import (
+    ConfigValidationError,
     check_schema,
     classify_fields,
     find_schema,
@@ -108,9 +109,9 @@ def _instantiate(
     wrap: Callable | None = None,
 ) -> Any:
     if CLASS_KEY not in config:
-        raise ValueError(
-            f"Cannot instantiate config with no `{CLASS_KEY}` key:"
-            f"\n{OmegaConf.to_yaml(config)}"
+        raise ConfigValidationError(
+            f"`{format_path(())}` has no `{CLASS_KEY}`, so there is nothing to "
+            "instantiate."
         )
     if not isinstance(config, DictConfig):
         config = OmegaConf.create(config)

@@ -44,8 +44,11 @@ def test_instantiate_builds_nested_class():
 
 
 def test_instantiate_missing_class_raises():
-    with pytest.raises(ValueError, match="Cannot instantiate config with no"):
-        instantiate({"x": 1})
+    with pytest.raises(
+        ConfigValidationError, match=r"`<root>` has no `\$class`"
+    ) as info:
+        instantiate({"x": 1, "secret": "hunter2"})
+    assert "hunter2" not in str(info.value)
 
 
 def test_instantiate_unknown_class_raises_before_building():
