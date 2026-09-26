@@ -175,7 +175,8 @@ such as `${.id}` resolves at the node's final position.
   containing `#` cannot be imported.
 - A `<node>` segment that walks through a scalar, a non-integer segment on a list,
   or an out-of-range index raises the same `ConfigValidationError` as a missing
-  node.
+  node. A path that goes through an interpolation in the imported file raises
+  `ConfigValidationError` too; interpolations are not resolved while importing.
 
 ## 8. Error model
 
@@ -462,8 +463,13 @@ imported).
   so does a `SystemExit` raised by a module that is imported; the other files are
   still checked. `KeyboardInterrupt` stops the command.
 - `omegakit show CONFIG [KEY=VALUE...] [--node KEY] [--resolve] [--keep-meta]`
-  prints the assembled config as YAML, or the node at `KEY`. `--resolve` resolves
-  interpolations and prints missing values as `???`. A scalar node prints as its
+  prints the assembled config as YAML, or the node at `KEY`. `KEY` is a dotted path
+  with the same syntax and walk as `~import file#node` (§7): `items.0.name`, and
+  `items.-1` from the end. The node is printed unresolved: an interpolation prints
+  as written, `???` as `???` and `null` as `null`. A path that goes through an
+  interpolation, or a node that does not exist, exits with 1. `--resolve` follows
+  interpolations on the path, and resolves only the selected node (the whole config
+  without `--node`); missing values print as `???`. A scalar node prints as its
   value.
 - `omegakit json-schema IMPORT_PATH [-o FILE] [--check]` prints or writes the JSON
   Schema (§12). With `--check`, which needs `-o`, it writes nothing and exits with 1

@@ -129,11 +129,21 @@ def check_resolved(
 
 def _resolve_allowing_missing(container: DictConfig | ListConfig) -> Any:
     if isinstance(container, ListConfig):
-        return [_resolve_item(container, index) for index in range(len(container))]
-    return {key: _resolve_item(container, key) for key in container}
+        return [resolve_item(container, index) for index in range(len(container))]
+    return {key: resolve_item(container, key) for key in container}
 
 
-def _resolve_item(container: Any, key: Any) -> Any:
+def resolve_item(container: Any, key: Any) -> Any:
+    """Resolve one item of a container, giving `???` for a missing value.
+
+    Args:
+        container: The `DictConfig` or `ListConfig`.
+        key: The item's key or index.
+
+    Returns:
+        The resolved item, with containers as `dict`s and `list`s, or `???` for a
+        missing value and for an interpolation to a missing or unknown key.
+    """
     try:
         value = container[key]
     except (

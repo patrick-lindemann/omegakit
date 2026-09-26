@@ -288,6 +288,13 @@ def test_import_invalid_selector_raises_missing_node(write_yaml, selector):
         load_config(write_yaml("main.yaml", f'n: "~import lib.yaml#{selector}"\n'))
 
 
+def test_import_selector_through_an_interpolation_raises(write_yaml):
+    write_yaml("lib.yaml", "a: ${b}\nb:\n  c: 1\n")
+    path = write_yaml("main.yaml", 'n: "~import lib.yaml#a.c"\n')
+    with pytest.raises(ConfigValidationError, match="`a`, which is an interpolation"):
+        load_config(path)
+
+
 def test_import_selects_negative_list_index(write_yaml):
     write_yaml("lib.yaml", "a: [0, 1]\n")
     cfg = load_config(write_yaml("main.yaml", 'n: "~import lib.yaml#a.-1"\n'))

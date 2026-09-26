@@ -140,9 +140,58 @@ def test_cli_show_resolve_prints_missing_values(write_yaml, capsys):
     assert capsys.readouterr().out == "80\n"
 
 
+SHOW_NODES = """\
+db:
+  url: postgres://u:${oc.env:OMEGAKIT_TEST_PASSWORD}@h/db
+  empty: null
+  host: ???
+items:
+  - {name: a}
+  - {name: b}
+alias: ${items}
+broken: ${nope}
+"""
+
+
+@pytest.mark.parametrize(
+    ("node", "output"),
+    [
+        ("db.url", "postgres://u:${oc.env:OMEGAKIT_TEST_PASSWORD}@h/db\n"),
+        ("db.empty", "null\n"),
+        ("db.host", "???\n"),
+        ("items.1", "name: b\n"),
+        ("items.-1.name", "b\n"),
+        ("alias", "${items}\n"),
+    ],
+)
+def test_cli_show_node_is_not_resolved(write_yaml, capsys, monkeypatch, node, output):
+    monkeypatch.setenv("OMEGAKIT_TEST_PASSWORD", "hunter2")
+    main(["show", str(write_yaml("app.yaml", SHOW_NODES)), "--node", node])
+    assert capsys.readouterr().out == output
+
+
+def test_cli_show_node_through_an_interpolation_needs_resolve(write_yaml, capsys):
+    path = write_yaml("app.yaml", SHOW_NODES)
+    assert _exit_code(["show", str(path), "--node", "alias.0.name"]) == 1
+    message = capsys.readouterr().out
+    assert "`alias`" in message
+    assert "--resolve" in message
+    main(["show", str(path), "--node", "alias.0.name", "--resolve"])
+    assert capsys.readouterr().out == "a\n"
+
+
+def test_cli_show_resolves_only_the_selected_node(write_yaml, capsys):
+    path = write_yaml("app.yaml", SHOW_NODES)
+    main(["show", str(path), "--node", "db.host", "--resolve"])
+    assert capsys.readouterr().out == "???\n"
+    main(["show", str(path), "--node", "items", "--resolve"])
+    assert capsys.readouterr().out == "- name: a\n- name: b\n"
+
+
 def test_cli_show_errors(write_yaml, capsys):
     path = write_yaml("app.yaml", "a: 1\n")
     assert _exit_code(["show", str(path), "--node", "b"]) == 1
+    assert _exit_code(["show", str(path), "--node", "a.b"]) == 1
     assert _exit_code(["show", str(path.with_name("nope.yaml"))]) == 1
     assert _exit_code(["show", str(path), str(path)]) == 2
     assert "no node `b`" in capsys.readouterr().out
