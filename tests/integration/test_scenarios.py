@@ -6,7 +6,6 @@ import pytest
 import yaml
 from jsonschema import Draft7Validator
 from omegaconf import OmegaConf
-from omegaconf.errors import MissingMandatoryValue
 
 from omegakit import (
     ConfigValidationError,
@@ -54,7 +53,7 @@ def test_scenario_missing_filled_by_dotlist_override(write_yaml):
     """`???` + overrides + `$class`: a dotlist override fills a slot before building."""
     path = write_yaml("main.yaml", f"point:\n  $class: {POINT}\n  x: ???\n  y: 2\n")
     assert instantiate(load_config(path, overrides=["point.x=1"]).point).x == 1
-    with pytest.raises(MissingMandatoryValue, match=r"point\.x"):
+    with pytest.raises(ConfigValidationError, match=r"`point\.x`"):
         instantiate(load_config(path).point)
 
 
@@ -193,7 +192,7 @@ def test_scenario_forward_base_to_imported_node_then_instantiate(write_yaml):
         )
     )
     assert instantiate(cfg.small, schemas.Model).depth == 2
-    with pytest.raises(MissingMandatoryValue, match=r"shared\.depth"):
+    with pytest.raises(ConfigValidationError, match=r"`shared\.depth`"):
         instantiate(cfg.shared)
 
 

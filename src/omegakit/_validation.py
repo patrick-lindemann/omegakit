@@ -56,16 +56,10 @@ def validate(
     Raises:
         ConfigValidationError: If the config cannot be resolved or does not match a
             schema.
-    """
+    """  # noqa: DOC502
     if not isinstance(config, DictConfig):
         config = OmegaConf.create(config)
-    try:
-        plain_config = resolve_config(config, allow_missing=allow_missing)
-    except OmegaConfBaseException as error:
-        location = f" `{error.full_key}`" if error.full_key else " the config"
-        raise ConfigValidationError(
-            f"Cannot resolve{location}: {str(error).splitlines()[0]}"
-        ) from error
+    plain_config = resolve_config(config, allow_missing=allow_missing)
     check_resolved(plain_config, schema=schema, allow_missing=allow_missing)
 
 
@@ -81,10 +75,20 @@ def resolve_config(
 
     Returns:
         The resolved config as `dict`s and `list`s.
+
+    Raises:
+        ConfigValidationError: If a value is missing or an interpolation fails,
+            including an exception from a resolver. OmegaConf's error is the cause.
     """
-    if not allow_missing:
-        return OmegaConf.to_container(config, resolve=True, throw_on_missing=True)
-    return _resolve_allowing_missing(config)
+    try:
+        if not allow_missing:
+            return OmegaConf.to_container(config, resolve=True, throw_on_missing=True)
+        return _resolve_allowing_missing(config)
+    except OmegaConfBaseException as error:
+        location = f" `{error.full_key}`" if error.full_key else " the config"
+        raise ConfigValidationError(
+            f"Cannot resolve{location}: {str(error).splitlines()[0]}"
+        ) from error
 
 
 def check_resolved(

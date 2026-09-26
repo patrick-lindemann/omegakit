@@ -1,7 +1,6 @@
 import pytest
-from omegaconf.errors import MissingMandatoryValue
 
-from omegakit import instantiate, prepare
+from omegakit import ConfigValidationError, instantiate, prepare
 from tests import schemas
 
 # Contracts: §10 Typed configs (from_config).
@@ -52,7 +51,7 @@ def test_from_config_call_time_arguments_reach_default_from_config():
 
 
 def test_from_config_missing_value_never_flows_through_a_partial():
-    with pytest.raises(MissingMandatoryValue):
+    with pytest.raises(ConfigValidationError, match="`depth`"):
         prepare({"$class": MODEL, "depth": "???"})
 
 

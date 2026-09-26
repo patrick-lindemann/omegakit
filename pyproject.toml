@@ -71,6 +71,7 @@ line-length = 88
 [tool.ruff.lint]
 select = ["E", "W", "F", "I", "B", "UP", "A", "D", "SIM", "RUF", "PT", "TID"]
 ignore = ["D100", "D104", "D105"]
+external = ["DOC"] # pydoclint's codes, for its `# noqa` comments
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

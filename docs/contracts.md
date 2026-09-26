@@ -82,8 +82,10 @@ such as `${.id}` resolves at the node's final position.
 
 - A `???` value survives `load_config`.
 - A consumer of the `$base` that carries it, or an override, can fill it.
-- If it is still missing, accessing it raises `MissingMandatoryValue`, and so does
-  instantiating any node that contains it. The error names the full key.
+- If it is still missing, accessing it raises OmegaConf's `MissingMandatoryValue`.
+  Validating or instantiating any node that contains it raises
+  `ConfigValidationError`, caused by `MissingMandatoryValue`. Both name the full
+  key.
 
 ## 5. Instantiation
 
@@ -91,9 +93,10 @@ such as `${.id}` resolves at the node's final position.
   `module.attribute`; the attribute is imported and called.
 - `instantiate` and `prepare` resolve the node (after `overrides`), then validate it
   as `validate` does (§11), then build it. A config error therefore raises
-  `ConfigValidationError` before any constructor or `from_config` is called.
-  Resolution errors (`MissingMandatoryValue`, interpolation errors) keep their
-  types, because resolution comes first.
+  `ConfigValidationError` before any constructor or `from_config` is called. So
+  does a resolution error: a `???`, an interpolation that fails, or an exception
+  from a resolver, which OmegaConf wraps in `InterpolationResolutionError`.
+  OmegaConf's error is the `__cause__`, and the message names the full key.
 - If the imported object has a `from_config` attribute, `from_config(arguments)` is
   called instead of the object. This is duck-typed: `Configurable` is one
   implementation, not a requirement. `arguments` is a plain `dict` of the
@@ -190,8 +193,9 @@ such as `${.id}` resolves at the node's final position.
 | Raw dict value that OmegaConf does not support | `UnsupportedValueType` | the key |
 | Unknown `$` key, or `$class` with `$ref`, at validation or instantiation | `ConfigValidationError` | the key and `reserved` |
 | `$partial` not a boolean | `ConfigValidationError` | `$partial` |
-| `???` accessed or instantiated | `MissingMandatoryValue` | the full key |
-| Unresolvable `${…}` accessed or instantiated | `InterpolationKeyError` (or another OmegaConf error) | the key |
+| `???` accessed | `MissingMandatoryValue` | the full key |
+| Unresolvable `${…}` accessed | `InterpolationKeyError` (or another OmegaConf error) | the key |
+| `???`, unresolvable `${…}` or a failing resolver, validated or instantiated | `ConfigValidationError`, caused by OmegaConf's error | `Cannot resolve` and the full key |
 | Exception from a constructor or `from_config` | unchanged | original message, plus the note from §5 |
 | Schema outside the supported subset (§10) | `ConfigValidationError` | the field and the fix |
 | Schema that does not match `__init__` (§10) | `ConfigValidationError` | the field or parameter |

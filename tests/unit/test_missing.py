@@ -1,8 +1,14 @@
 import pytest
 from omegaconf import OmegaConf
-from omegaconf.errors import MissingMandatoryValue
+from omegaconf.errors import (
+    InterpolationKeyError,
+    InterpolationResolutionError,
+    MissingMandatoryValue,
+    UnsupportedInterpolationType,
+)
 
-from omegakit import instantiate, load_config
+from omegakit import ConfigValidationError, instantiate, load_config, prepare
+from omegakit._utils import register_resolver
 from tests.helpers import CONTAINER, POINT
 
 # Contracts: §4 `???` lifecycle.
@@ -57,8 +63,30 @@ def test_instantiate_raises_on_missing_value():
     # `???` marks a consumer fill-in point; it must fail loudly rather than pass the
     # literal string "???" to the constructor.
     config = OmegaConf.create({"$class": POINT, "x": "???", "y": 2})
-    with pytest.raises(MissingMandatoryValue):
+    with pytest.raises(ConfigValidationError, match="`x`") as info:
         instantiate(config)
+    assert isinstance(info.value.__cause__, MissingMandatoryValue)
+
+
+@pytest.mark.parametrize(
+    ("value", "cause"),
+    [
+        ("${nope}", InterpolationKeyError),
+        ("${nope:1}", UnsupportedInterpolationType),
+        ("${fail:}", InterpolationResolutionError),
+    ],
+)
+def test_instantiate_raises_config_errors_for_failed_interpolations(value, cause):
+    register_resolver("fail", _fail)
+    with pytest.raises(ConfigValidationError, match="`x`") as info:
+        instantiate({"$class": POINT, "x": value, "y": 2})
+    assert isinstance(info.value.__cause__, cause)
+    with pytest.raises(ConfigValidationError, match="`x`"):
+        prepare({"$class": POINT, "x": value, "y": 2})
+
+
+def _fail() -> None:
+    raise RuntimeError("resolver failed")
 
 
 def test_missing_filled_by_dotlist_override(write_yaml):
@@ -70,10 +98,10 @@ def test_missing_nested_at_instantiate_names_full_key():
     config = OmegaConf.create(
         {"$class": CONTAINER, "name": "c", "point": {"$class": POINT, "x": "???"}}
     )
-    with pytest.raises(MissingMandatoryValue, match=r"point\.x"):
+    with pytest.raises(ConfigValidationError, match=r"`point\.x`"):
         instantiate(config)
 
 
 def test_missing_in_raw_dict_raises_at_instantiate():
-    with pytest.raises(MissingMandatoryValue):
+    with pytest.raises(ConfigValidationError, match="`x`"):
         instantiate({"$class": POINT, "x": "???", "y": 2})

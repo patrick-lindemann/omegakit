@@ -18,7 +18,7 @@ from ._schema import (
     validate_native,
 )
 from ._utils import format_path, import_object
-from ._validation import check_resolved
+from ._validation import check_resolved, resolve_config
 
 
 @overload
@@ -118,10 +118,7 @@ def _instantiate(
         config = config.copy()
         overrides = parse_overrides(overrides)
         config.merge_with(overrides)
-    plain_config = cast(
-        dict[str, Any],
-        OmegaConf.to_container(config, resolve=True, throw_on_missing=True),
-    )
+    plain_config = cast(dict[str, Any], resolve_config(config))
     check_resolved(plain_config)
     return _build(plain_config, wrap)
 

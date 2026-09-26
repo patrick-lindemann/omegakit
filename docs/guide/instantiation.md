@@ -68,8 +68,8 @@ for pyright and editors. It is not checked at runtime. Without it the result is
 | An unknown `$` key, or `$class` with `$ref` | `ConfigValidationError` (`reserved`) |
 | `$partial` that is not a boolean | `ConfigValidationError` |
 | A value that does not match a schema | `ConfigValidationError` |
-| A `???` in the node | `MissingMandatoryValue` |
-| An interpolation that cannot be resolved | OmegaConf's error, such as `InterpolationKeyError` |
+| A `???` in the node | `ConfigValidationError`, caused by `MissingMandatoryValue` |
+| An interpolation that cannot be resolved | `ConfigValidationError`, caused by OmegaConf's error |
 
 `ConfigValidationError` is a `ValueError`.
 
