@@ -29,5 +29,5 @@ item's own values win. It suits manifests, where many entries share most setting
 
 ## Errors
 
-A `$defaults` that is not a mapping raises `ValueError`, and so do `$defaults`
-interpolations that refer to each other.
+A `$defaults` that is not a mapping raises `ConfigValidationError`, and so do
+`$defaults` interpolations that refer to each other.

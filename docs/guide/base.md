@@ -46,7 +46,6 @@ From strongest to weakest:
 
 ## Errors
 
-A `$base` that is not a mapping or a list of mappings raises `ValueError`, and so do
-`$base` interpolations that refer to each other (`references form a cycle`). An
-interpolation to a key that never appears raises OmegaConf's
-`InterpolationKeyError`.
+A `$base` that is not a mapping or a list of mappings raises `ConfigValidationError`,
+and so do `$base` interpolations that refer to each other (`references form a
+cycle`) and an interpolation to a key that never appears.

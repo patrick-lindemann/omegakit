@@ -4,14 +4,17 @@ from pathlib import Path
 from typing import Any, cast
 
 from omegaconf import DictConfig, ListConfig, OmegaConf
+from omegaconf.errors import OmegaConfBaseException
 
 from ._assembly import (
     apply_defaults,
+    load_file,
     merge_bases,
     resolve_imports,
     strip_keys,
 )
 from ._keys import CLASS_KEY, META_KEY, PARTIAL_KEY, REF_KEY
+from ._schema import ConfigValidationError
 
 type PathLike = Path | str
 
@@ -37,12 +40,21 @@ def load_config(
 
     Returns:
         The parsed configuration.
+
+    Raises:
+        ConfigValidationError: If a file, an import or a `$base` or `$defaults`
+            value is invalid. A missing root file raises `FileNotFoundError`.
     """
     file_path = Path(file_path).resolve()
-    config = cast(DictConfig, OmegaConf.load(file_path))
-    resolve_imports(config, file_path, visited_paths={file_path}, cache={})
-    merge_bases(config)
-    apply_defaults(config)
+    config = cast(DictConfig, load_file(file_path))
+    try:
+        resolve_imports(config, file_path, visited_paths={file_path}, cache={})
+        merge_bases(config)
+        apply_defaults(config)
+    except OmegaConfBaseException as error:
+        raise ConfigValidationError(
+            f"Cannot load `{file_path}`: {str(error).splitlines()[0]}"
+        ) from error
     if overrides is not None:
         overrides = parse_overrides(overrides)
         config.merge_with(overrides)

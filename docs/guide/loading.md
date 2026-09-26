@@ -39,8 +39,8 @@ that contains them, not to the working directory.
 
 | Problem | Exception |
 |---|---|
-| The file, or an imported file, does not exist | `FileNotFoundError` |
-| A malformed import, `$base` or `$defaults` | `ValueError`, naming the node |
+| The file does not exist | `FileNotFoundError` |
+| Invalid YAML, or a missing, invalid or malformed import, `$base` or `$defaults` | `ConfigValidationError`, naming the file or node |
 | Overrides of another type | `ValueError` (`Unsupported overrides type`) |
 
 Unknown `$` keys are kept by `load_config`; `instantiate` rejects them. The complete

@@ -67,7 +67,7 @@ def test_cli_check_reports_every_invalid_file(write_yaml, capsys):
     lines = capsys.readouterr().out.splitlines()
     assert lines[0].startswith(f"{bad}: ConfigValidationError: ")
     assert "`model.depth`" in lines[0]
-    assert lines[1].startswith(f"{broken}: FileNotFoundError")
+    assert lines[1].startswith(f"{broken}: ConfigValidationError")
     assert len(lines) == 2
 
 

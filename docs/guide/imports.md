@@ -46,9 +46,9 @@ node of it.
 
 | Problem | Exception |
 |---|---|
-| Circular import | `ValueError` (`Circular import detected`) |
-| Missing file | `FileNotFoundError` |
-| `#<node>` that does not exist, walks through a scalar or is out of range | `ValueError` (`selects node`) |
-| More than one `#` | `ValueError` |
+| Circular import | `ConfigValidationError` (`Circular import detected`) |
+| Missing or invalid file | `ConfigValidationError` (`Cannot import`) |
+| `#<node>` that does not exist, walks through a scalar or is out of range | `ConfigValidationError` (`selects node`) |
+| More than one `#` | `ConfigValidationError` |
 
 The full rules are in the [contracts](../contracts.md), section 7.

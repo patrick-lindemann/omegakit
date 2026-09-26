@@ -1,6 +1,6 @@
 import pytest
 
-from omegakit import load_config
+from omegakit import ConfigValidationError, load_config
 
 # Contracts: §2 Precedence, §3 Resolution timing.
 
@@ -48,7 +48,7 @@ def test_load_defaults_skips_special_keys(write_yaml):
 
 
 def test_load_defaults_non_dict_raises(write_yaml):
-    with pytest.raises(ValueError, match="is not a dictionary"):
+    with pytest.raises(ConfigValidationError, match="is not a dictionary"):
         load_config(write_yaml("c.yaml", "node:\n  $defaults: 5\n  a: {}\n"))
 
 
@@ -172,5 +172,7 @@ def test_defaults_cycle_raises(write_yaml):
     path = write_yaml(
         "c.yaml", "m:\n  $defaults: ${c}\n  k: {}\nc:\n  $defaults: ${m}\n  d: {}\n"
     )
-    with pytest.raises(ValueError, match=r"`\$defaults` references form a cycle"):
+    with pytest.raises(
+        ConfigValidationError, match=r"`\$defaults` references form a cycle"
+    ):
         load_config(path)

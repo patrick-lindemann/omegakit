@@ -65,9 +65,9 @@ in dependency order:
   (or unapplied `$defaults`), or to a key that does not exist yet, such as a key
   that a later `$base` creates. It is merged as soon as the referenced node is.
 - An ancestor of a waiting node waits too.
-- References that can never be merged raise: a key that never appears raises the
-  interpolation error, and nodes that refer to each other raise `ValueError`
-  (`references form a cycle`), naming the nodes.
+- References that can never be merged raise `ConfigValidationError`: a key that
+  never appears (caused by the interpolation error), and nodes that refer to each
+  other (`references form a cycle`), naming the nodes.
 - All bases are merged before any defaults are applied, so a `$base` sees a node
   without the keys that its parent's `$defaults` add later.
 
@@ -162,29 +162,38 @@ such as `${.id}` resolves at the node's final position.
 - An import can replace a mapping value or a list item. The imported file may be a
   mapping or a list.
 - Cycles are detected per import chain: a file that imports itself, directly or
-  through other files, raises `ValueError`. Importing the same file from two
-  branches (a diamond) is not a cycle.
+  through other files, raises `ConfigValidationError`. Importing the same file from
+  two branches (a diamond) is not a cycle.
 - Every import produces an independent copy. Changing one imported node never
   changes another import of the same file or node.
 - Each imported file is read once per `load_config` call.
-- A statement with more than one `#` raises `ValueError`. File names containing
-  `#` cannot be imported.
+- A statement with more than one `#` raises `ConfigValidationError`. File names
+  containing `#` cannot be imported.
 - A `<node>` segment that walks through a scalar, a non-integer segment on a list,
-  or an out-of-range index raises the same `ValueError` as a missing node.
+  or an out-of-range index raises the same `ConfigValidationError` as a missing
+  node.
 
 ## 8. Error model
 
+`ConfigValidationError` covers every problem in a config's content, including those
+that `load_config` finds while loading; the error it wraps, from PyYAML, OmegaConf
+or the file system, is its `__cause__`. Only a missing root file passed to
+`load_config` raises `FileNotFoundError`.
+
 | Misuse | Exception | Message contains |
 |---|---|---|
-| Circular `~import` | `ValueError` | `Circular import detected` and the path |
-| `~import` of a missing file | `FileNotFoundError` | the resolved path |
-| `~import` of a missing node | `ValueError` | `selects node`, the node and the file |
-| `~import` selector through a scalar, or a bad or out-of-range list index | `ValueError` | as missing node |
-| `~import` with more than one `#` | `ValueError` | `more than one` `#` |
-| `~import` path with an unknown interpolation key | `InterpolationKeyError` | the key |
-| `$base` not a mapping or list of mappings | `ValueError` | `$base` |
-| `$base` or `$defaults` interpolations that refer to each other | `ValueError` | `references form a cycle` and the nodes |
-| `$defaults` not a mapping | `ValueError` | `$defaults` |
+| Root file passed to `load_config` does not exist | `FileNotFoundError` | the path |
+| A file that is not valid YAML, has duplicate keys or unknown tags, or is not UTF-8 | `ConfigValidationError`, caused by PyYAML's error or `UnicodeDecodeError` | `Cannot load`, the file, the line and column |
+| Circular `~import` | `ConfigValidationError` | `Circular import detected`, the statement and the files |
+| `~import` of a missing or unreadable file, or of an invalid file | `ConfigValidationError`, caused by the `OSError` or the load error | `Cannot import`, the statement and the importing file |
+| `~import` of a missing node | `ConfigValidationError` | `selects node`, the node and the files |
+| `~import` selector through a scalar, or a bad or out-of-range list index | `ConfigValidationError` | as missing node |
+| `~import` with more than one `#` | `ConfigValidationError` | `more than one` `#` |
+| `~import` path with an interpolation that fails | `ConfigValidationError`, caused by OmegaConf's error | `Cannot resolve`, the statement and the importing file |
+| `$base` not a mapping or list of mappings | `ConfigValidationError` | `$base` |
+| `$base` or `$defaults` interpolation to a key that never appears | `ConfigValidationError`, caused by OmegaConf's error | `Cannot resolve` and the full key |
+| `$base` or `$defaults` interpolations that refer to each other | `ConfigValidationError` | `references form a cycle` and the nodes |
+| `$defaults` not a mapping | `ConfigValidationError` | `$defaults` |
 | Overrides of another type than `DictConfig`, `dict` or `list` | `ValueError` | `Unsupported overrides type` |
 | `instantiate`/`prepare` on a node without `$class` | `ConfigValidationError` | `<root>` and `has no` `$class` |
 | `$class`/`$ref` module not found | `ConfigValidationError`, caused by `ModuleNotFoundError` | `Cannot import`, the node path and the module |

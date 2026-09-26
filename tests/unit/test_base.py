@@ -1,7 +1,7 @@
 import pytest
 from omegaconf.errors import InterpolationKeyError
 
-from omegakit import load_config
+from omegakit import ConfigValidationError, load_config
 
 # Contracts: §1 Pipeline order, §2 Precedence, §3 Resolution timing.
 
@@ -50,7 +50,7 @@ def test_load_base_populated_by_import(write_yaml):
 
 
 def test_load_base_non_dict_raises(write_yaml):
-    with pytest.raises(ValueError, match="is not a dictionary or a list"):
+    with pytest.raises(ConfigValidationError, match="is not a dictionary or a list"):
         load_config(write_yaml("c.yaml", "$base: 5\na: 1\n"))
 
 
@@ -81,7 +81,7 @@ def test_load_merges_list_base_from_imports(write_yaml):
 
 
 def test_load_list_base_non_dict_element_raises(write_yaml):
-    with pytest.raises(ValueError, match="must contain only dictionaries"):
+    with pytest.raises(ConfigValidationError, match="must contain only dictionaries"):
         load_config(write_yaml("c.yaml", "$base:\n  - { a: 1 }\n  - 5\n"))
 
 
@@ -164,10 +164,11 @@ def test_base_parent_waits_for_a_waiting_child(write_yaml):
 
 def test_base_cycle_raises(write_yaml):
     path = write_yaml("c.yaml", "m:\n  $base: ${c}\nc:\n  $base: ${m}\n")
-    with pytest.raises(ValueError, match=r"cycle between `m`, `c`"):
+    with pytest.raises(ConfigValidationError, match=r"cycle between `m`, `c`"):
         load_config(path)
 
 
-def test_base_interpolation_to_unknown_key_raises_its_own_error(write_yaml):
-    with pytest.raises(InterpolationKeyError, match="nope"):
+def test_base_interpolation_to_unknown_key_raises_a_config_error(write_yaml):
+    with pytest.raises(ConfigValidationError, match="nope") as info:
         load_config(write_yaml("c.yaml", "m:\n  $base: ${nope}\n"))
+    assert isinstance(info.value.__cause__, InterpolationKeyError)

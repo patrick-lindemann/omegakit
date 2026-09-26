@@ -4,11 +4,41 @@ from collections.abc import Callable, Iterator
 from pathlib import Path
 from typing import Any, cast
 
+import yaml
 from omegaconf import DictConfig, ListConfig, Node, OmegaConf
 from omegaconf.errors import InterpolationKeyError, OmegaConfBaseException
 
 from ._keys import BASE_KEY, DEFAULTS_KEY, IMPORT_KEY
+from ._schema import ConfigValidationError
 from ._utils import walk
+
+
+def load_file(file_path: Path) -> DictConfig | ListConfig:
+    """Load one YAML file.
+
+    Args:
+        file_path: The file to load.
+
+    Returns:
+        The file's content.
+
+    Raises:
+        ConfigValidationError: If the file is not valid YAML or not UTF-8, or holds
+            a value that OmegaConf rejects.
+    """
+    try:
+        return OmegaConf.load(file_path)
+    except yaml.MarkedYAMLError as error:
+        context = f"{error.context}: " if error.context else ""
+        mark = error.problem_mark
+        position = f" (line {mark.line + 1}, column {mark.column + 1})" if mark else ""
+        raise ConfigValidationError(
+            f"Cannot load `{file_path}`: {context}{error.problem}{position}"
+        ) from error
+    except (yaml.YAMLError, UnicodeDecodeError, OmegaConfBaseException) as error:
+        raise ConfigValidationError(
+            f"Cannot load `{file_path}`: {str(error).splitlines()[0]}"
+        ) from error
 
 
 def resolve_imports(
@@ -35,28 +65,39 @@ def resolve_imports(
                 value = node._value() if isinstance(node, Node) else None
                 if isinstance(value, str) and value.startswith(IMPORT_KEY):
                     config[index] = _load_import(
-                        config[index], config_path, visited_paths, cache
+                        config, index, value, config_path, visited_paths, cache
                     )
         return
     for key, value in config.items_ex(resolve=False):
         if isinstance(value, (DictConfig, ListConfig)):
             resolve_imports(value, config_path, visited_paths, cache)
         elif isinstance(value, str) and value.startswith(IMPORT_KEY):
-            config[key] = _load_import(config[key], config_path, visited_paths, cache)
+            config[key] = _load_import(
+                config, key, value, config_path, visited_paths, cache
+            )
 
 
 def _load_import(
+    container: DictConfig | ListConfig,
+    key: Any,
     statement: str,
     config_path: Path,
     visited_paths: set[Path],
     cache: dict[Path, DictConfig | ListConfig],
 ) -> Any:
+    try:
+        statement = container[key]
+    except OmegaConfBaseException as error:
+        raise ConfigValidationError(
+            f"Cannot resolve `{statement}` in `{config_path}`: "
+            f"{str(error).splitlines()[0]}"
+        ) from error
     # Match the pattern ~import <file_path>[#<node_path>]
     args = statement[len(IMPORT_KEY) :].strip().split("#")
     if len(args) > 2:
-        raise ValueError(
-            f"Import `{statement}` contains more than one `#`. Use `#` only to "
-            "separate the file path from the node path."
+        raise ConfigValidationError(
+            f"Import `{statement}` in `{config_path}` contains more than one `#`. Use "
+            "`#` only to separate the file path from the node path."
         )
     file_path = Path(args[0])
     if not file_path.is_absolute():
@@ -65,13 +106,19 @@ def _load_import(
     node_path = args[1].strip() if len(args) > 1 else ""
     # Load the imported config file and resolve its own imports first
     if file_path in visited_paths:
-        raise ValueError(
-            f"Circular import detected: `{file_path}` was already imported."
+        raise ConfigValidationError(
+            f"Circular import detected: `{statement}` in `{config_path}` imports "
+            f"`{file_path}`, which was already imported."
         )
     if file_path in cache:
         imported_config = cache[file_path]
     else:
-        imported_config = OmegaConf.load(file_path)
+        try:
+            imported_config = load_file(file_path)
+        except (OSError, ConfigValidationError) as error:
+            raise ConfigValidationError(
+                f"Cannot import `{statement}` in `{config_path}`: {error}"
+            ) from error
         resolve_imports(
             imported_config,
             file_path,
@@ -94,9 +141,9 @@ def _load_import(
         if node is None:
             break
     if node is None:
-        raise ValueError(
-            f"Import `{statement}` selects node `{node_path}`, which does not exist in "
-            f"`{file_path}`."
+        raise ConfigValidationError(
+            f"Import `{statement}` in `{config_path}` selects node `{node_path}`, "
+            f"which does not exist in `{file_path}`."
         )
     return node
 
@@ -111,12 +158,14 @@ def merge_bases(config: DictConfig | ListConfig) -> None:
         config: The config to process.
 
     Raises:
-        ValueError: If a `$base` is not a mapping or a list of mappings, or if `$base`
-            references form a cycle.
+        ConfigValidationError: If a `$base` is not a mapping or a list of mappings,
+            cannot be resolved, or if `$base` references form a cycle.
     """
     cycle = _merge_in_dependency_order(config, BASE_KEY, _merge_base)
     if cycle:
-        raise ValueError(f"`{BASE_KEY}` references form a cycle between {cycle}.")
+        raise ConfigValidationError(
+            f"`{BASE_KEY}` references form a cycle between {cycle}."
+        )
 
 
 def apply_defaults(config: DictConfig | ListConfig) -> None:
@@ -129,12 +178,14 @@ def apply_defaults(config: DictConfig | ListConfig) -> None:
         config: The config to process.
 
     Raises:
-        ValueError: If a `$defaults` is not a mapping, or if `$defaults` references
-            form a cycle.
+        ConfigValidationError: If a `$defaults` is not a mapping, cannot be resolved,
+            or if `$defaults` references form a cycle.
     """
     cycle = _merge_in_dependency_order(config, DEFAULTS_KEY, _merge_defaults)
     if cycle:
-        raise ValueError(f"`{DEFAULTS_KEY}` references form a cycle between {cycle}.")
+        raise ConfigValidationError(
+            f"`{DEFAULTS_KEY}` references form a cycle between {cycle}."
+        )
 
 
 def strip_keys(config: DictConfig | ListConfig, exclude: set[str]) -> None:
@@ -205,7 +256,10 @@ def _merge_in_dependency_order(
             return ""
         if not merged:
             if first_error is not None:
-                raise first_error
+                raise ConfigValidationError(
+                    f"Cannot resolve `{first_error.full_key or key}`: "
+                    f"{str(first_error).splitlines()[0]}"
+                ) from first_error
             return ", ".join(f"`{node._get_full_key(None)}`" for node in waiting)
 
 
@@ -215,14 +269,14 @@ def _merge_base(node: DictConfig, base: Any) -> None:
     if isinstance(base, ListConfig):
         bases = [base[index] for index in range(len(base))]
         if not all(isinstance(item, DictConfig) for item in bases):
-            raise ValueError(
+            raise ConfigValidationError(
                 f"List-valued `{BASE_KEY}` in parent `{node}` must contain only "
                 f"dictionaries."
             )
     elif isinstance(base, DictConfig):
         bases = [base]
     else:
-        raise ValueError(
+        raise ConfigValidationError(
             f"Node `{BASE_KEY}` in parent `{node}` is not a dictionary or a list of "
             f"dictionaries."
         )
@@ -234,7 +288,7 @@ def _merge_base(node: DictConfig, base: Any) -> None:
 
 def _merge_defaults(node: DictConfig, defaults: Any) -> None:
     if not isinstance(defaults, DictConfig):
-        raise ValueError(
+        raise ConfigValidationError(
             f"Node `{DEFAULTS_KEY}` in parent `{node}` is not a dictionary."
         )
     node.pop(DEFAULTS_KEY)
