@@ -1,4 +1,5 @@
 import pytest
+from omegaconf.errors import InterpolationKeyError
 
 from omegakit import load_config
 
@@ -124,3 +125,49 @@ def test_base_interpolation_to_earlier_sibling(write_yaml):
 def test_base_relative_interpolation_resolves_at_final_position(write_yaml):
     cfg = load_config(write_yaml("c.yaml", "n:\n  $base: {b: '${.a}'}\n  a: 7\n"))
     assert cfg.n.b == 7
+
+
+def test_base_interpolation_to_later_sibling_with_its_own_base(write_yaml):
+    cfg = load_config(
+        write_yaml("c.yaml", "m:\n  $base: ${c}\nc:\n  $base: {a: 1}\n  b: 2\n")
+    )
+    assert dict(cfg.m) == {"a": 1, "b": 2}
+
+
+def test_base_interpolation_to_key_created_by_a_later_base(write_yaml):
+    cfg = load_config(
+        write_yaml("c.yaml", "m:\n  $base: ${c.x}\nc:\n  $base:\n    x: {a: 1}\n")
+    )
+    assert dict(cfg.m) == {"a": 1}
+
+
+def test_base_chain_through_list_valued_base(write_yaml):
+    cfg = load_config(
+        write_yaml(
+            "c.yaml",
+            "m:\n  $base: ['${c}', {z: 1}]\nc:\n  $base: ${d}\nd:\n  $base: {a: 1}\n",
+        )
+    )
+    assert dict(cfg.m) == {"a": 1, "z": 1}
+
+
+def test_base_parent_waits_for_a_waiting_child(write_yaml):
+    cfg = load_config(
+        write_yaml(
+            "c.yaml",
+            "outer:\n  $base: {q: 1}\n  inner:\n    $base: ${c}\nc:\n  $base: {a: 1}\n",
+        )
+    )
+    assert dict(cfg.outer.inner) == {"a": 1}
+    assert cfg.outer.q == 1
+
+
+def test_base_cycle_raises(write_yaml):
+    path = write_yaml("c.yaml", "m:\n  $base: ${c}\nc:\n  $base: ${m}\n")
+    with pytest.raises(ValueError, match=r"cycle between `m`, `c`"):
+        load_config(path)
+
+
+def test_base_interpolation_to_unknown_key_raises_its_own_error(write_yaml):
+    with pytest.raises(InterpolationKeyError, match="nope"):
+        load_config(write_yaml("c.yaml", "m:\n  $base: ${nope}\n"))

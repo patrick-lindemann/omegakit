@@ -19,6 +19,10 @@ The import path must be importable from the current directory.
 `python -m omegakit json-schema …` works the same. `omegakit.generate_json_schema`
 returns the same schema as a dictionary.
 
+To keep committed schemas current, run the same commands with `--check` in CI: it
+writes nothing and exits with 1 when a file is out of date. See the
+[command line](command-line.md).
+
 ## Connecting the editor
 
 With the YAML extension for VS Code (by Red Hat, based on yaml-language-server),

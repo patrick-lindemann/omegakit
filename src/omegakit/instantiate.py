@@ -1,21 +1,24 @@
 from __future__ import annotations
 
 import functools
+import types
+import typing
 from collections.abc import Callable
-from typing import Any, cast, overload
+from typing import Any, TypeAliasType, cast, get_args, get_origin, overload
 
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
 from .keys import CLASS_KEY, META_KEY, PARTIAL_KEY, REF_KEY
 from .loading import parse_overrides
 from .schema import (
-    check_object,
     check_schema,
     classify_fields,
     find_schema,
+    find_section,
     validate_native,
 )
 from .utils import format_path, import_object
+from .validation import check_resolved
 
 
 @overload
@@ -119,6 +122,7 @@ def _instantiate(
         dict[str, Any],
         OmegaConf.to_container(config, resolve=True, throw_on_missing=True),
     )
+    check_resolved(plain_config)
     return _build(plain_config, wrap)
 
 
@@ -177,10 +181,50 @@ def _build_typed_config(
     for name, (kind, annotation) in classify_fields(schema).items():
         if kind == "native" or name not in values:
             continue
-        fields[name] = _materialize(values[name], (*path, name))
         if kind == "object":
-            check_object(fields[name], annotation, values[name], (*path, name), schema)
+            fields[name] = _build_object(values[name], annotation, (*path, name))
+        else:
+            fields[name] = _materialize(values[name], (*path, name))
     return schema(**fields)
+
+
+def _build_object(value: Any, annotation: Any, path: tuple[str | int, ...]) -> Any:
+    # Follows the annotation into `list` and `dict` fields, where a plain mapping in a
+    # dataclass item is a section, as in `validate`.
+    while isinstance(annotation, TypeAliasType):
+        annotation = annotation.__value__
+    members = [
+        member
+        for member in (
+            get_args(annotation)
+            if get_origin(annotation) in (typing.Union, types.UnionType)
+            else (annotation,)
+        )
+        if member is not type(None)
+    ]
+    if len(members) == 1 and get_origin(members[0]) in (list, dict):
+        item_annotation = get_args(members[0])[-1]
+        if isinstance(value, list):
+            return [
+                _build_object(item, item_annotation, (*path, index))
+                for index, item in enumerate(value)
+            ]
+        if isinstance(value, dict):
+            return {
+                key: _build_object(item, item_annotation, (*path, key))
+                for key, item in value.items()
+                if key != META_KEY
+            }
+    section = (
+        find_section(annotation)
+        if isinstance(value, dict) and CLASS_KEY not in value and REF_KEY not in value
+        else None
+    )
+    if section is None:
+        return _materialize(value, path)
+    return _build_typed_config(
+        section, {key: item for key, item in value.items() if key != META_KEY}, path
+    )
 
 
 def _materialize(node: Any, path: tuple[str | int, ...]) -> Any:

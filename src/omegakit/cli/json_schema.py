@@ -21,7 +21,12 @@ def register(commands: argparse._SubParsersAction) -> None:
     parser.add_argument(
         "-o", "--output", type=Path, help="output file (default: standard output)"
     )
-    parser.set_defaults(run=run)
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="do not write; exit with 1 if the output file is not up to date",
+    )
+    parser.set_defaults(run=run, parser=parser)
 
 
 def run(arguments: argparse.Namespace) -> None:
@@ -29,10 +34,22 @@ def run(arguments: argparse.Namespace) -> None:
 
     Args:
         arguments: The parsed `json-schema` arguments.
+
+    Raises:
+        SystemExit: With status 1 if `--check` finds the output file out of date.
     """
+    parser: argparse.ArgumentParser = arguments.parser
+    output: Path | None = arguments.output
     schema = generate_json_schema(import_object(arguments.schema))
+    if arguments.check:
+        if output is None:
+            parser.error("--check needs -o/--output")
+        if not output.exists() or json.loads(output.read_text()) != schema:
+            print(f"{output} is out of date; run without --check to update it.")
+            raise SystemExit(1)
+        return
     text = json.dumps(schema, indent=2) + "\n"
-    if arguments.output is None:
+    if output is None:
         print(text, end="")
     else:
-        arguments.output.write_text(text)
+        output.write_text(text)

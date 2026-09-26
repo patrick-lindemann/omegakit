@@ -2,7 +2,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from . import json_schema
+from . import check, json_schema, show
 
 
 def main(arguments: list[str] | None = None) -> None:
@@ -14,6 +14,8 @@ def main(arguments: list[str] | None = None) -> None:
     """
     parser = argparse.ArgumentParser(prog="omegakit")
     commands = parser.add_subparsers(dest="command", required=True)
+    check.register(commands)
+    show.register(commands)
     json_schema.register(commands)
     parsed = parser.parse_args(arguments)
     # `python -m` puts the working directory on the path; installed scripts do not.

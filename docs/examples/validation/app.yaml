@@ -1,0 +1,4 @@
+depth: 4
+encoder:
+  $base: ~import encoder.yaml
+  width: 64

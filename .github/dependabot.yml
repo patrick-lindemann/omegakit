@@ -1,0 +1,29 @@
+version: 2
+updates:
+  - package-ecosystem: uv
+    directory: /
+    schedule:
+      interval: weekly
+    # Updates merge automatically once CI passes, so give new releases time to be
+    # yanked or fixed first.
+    cooldown:
+      default-days: 7
+    groups:
+      python:
+        patterns: ["*"]
+    ignore:
+      # The runtime bounds are part of the published package: widen them by hand,
+      # when the test-omegaconf-next job shows that a new version works.
+      - dependency-name: omegaconf
+        update-types: ["version-update:semver-minor", "version-update:semver-major"]
+      - dependency-name: "typing*extensions"
+        update-types: ["version-update:semver-minor", "version-update:semver-major"]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      actions:
+        patterns: ["*"]

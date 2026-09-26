@@ -579,7 +579,7 @@ docs = [
 
 [package.metadata]
 requires-dist = [
-    { name = "omegaconf", specifier = ">=2.3,<2.4" },
+    { name = "omegaconf", specifier = ">=2.3,<2.5" },
     { name = "typing-extensions", specifier = ">=4.12" },
 ]
 

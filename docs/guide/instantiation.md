@@ -45,6 +45,13 @@ constant. It allows no other keys except `$meta`.
 - Arguments passed when calling the partial win over config arguments of the same
   name. With `from_config`, they arrive as its `**kwargs`.
 
+## Validation first
+
+`instantiate` and `prepare` resolve the node, then check it as
+[`validate`](validation.md) does, and only then build it. A mistake anywhere in the
+node raises `ConfigValidationError` before any constructor runs, so no object is
+half-built. Error paths start at the node passed to `instantiate`.
+
 ## Typing
 
 The optional second argument, `instantiate(node, Cart)`, types the result as `Cart`
@@ -56,12 +63,15 @@ for pyright and editors. It is not checked at runtime. Without it the result is
 | Problem | Exception |
 |---|---|
 | Top-level node without `$class` | `ValueError` |
-| Module not found | `ModuleNotFoundError` |
-| Attribute not found | `ImportError` (`Could not import`) |
-| `$ref` with other keys | `ValueError` |
-| An unknown `$` key, or `$class` with `$ref` | `ValueError` (`reserved`) |
-| `$partial` that is not a boolean | `ValueError` |
+| Module or attribute not found | `ConfigValidationError` (`Cannot import`), caused by the `ImportError` |
+| `$ref` with other keys | `ConfigValidationError` |
+| An unknown `$` key, or `$class` with `$ref` | `ConfigValidationError` (`reserved`) |
+| `$partial` that is not a boolean | `ConfigValidationError` |
+| A value that does not match a schema | `ConfigValidationError` |
 | A `???` in the node | `MissingMandatoryValue` |
+| An interpolation that cannot be resolved | OmegaConf's error, such as `InterpolationKeyError` |
+
+`ConfigValidationError` is a `ValueError`.
 
 An exception raised by a constructor or `from_config` keeps its type and message, and
 gets a note such as `while instantiating items.0 (shop.Item)`. Errors raised later by

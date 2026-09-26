@@ -1,0 +1,4 @@
+# A fragment: consumers import it and set `width`.
+$class: models.Encoder
+width: ???
+layers: ${depth}

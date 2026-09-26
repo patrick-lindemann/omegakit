@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from pathlib import Path
 from typing import Any, cast
 
 from omegaconf import DictConfig, ListConfig, Node, OmegaConf
+from omegaconf.errors import InterpolationKeyError, OmegaConfBaseException
 
 from .keys import BASE_KEY, DEFAULTS_KEY, IMPORT_KEY
 from .utils import walk
@@ -101,66 +102,39 @@ def _load_import(
 
 
 def merge_bases(config: DictConfig | ListConfig) -> None:
-    """Merge every `$base` underneath its node in place, children before parents.
+    """Merge every `$base` underneath its node in place, in dependency order.
+
+    Children are merged before parents, and a node whose `$base` refers to a node that
+    still has an unmerged `$base` waits until that node is merged.
 
     Args:
         config: The config to process.
 
     Raises:
-        ValueError: If a `$base` is not a mapping or a list of mappings.
+        ValueError: If a `$base` is not a mapping or a list of mappings, or if `$base`
+            references form a cycle.
     """
-    for node in _walk_post_order(config):
-        if node._get_node(BASE_KEY) is None:
-            continue
-        base = node[BASE_KEY]
-        # A base may be a single mapping or a list of mappings. Later list elements
-        # take precedence over earlier ones, and the node's own keys over all.
-        if isinstance(base, ListConfig):
-            bases = [base[index] for index in range(len(base))]
-            if not all(isinstance(item, DictConfig) for item in bases):
-                raise ValueError(
-                    f"List-valued `{BASE_KEY}` in parent `{node}` must contain only "
-                    f"dictionaries."
-                )
-        elif isinstance(base, DictConfig):
-            bases = [base]
-        else:
-            raise ValueError(
-                f"Node `{BASE_KEY}` in parent `{node}` is not a dictionary or a list "
-                f"of dictionaries."
-            )
-        node.pop(BASE_KEY)
-        merged_config = cast(DictConfig, OmegaConf.merge(*bases, node))
-        for key in list(merged_config.keys()):
-            node[key] = merged_config._get_node(key)
+    cycle = _merge_in_dependency_order(config, BASE_KEY, _merge_base)
+    if cycle:
+        raise ValueError(f"`{BASE_KEY}` references form a cycle between {cycle}.")
 
 
 def apply_defaults(config: DictConfig | ListConfig) -> None:
     """Merge every `$defaults` under its dict-valued siblings in place.
 
-    Nested mappings are processed before their parents.
+    Nested mappings are processed before their parents, and a `$defaults` that refers
+    to a node with an unapplied `$defaults` waits until that node is processed.
 
     Args:
         config: The config to process.
 
     Raises:
-        ValueError: If a `$defaults` is not a mapping.
+        ValueError: If a `$defaults` is not a mapping, or if `$defaults` references
+            form a cycle.
     """
-    for node in _walk_post_order(config):
-        if node._get_node(DEFAULTS_KEY) is None:
-            continue
-        defaults = node[DEFAULTS_KEY]
-        if not isinstance(defaults, DictConfig):
-            raise ValueError(
-                f"Node `{DEFAULTS_KEY}` in parent `{node}` is not a dictionary."
-            )
-        node.pop(DEFAULTS_KEY)
-        for key in list(node.keys()):
-            if str(key).startswith("$"):
-                continue
-            item = node._get_node(key)
-            if isinstance(item, DictConfig):
-                node[key] = OmegaConf.merge(defaults, item)
+    cycle = _merge_in_dependency_order(config, DEFAULTS_KEY, _merge_defaults)
+    if cycle:
+        raise ValueError(f"`{DEFAULTS_KEY}` references form a cycle between {cycle}.")
 
 
 def strip_keys(config: DictConfig | ListConfig, exclude: set[str]) -> None:
@@ -187,3 +161,95 @@ def _walk_post_order(config: DictConfig | ListConfig) -> Iterator[DictConfig]:
             yield from _walk_post_order(node)
     if isinstance(config, DictConfig):
         yield config
+
+
+def _merge_in_dependency_order(
+    config: DictConfig | ListConfig,
+    key: str,
+    merge: Callable[[DictConfig, Any], None],
+) -> str:
+    # Returns the nodes that form a cycle, or "" once everything is merged. A node
+    # waits while its value refers to a node that still holds `key`, or to a key that
+    # does not exist yet. Ancestors of a waiting node wait too, because merging
+    # replaces their children. A pass without progress is a cycle, or a reference
+    # that will never resolve.
+    while True:
+        waiting: list[DictConfig] = []
+        first_error: OmegaConfBaseException | None = None
+        merged = False
+        for node in _walk_post_order(config):
+            if node._get_node(key) is None:
+                continue
+            if any(_is_ancestor(node, other) for other in waiting):
+                waiting.append(node)
+                continue
+            try:
+                value = node[key]
+                referenced = (
+                    [value] if not isinstance(value, ListConfig) else list(value)
+                )
+            except InterpolationKeyError as error:
+                first_error = first_error or error
+                waiting.append(node)
+                continue
+            if any(
+                isinstance(item, DictConfig)
+                and any(inner._get_node(key) is not None for inner in walk(item))
+                for item in referenced
+            ):
+                waiting.append(node)
+                continue
+            merge(node, value)
+            merged = True
+        if not waiting:
+            return ""
+        if not merged:
+            if first_error is not None:
+                raise first_error
+            return ", ".join(f"`{node._get_full_key(None)}`" for node in waiting)
+
+
+def _merge_base(node: DictConfig, base: Any) -> None:
+    # A base may be a single mapping or a list of mappings. Later list elements take
+    # precedence over earlier ones, and the node's own keys over all.
+    if isinstance(base, ListConfig):
+        bases = [base[index] for index in range(len(base))]
+        if not all(isinstance(item, DictConfig) for item in bases):
+            raise ValueError(
+                f"List-valued `{BASE_KEY}` in parent `{node}` must contain only "
+                f"dictionaries."
+            )
+    elif isinstance(base, DictConfig):
+        bases = [base]
+    else:
+        raise ValueError(
+            f"Node `{BASE_KEY}` in parent `{node}` is not a dictionary or a list of "
+            f"dictionaries."
+        )
+    node.pop(BASE_KEY)
+    merged_config = cast(DictConfig, OmegaConf.merge(*bases, node))
+    for key in list(merged_config.keys()):
+        node[key] = merged_config._get_node(key)
+
+
+def _merge_defaults(node: DictConfig, defaults: Any) -> None:
+    if not isinstance(defaults, DictConfig):
+        raise ValueError(
+            f"Node `{DEFAULTS_KEY}` in parent `{node}` is not a dictionary."
+        )
+    node.pop(DEFAULTS_KEY)
+    for key in list(node.keys()):
+        if str(key).startswith("$"):
+            continue
+        item = node._get_node(key)
+        if isinstance(item, DictConfig):
+            node[key] = OmegaConf.merge(defaults, item)
+
+
+def _is_ancestor(node: DictConfig, other: DictConfig) -> bool:
+    parent = other._get_parent()
+    while parent is not None:
+        if parent is node:
+            return True
+        parent = parent._get_parent()
+    return False

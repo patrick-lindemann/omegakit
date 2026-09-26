@@ -155,3 +155,22 @@ def test_defaults_interpolated_value(write_yaml):
         write_yaml("c.yaml", "d: {k: 1}\nnode:\n  $defaults: ${d}\n  x: {}\n")
     )
     assert cfg.node.x.k == 1
+
+
+def test_defaults_interpolation_to_later_node_with_its_own_defaults(write_yaml):
+    cfg = load_config(
+        write_yaml(
+            "c.yaml",
+            "m:\n  $defaults: ${c}\n  k: {z: 0}\n"
+            "c:\n  $defaults: {q: 1}\n  d: {w: 1}\n",
+        )
+    )
+    assert cfg.m.k == {"d": {"q": 1, "w": 1}, "z": 0}
+
+
+def test_defaults_cycle_raises(write_yaml):
+    path = write_yaml(
+        "c.yaml", "m:\n  $defaults: ${c}\n  k: {}\nc:\n  $defaults: ${m}\n  d: {}\n"
+    )
+    with pytest.raises(ValueError, match=r"`\$defaults` references form a cycle"):
+        load_config(path)

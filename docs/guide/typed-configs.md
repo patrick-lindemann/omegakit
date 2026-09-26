@@ -31,15 +31,40 @@ built. Call it in a test to catch a mismatch without a config.
 Each schema field is one of three kinds:
 
 - **Native** fields hold plain values: `int`, `float`, `bool`, `str`, `bytes`,
-  `Path`, `Enum`, `Literal`, dataclasses of these, and `list` or `dict` of these.
-  OmegaConf validates and coerces them, and omegakit checks `Literal` values, such
-  as `mode: Literal["train", "eval"]`. Enums are written by member **name**
-  (`kind: B`).
+  `Path`, `Enum`, `Literal`, `TypedDict`, dataclasses of these, and `list`, `dict`,
+  `tuple`, `Sequence` or `Mapping` of these, and unions of these. OmegaConf
+  validates and coerces them, and omegakit adds what OmegaConf 2.3 lacks, so every
+  supported OmegaConf version behaves the same.
 - **Object** fields are typed by the class they build, such as
-  `encoder: Encoder | None`. In YAML they hold a `$class` or `$ref` node. The built
-  object must be an instance of the annotation.
+  `encoder: Encoder | None`, or a `list` or `dict` of it. In YAML they hold a
+  `$class` node whose class is `Encoder` or a subclass, or a `$ref` to an
+  `Encoder`. A dataclass with object fields is a section: a plain mapping in it is
+  built as that dataclass.
 - **`Any`** fields are not validated. Use them for values that OmegaConf cannot
-  hold, such as objects returned by resolvers, and for lists of objects.
+  hold, such as objects returned by resolvers.
+
+```{literalinclude} ../examples/field-types/models.py
+:language: python
+:caption: models.py
+```
+
+```{literalinclude} ../examples/field-types/model.yaml
+:language: yaml
+:caption: model.yaml
+```
+
+```{literalinclude} ../examples/field-types/main.py
+:language: python
+:caption: main.py
+```
+
+- Enums are written by member **name** or **value** (`gelu` or `GELU`); a name wins
+  over an equal value of another member.
+- A union may hold one mapping type and one list type. A mapping or a list is
+  coerced like that member; a scalar must match a member's type exactly.
+- Tuples come from YAML lists; `tuple[int, int]` needs exactly two items.
+- `init=False` fields are computed by the dataclass, and a config cannot set them.
+  An `InitVar` needs a default and cannot be set either.
 
 ## A custom `from_config`
 
@@ -82,9 +107,8 @@ Nothing is validated in these cases:
 
 ## Supported dataclasses
 
-Schemas support a subset of dataclass features. The lookup raises
-`ConfigValidationError`, naming the field and the fix, for `init=False`, `InitVar`
-and keyword-only fields; for `tuple`, `set` and the abstract containers; for `list`
-or `dict` of objects; for unions that mix plain values and classes; and for
-annotations that cannot be resolved at runtime, such as names imported under
-`TYPE_CHECKING`.
+The lookup raises `ConfigValidationError`, naming the field and the fix, for
+`InitVar` fields without a default; for `set` and the other abstract containers; for
+containers that mix plain values and objects; for unions that mix plain values and
+classes, or that hold two mapping or two list types; and for annotations that cannot
+be resolved at runtime, such as names imported under `TYPE_CHECKING`.

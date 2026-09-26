@@ -5,6 +5,8 @@ from typing import Any
 
 from omegaconf import OmegaConf
 
+from omegakit.utils import register_resolver
+
 
 def _import_torch() -> Any:
     try:
@@ -30,19 +32,16 @@ def _resolve_dtype(dtype_str: str) -> Any:
 def register_torch_dtype_resolver(*, replace: bool = False) -> None:
     """Register `${dtype:float32}`; require an existing Torch installation."""
     _import_torch()
-    OmegaConf.register_new_resolver(
-        "dtype", _resolve_dtype, replace=replace, use_cache=True
-    )
+    register_resolver("dtype", _resolve_dtype, replace=replace)
 
 
 def register_cuda_available_resolver(*, replace: bool = False) -> None:
     """Register `${cuda_available:}`; require an existing Torch installation."""
     torch = _import_torch()
-    OmegaConf.register_new_resolver(
+    register_resolver(
         "cuda_available",
         lambda _=None: torch.cuda.is_available(),
         replace=replace,
-        use_cache=True,
     )
 
 

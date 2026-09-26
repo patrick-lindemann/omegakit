@@ -180,6 +180,63 @@ def test_validate_root_class_must_match_the_schema():
         validate(_model(), schema=schemas.AppConfig)
 
 
-def test_validate_rejects_non_dataclass_schemas():
-    with pytest.raises(TypeError, match="not a dataclass"):
+def test_validate_rejects_schemas_that_are_not_classes():
+    with pytest.raises(TypeError, match="not a class"):
+        validate({}, schema=schemas.make_encoder)  # pyright: ignore[reportArgumentType]
+
+
+def test_validate_class_without_schema_needs_a_root_class():
+    with pytest.raises(ConfigValidationError, match="no dataclass schema"):
         validate({}, schema=schemas.Encoder)
+
+
+LIBRARY = """\
+connection:
+  host: ???
+  port: 5432
+  url: postgres://${.host}:${.port}/${database}
+"""
+
+
+def test_validate_allow_missing_accepts_open_slots_and_their_interpolations(
+    write_yaml,
+):
+    cfg = load_config(write_yaml("library.yaml", LIBRARY))
+    assert not is_valid(cfg)
+    validate(cfg, allow_missing=True)
+    assert is_valid(cfg, allow_missing=True)
+
+
+def test_validate_allow_missing_accepts_missing_schema_fields():
+    validate({"model": {"$class": MODEL, "depth": "???"}}, allow_missing=True)
+    validate({"model": {"$class": MODEL}}, allow_missing=True)
+    validate({"$class": "tests.schemas.RequiredObject"}, allow_missing=True)
+    with pytest.raises(ConfigValidationError, match="Missing"):
+        validate({"model": {"$class": MODEL}})
+
+
+def test_validate_allow_missing_still_checks_given_values():
+    with pytest.raises(ConfigValidationError, match=r"`model\.depth`"):
+        validate({"model": _model(depth="deep")}, allow_missing=True)
+    with pytest.raises(ConfigValidationError, match="`mode`"):
+        validate(
+            {"mode": "test", "level": "???"},
+            schema=schemas.LiteralConfig,
+            allow_missing=True,
+        )
+
+
+def test_validate_allow_missing_keeps_defaults_for_missing_values():
+    validate({"level": "???"}, schema=schemas.LiteralConfig, allow_missing=True)
+
+
+def test_validate_class_schema_checks_a_fragment_without_root_class():
+    validate({"depth": 1}, schema=schemas.Model)
+    with pytest.raises(ConfigValidationError, match=r"Unknown field.*'dpth'"):
+        validate({"dpth": 1}, schema=schemas.Model)
+
+
+def test_validate_class_schema_checks_the_root_class():
+    validate(_model(), schema=schemas.Model)
+    with pytest.raises(ConfigValidationError, match="expects Encoder"):
+        validate(_model(), schema=schemas.Encoder)

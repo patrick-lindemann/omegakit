@@ -28,6 +28,7 @@ class Configurable(Generic[TConfig]):
             fields = {
                 field.name: getattr(config, field.name)
                 for field in dataclasses.fields(config)
+                if field.init
             }
         else:
             fields = dict(cast(Mapping[str, Any], config))

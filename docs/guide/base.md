@@ -39,10 +39,14 @@ From strongest to weakest:
 - Helper nodes such as `_fast` stay in the config. omegakit gives no meaning to a
   leading underscore.
 
-**Known limitation:** a `$base: ${other}` that points at a node later in the file,
-which has its own `$base`, sees that node unmerged. Reference earlier nodes, or
-nodes without their own `$base`. See the [contracts](../contracts.md), section 3.
+- An interpolation sees the referenced node fully merged, wherever it is in the
+  file: a node waits until the node it refers to has merged its own `$base`.
+- A `$base` sees a node without the keys that its parent's `$defaults` add, because
+  all bases are merged before any defaults.
 
 ## Errors
 
-A `$base` that is not a mapping or a list of mappings raises `ValueError`.
+A `$base` that is not a mapping or a list of mappings raises `ValueError`, and so do
+`$base` interpolations that refer to each other (`references form a cycle`). An
+interpolation to a key that never appears raises OmegaConf's
+`InterpolationKeyError`.

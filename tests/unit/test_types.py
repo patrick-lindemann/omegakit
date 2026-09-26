@@ -1,0 +1,124 @@
+import pytest
+from omegaconf import OmegaConf
+
+from omegakit import ConfigValidationError, instantiate, validate
+from tests import schemas
+
+# Contracts: §10 Typed configs (field kinds), §11 Validation.
+
+TYPES = "tests.schemas.Types"
+CONTAINERS = "tests.schemas.ObjectContainers"
+
+
+def _fields(**values):
+    return instantiate({"$class": TYPES, **values}).fields
+
+
+def test_types_defaults():
+    fields = _fields()
+    assert (fields["pair"], fields["numbers"]) == ((0, "a"), ())
+    assert fields["sub_default"] == schemas.Sub()
+    assert fields["point"] == {"x": 0}
+
+
+def test_types_tuples():
+    fields = _fields(pair=["1", 2], numbers=["1", 2])
+    assert fields["pair"] == (1, "2")
+    assert fields["numbers"] == (1, 2)
+    with pytest.raises(ConfigValidationError, match=r"`pair` expects a list of 2"):
+        _fields(pair=[1])
+    with pytest.raises(ConfigValidationError, match=r"`pair\.0`"):
+        _fields(pair=["x", "y"])
+
+
+def test_types_abstract_containers_give_lists_and_dicts():
+    fields = _fields(sequence=["1"], mapping={"a": "2"})
+    assert (fields["sequence"], fields["mapping"]) == ([1], {"a": 2})
+
+
+def test_types_typed_dict_fields_are_unchecked_dicts():
+    assert _fields(point={"x": "a", "extra": [1]})["point"] == {"x": "a", "extra": [1]}
+
+
+def test_types_enums_by_name_or_value():
+    fields = _fields(color="blue", level=2, colors={"red": 1, "BLUE": 2})
+    assert fields["color"] is schemas.Color.BLUE
+    assert fields["level"] is schemas.Level.HIGH
+    assert fields["colors"] == {schemas.Color.RED: 1, schemas.Color.BLUE: 2}
+
+
+def test_types_enum_names_win_over_values():
+    assert _fields(clash="B")["clash"] is schemas.Clash.B
+    assert _fields(clash="x")["clash"] is schemas.Clash.B
+
+
+@pytest.mark.parametrize(("key", "value"), [("level", True), ("level", "2")])
+def test_types_enum_values_need_their_exact_type(key, value):
+    with pytest.raises(ConfigValidationError, match=f"`{key}`"):
+        _fields(**{key: value})
+
+
+def test_types_union_with_a_dataclass():
+    assert _fields(sub_or_int={"value": "2"})["sub_or_int"] == schemas.Sub(2)
+    assert _fields(sub_or_int=5)["sub_or_int"] == 5
+    assert _fields(sub_default=5)["sub_default"] == 5
+    assert _fields(maybe_sub={"value": 1})["maybe_sub"] == schemas.Sub(1)
+
+
+@pytest.mark.parametrize("value", ["5", 5.5, True, [1]])
+def test_types_union_scalars_need_an_exact_type(value):
+    with pytest.raises(ConfigValidationError, match="`sub_or_int`"):
+        _fields(sub_or_int=value)
+
+
+def test_types_union_with_a_list():
+    assert _fields(list_or_int=["1", 2])["list_or_int"] == [1, 2]
+    assert _fields(list_or_int=3)["list_or_int"] == 3
+    with pytest.raises(ConfigValidationError, match="`list_or_int`"):
+        _fields(list_or_int={"a": 1})
+
+
+def test_types_init_false_fields_are_not_configurable():
+    obj = instantiate({"$class": "tests.schemas.InitFalse", "value": 2})
+    assert obj.fields == {"value": 2}
+    with pytest.raises(ConfigValidationError, match=r"Unknown field.*'derived'"):
+        instantiate({"$class": "tests.schemas.InitFalse", "derived": 1})
+
+
+def test_types_init_var_with_default_and_keyword_only_fields():
+    assert instantiate({"$class": "tests.schemas.WithInitVar"}).fields == {"value": 0}
+    with pytest.raises(ConfigValidationError, match=r"Unknown field.*'seed'"):
+        instantiate({"$class": "tests.schemas.WithInitVar", "seed": 1})
+    assert instantiate({"$class": "tests.schemas.KwOnly", "value": 3}).fields == {
+        "value": 3
+    }
+
+
+def test_types_object_containers_build_every_item():
+    fields = instantiate(
+        {
+            "$class": CONTAINERS,
+            "encoders": [{"$class": "tests.schemas.Encoder", "width": 2}],
+            "by_name": {"a": {"$class": "tests.schemas.Encoder", "width": 3}},
+            "sections": [{"encoder": {"$class": "tests.schemas.Encoder"}}],
+            "maybe": None,
+        }
+    ).fields
+    assert fields["encoders"][0].width == 2
+    assert fields["by_name"]["a"].width == 3
+    assert isinstance(fields["sections"][0], schemas.SectionWithObject)
+    assert fields["maybe"] is None
+
+
+def test_types_object_containers_check_every_item():
+    wrong = {"$class": CONTAINERS, "encoders": [{"$class": "tests.schemas.Decoder"}]}
+    with pytest.raises(ConfigValidationError, match=r"`encoders\.0` expects Encoder"):
+        validate(wrong)
+    with pytest.raises(ConfigValidationError, match="`by_name` expects"):
+        validate({"$class": CONTAINERS, "by_name": [1]})
+
+
+def test_types_behave_the_same_through_validate():
+    validate(OmegaConf.create({"$class": TYPES, "color": "blue", "pair": [1, "a"]}))
+    with pytest.raises(ConfigValidationError, match="`sub_or_int`"):
+        validate({"$class": TYPES, "sub_or_int": "5"})

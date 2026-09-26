@@ -4,8 +4,13 @@ import typing
 from collections.abc import Callable
 from typing import Any, TypeAliasType, get_args, get_origin
 
-from omegaconf import DictConfig, OmegaConf
-from omegaconf.errors import OmegaConfBaseException
+from omegaconf import MISSING, DictConfig, ListConfig, OmegaConf
+from omegaconf.errors import (
+    InterpolationKeyError,
+    InterpolationToMissingValueError,
+    MissingMandatoryValue,
+    OmegaConfBaseException,
+)
 
 from .keys import CLASS_KEY, META_KEY, PARTIAL_KEY, REF_KEY
 from .schema import (
@@ -13,13 +18,17 @@ from .schema import (
     check_schema,
     classify_fields,
     find_schema,
+    find_section,
     validate_native,
 )
 from .utils import format_path, import_object
 
 
 def validate(
-    config: DictConfig | dict[str, Any], *, schema: type | None = None
+    config: DictConfig | dict[str, Any],
+    *,
+    schema: type | None = None,
+    allow_missing: bool = False,
 ) -> None:
     """Validate a loaded config without instantiating anything.
 
@@ -30,60 +39,139 @@ def validate(
 
     Args:
         config: The assembled config, such as the result of `load_config`.
-        schema: A dataclass the root of the config must match. Defaults to `None`.
+        schema: The class the root of the config must match. A dataclass checks the
+            root as a section. Another class checks the root as a node that builds
+            it: with `$class`, that class must be `schema` or a subclass; without,
+            the root is checked against the schema of `schema`. Defaults to `None`.
+        allow_missing: Accept missing values: `???`, required fields that are not
+            given, and interpolations to missing or unknown keys, as in a library
+            file that its consumers complete. Defaults to `False`.
 
     Raises:
-        TypeError: If `schema` is not a dataclass.
         ConfigValidationError: If the config cannot be resolved or does not match a
             schema.
     """
-    if schema is not None and not dataclasses.is_dataclass(schema):
-        raise TypeError(f"`{schema.__qualname__}` is not a dataclass.")
     if not isinstance(config, DictConfig):
         config = OmegaConf.create(config)
     try:
-        plain_config = OmegaConf.to_container(
-            config, resolve=True, throw_on_missing=True
-        )
+        plain_config = resolve_config(config, allow_missing=allow_missing)
     except OmegaConfBaseException as error:
+        location = f" `{error.full_key}`" if error.full_key else " the config"
         raise ConfigValidationError(
-            f"Cannot resolve the config: {str(error).splitlines()[0]}"
+            f"Cannot resolve{location}: {str(error).splitlines()[0]}"
         ) from error
-    if schema is None:
-        _check_untyped(plain_config, ())
-    else:
-        _check_object(plain_config, schema, ())
+    check_resolved(plain_config, schema=schema, allow_missing=allow_missing)
 
 
 def is_valid(
-    config: DictConfig | dict[str, Any], *, schema: type | None = None
+    config: DictConfig | dict[str, Any],
+    *,
+    schema: type | None = None,
+    allow_missing: bool = False,
 ) -> bool:
     """Check a loaded config like `validate`, without raising.
 
     Args:
         config: The assembled config, such as the result of `load_config`.
-        schema: A dataclass the root of the config must match. Defaults to `None`.
+        schema: The class the root of the config must match, as in `validate`.
+            Defaults to `None`.
+        allow_missing: Accept missing values, as in `validate`. Defaults to `False`.
 
     Returns:
         `True` if `validate` accepts the config, `False` otherwise.
     """
     try:
-        validate(config, schema=schema)
+        validate(config, schema=schema, allow_missing=allow_missing)
     except ConfigValidationError:
         return False
     return True
 
 
-def _check_untyped(value: Any, path: tuple[str | int, ...]) -> None:
+def resolve_config(
+    config: DictConfig | ListConfig, *, allow_missing: bool = False
+) -> Any:
+    """Resolve a config into plain containers.
+
+    Args:
+        config: The config to resolve.
+        allow_missing: Give `???` for missing values and for interpolations to
+            missing or unknown keys, instead of raising. Defaults to `False`.
+
+    Returns:
+        The resolved config as `dict`s and `list`s.
+    """
+    if not allow_missing:
+        return OmegaConf.to_container(config, resolve=True, throw_on_missing=True)
+    return _resolve_allowing_missing(config)
+
+
+def check_resolved(
+    config: Any, *, schema: type | None = None, allow_missing: bool = False
+) -> None:
+    """Check a resolved config, the plain containers of `resolve_config`.
+
+    Args:
+        config: The resolved config.
+        schema: The class the root must match, as in `validate`. Defaults to `None`.
+        allow_missing: Accept missing values, as in `validate`. Defaults to `False`.
+
+    Raises:
+        TypeError: If `schema` is not a class.
+        ConfigValidationError: If the config does not match a schema.
+    """
+    if schema is None:
+        _check_untyped(config, (), allow_missing)
+        return
+    if not isinstance(schema, type):
+        raise TypeError(f"`{schema!r}` is not a class.")
+    if (
+        isinstance(config, dict)
+        and CLASS_KEY not in config
+        and not dataclasses.is_dataclass(schema)
+    ):
+        section = find_schema(schema)
+        if section is None:
+            raise ConfigValidationError(
+                f"The root has no `{CLASS_KEY}`, and `{schema.__qualname__}` has no "
+                "dataclass schema to check it against."
+            )
+        _check_target(schema, config, (), allow_missing)
+        return
+    _check_object(config, schema, (), allow_missing)
+
+
+def _resolve_allowing_missing(container: DictConfig | ListConfig) -> Any:
+    if isinstance(container, ListConfig):
+        return [_resolve_item(container, index) for index in range(len(container))]
+    return {key: _resolve_item(container, key) for key in container}
+
+
+def _resolve_item(container: Any, key: Any) -> Any:
+    try:
+        value = container[key]
+    except (
+        MissingMandatoryValue,
+        InterpolationToMissingValueError,
+        InterpolationKeyError,
+    ):
+        return MISSING
+    if isinstance(value, (DictConfig, ListConfig)):
+        return _resolve_allowing_missing(value)
+    return value
+
+
+def _check_untyped(
+    value: Any, path: tuple[str | int, ...], allow_missing: bool
+) -> None:
     if isinstance(value, list):
         for index, item in enumerate(value):
-            _check_untyped(item, (*path, index))
+            _check_untyped(item, (*path, index), allow_missing)
         return
     if not isinstance(value, dict):
         return
     value = {key: item for key, item in value.items() if key != META_KEY}
     if CLASS_KEY in value:
-        _check_class_node(value, path)
+        _check_class_node(value, path, allow_missing)
     elif REF_KEY in value:
         _import_ref(value, path)
     else:
@@ -93,14 +181,23 @@ def _check_untyped(value: Any, path: tuple[str | int, ...]) -> None:
                     f"Key `{key}` in `{format_path(path)}` is not supported here; keys "
                     "starting with `$` are reserved."
                 )
-            _check_untyped(item, (*path, key))
+            _check_untyped(item, (*path, key), allow_missing)
 
 
-def _check_class_node(node: dict[str, Any], path: tuple[str | int, ...]) -> Any:
+def _check_class_node(
+    node: dict[str, Any], path: tuple[str | int, ...], allow_missing: bool
+) -> Any:
     target = _import(node[CLASS_KEY], path)
+    _check_target(target, node, path, allow_missing)
+    return target
+
+
+def _check_target(
+    target: Any, node: dict[str, Any], path: tuple[str | int, ...], allow_missing: bool
+) -> None:
     values = {}
     for key, value in node.items():
-        if key == CLASS_KEY:
+        if key in (CLASS_KEY, META_KEY):
             continue
         if key == PARTIAL_KEY:
             if not isinstance(value, bool):
@@ -118,27 +215,33 @@ def _check_class_node(node: dict[str, Any], path: tuple[str | int, ...]) -> Any:
     schema = find_schema(target) if isinstance(target, type) else None
     if schema is None:
         for key, value in values.items():
-            _check_untyped(value, (*path, key))
+            _check_untyped(value, (*path, key), allow_missing)
     else:
         check_schema(target)
-        _check_section(schema, values, path)
-    return target
+        _check_section(schema, values, path, allow_missing)
 
 
 def _check_section(
-    schema: type, values: dict[str, Any], path: tuple[str | int, ...]
+    schema: type,
+    values: dict[str, Any],
+    path: tuple[str | int, ...],
+    allow_missing: bool,
 ) -> None:
     for name, (kind, annotation) in classify_fields(schema).items():
         if name not in values or kind == "native":
             continue
         if kind == "any":
-            _check_untyped(values[name], (*path, name))
+            _check_untyped(values[name], (*path, name), allow_missing)
         else:
-            _check_object(values[name], annotation, (*path, name))
-    validate_native(schema, values, path)
+            _check_object(values[name], annotation, (*path, name), allow_missing)
+    validate_native(schema, values, path, allow_missing)
 
 
-def _check_object(value: Any, annotation: Any, path: tuple[str | int, ...]) -> None:
+def _check_object(
+    value: Any, annotation: Any, path: tuple[str | int, ...], allow_missing: bool
+) -> None:
+    if allow_missing and value == MISSING:
+        return
     while isinstance(annotation, TypeAliasType):
         annotation = annotation.__value__
     if get_origin(annotation) in (typing.Union, types.UnionType):
@@ -155,10 +258,31 @@ def _check_object(value: Any, annotation: Any, path: tuple[str | int, ...]) -> N
             return
         _check_type(isinstance, None, classes, path, "`None`")
         return
+    if len(classes) == 1 and get_origin(classes[0]) in (list, dict):
+        item_annotation = get_args(classes[0])[-1]
+        if get_origin(classes[0]) is list and isinstance(value, list):
+            for index, item in enumerate(value):
+                _check_object(item, item_annotation, (*path, index), allow_missing)
+            return
+        if (
+            get_origin(classes[0]) is dict
+            and isinstance(value, dict)
+            and CLASS_KEY not in value
+            and REF_KEY not in value
+        ):
+            _check_untyped({key: None for key in value}, path, allow_missing)
+            for key, item in value.items():
+                if key != META_KEY:
+                    _check_object(item, item_annotation, (*path, key), allow_missing)
+            return
+        raise ConfigValidationError(
+            f"`{format_path(path)}` expects `{classes[0]}`, but the config gives "
+            f"{value!r}."
+        )
     if isinstance(value, dict):
         value = {key: item for key, item in value.items() if key != META_KEY}
         if CLASS_KEY in value:
-            target = _check_class_node(value, path)
+            target = _check_class_node(value, path, allow_missing)
             if value.get(PARTIAL_KEY) is not True and isinstance(target, type):
                 _check_type(
                     issubclass, target, classes, path, f"`$class: {value[CLASS_KEY]}`"
@@ -168,10 +292,10 @@ def _check_object(value: Any, annotation: Any, path: tuple[str | int, ...]) -> N
             target = _import_ref(value, path)
             _check_type(isinstance, target, classes, path, f"`$ref: {value[REF_KEY]}`")
             return
-        for member in classes:
-            if isinstance(member, type) and dataclasses.is_dataclass(member):
-                _check_section(member, value, path)
-                return
+        section = find_section(annotation)
+        if section is not None:
+            _check_section(section, value, path, allow_missing)
+            return
         _check_type(isinstance, value, classes, path, "a mapping without `$class`")
         return
     _check_type(isinstance, value, classes, path, f"`{value!r}`")

@@ -1,8 +1,9 @@
 import importlib
+import inspect
 from collections.abc import Callable, Iterator
 from typing import Any
 
-from omegaconf import DictConfig, ListConfig
+from omegaconf import DictConfig, ListConfig, OmegaConf
 
 from .keys import CLASS_KEY
 
@@ -86,3 +87,30 @@ def import_object(import_path: str) -> Any:
             "the import name is correct, and that dependencies are installed, if "
             "necessary."
         ) from error
+
+
+def register_resolver(
+    name: str, resolver: Callable[..., Any], *, replace: bool = False
+) -> None:
+    """Register a cached OmegaConf resolver on every supported OmegaConf version.
+
+    OmegaConf 2.4 registers with `register_resolver` and deprecates
+    `register_new_resolver`; 2.3 has only `register_new_resolver`, and its
+    `register_resolver` is an older, incompatible function.
+
+    Args:
+        name: The resolver name, as used in `${name:...}`.
+        resolver: The resolver function.
+        replace: Replace a resolver of the same name. Defaults to `False`.
+    """
+    register: Any = OmegaConf.register_resolver
+    if "replace" in inspect.signature(register).parameters:
+        register(
+            name,
+            resolver,
+            replace=replace,
+            use_cache=True,
+            annotation_validation="off",
+        )
+    else:
+        OmegaConf.register_new_resolver(name, resolver, replace=replace, use_cache=True)

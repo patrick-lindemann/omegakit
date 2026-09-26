@@ -58,15 +58,18 @@ and the keys literally present in that file. It does not see keys contributed by
 `$base`, by another file, or by overrides.
 
 A `$base` or `$defaults` value that is an interpolation (`$base: ${_common}`) sees
-the referenced node as assembled so far. Nodes are visited in document order,
-children before parents.
+the referenced node fully assembled. Nodes are merged children before parents and
+in dependency order:
 
-**Known limitation (finding 15, fix deferred):** if the referenced node comes
-later in document order and has its own `$base`, it has not been merged yet. In
-`{m: {$base: ${c}}, c: {$base: {a: 1}, b: 2}}`, `m` ends up with a literal `$base`
-key: `{$base: {a: 1}, b: 2}`. If `c` comes first, `m` gets `{b: 2, a: 1}`. Until
-this is fixed, reference only nodes that come earlier, or nodes without their own
-`$base`.
+- A node waits while its value refers to a node that still has an unmerged `$base`
+  (or unapplied `$defaults`), or to a key that does not exist yet, such as a key
+  that a later `$base` creates. It is merged as soon as the referenced node is.
+- An ancestor of a waiting node waits too.
+- References that can never be merged raise: a key that never appears raises the
+  interpolation error, and nodes that refer to each other raise `ValueError`
+  (`references form a cycle`), naming the nodes.
+- All bases are merged before any defaults are applied, so a `$base` sees a node
+  without the keys that its parent's `$defaults` add later.
 
 Every other `${…}` stays an interpolation until it is accessed or instantiated, and
 then resolves against the assembled config. This includes interpolations inside
@@ -86,6 +89,11 @@ such as `${.id}` resolves at the node's final position.
 
 - A mapping with `$class` is instantiable. `$class` is a dotted import path
   `module.attribute`; the attribute is imported and called.
+- `instantiate` and `prepare` resolve the node (after `overrides`), then validate it
+  as `validate` does (§11), then build it. A config error therefore raises
+  `ConfigValidationError` before any constructor or `from_config` is called.
+  Resolution errors (`MissingMandatoryValue`, interpolation errors) keep their
+  types, because resolution comes first.
 - If the imported object has a `from_config` attribute, `from_config(arguments)` is
   called instead of the object. This is duck-typed: `Configurable` is one
   implementation, not a requirement. `arguments` is a plain `dict` of the
@@ -172,11 +180,12 @@ such as `${.id}` resolves at the node's final position.
 | `~import` with more than one `#` | `ValueError` | `more than one` `#` |
 | `~import` path with an unknown interpolation key | `InterpolationKeyError` | the key |
 | `$base` not a mapping or list of mappings | `ValueError` | `$base` |
+| `$base` or `$defaults` interpolations that refer to each other | `ValueError` | `references form a cycle` and the nodes |
 | `$defaults` not a mapping | `ValueError` | `$defaults` |
 | Overrides of another type than `DictConfig`, `dict` or `list` | `ValueError` | `Unsupported overrides type` |
 | `instantiate`/`prepare` on a node without `$class` | `ValueError` | `Cannot instantiate config with no` `$class` |
-| `$class`/`$ref` module not found | `ModuleNotFoundError` | the module |
-| `$class`/`$ref` attribute not found | `ImportError` | `Could not import`, attribute and module |
+| `$class`/`$ref` module not found | `ConfigValidationError`, caused by `ModuleNotFoundError` | `Cannot import`, the node path and the module |
+| `$class`/`$ref` attribute not found | `ConfigValidationError`, caused by `ImportError` | `Cannot import`, the node path, `Could not import` |
 | `$ref` with sibling keys other than `$meta` | `ValueError` | `cannot contain any other keys` |
 | Raw dict value that OmegaConf does not support | `UnsupportedValueType` | the key |
 | Unknown `$` key, or `$class` with `$ref`, at instantiation | `ValueError` | the key and `reserved` |
@@ -187,7 +196,7 @@ such as `${.id}` resolves at the node's final position.
 | Schema outside the supported subset (§10) | `ConfigValidationError` | the field and the fix |
 | Schema that does not match `__init__` (§10) | `ConfigValidationError` | the field or parameter |
 | Unknown field, missing required field, or invalid native value | `ConfigValidationError` | the node path and the schema |
-| Object field built with the wrong class | `ConfigValidationError` | the field path, expected and actual class |
+| Object field whose `$class` is not the annotated class or a subclass, or a `$ref` that is not an instance | `ConfigValidationError` | the field path, the expected class and the given node |
 | `make_node()` for a class or function not defined at module level | `ValueError` | `module level` |
 | Type variable in a `Configurable` base that cannot be substituted | `TypeError` | `Cannot resolve type variable` |
 | Resolver registered twice without `replace=True` | `ValueError` | `already registered` |
@@ -205,7 +214,11 @@ A malformed dotlist override such as `["a"]` is not an error: OmegaConf sets `a`
   each resolver is imported from its own module, which carries its own
   dependencies.
 - omegakit does not load `.env` files.
-- OmegaConf is pinned to 2.3.x, because assembly uses private OmegaConf node APIs.
+- omegakit supports OmegaConf 2.3 and 2.4 (`omegaconf>=2.3,<2.5`) and behaves the
+  same on both. Assembly uses private OmegaConf node APIs, so CI tests the lowest
+  supported version, the locked version and the newest pre-release in the range.
+- Resolvers are registered with the API of the installed OmegaConf
+  (`register_resolver` on 2.4, `register_new_resolver` on 2.3), so neither warns.
 - Configs import and call arbitrary Python objects. Load them only from trusted
   sources.
 
@@ -227,16 +240,35 @@ has no schema. A type variable that cannot be substituted raises `TypeError`.
 
 | Annotation | Config value | Validated by | The typed config holds |
 |---|---|---|---|
-| **native**: `int`, `float`, `bool`, `str`, `bytes`, `Path`, `Enum`, `Literal` of strings, integers or booleans, dataclasses whose fields are all native, `list`/`dict` of these, unions of these, and these or `None` | plain values | OmegaConf, then omegakit for `Literal` | the coerced value |
-| **object**: any other class, a generic class, a union of classes, and these or `None`, also through a `type` alias | a `$class` or `$ref` node, or `null` if optional | its own class, then `isinstance` | the built object |
+| **native**: `int`, `float`, `bool`, `str`, `bytes`, `Path`, `Enum`, `Literal` of strings, integers or booleans, `TypedDict`, dataclasses whose fields are all native, `list`/`dict`/`tuple`/`Sequence`/`Mapping` of these, unions of these, and these or `None` | plain values | OmegaConf, then omegakit (see below) | the coerced value |
+| **object**: any other class, a generic class, a union of classes, `list`/`dict` of these, and these or `None`, also through a `type` alias | a `$class` or `$ref` node, a list or mapping of them, or `null` if optional | the `$class` against the annotation (§11), then its own schema | the built object |
 | **`Any`** | anything | nothing | the value, with `$class` nodes inside built |
 
-- Enums are given by member **name** (`kind: B`); member values are rejected.
+- omegakit behaves the same on every supported OmegaConf. Where OmegaConf 2.3 lacks
+  a form (`Literal`, unions with non-scalar members, fixed-length tuples), omegakit
+  gives OmegaConf a plain type there and checks the rest itself.
+- Enums are given by member **name** or **value** (`kind: B` or `kind: beta`). A
+  name wins over an equal value of another member. Values must have the member
+  value's exact type: `"2"` and `true` are not the member with value `2`.
 - A `Literal` value is first coerced like its type, then compared by type and
-  value: `level: "2"` is valid for `Literal[1, 2]`, `level: true` is not. OmegaConf
-  does not support `Literal`, so omegakit gives it the literal's value type and
-  checks the values itself.
-- Unions of plain values are accepted, but OmegaConf does not coerce them.
+  value: `level: "2"` is valid for `Literal[1, 2]`, `level: true` is not.
+- Unions: a union may have at most one mapping member (a dataclass, `dict`,
+  `Mapping` or `TypedDict`) and at most one list member (`list`, `tuple`,
+  `Sequence`); otherwise the lookup raises. A mapping is checked as the mapping
+  member, a list as the list member, both with coercion; a scalar must match a
+  scalar member's type exactly, without coercion (`"5"` is not an `int`, `True`
+  not an `int`, `3` not a `float`, and a string is not a `Path` or an enum member);
+  `null` needs `None` in the union.
+- `tuple[T, ...]` and `tuple[A, B]` are built as tuples from YAML lists; a
+  fixed-length tuple needs exactly that many items. `Sequence` and `Mapping` give
+  a `list` and a `dict`.
+- A `TypedDict` field is a `dict` whose keys and values are not checked, as in
+  OmegaConf.
+- Fields with `init=False` and `InitVar` pseudo-fields are not configurable: a
+  config key for them is an unknown field. An `InitVar` needs a default.
+  Keyword-only fields work like any other.
+- In an object `list` or `dict`, every item is a `$class` or `$ref` node, or a
+  plain mapping when the item type is a dataclass (a section).
 - Missing fields take their dataclass defaults. A field without a default is
   required.
 - Schema defaults win over constructor defaults, because the default `from_config`
@@ -245,11 +277,13 @@ has no schema. A type variable that cannot be substituted raises `TypeError`.
 **Supported subset.** The lookup raises `ConfigValidationError`, naming the field
 and the fix, for:
 
-- fields with `init=False`, `InitVar` fields and keyword-only fields
-- `tuple`, `set`, `frozenset` and the abstract containers (`Sequence`, `Mapping`,
-  …); use `list`, `dict` or `Any`
-- `list` or `dict` of objects; use `Any`
-- unions that mix plain values and classes, and `TypedDict` fields
+- `InitVar` fields without a default
+- `set`, `frozenset` and the other abstract containers (`Iterable`, `Collection`,
+  `Set`, …); use `list`, `tuple` or `Any`
+- containers that mix plain values and objects, and tuples, `Sequence` or
+  `Mapping` of objects; use `list`, `dict` or `Any`
+- unions that mix plain values and classes, and unions with more than one mapping
+  or more than one list member
 - `Literal` values other than strings, integers and booleans
 - annotations that `get_type_hints` cannot resolve, such as names imported under
   `TYPE_CHECKING`
@@ -266,22 +300,25 @@ and the fix, for:
      `float`, a subclass to its base, unions member by member). Generic and
      unresolvable annotations are skipped.
 3. **Native validation** (parent before children): unknown keys and missing required
-   non-native fields raise. The native values are merged onto an OmegaConf schema of
-   the native fields and converted with `to_object`. Object and `Any` values never
-   enter OmegaConf, so resolver-returned objects and object defaults work.
-4. **Object and `Any` fields** (children before parent) are built as in §5. A built
-   object field must be an instance of its annotation. The check is skipped for a
-   child with `$partial: true`, for generic annotations, and when `isinstance` raises
-   `TypeError` (protocols that are not runtime-checkable).
+   non-native fields raise. The native values are merged onto an OmegaConf structure
+   of the native fields, with `Literal` replaced by its value type, and the result
+   is checked for literals and converted back into the schema's own classes. Object
+   and `Any` values never enter OmegaConf, so resolver-returned objects and object
+   defaults work.
+4. **Object and `Any` fields** (children before parent) are built as in §5. A plain
+   mapping in a field whose annotation includes a dataclass is a section: it is
+   built as that dataclass, with the same steps. The type of a built object is not
+   checked; the `$class` was checked before building (§11), and what `from_config`
+   returns is its own contract.
 5. **Assembly:** `TConfig(**fields)`, so `__post_init__` runs. Nested native
    dataclasses, including those in `list` and `dict` fields, are the user's classes.
 6. **Call:** `from_config(typed_config)`, or a partial of it for `prepare` and
    `$partial` that passes call-time arguments as `**kwargs`. Validation happens when
    the partial is created; a `???` never reaches it.
 
-Validation errors name the node path and the schema class. Children are built before
-the parent's constructor runs, so an expensive child is wasted if the parent fails;
-the consistency check catches the most common mismatch first.
+Validation errors name the node path and the schema class. The whole node is
+validated before anything is built (§5), so a config error never leaves some
+children built.
 
 **`from_config` contract.** It receives the typed config with its children built,
 plus `**kwargs` from a partial or a direct caller. It returns `Self`, or is
@@ -295,28 +332,35 @@ users should configure belong in object fields.
 
 ## 11. Validation
 
-`validate(config, *, schema=None)` checks a config that `load_config` has
-assembled, without building anything. It returns nothing and raises
-`ConfigValidationError` at the first problem. `is_valid(config, *, schema=None)`
-runs the same check and returns `False` in place of raising.
-
-Loading, validating and instantiating are separate steps:
+`validate(config, *, schema=None, allow_missing=False)` checks a config that
+`load_config` has assembled, without building anything. It returns nothing and
+raises `ConfigValidationError` at the first problem. `is_valid` takes the same
+arguments, runs the same check and returns `False` in place of raising.
 
 1. `load_config` assembles the full config (§1). It checks no schema.
-2. `validate` checks the assembled config. It is not called by `load_config` or
-   `instantiate`.
-3. `instantiate` builds objects and runs its own per-node checks (§10).
+2. `validate` checks the assembled config, or any node of it.
+3. `instantiate` and `prepare` run the same check on the node they build before
+   building it (§5).
 
 The check:
 
 - The config is resolved first. An interpolation that fails, and a `???` anywhere,
-  make the config invalid.
+  make the config invalid (unless `allow_missing`). The error names the full key.
 - Every node with `$class` is checked against the schema of its class (§10),
   children before parents. `$class` is imported to find the schema, but nothing is
   called. Classes without a schema only have their children checked.
-- `schema` is a dataclass for the root. The root and its nested dataclasses are
-  sections: unknown keys, invalid plain values and missing required fields raise.
-  Without `schema`, the root is not checked, but its `$class` nodes are.
+- `schema` is the class the root must match:
+  - A dataclass makes the root a section: unknown keys, invalid plain values and
+    missing required fields raise, and so do nested dataclass sections.
+  - Another class makes the root a node that builds it. With `$class`, that class
+    must be `schema` or a subclass, and is checked as usual. Without `$class`, the
+    root is checked against the schema of `schema`, as a fragment file that is
+    completed elsewhere; a class without a dataclass schema raises.
+  - A `schema` that is not a class raises `TypeError`.
+  - Without `schema`, the root is not checked, but its `$class` nodes are.
+- `allow_missing=True` accepts missing values: `???`, required fields that are not
+  given, and interpolations to missing or unknown keys (as in a library file that
+  its consumers complete). Every value that is given is still checked.
 - An object field (§10) accepts a node whose `$class` is the annotated class or a
   subclass, a `$ref` to an instance of it, or `None` when the annotation is
   optional. A mapping without `$class` is accepted only when the annotation is a
@@ -326,26 +370,54 @@ The check:
 - `Any` fields are not checked, but their `$class` nodes are.
 - What `from_config` returns is not checked. A valid config is one whose every
   node matches its schema; building it is left to `from_config`.
-- Reserved keys (§5) are checked as in `instantiate`, and `$meta` is ignored.
+- Reserved keys (§6) are checked, and `$meta` is ignored.
+- A `$class` or `$ref` that cannot be imported raises, naming the node.
 - `check_schema` (§10) runs for every class with a schema.
 - Plain values are checked the way `instantiate` coerces them, so `"64"` is a valid
   `int`. The config itself is not changed.
 
 ## 12. Editor schemas
 
-`generate_json_schema(schema)` and the command
-`omegakit json-schema <import path> [-o file]` (also `python -m omegakit`) generate a
-JSON Schema (draft-07) for YAML files. The argument is a root schema dataclass (§11), or a
-`Configurable` class whose schema describes a fragment file.
+`generate_json_schema(schema)` and the command `omegakit json-schema` (§13)
+generate a JSON Schema (draft-07) for YAML files. The argument is a root schema
+dataclass (§11), or a `Configurable` class whose schema describes a fragment file.
 
 - Every value, scalar or whole node, may also be an interpolation (`${…}`), `???`
   or an `~import`.
 - Every mapping accepts any `$` key. Other unknown keys are errors.
 - Nothing is required, because values may come from `$base`, `$defaults`, imports or
   overrides. Missing values are caught by `validate` or `instantiate`.
-- Enums list member names, and `Literal` fields list their values.
+- Enums list member names and values, and `Literal` fields list their values.
+  Fixed-length tuples give arrays with one schema per position.
 - An object field whose class is a `Configurable` with a dataclass schema
   is checked against that schema (`if`/`then`), but only when its `$class` names the
   class's defining module and qualified name. Any other `$class`, such as a
   re-export or a subclass, accepts any mapping.
 - Field descriptions are not generated.
+
+## 13. Command line
+
+The `omegakit` command (also `python -m omegakit`) has one subcommand per task. It
+puts the working directory on the import path, so `$class`, `--schema` and
+`json-schema` import paths resolve from there.
+
+**Arguments.** `check` and `show` take config files and `key=value` overrides in
+any order. An argument that names an existing file is a config file, even if it
+contains `=`. Otherwise it is an override if it has a `=` with no `/` before it, and
+a config file (which then fails to load) if not. Overrides apply to every file.
+
+**Exit codes.** 0 on success, 1 when a config is invalid or cannot be loaded, 2 for
+usage errors (a missing config file, an unknown option, an `--schema` that cannot be
+imported).
+
+- `omegakit check CONFIG... [KEY=VALUE...] [--schema IMPORT_PATH] [--allow-missing]`
+  loads each file with the overrides and validates it (§11). It prints one line per
+  failing file, `<file>: <exception type>: <message>`, and nothing for valid files.
+  Every exception from loading or validating counts as a failure of that file.
+- `omegakit show CONFIG [KEY=VALUE...] [--node KEY] [--resolve] [--keep-meta]`
+  prints the assembled config as YAML, or the node at `KEY`. `--resolve` resolves
+  interpolations and prints missing values as `???`. A scalar node prints as its
+  value.
+- `omegakit json-schema IMPORT_PATH [-o FILE] [--check]` prints or writes the JSON
+  Schema (§12). With `--check`, which needs `-o`, it writes nothing and exits with 1
+  if `FILE` is missing or differs from the generated schema (compared as JSON).

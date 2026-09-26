@@ -11,6 +11,7 @@ from omegakit.resolvers.torch import (
     register_torch_dtype_resolver,
     register_torch_resolvers,
 )
+from omegakit.utils import register_resolver
 
 # Contracts: §9 Environment.
 
@@ -65,7 +66,7 @@ def test_real_torch_resolvers():
 
 def test_torch_conflict_does_not_partially_register():
     pytest.importorskip("torch")
-    OmegaConf.register_new_resolver("cuda_available", lambda: False)
+    register_resolver("cuda_available", lambda: False)
     with pytest.raises(ValueError, match="already registered"):
         register_torch_resolvers()
     assert not OmegaConf.has_resolver("dtype")
@@ -95,13 +96,13 @@ def test_torch_individual_resolvers_register_one_name(fake_torch):
 
 
 def test_torch_conflict_does_not_partially_register_with_fake_torch(fake_torch):
-    OmegaConf.register_new_resolver("cuda_available", lambda: True)
+    register_resolver("cuda_available", lambda: True)
     with pytest.raises(ValueError, match="already registered"):
         register_torch_resolvers()
     assert not OmegaConf.has_resolver("dtype")
 
 
 def test_torch_replace_overwrites_existing_resolvers(fake_torch):
-    OmegaConf.register_new_resolver("cuda_available", lambda: True)
+    register_resolver("cuda_available", lambda: True)
     register_torch_resolvers(replace=True)
     assert OmegaConf.create({"cuda": "${cuda_available:}"}).cuda is False

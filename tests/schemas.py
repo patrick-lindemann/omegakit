@@ -1,8 +1,8 @@
-from collections.abc import Callable
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import InitVar, dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Any, Literal, Protocol, Self, override
+from typing import Any, Literal, Protocol, Self, TypedDict, override
 
 from omegaconf import MISSING
 from typing_extensions import TypeVar
@@ -189,7 +189,8 @@ class InitFalseConfig:
 
 
 class InitFalse(Configurable[InitFalseConfig]):
-    def __init__(self, **fields: Any) -> None: ...
+    def __init__(self, **fields: Any) -> None:
+        self.fields = fields
 
 
 @dataclass
@@ -199,7 +200,8 @@ class InitVarConfig:
 
 
 class WithInitVar(Configurable[InitVarConfig]):
-    def __init__(self, **fields: Any) -> None: ...
+    def __init__(self, **fields: Any) -> None:
+        self.fields = fields
 
 
 @dataclass(kw_only=True)
@@ -208,7 +210,8 @@ class KwOnlyConfig:
 
 
 class KwOnly(Configurable[KwOnlyConfig]):
-    def __init__(self, **fields: Any) -> None: ...
+    def __init__(self, **fields: Any) -> None:
+        self.fields = fields
 
 
 @dataclass
@@ -217,7 +220,8 @@ class TupleConfig:
 
 
 class WithTuple(Configurable[TupleConfig]):
-    def __init__(self, **fields: Any) -> None: ...
+    def __init__(self, **fields: Any) -> None:
+        self.fields = fields
 
 
 @dataclass
@@ -235,7 +239,8 @@ class ObjectListConfig:
 
 
 class WithObjectList(Configurable[ObjectListConfig]):
-    def __init__(self, **fields: Any) -> None: ...
+    def __init__(self, **fields: Any) -> None:
+        self.fields = fields
 
 
 @dataclass
@@ -370,7 +375,8 @@ class DataclassUnionConfig:
 
 
 class WithDataclassUnion(Configurable[DataclassUnionConfig]):
-    def __init__(self, **fields: Any) -> None: ...
+    def __init__(self, **fields: Any) -> None:
+        self.fields = fields
 
 
 @dataclass
@@ -431,3 +437,104 @@ class FloatLiteralConfig:
 
 class WithFloatLiteral(Configurable[FloatLiteralConfig]):
     def __init__(self, **fields: Any) -> None: ...
+
+
+BUILT: list[str] = []
+
+
+class Recorded:
+    """Records every construction in `BUILT`."""
+
+    def __init__(self, name: str) -> None:
+        BUILT.append(name)
+
+
+@dataclass
+class SectionWithObject:
+    """A dataclass section that holds an object field."""
+
+    encoder: Encoder
+    size: int = 1
+
+
+@dataclass
+class HolderConfig:
+    section: SectionWithObject | None = None
+
+
+class Holder(Configurable[HolderConfig]):
+    def __init__(self, section: SectionWithObject | None) -> None:
+        self.section = section
+
+
+class Color(Enum):
+    """An enum with string values."""
+
+    RED = "red"
+    BLUE = "blue"
+
+
+class Clash(Enum):
+    """An enum where a value equals another member's name."""
+
+    A = "B"
+    B = "x"
+
+
+class Level(Enum):
+    """An enum with integer values."""
+
+    LOW = 1
+    HIGH = 2
+
+
+class PointDict(TypedDict):
+    x: int
+
+
+@dataclass
+class TypesConfig:
+    """A schema with the annotations beyond plain values and dataclasses."""
+
+    pair: tuple[int, str] = (0, "a")
+    numbers: tuple[int, ...] = ()
+    sequence: Sequence[int] = field(default_factory=list)
+    mapping: Mapping[str, int] = field(default_factory=dict)
+    point: PointDict = field(default_factory=lambda: PointDict(x=0))
+    color: Color = Color.RED
+    clash: Clash = Clash.A
+    level: Level = Level.LOW
+    colors: dict[Color, int] = field(default_factory=dict)
+    sub_or_int: Sub | int = 0
+    sub_default: Sub | int = field(default_factory=Sub)
+    list_or_int: list[int] | int = 0
+    maybe_sub: Sub | None = None
+
+
+class Types(Configurable[TypesConfig]):
+    def __init__(self, **fields: Any) -> None:
+        self.fields = fields
+
+
+@dataclass
+class AmbiguousUnionConfig:
+    value: Sub | EncoderConfig | None = None
+
+
+class WithAmbiguousUnion(Configurable[AmbiguousUnionConfig]):
+    def __init__(self, **fields: Any) -> None: ...
+
+
+@dataclass
+class ObjectContainersConfig:
+    """A schema with lists and dicts of objects."""
+
+    encoders: list[Encoder] = field(default_factory=list)
+    by_name: dict[str, Encoder] = field(default_factory=dict)
+    sections: list[SectionWithObject] = field(default_factory=list)
+    maybe: list[Encoder] | None = None
+
+
+class ObjectContainers(Configurable[ObjectContainersConfig]):
+    def __init__(self, **fields: Any) -> None:
+        self.fields = fields

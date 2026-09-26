@@ -1,0 +1,3 @@
+server:
+  $base: ~import server.yaml
+  port: 8080

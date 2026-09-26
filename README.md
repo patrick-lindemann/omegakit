@@ -62,10 +62,14 @@ the failing node. The complete rules are in the
 schema, `class Model(Configurable[ModelConfig])`, the config is validated and typed
 before `from_config` receives it; see the
 [typed-configs guide](https://omegakit.readthedocs.io/en/latest/guide/typed-configs.html). `validate(cfg, schema=AppConfig)`
-checks a loaded config without building anything; see the
+checks a loaded config without building anything, and `instantiate` runs the same
+check before it builds; see the
 [validation guide](https://omegakit.readthedocs.io/en/latest/guide/validation.html).
 `omegakit json-schema` turns the same dataclasses into a JSON Schema for YAML
-editors; see the [editor-schemas guide](https://omegakit.readthedocs.io/en/latest/guide/editor-schemas.html). `walk` traverses
+editors; see the [editor-schemas guide](https://omegakit.readthedocs.io/en/latest/guide/editor-schemas.html).
+`omegakit check` validates config files from a terminal or a pre-commit hook, and
+`omegakit show` prints a config as it is assembled; see the
+[command-line guide](https://omegakit.readthedocs.io/en/latest/guide/command-line.html). `walk` traverses
 mapping nodes depth-first, parents before children. The optional `expected` argument
 to `instantiate` and `prepare` is a typing hint, not runtime validation: with it, the
 result is typed as that class, and without it as `Any`. `overrides` is keyword-only.
@@ -121,4 +125,9 @@ Tests that require a real Torch installation skip when it is absent.
 
 This package imports and calls Python objects specified by configs, so configs must
 come from trusted sources. Assembly currently relies on private OmegaConf node APIs;
-the supported OmegaConf range is intentionally constrained to 2.3.x.
+the supported OmegaConf range is `>=2.3,<2.5`, and CI also tests the newest OmegaConf
+pre-release in that range.
+
+Dependabot proposes dependency and GitHub Actions updates weekly, and patch and minor
+updates merge automatically once CI passes. The runtime bounds in `pyproject.toml` are
+changed by hand.

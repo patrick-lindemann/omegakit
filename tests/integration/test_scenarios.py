@@ -17,6 +17,7 @@ from omegakit import (
     prepare,
     validate,
 )
+from omegakit.utils import register_resolver
 from tests import schemas
 from tests.helpers import POINT, RECORDER, Point
 
@@ -161,7 +162,7 @@ def test_scenario_object_field_of_wrong_class(write_yaml):
 def test_scenario_resolver_object_in_any_field(write_yaml):
     """Resolver + `Any` field: an object returned by a resolver is passed through."""
     encoder = schemas.Encoder(9)
-    OmegaConf.register_new_resolver("encoder", lambda: encoder)
+    register_resolver("encoder", lambda: encoder)
     cfg = load_config(
         write_yaml(
             "main.yaml",
@@ -179,6 +180,21 @@ def test_scenario_validate_before_instantiating(write_yaml):
     cfg = load_config(path, overrides=["training.model.depth=${seed}"])
     validate(cfg, schema=schemas.AppConfig)
     assert instantiate(cfg.training.model, schemas.Model).depth == 4
+
+
+def test_scenario_forward_base_to_imported_node_then_instantiate(write_yaml):
+    """`$base: ${later}` + `~import` + `instantiate`: the later node merges first."""
+    write_yaml("model.yaml", "$class: tests.schemas.Model\nkind: B\n")
+    cfg = load_config(
+        write_yaml(
+            "main.yaml",
+            "small:\n  $base: ${shared}\n  depth: 2\n"
+            "shared:\n  $base: ~import model.yaml\n  depth: ???\n",
+        )
+    )
+    assert instantiate(cfg.small, schemas.Model).depth == 2
+    with pytest.raises(MissingMandatoryValue, match=r"shared\.depth"):
+        instantiate(cfg.shared)
 
 
 EDITOR = Path(__file__).parents[2] / "docs" / "examples" / "editor"

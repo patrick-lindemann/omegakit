@@ -2,7 +2,8 @@ import pytest
 from omegaconf import OmegaConf
 from omegaconf.errors import UnsupportedValueType
 
-from omegakit import instantiate
+from omegakit import ConfigValidationError, instantiate
+from tests import schemas
 from tests.helpers import (
     CONFIGURABLE_POINT,
     CONTAINER,
@@ -47,9 +48,10 @@ def test_instantiate_missing_class_raises():
         instantiate({"x": 1})
 
 
-def test_instantiate_unknown_class_raises():
-    with pytest.raises(ImportError):
+def test_instantiate_unknown_class_raises_before_building():
+    with pytest.raises(ConfigValidationError, match="Could not import") as info:
         instantiate({"$class": "tests.helpers.DoesNotExist"})
+    assert isinstance(info.value.__cause__, ImportError)
 
 
 def test_instantiate_applies_overrides():
@@ -105,9 +107,10 @@ def test_instantiate_duck_typed_from_config_receives_built_children():
     assert kwargs == {}
 
 
-def test_instantiate_unknown_module_raises():
-    with pytest.raises(ModuleNotFoundError):
+def test_instantiate_unknown_module_raises_before_building():
+    with pytest.raises(ConfigValidationError, match=r"tests\.does_not_exist") as info:
         instantiate({"$class": "tests.does_not_exist.Thing"})
+    assert isinstance(info.value.__cause__, ModuleNotFoundError)
 
 
 @pytest.mark.parametrize("wrap", [dict, OmegaConf.create])
@@ -194,3 +197,15 @@ def test_instantiate_overrides_are_keyword_only():
 
 def test_instantiate_expected_is_not_checked_at_runtime():
     assert isinstance(instantiate({"$class": POINT, "x": 1, "y": 2}, Container), Point)
+
+
+def test_instantiate_validates_before_building_anything():
+    schemas.BUILT.clear()
+    config = {
+        "$class": "tests.helpers.Container",
+        "name": {"$class": "tests.schemas.Recorded", "name": "first"},
+        "point": {"$class": "tests.schemas.Model", "depth": "deep"},
+    }
+    with pytest.raises(ConfigValidationError, match=r"`point\.depth`"):
+        instantiate(config)
+    assert schemas.BUILT == []

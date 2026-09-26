@@ -1,6 +1,6 @@
 import pytest
 
-from omegakit import instantiate
+from omegakit import ConfigValidationError, instantiate
 from tests.helpers import POINT
 
 # Contracts: §5 Instantiation.
@@ -36,5 +36,5 @@ def test_ref_at_top_level_is_not_instantiable():
 
 
 def test_ref_unknown_attribute_raises():
-    with pytest.raises(ImportError, match="Could not import"):
+    with pytest.raises(ConfigValidationError, match=r"in `x`: Could not import"):
         instantiate({"$class": POINT, "x": {"$ref": "builtins.nope"}, "y": 2})

@@ -4,6 +4,7 @@ import pytest
 from omegaconf import OmegaConf
 
 from omegakit import ConfigValidationError, check_schema, instantiate, prepare
+from omegakit.utils import register_resolver
 from tests import schemas
 
 # Contracts: §10 Typed configs (field kinds, supported subset, validation).
@@ -28,9 +29,11 @@ def test_schema_enum_given_by_member_name():
     assert instantiate({"$class": FIELDS, "kind": "B"}).fields["kind"] is schemas.Kind.B
 
 
-def test_schema_enum_value_is_rejected():
-    with pytest.raises(ConfigValidationError, match="alpha"):
-        instantiate({"$class": FIELDS, "kind": "alpha"})
+def test_schema_enum_value_is_accepted():
+    assert (
+        instantiate({"$class": FIELDS, "kind": "alpha"}).fields["kind"]
+        is schemas.Kind.A
+    )
 
 
 def test_schema_union_of_primitives_is_not_coerced():
@@ -61,7 +64,7 @@ def test_schema_object_field_is_built():
 
 def test_schema_object_field_of_wrong_type_raises_with_path():
     with pytest.raises(
-        ConfigValidationError, match=r"`point\.encoder`.*Encoder \| None.*Decoder"
+        ConfigValidationError, match=r"`point\.encoder` expects Encoder.*Decoder"
     ):
         instantiate(
             {
@@ -76,7 +79,7 @@ def test_schema_object_field_of_wrong_type_raises_with_path():
 
 
 def test_schema_object_field_rejects_plain_mapping():
-    with pytest.raises(ConfigValidationError, match="dict"):
+    with pytest.raises(ConfigValidationError, match="mapping without `\\$class`"):
         instantiate({"$class": FIELDS, "encoder": {"width": 4}})
 
 
@@ -103,7 +106,7 @@ def test_schema_isinstance_check_skipped_for_non_runtime_protocols():
 
 
 def test_schema_any_field_accepts_resolver_objects():
-    OmegaConf.register_new_resolver("obj", lambda: schemas.Encoder(5))
+    register_resolver("obj", lambda: schemas.Encoder(5))
     obj = instantiate(OmegaConf.create({"$class": FIELDS, "anything": "${obj:}"}))
     assert obj.fields["anything"].width == 5
 
@@ -161,17 +164,25 @@ def test_schema_validation_happens_at_prepare():
 @pytest.mark.parametrize(
     ("cls", "match"),
     [
-        (schemas.InitFalse, "init=False"),
-        (schemas.WithInitVar, "InitVar"),
-        (schemas.KwOnly, "keyword-only"),
-        (schemas.WithTuple, "unsupported container"),
         (schemas.WithSet, "unsupported container"),
-        (schemas.WithObjectList, "Use `Any`"),
         (schemas.WithMixedUnion, "mixes value types and classes"),
         (schemas.WithUnresolvable, "field `value`"),
-        (schemas.WithDataclassUnion, "cannot be validated by OmegaConf"),
+        (schemas.WithAmbiguousUnion, "cannot be told apart"),
     ],
 )
 def test_schema_outside_supported_subset_raises(cls, match):
     with pytest.raises(ConfigValidationError, match=match):
         check_schema(cls)
+
+
+def test_schema_plain_mapping_in_dataclass_field_is_built_as_a_section():
+    holder = instantiate(
+        {
+            "$class": "tests.schemas.Holder",
+            "section": {"encoder": {"$class": "tests.schemas.Encoder", "width": 3}},
+        },
+        schemas.Holder,
+    )
+    assert isinstance(holder.section, schemas.SectionWithObject)
+    assert isinstance(holder.section.encoder, schemas.Encoder)
+    assert (holder.section.encoder.width, holder.section.size) == (3, 1)

@@ -67,9 +67,28 @@ def test_json_schema_rejects_wrong_types(config):
     assert _errors(schemas.AppConfig, config)
 
 
-def test_json_schema_enums_accept_member_names_only():
+def test_json_schema_enums_accept_member_names_and_values():
     assert _errors(schemas.Fields, {"kind": "B"}) == []
-    assert _errors(schemas.Fields, {"kind": "beta"})
+    assert _errors(schemas.Fields, {"kind": "beta"}) == []
+    assert _errors(schemas.Fields, {"kind": "gamma"})
+
+
+def test_json_schema_tuples_and_abstract_containers():
+    assert _errors(schemas.Types, {"pair": [1, "b"], "numbers": [1, 2]}) == []
+    assert _errors(schemas.Types, {"pair": [1]})
+    assert _errors(schemas.Types, {"sequence": [1], "mapping": {"a": 1}}) == []
+    assert _errors(schemas.Types, {"sequence": {"a": 1}})
+
+
+def test_json_schema_object_lists():
+    encoders = [{"$class": "tests.schemas.TypedEncoder", "width": 2}]
+    assert _errors(schemas.ObjectContainers, {"encoders": encoders}) == []
+    assert _errors(schemas.ObjectContainers, {"encoders": {"a": 1}})
+
+
+def test_json_schema_leaves_out_fields_a_config_cannot_set():
+    properties = generate_json_schema(schemas.InitFalse)["properties"]
+    assert list(properties) == ["value"]
 
 
 def test_json_schema_checks_configurable_object_fields_by_class():

@@ -59,6 +59,7 @@ guide/editor-schemas
 guide/metadata
 guide/resolvers
 guide/walk
+guide/command-line
 ```
 
 ```{toctree}
