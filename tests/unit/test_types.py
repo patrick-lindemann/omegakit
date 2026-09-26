@@ -186,3 +186,30 @@ def test_types_optional_containers_and_dataclasses_reject_other_values(
         validate(config)
     with pytest.raises(ConfigValidationError, match=match):
         instantiate(config)
+
+
+@dataclass
+class ListUnionConfig:
+    value: int | list[int] = 0
+    maybe: int | list[int] | None = 0
+
+
+class ListUnion(Configurable[ListUnionConfig]):
+    def __init__(self, **fields: Any) -> None:
+        self.fields = fields
+
+
+LIST_UNION = f"{__name__}.ListUnion"
+
+
+def test_types_list_union_accepts_its_members():
+    fields = instantiate({"$class": LIST_UNION, "value": [1], "maybe": None}).fields
+    assert fields == {"value": [1], "maybe": None}
+
+
+@pytest.mark.parametrize("value", ["wrong", 3.5, True, None])
+def test_types_list_union_rejects_other_scalars(value):
+    with pytest.raises(ConfigValidationError, match="`value`"):
+        validate({"$class": LIST_UNION, "value": value})
+    with pytest.raises(ConfigValidationError, match="`value`"):
+        instantiate({"$class": LIST_UNION, "value": value})

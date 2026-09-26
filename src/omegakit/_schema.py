@@ -707,7 +707,7 @@ def _is_match(value: Any, member: Any) -> bool:
         return isinstance(value, member)
     if isinstance(member, type):
         return type(value) is member
-    return True
+    return get_origin(member) is None
 
 
 def _is_assignable(source: Any, target: Any) -> bool:
