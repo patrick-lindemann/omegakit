@@ -170,6 +170,12 @@ def _check_class_node(
     node: dict[str, Any], path: tuple[str | int, ...], allow_missing: bool
 ) -> Any:
     target = _import(node, CLASS_KEY, path)
+    if not (callable(target) or hasattr(target, "from_config")):
+        raise ConfigValidationError(
+            f"`{CLASS_KEY}: {node[CLASS_KEY]}` in `{format_path(path)}` is neither "
+            f"callable nor has `from_config`. Use `{REF_KEY}` for an object that is "
+            "used as it is."
+        )
     _check_target(target, node, path, allow_missing)
     return target
 

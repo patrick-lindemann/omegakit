@@ -218,6 +218,16 @@ def test_validate_rejects_import_paths_that_are_not_strings(key, value):
         instantiate({"$class": "tests.helpers.Recorder", "thing": {key: value}})
 
 
+def test_validate_rejects_class_targets_that_cannot_be_built():
+    with pytest.raises(ConfigValidationError, match=r"math\.pi` in `thing`"):
+        validate({"thing": {"$class": "math.pi"}})
+    with pytest.raises(ConfigValidationError, match=r"math\.pi` in `thing`"):
+        instantiate(
+            {"$class": "tests.helpers.Recorder", "thing": {"$class": "math.pi"}}
+        )
+    validate({"thing": {"$ref": "math.pi"}})
+
+
 def test_validate_runs_the_schema_consistency_check():
     with pytest.raises(ConfigValidationError, match="required parameter `z`"):
         validate({"$class": "tests.schemas.MissingParameter"})

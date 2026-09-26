@@ -371,7 +371,8 @@ The check:
   node matches its schema; building it is left to `from_config`.
 - Reserved keys (§6) are checked, and `$meta` is ignored.
 - A `$class` or `$ref` that is not a string, or cannot be imported, raises, naming
-  the node.
+  the node. So does a `$class` target that is neither callable nor has
+  `from_config`; `$ref` accepts any object.
 - `check_schema` (§10) runs for every class with a schema.
 - Plain values are checked the way `instantiate` coerces them, so `"64"` is a valid
   `int`. The config itself is not changed.
