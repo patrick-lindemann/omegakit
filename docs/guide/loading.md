@@ -41,7 +41,7 @@ that contains them, not to the working directory.
 |---|---|
 | The file does not exist | `FileNotFoundError` |
 | Invalid YAML, or a missing, invalid or malformed import, `$base` or `$defaults` | `ConfigValidationError`, naming the file or node |
-| Overrides of another type | `ValueError` (`Unsupported overrides type`) |
+| Overrides of another type | `TypeError` (`Unsupported overrides type`) |
 
 Unknown `$` keys are kept by `load_config`; `instantiate` rejects them. The complete
 order and its consequences are in the [contracts](../contracts.md), section 1.

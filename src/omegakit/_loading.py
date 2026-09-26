@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any, cast
 
 import yaml
-from omegaconf import DictConfig, ListConfig, OmegaConf
+from omegaconf import DictConfig, OmegaConf
 from omegaconf.errors import OmegaConfBaseException
 
 from ._assembly import (
@@ -97,8 +97,8 @@ def merge_overrides(
 def _parse_overrides(
     overrides: DictConfig | dict[str, Any] | list[str],
 ) -> DictConfig:
-    if isinstance(overrides, (DictConfig, ListConfig)):
-        return cast(DictConfig, overrides)
+    if isinstance(overrides, DictConfig):
+        return overrides
     elif isinstance(overrides, dict):
         return OmegaConf.create(overrides)
     elif isinstance(overrides, list):
@@ -111,7 +111,7 @@ def _parse_overrides(
                     f"Cannot parse the override `{override}`: {describe_error(error)}"
                 ) from error
         return parsed
-    raise ValueError(
-        f"Unsupported overrides type: {type(overrides)}. Expected `Config`, `dict` "
-        "or `list` of `key=value` string pairs."
+    raise TypeError(
+        f"Unsupported overrides type: {type(overrides)}. Expected a `DictConfig`, a "
+        "`dict` or a `list` of `key=value` strings."
     )

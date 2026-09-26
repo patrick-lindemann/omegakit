@@ -194,7 +194,7 @@ or the file system, is its `__cause__`. Only a missing root file passed to
 | `$base` or `$defaults` interpolation to a key that never appears | `ConfigValidationError`, caused by OmegaConf's error | `Cannot resolve` and the full key |
 | `$base` or `$defaults` interpolations that refer to each other | `ConfigValidationError` | `references form a cycle` and the nodes |
 | `$defaults` not a mapping | `ConfigValidationError` | `$defaults` |
-| Overrides of another type than `DictConfig`, `dict` or `list` | `ValueError` | `Unsupported overrides type` |
+| Overrides of another type than `DictConfig`, `dict` or `list`, including a `ListConfig` | `TypeError` | `Unsupported overrides type` |
 | An override that does not parse, has an unsupported value type, or is rejected by a struct config, in `load_config`, `instantiate` or `prepare` | `ConfigValidationError`, caused by PyYAML's or OmegaConf's error | `override`, and the override or its key |
 | `instantiate`/`prepare` on a node without `$class` | `ConfigValidationError` | `<root>` and `has no` `$class` |
 | `$class`/`$ref` module not found | `ConfigValidationError`, caused by `ModuleNotFoundError` | `Cannot import`, the node path and the module |

@@ -35,5 +35,5 @@ copy of the node being built; the config passed in is not changed.
 
 ## Errors
 
-Overrides of another type raise `ValueError` (`Unsupported overrides type`). A
+Overrides of another type raise `TypeError` (`Unsupported overrides type`). A
 malformed dotlist entry such as `"a"` is not an error: OmegaConf sets `a` to `None`.
