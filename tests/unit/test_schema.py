@@ -1,9 +1,19 @@
+import sys
+import types
+from dataclasses import dataclass
+from decimal import Decimal
 from pathlib import Path
 
 import pytest
 from omegaconf import OmegaConf
 
-from omegakit import ConfigValidationError, check_schema, instantiate, prepare
+from omegakit import (
+    ConfigValidationError,
+    check_schema,
+    instantiate,
+    prepare,
+    validate,
+)
 from omegakit._utils import register_resolver
 from tests import schemas
 
@@ -186,3 +196,26 @@ def test_schema_plain_mapping_in_dataclass_field_is_built_as_a_section():
     assert isinstance(holder.section, schemas.SectionWithObject)
     assert isinstance(holder.section.encoder, schemas.Encoder)
     assert (holder.section.encoder.width, holder.section.size) == (3, 1)
+
+
+@dataclass
+class InheritedBase:
+    amount: "Decimal" = Decimal(0)
+
+
+SUBCLASS_MODULE = """
+from dataclasses import dataclass
+
+@dataclass
+class Subclass(InheritedBase):
+    other: "Missing" = 0
+"""
+
+
+def test_schema_unresolvable_annotation_blames_its_own_field(monkeypatch):
+    module = types.ModuleType("inherited_schema")
+    module.InheritedBase = InheritedBase  # pyright: ignore[reportAttributeAccessIssue]
+    monkeypatch.setitem(sys.modules, module.__name__, module)
+    exec(SUBCLASS_MODULE, vars(module))
+    with pytest.raises(ConfigValidationError, match="field `other`"):
+        validate({}, schema=module.Subclass)

@@ -370,12 +370,21 @@ def _type_hints(schema: type) -> dict[str, Any]:
     try:
         return get_type_hints(schema)
     except NameError as error:
-        namespace = vars(sys.modules[schema.__module__])
         for field in dataclasses.fields(schema):
             if not isinstance(field.type, str):
                 continue
+            # An inherited field shares its `Field` with the base that defines it.
+            owner = next(
+                base
+                for base in reversed(schema.__mro__)
+                if getattr(base, "__dataclass_fields__", {}).get(field.name) is field
+            )
             try:
-                eval(field.type, namespace, dict(vars(schema)))
+                eval(
+                    field.type,
+                    vars(sys.modules[owner.__module__]),
+                    dict(vars(owner)),
+                )
             except NameError:
                 raise ConfigValidationError(
                     f"Cannot resolve the annotation of field `{field.name}` of schema "
