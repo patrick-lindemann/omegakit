@@ -4,6 +4,19 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.4.0] - 2026-09-26
+
+### Added
+
+- A documentation site at https://omegakit.readthedocs.io, with a getting-started
+  page, a guide page with a runnable example for every feature, a cookbook of
+  common patterns and the changelog.
+
+### Changed
+
+- The `Configurable` docstring now reads "A class with a typed config schema and a
+  `from_config` hook."
+
 ## [0.3.0] - 2026-09-26
 
 ### Added
@@ -81,6 +94,7 @@ First release. The configuration language is specified in the
   such as `omegakit.resolvers.paths`.
 - Python 3.12 is supported.
 
+[0.4.0]: https://github.com/patrick-lindemann/omegakit/releases/tag/v0.4.0
 [0.3.0]: https://github.com/patrick-lindemann/omegakit/releases/tag/v0.3.0
 [0.2.0]: https://github.com/patrick-lindemann/omegakit/releases/tag/v0.2.0
 [0.1.0]: https://github.com/patrick-lindemann/omegakit/releases/tag/v0.1.0
