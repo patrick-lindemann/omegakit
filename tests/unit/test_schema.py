@@ -8,6 +8,7 @@ import pytest
 from omegaconf import OmegaConf
 
 from omegakit import (
+    Configurable,
     ConfigValidationError,
     check_schema,
     instantiate,
@@ -219,3 +220,36 @@ def test_schema_unresolvable_annotation_blames_its_own_field(monkeypatch):
     exec(SUBCLASS_MODULE, vars(module))
     with pytest.raises(ConfigValidationError, match="field `other`"):
         validate({}, schema=module.Subclass)
+
+
+@dataclass
+class Tree:
+    child: "Tree | None" = None
+
+
+@dataclass
+class Outer:
+    inner: "list[Inner]"
+
+
+@dataclass
+class Inner:
+    outer: Outer | None = None
+
+
+class WithTree(Configurable[Tree]):
+    def __init__(self, child: Tree | None = None) -> None: ...
+
+
+@pytest.mark.parametrize(
+    ("schema", "cycle"),
+    [(Tree, "Tree -> Tree"), (Outer, "Outer -> Inner -> Outer")],
+)
+def test_schema_recursive_dataclasses_raise(schema, cycle):
+    with pytest.raises(ConfigValidationError, match=cycle):
+        validate({}, schema=schema)
+
+
+def test_schema_recursive_schema_of_a_class_raises():
+    with pytest.raises(ConfigValidationError, match="Tree -> Tree"):
+        check_schema(WithTree)

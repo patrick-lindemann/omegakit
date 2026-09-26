@@ -307,6 +307,9 @@ and the fix, for:
 - `Literal` values other than strings, integers and booleans
 - annotations that `get_type_hints` cannot resolve, such as names imported under
   `TYPE_CHECKING`
+- a dataclass that contains itself, directly or through other dataclasses; the
+  error names the cycle (`Tree -> Tree`). A `Configurable` class whose schema has a
+  field of that same class is not recursive, because such a field holds an object.
 
 **Per node, in order:**
 

@@ -83,7 +83,9 @@ def find_schema(cls: type) -> type | None:
 
 
 @functools.cache
-def classify_fields(schema: type) -> dict[str, tuple[FieldKind, Any]]:
+def classify_fields(
+    schema: type, outer: tuple[type, ...] = ()
+) -> dict[str, tuple[FieldKind, Any]]:
     """Classify the configurable fields of a schema dataclass.
 
     Fields with `init=False` and `InitVar` pseudo-fields are not configurable and
@@ -91,14 +93,23 @@ def classify_fields(schema: type) -> dict[str, tuple[FieldKind, Any]]:
 
     Args:
         schema: The schema dataclass.
+        outer: The dataclasses whose fields lead to `schema`, outermost first.
+            Defaults to `()`.
 
     Returns:
         The kind and resolved annotation of every configurable field, by field name.
 
     Raises:
         ConfigValidationError: If the schema uses a dataclass feature outside the
-            supported subset.
+            supported subset, or contains itself.
     """
+    if schema in outer:
+        cycle = (*outer[outer.index(schema) :], schema)
+        raise ConfigValidationError(
+            f"Schema `{schema.__qualname__}` contains itself: "
+            f"{' -> '.join(cls.__qualname__ for cls in cycle)}. Recursive schemas are "
+            "not supported."
+        )
     hints = _type_hints(schema)
     for name, hint in hints.items():
         if isinstance(hint, dataclasses.InitVar) and not hasattr(schema, name):
@@ -108,7 +119,7 @@ def classify_fields(schema: type) -> dict[str, tuple[FieldKind, Any]]:
             )
     return {
         field.name: (
-            _field_kind(hints[field.name], schema, field.name),
+            _field_kind(hints[field.name], schema, field.name, (*outer, schema)),
             hints[field.name],
         )
         for field in dataclasses.fields(schema)
@@ -398,7 +409,9 @@ def _type_hints(schema: type) -> dict[str, Any]:
         ) from error
 
 
-def _field_kind(annotation: Any, schema: type, name: str) -> FieldKind:
+def _field_kind(
+    annotation: Any, schema: type, name: str, outer: tuple[type, ...]
+) -> FieldKind:
     while isinstance(annotation, TypeAliasType):
         annotation = annotation.__value__
     origin = get_origin(annotation)
@@ -417,14 +430,14 @@ def _field_kind(annotation: Any, schema: type, name: str) -> FieldKind:
     ):
         return "native"
     if isinstance(annotation, type) and dataclasses.is_dataclass(annotation):
-        kinds = {kind for kind, _ in classify_fields(annotation).values()}
+        kinds = {kind for kind, _ in classify_fields(annotation, outer).values()}
         return "native" if kinds <= {"native"} else "object"
     if isinstance(annotation, type) and typing.is_typeddict(annotation):
         return "native"
     if origin in (typing.Union, types.UnionType):
         members = [member for member in arguments if member is not type(None)]
         member_kinds: set[FieldKind] = {
-            _field_kind(member, schema, name) for member in members
+            _field_kind(member, schema, name, outer) for member in members
         }
         if len(member_kinds) > 1:
             raise ConfigValidationError(
@@ -453,7 +466,9 @@ def _field_kind(annotation: Any, schema: type, name: str) -> FieldKind:
         items = [argument for argument in arguments if argument is not Ellipsis]
         if origin is dict or origin is collections.abc.Mapping:
             items = items[1:]
-        kinds: set[FieldKind] = {_field_kind(item, schema, name) for item in items}
+        kinds: set[FieldKind] = {
+            _field_kind(item, schema, name, outer) for item in items
+        }
         if kinds <= {"native"}:
             return "native"
         if kinds == {"object"} and origin in (list, dict):
