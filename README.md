@@ -109,26 +109,11 @@ Register resolvers before loading configs. Registration is global to OmegaConf a
 refuses existing names unless `replace=True` is supplied. Resolver results are cached
 per config; replacing a resolver does not clear caches on existing configs.
 
-## Development
-
-```sh
-uv sync
-uv run pytest
-uv run ruff check
-uv run ruff format --check
-uv run pydoclint src
-uv run pyright
-uv run sphinx-build -W docs docs/_build
-uv build
-```
-
-Tests that require a real Torch installation skip when it is absent.
+## Trust
 
 This package imports and calls Python objects specified by configs, so configs must
-come from trusted sources. Assembly currently relies on private OmegaConf node APIs;
-the supported OmegaConf range is `>=2.3,<2.5`, and CI also tests the newest OmegaConf
-pre-release in that range.
+come from trusted sources.
 
-Dependabot proposes dependency and GitHub Actions updates weekly, and they are
-reviewed and merged by hand. The runtime bounds in `pyproject.toml` are changed by
-hand too.
+## Development
+
+See [CONTRIBUTING.md](https://github.com/patrick-lindemann/omegakit/blob/main/CONTRIBUTING.md).
