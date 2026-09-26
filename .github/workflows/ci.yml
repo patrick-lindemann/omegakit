@@ -74,6 +74,6 @@ jobs:
         with:
           python-version: "3.13"
       - run: uv sync --locked
-      - run: uv pip install --prerelease allow "omegaconf>=2.4.0.dev0,<2.5"
+      - run: uv pip install --prerelease if-necessary-or-explicit "omegaconf>=2.4.0.dev0,<2.5"
       - run: uv run --no-sync python -c "import omegaconf; print(omegaconf.__version__)"
       - run: uv run --no-sync pytest -W error::UserWarning -m "not distribution"
