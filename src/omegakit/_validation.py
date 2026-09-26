@@ -56,6 +56,7 @@ def validate(
     Raises:
         ConfigValidationError: If the config cannot be resolved or does not match a
             schema.
+        TypeError: If `schema` is not a class.
     """  # noqa: DOC502
     if not isinstance(config, DictConfig):
         config = OmegaConf.create(config)
