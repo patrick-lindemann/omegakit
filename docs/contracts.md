@@ -248,7 +248,40 @@ A malformed dotlist override such as `["a"]` is not an error: OmegaConf sets `a`
 - Resolvers are registered with the API of the installed OmegaConf
   (`register_resolver` on 2.4, `register_new_resolver` on 2.3), so neither warns.
 - Configs import and call arbitrary Python objects. Load them only from trusted
-  sources.
+  sources (see Trust below).
+
+### Trust
+
+Loading, validating, checking and showing a config are not safe on untrusted
+input. Validation checks the shape of values; it is not input sanitisation. Code
+and I/O happen without anything being built:
+
+- The modules named by `$class` and `$ref` are imported, which runs their
+  import-time code, unless `allowed_modules` limits them (§11). `allowed_modules`
+  is not a sandbox.
+- Resolvers run, including OmegaConf's `oc.env`, which reads any environment
+  variable of the process. `load_config` itself evaluates interpolations in
+  `~import` paths and in `$base` and `$defaults` values. An application that does
+  not need `oc.env` can call `OmegaConf.clear_resolver("oc.env")` before loading.
+- Every `default_factory` of a schema runs during validation (§11).
+- `~import` reads any file the process can read, unless `import_root` is set (§7).
+  `keep_targets=False` does not make loading safe.
+- Overrides carry the same trust as the config file: an override can set `$class`,
+  `$ref` and interpolations such as `${oc.env:...}`.
+- The command line puts the working directory first on `sys.path` (§13), so a
+  module there can shadow a `$class` target.
+- Reading a special file, such as a FIFO, blocks.
+- `~import` fan-out can grow exponentially, because every import is a deep copy,
+  and a long chain of `$base` references costs time quadratic in its size.
+- Any string value that starts with `~import` is an import, so a tool that writes
+  YAML from untrusted strings must not let them start with it.
+- Error messages, and so CI logs, can contain scalar config values; mappings are
+  described by their keys.
+
+Resolved configs and objects built by `instantiate` contain the real values of
+secrets read with `${oc.env:...}`. Log `mask_secrets(config)` instead of a resolved
+config, and keep secrets out of arguments that components save, such as
+hyperparameters written into checkpoints.
 
 ### Masking secrets
 
