@@ -365,7 +365,9 @@ The check:
   optional. A mapping without `$class` is accepted only when the annotation is a
   dataclass, which is then checked as a section. The class check is skipped when
   `$class` names a function, when the node has `$partial: true`, and when the
-  annotation is not a plain class or a union of plain classes.
+  annotation is not a plain class or a union of plain classes, such as a
+  `Callable` or a `Protocol`. The value's reserved keys and nested `$class` and
+  `$ref` nodes are still checked.
 - `Any` fields are not checked, but their `$class` nodes are.
 - What `from_config` returns is not checked. A valid config is one whose every
   node matches its schema; building it is left to `from_config`.

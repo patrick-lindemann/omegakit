@@ -285,8 +285,10 @@ def _check_object(
             _check_section(section, value, path, allow_missing)
             return
         _check_type(isinstance, value, classes, path, "a mapping without `$class`")
+        _check_untyped(value, path, allow_missing)
         return
     _check_type(isinstance, value, classes, path, f"`{value!r}`")
+    _check_untyped(value, path, allow_missing)
 
 
 def _check_type(

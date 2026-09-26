@@ -1,6 +1,7 @@
 import sys
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Protocol
 
 import pytest
 from omegaconf import OmegaConf
@@ -217,6 +218,40 @@ def test_validate_rejects_import_paths_that_are_not_strings(key, value):
         validate({"thing": {key: value}})
     with pytest.raises(ConfigValidationError, match=rf"`\{key}` in `thing`"):
         instantiate({"$class": "tests.helpers.Recorder", "thing": {key: value}})
+
+
+class Runner(Protocol):
+    def run(self) -> None: ...
+
+
+@dataclass
+class UntypedFieldsConfig:
+    function: Callable[..., Any] | None = None
+    runner: Runner | None = None
+
+
+class WithUntypedFields(Configurable[UntypedFieldsConfig]):
+    def __init__(self, **fields: Any) -> None:
+        self.fields = fields
+
+
+@pytest.mark.parametrize(
+    ("values", "match"),
+    [
+        ({"function": {"$foo": 1}}, r"`\$foo` in `function`"),
+        ({"function": {"$partial": "yes"}}, r"`\$partial` in `function`"),
+        ({"function": [{"$ref": "math.sqrt", "a": 1}]}, r"`function\.0` has"),
+        ({"function": [{"$class": "tests.no_such_module.X"}]}, r"in `function\.0`"),
+        ({"runner": {"$foo": 1}}, r"`\$foo` in `runner`"),
+        ({"runner": {"a": {"$class": "tests.no_such_module.X"}}}, r"`runner\.a`"),
+    ],
+)
+def test_validate_checks_reserved_keys_under_untyped_object_fields(values, match):
+    config = {"$class": f"{__name__}.WithUntypedFields", **values}
+    with pytest.raises(ConfigValidationError, match=match):
+        validate(config)
+    with pytest.raises(ConfigValidationError, match=match):
+        instantiate(config)
 
 
 def test_validate_rejects_a_missing_target_module():
