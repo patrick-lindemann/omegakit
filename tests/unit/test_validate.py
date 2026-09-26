@@ -1,9 +1,16 @@
 from dataclasses import dataclass
+from typing import Any
 
 import pytest
 from omegaconf import OmegaConf
 
-from omegakit import ConfigValidationError, load_config, validate
+from omegakit import (
+    Configurable,
+    ConfigValidationError,
+    instantiate,
+    load_config,
+    validate,
+)
 from tests import schemas
 from tests.helpers import FAILING
 
@@ -45,6 +52,38 @@ def test_validate_returns_nothing_and_leaves_the_config_unchanged(write_yaml):
 
 def test_validate_builds_nothing():
     validate({"child": {"$class": FAILING}})
+
+
+HOOK_CALLS: list[int] = []
+
+
+@dataclass
+class Hooked:
+    x: int
+
+    def __post_init__(self) -> None:
+        HOOK_CALLS.append(self.x)
+
+
+@dataclass
+class HookedConfig:
+    hooked: Hooked
+    items: list[Hooked]
+
+
+class WithHooked(Configurable[HookedConfig]):
+    def __init__(self, **fields: Any) -> None:
+        self.fields = fields
+
+
+def test_validate_constructs_no_schema_dataclasses():
+    HOOK_CALLS.clear()
+    values = {"hooked": {"x": 1}, "items": [{"x": 2}]}
+    validate({"$class": f"{__name__}.WithHooked", **values})
+    validate(values, schema=HookedConfig)
+    assert HOOK_CALLS == []
+    instantiate({"$class": f"{__name__}.WithHooked", **values})
+    assert HOOK_CALLS == [1, 2]
 
 
 def test_validate_checks_root_values_against_the_schema(write_yaml):

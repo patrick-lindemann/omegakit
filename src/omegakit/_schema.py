@@ -186,6 +186,7 @@ def validate_native(
     values: dict[str, Any],
     path: tuple[str | int, ...],
     allow_missing: bool = False,
+    build: bool = False,
 ) -> dict[str, Any]:
     """Validate and coerce the native fields of a node through OmegaConf.
 
@@ -195,6 +196,8 @@ def validate_native(
         path: The node's path from the config root.
         allow_missing: Keep missing values as `???` instead of raising, including
             required fields that are not given. Defaults to `False`.
+        build: Construct the nested dataclasses of native fields. Without it, their
+            fields are checked and kept as mappings. Defaults to `False`.
 
     Returns:
         The coerced native fields. Absent fields with a default are left out, so
@@ -247,7 +250,12 @@ def validate_native(
     merged = typing.cast(dict[str, Any], merged)
     return {
         name: _build_native_value(
-            merged[name], native.get(name), annotation, (*path, name), allow_missing
+            merged[name],
+            native.get(name),
+            annotation,
+            (*path, name),
+            allow_missing,
+            build,
         )
         for name, (kind, annotation) in fields.items()
         if kind == "native" and (name in native or name not in _defaulted(schema))
@@ -462,8 +470,8 @@ def _is_sequence_type(annotation: Any) -> bool:
 
 # OmegaConf 2.3 supports neither `Literal`, nor unions with non-scalar members, nor
 # fixed-length tuples, so it validates against a derived structure that holds plain
-# types there. `_build_native_value` checks the rest and builds the schema's own
-# classes, so every supported OmegaConf version behaves the same.
+# types there. `_build_native_value` checks the rest and, when building, constructs
+# the schema's own classes, so every supported OmegaConf version behaves the same.
 @functools.cache
 def _native_schema(schema: type) -> type:
     structure = []
@@ -593,7 +601,11 @@ def _normalize_enums(value: Any, annotation: Any) -> Any:
 
 
 def _coerce(
-    value: Any, annotation: Any, path: tuple[str | int, ...], allow_missing: bool
+    value: Any,
+    annotation: Any,
+    path: tuple[str | int, ...],
+    allow_missing: bool,
+    build: bool,
 ) -> Any:
     # Validates one value against an annotation through OmegaConf, as a field would.
     try:
@@ -615,6 +627,7 @@ def _coerce(
         annotation,
         path,
         allow_missing,
+        build,
     )
 
 
@@ -631,6 +644,7 @@ def _build_native_value(
     annotation: Any,
     path: tuple[str | int, ...],
     allow_missing: bool,
+    build: bool,
 ) -> Any:
     # `given` is the value as the config gave it, before OmegaConf filled in the
     # defaults. A dataclass default is not rebuilt from its own fields, because its
@@ -649,7 +663,7 @@ def _build_native_value(
             )
         return value
     if origin in (typing.Union, types.UnionType):
-        return _build_union_value(value, given, annotation, path, allow_missing)
+        return _build_union_value(value, given, annotation, path, allow_missing, build)
     if origin in (list, collections.abc.Sequence):
         return [
             _build_native_value(
@@ -658,6 +672,7 @@ def _build_native_value(
                 arguments[0],
                 (*path, index),
                 allow_missing,
+                build,
             )
             for index, item in enumerate(value)
         ]
@@ -669,6 +684,7 @@ def _build_native_value(
                 arguments[0],
                 (*path, index),
                 allow_missing,
+                build,
             )
             for index, item in enumerate(value)
         )
@@ -679,7 +695,7 @@ def _build_native_value(
                 f"`{annotation}`, but the config gives {value!r}."
             )
         return tuple(
-            _coerce(item, item_annotation, (*path, index), allow_missing)
+            _coerce(item, item_annotation, (*path, index), allow_missing, build)
             for index, (item, item_annotation) in enumerate(
                 zip(value, arguments, strict=True)
             )
@@ -692,21 +708,26 @@ def _build_native_value(
                 arguments[1],
                 (*path, key),
                 allow_missing,
+                build,
             )
             for key, item in value.items()
         }
     if isinstance(annotation, type) and dataclasses.is_dataclass(annotation):
         fields = classify_fields(annotation)
         given = given if isinstance(given, dict) else value
-        return annotation(
-            **{
-                name: _build_native_value(
-                    item, given.get(name), fields[name][1], (*path, name), allow_missing
-                )
-                for name, item in value.items()
-                if name in given or name not in _defaulted(annotation)
-            }
-        )
+        items = {
+            name: _build_native_value(
+                item,
+                given.get(name),
+                fields[name][1],
+                (*path, name),
+                allow_missing,
+                build,
+            )
+            for name, item in value.items()
+            if name in given or name not in _defaulted(annotation)
+        }
+        return annotation(**items) if build else items
     return value
 
 
@@ -716,20 +737,21 @@ def _build_union_value(
     annotation: Any,
     path: tuple[str | int, ...],
     allow_missing: bool,
+    build: bool,
 ) -> Any:
     members = [member for member in get_args(annotation) if member is not type(None)]
     if value is None and len(members) < len(get_args(annotation)):
         return None
     if len(members) == 1:
-        return _build_native_value(value, given, members[0], path, allow_missing)
+        return _build_native_value(value, given, members[0], path, allow_missing, build)
     if isinstance(value, dict):
         for member in members:
             if _is_mapping_type(member):
-                return _coerce(value, member, path, allow_missing)
+                return _coerce(value, member, path, allow_missing, build)
     elif isinstance(value, (list, tuple)):
         for member in members:
             if _is_sequence_type(member):
-                return _coerce(value, member, path, allow_missing)
+                return _coerce(value, member, path, allow_missing, build)
     elif any(_is_match(value, member) for member in members):
         return value
     raise ConfigValidationError(

@@ -30,12 +30,18 @@ def validate(
     schema: type | None = None,
     allow_missing: bool = False,
 ) -> None:
-    """Validate a loaded config without instantiating anything.
+    """Check a loaded config against the schemas of the classes it names.
 
     The config is resolved, and every node with `$class` is checked bottom-up against
     the schema of its class. An object field accepts a node whose `$class` is the
-    field's class or a subclass, or a `$ref` to an instance of it. Classes are
-    imported to find their schemas, but nothing is built.
+    field's class or a subclass, or a `$ref` to an instance of it.
+
+    Validation checks values. It calls no `$class` target and constructs none of the
+    schema's dataclasses. Code still runs: the modules named by `$class` and `$ref`
+    are imported, resolvers run, so do `__instancecheck__` and `__subclasscheck__`
+    of imported classes, and every `default_factory` of a schema runs, possibly
+    several times and even for fields that the config sets. An exception from a
+    factory propagates.
 
     Args:
         config: The assembled config, such as the result of `load_config`.

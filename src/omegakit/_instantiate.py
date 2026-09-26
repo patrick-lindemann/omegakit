@@ -177,7 +177,7 @@ def _build(
 def _build_typed_config(
     schema: type, values: dict[str, Any], path: tuple[str | int, ...]
 ) -> Any:
-    fields = validate_native(schema, values, path)
+    fields = validate_native(schema, values, path, build=True)
     for name, (kind, annotation) in classify_fields(schema).items():
         if kind == "native" or name not in values:
             continue

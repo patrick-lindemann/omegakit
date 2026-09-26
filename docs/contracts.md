@@ -333,8 +333,8 @@ users should configure belong in object fields.
 ## 11. Validation
 
 `validate(config, *, schema=None, allow_missing=False)` checks a config that
-`load_config` has assembled, without building anything. It returns nothing and
-raises `ConfigValidationError` at the first problem.
+`load_config` has assembled. It returns nothing and raises `ConfigValidationError`
+at the first problem.
 
 1. `load_config` assembles the full config (§1). It checks no schema.
 2. `validate` checks the assembled config, or any node of it.
@@ -346,8 +346,8 @@ The check:
 - The config is resolved first. An interpolation that fails, and a `???` anywhere,
   make the config invalid (unless `allow_missing`). The error names the full key.
 - Every node with `$class` is checked against the schema of its class (§10),
-  children before parents. `$class` is imported to find the schema, but nothing is
-  called. Classes without a schema only have their children checked.
+  children before parents. `$class` is imported to find the schema, but the class
+  is not called. Classes without a schema only have their children checked.
 - `schema` is the class the root must match:
   - A dataclass makes the root a section: unknown keys, invalid plain values and
     missing required fields raise, and so do nested dataclass sections.
@@ -374,6 +374,19 @@ The check:
 - `check_schema` (§10) runs for every class with a schema.
 - Plain values are checked the way `instantiate` coerces them, so `"64"` is a valid
   `int`. The config itself is not changed.
+
+What runs during validation. The check looks at values: it calls no `$class`
+target and no `from_config`, and it constructs none of the schema's dataclasses, so
+their `__post_init__` does not run. `instantiate` constructs them once, while
+building. Code still runs:
+
+- the modules named by `$class` and `$ref` are imported, with their import-time
+  code;
+- resolvers run;
+- `__instancecheck__` and `__subclasscheck__` of imported classes run;
+- every `default_factory` of a schema runs, possibly several times and even for
+  fields that the config sets, together with the hooks of whatever it constructs.
+  An exception from a factory propagates with its own type.
 
 ## 12. Editor schemas
 
