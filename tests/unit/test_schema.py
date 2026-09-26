@@ -130,11 +130,20 @@ def test_schema_any_field_builds_nested_classes():
     assert obj.fields["anything"]["inner"].width == 2
 
 
+@dataclass
+class ObjectDefaultConfig:
+    encoder: schemas.Encoder = field(default_factory=lambda: schemas.Encoder(width=3))
+
+
+class WithObjectDefault(Configurable[ObjectDefaultConfig]):
+    def __init__(self, encoder: schemas.Encoder) -> None:
+        self.encoder = encoder
+
+
 def test_schema_object_default_never_enters_omegaconf():
-    obj = instantiate(
-        {"$class": "tests.schemas.RequiredObject", "encoder": {"$class": ENCODER}}
-    )
-    assert isinstance(obj.encoder, schemas.Encoder)
+    config = {"$class": f"{__name__}.WithObjectDefault"}
+    validate(config)
+    assert instantiate(config).encoder.width == 3
 
 
 def test_schema_unknown_field_raises():
