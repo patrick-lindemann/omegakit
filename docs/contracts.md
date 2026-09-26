@@ -469,8 +469,8 @@ imported).
   as written, `???` as `???` and `null` as `null`. A path that goes through an
   interpolation, or a node that does not exist, exits with 1. `--resolve` follows
   interpolations on the path, and resolves only the selected node (the whole config
-  without `--node`); missing values print as `???`. A scalar node prints as its
-  value.
+  without `--node`); missing values print as `???`, and any other resolution error
+  exits with 1 and one line, like a load error. A scalar node prints as its value.
 - `omegakit json-schema IMPORT_PATH [-o FILE] [--check]` prints or writes the JSON
   Schema (§12). With `--check`, which needs `-o`, it writes nothing and exits with 1
   if `FILE` is missing or differs from the generated schema (compared as JSON).

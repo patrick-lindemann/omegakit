@@ -1,11 +1,12 @@
 import argparse
+from pathlib import Path
+from typing import NoReturn
 
-from omegaconf import DictConfig, ListConfig, Node, OmegaConf
+from omegaconf import DictConfig, ListConfig, OmegaConf
 
 from omegakit._assembly import select_node
 from omegakit._cli.arguments import split_arguments
 from omegakit._loading import load_config
-from omegakit._schema import ConfigValidationError
 from omegakit._validation import resolve_config, resolve_item
 
 
@@ -51,8 +52,8 @@ def run(arguments: argparse.Namespace) -> None:
         arguments: The parsed `show` arguments.
 
     Raises:
-        SystemExit: With status 1 if the config cannot be loaded, or the node does
-            not exist.
+        SystemExit: With status 1 if the config cannot be loaded or resolved, or the
+            node does not exist.
     """
     parser: argparse.ArgumentParser = arguments.parser
     paths, overrides = split_arguments(arguments.arguments)
@@ -63,26 +64,34 @@ def run(arguments: argparse.Namespace) -> None:
             paths[0], overrides=overrides or None, keep_meta=arguments.keep_meta
         )
     except Exception as error:
-        print(f"{paths[0]}: {type(error).__name__}: {str(error).splitlines()[0]}")
-        raise SystemExit(1) from error
-    node: Node = config
-    if arguments.node is not None:
-        try:
-            selected = select_node(config, arguments.node, resolve=arguments.resolve)
-        except ConfigValidationError as error:
-            print(f"{paths[0]}: {error} Add --resolve to follow it.")
-            raise SystemExit(1) from error
-        if selected is None:
+        _fail(paths[0], error)
+    try:
+        node = config
+        if arguments.node is not None:
+            node = select_node(config, arguments.node, resolve=arguments.resolve)
+        if node is None:
             print(f"{paths[0]}: no node `{arguments.node}`")
             raise SystemExit(1)
-        node = selected
-    if isinstance(node, (DictConfig, ListConfig)):
-        value = resolve_config(node, allow_missing=True) if arguments.resolve else node
-    elif arguments.resolve:
-        value = resolve_item(node._get_parent_container(), node._key())
-    else:
-        value = node._value()
+        if isinstance(node, (DictConfig, ListConfig)):
+            value = (
+                resolve_config(node, allow_missing=True) if arguments.resolve else node
+            )
+        elif arguments.resolve:
+            value = resolve_item(node._get_parent_container(), node._key())
+        else:
+            value = node._value()
+    except Exception as error:
+        # Without --resolve, the only error here is a path through an interpolation.
+        _fail(
+            paths[0], error, "" if arguments.resolve else " Add --resolve to follow it."
+        )
     if isinstance(value, (DictConfig, ListConfig, dict, list)):
         print(OmegaConf.to_yaml(value), end="")
     else:
         print("null" if value is None else value)
+
+
+def _fail(path: Path, error: Exception, hint: str = "") -> NoReturn:
+    message = str(error).splitlines()[0] if str(error) else ""
+    print(f"{path}: {type(error).__name__}: {message}{hint}")
+    raise SystemExit(1) from error

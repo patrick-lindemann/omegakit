@@ -188,6 +188,16 @@ def test_cli_show_resolves_only_the_selected_node(write_yaml, capsys):
     assert capsys.readouterr().out == "- name: a\n- name: b\n"
 
 
+@pytest.mark.parametrize(
+    "arguments",
+    [["--resolve"], ["--node", "x", "--resolve"], ["--node", "y.z", "--resolve"]],
+)
+def test_cli_show_reports_resolution_errors(write_yaml, capsys, arguments):
+    path = write_yaml("app.yaml", "x: ${nope:1}\ny: ${nope:2}\n")
+    assert _exit_code(["show", str(path), *arguments]) == 1
+    assert capsys.readouterr().out.startswith(f"{path}: ")
+
+
 def test_cli_show_errors(write_yaml, capsys):
     path = write_yaml("app.yaml", "a: 1\n")
     assert _exit_code(["show", str(path), "--node", "b"]) == 1
