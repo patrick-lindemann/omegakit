@@ -1,0 +1,219 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "training": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/editor_app.TrainingConfig"
+        },
+        {
+          "type": "string",
+          "pattern": "^(\\?\\?\\?$|~import\\s|.*\\$\\{)"
+        }
+      ]
+    },
+    "seed": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "string",
+          "pattern": "^(\\?\\?\\?$|~import\\s|.*\\$\\{)"
+        }
+      ]
+    },
+    "data": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/editor_app.DataConfig"
+        },
+        {
+          "type": "string",
+          "pattern": "^(\\?\\?\\?$|~import\\s|.*\\$\\{)"
+        }
+      ]
+    }
+  },
+  "patternProperties": {
+    "^\\$": {}
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "editor_app.TrainingConfig": {
+      "type": "object",
+      "properties": {
+        "model": {
+          "anyOf": [
+            {
+              "type": "object",
+              "if": {
+                "properties": {
+                  "$class": {
+                    "const": "editor_app.Model"
+                  }
+                },
+                "required": [
+                  "$class"
+                ]
+              },
+              "then": {
+                "$ref": "#/definitions/editor_app.ModelConfig"
+              }
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\?\\?\\?$|~import\\s|.*\\$\\{)"
+            }
+          ]
+        },
+        "epochs": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\?\\?\\?$|~import\\s|.*\\$\\{)"
+            }
+          ]
+        }
+      },
+      "patternProperties": {
+        "^\\$": {}
+      },
+      "additionalProperties": false
+    },
+    "editor_app.ModelConfig": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "anyOf": [
+            {
+              "enum": [
+                "A",
+                "B"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\?\\?\\?$|~import\\s|.*\\$\\{)"
+            }
+          ]
+        },
+        "depth": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\?\\?\\?$|~import\\s|.*\\$\\{)"
+            }
+          ]
+        },
+        "encoder": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "if": {
+                    "properties": {
+                      "$class": {
+                        "const": "editor_app.Encoder"
+                      }
+                    },
+                    "required": [
+                      "$class"
+                    ]
+                  },
+                  "then": {
+                    "$ref": "#/definitions/editor_app.EncoderConfig"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\?\\?\\?$|~import\\s|.*\\$\\{)"
+            }
+          ]
+        }
+      },
+      "patternProperties": {
+        "^\\$": {}
+      },
+      "additionalProperties": false
+    },
+    "editor_app.EncoderConfig": {
+      "type": "object",
+      "properties": {
+        "width": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\?\\?\\?$|~import\\s|.*\\$\\{)"
+            }
+          ]
+        }
+      },
+      "patternProperties": {
+        "^\\$": {}
+      },
+      "additionalProperties": false
+    },
+    "editor_app.DataConfig": {
+      "type": "object",
+      "properties": {
+        "root": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\?\\?\\?$|~import\\s|.*\\$\\{)"
+            }
+          ]
+        },
+        "split": {
+          "anyOf": [
+            {
+              "enum": [
+                "train",
+                "test"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\?\\?\\?$|~import\\s|.*\\$\\{)"
+            }
+          ]
+        },
+        "batch_size": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\?\\?\\?$|~import\\s|.*\\$\\{)"
+            }
+          ]
+        }
+      },
+      "patternProperties": {
+        "^\\$": {}
+      },
+      "additionalProperties": false
+    }
+  }
+}

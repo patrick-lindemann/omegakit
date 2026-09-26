@@ -26,11 +26,11 @@ def walk(config: DictConfig | ListConfig) -> Iterator[DictConfig]:
             yield from walk(node)
 
 
-def node(target: Callable[..., Any], /, **kwargs: Any) -> dict[str, Any]:
+def make_node(target: Callable[..., Any], /, **kwargs: Any) -> dict[str, Any]:
     """Create an instantiable config node for a class or function.
 
     Use it inside `from_config` for children that code chooses, such as
-    `instantiate(node(Encoder, width=8), Encoder)`.
+    `instantiate(make_node(Encoder, width=8), Encoder)`.
 
     Args:
         target: The class or function to build. It must be defined at module level.

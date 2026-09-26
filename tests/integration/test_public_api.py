@@ -20,10 +20,13 @@ def test_public_api_exports():
         "PARTIAL_KEY",
         "REF_KEY",
         "check_schema",
+        "generate_json_schema",
         "instantiate",
+        "is_valid",
         "load_config",
-        "node",
+        "make_node",
         "prepare",
+        "validate",
         "walk",
     ]
     assert all(hasattr(omegakit, name) for name in omegakit.__all__)
@@ -42,7 +45,6 @@ import omegakit.resolvers.torch
 from omegaconf import OmegaConf
 assert 'torch' not in sys.modules
 assert 'dotenv' not in sys.modules
-assert 'graspdiff' not in sys.modules
 assert not any(OmegaConf.has_resolver(n) for n in ('paths', 'dtype', 'cuda_available'))
 """,
         ],

@@ -6,10 +6,10 @@ from typing import Any, cast
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
 from .assembly import (
-    exclude_keys_recursive,
-    merge_base_recursive,
-    resolve_defaults_recursive,
+    apply_defaults,
+    merge_bases,
     resolve_imports,
+    strip_keys,
 )
 from .keys import CLASS_KEY, META_KEY, PARTIAL_KEY, REF_KEY
 
@@ -41,10 +41,10 @@ def load_config(
     file_path = Path(file_path).resolve()
     config = cast(DictConfig, OmegaConf.load(file_path))
     resolve_imports(config, file_path, visited_paths={file_path}, cache={})
-    merge_base_recursive(config)
-    resolve_defaults_recursive(config)
+    merge_bases(config)
+    apply_defaults(config)
     if overrides is not None:
-        overrides = cast_overrides(overrides)
+        overrides = parse_overrides(overrides)
         config.merge_with(overrides)
     if keep_meta and keep_targets:
         return config
@@ -55,11 +55,11 @@ def load_config(
         exclude_keys.add(REF_KEY)
         exclude_keys.add(CLASS_KEY)
         exclude_keys.add(PARTIAL_KEY)
-    exclude_keys_recursive(config, exclude_keys)
+    strip_keys(config, exclude_keys)
     return config
 
 
-def cast_overrides(
+def parse_overrides(
     overrides: DictConfig | dict[str, Any] | list[str],
 ) -> DictConfig:
     """Convert overrides into a `DictConfig`.

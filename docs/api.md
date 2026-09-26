@@ -13,7 +13,7 @@
 .. autofunction:: omegakit.prepare
 .. autoclass:: omegakit.Configurable
    :members: from_config
-.. autofunction:: omegakit.node
+.. autofunction:: omegakit.make_node
 ```
 
 ## Typed configs
@@ -21,6 +21,19 @@
 ```{eval-rst}
 .. autofunction:: omegakit.check_schema
 .. autoexception:: omegakit.ConfigValidationError
+```
+
+## Validation
+
+```{eval-rst}
+.. autofunction:: omegakit.validate
+.. autofunction:: omegakit.is_valid
+```
+
+## Editor schemas
+
+```{eval-rst}
+.. autofunction:: omegakit.generate_json_schema
 ```
 
 ## Traversal

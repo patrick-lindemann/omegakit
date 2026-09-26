@@ -6,7 +6,7 @@ from typing import Any, Self, override
 
 from omegaconf import MISSING
 
-from omegakit import Configurable, instantiate, load_config, node
+from omegakit import Configurable, instantiate, load_config, make_node
 
 
 class Kind(Enum):
@@ -47,7 +47,7 @@ class Model(Configurable[ModelConfig]):
     @classmethod
     @override
     def from_config(cls, config: ModelConfig, **kwargs: Any) -> Self:
-        kind = instantiate(node(A if config.kind is Kind.A else B), Base)
+        kind = instantiate(make_node(A if config.kind is Kind.A else B), Base)
         return cls(kind, config.depth, config.encoder, **kwargs)
 
 

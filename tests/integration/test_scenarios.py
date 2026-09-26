@@ -1,13 +1,27 @@
+import importlib
+import json
+from pathlib import Path
+
 import pytest
+import yaml
+from jsonschema import Draft7Validator
 from omegaconf import OmegaConf
 from omegaconf.errors import MissingMandatoryValue
 
-from omegakit import ConfigValidationError, instantiate, load_config, prepare
+from omegakit import (
+    ConfigValidationError,
+    generate_json_schema,
+    instantiate,
+    is_valid,
+    load_config,
+    prepare,
+    validate,
+)
 from tests import schemas
 from tests.helpers import POINT, RECORDER, Point
 
 # Contracts: §3 Resolution timing, §4 `???` lifecycle, §5 Instantiation, §10 Typed
-# configs.
+# configs, §11 Validation, §12 Editor schemas.
 
 MODEL_YAML = "model:\n  $class: tests.schemas.Model\n  kind: A\n  depth: ???\n"
 
@@ -124,7 +138,7 @@ def test_scenario_enum_override_mapped_to_class(write_yaml):
 
 
 def test_scenario_node_child_validated_against_its_schema():
-    """`node()` + schema: a code-chosen child is validated by its own schema."""
+    """`make_node()` + schema: a code-chosen child is validated by its own schema."""
     wrapper = instantiate({"$class": "tests.schemas.Wrapper", "width": "4"})
     assert wrapper.inner.width == 4
     with pytest.raises(ConfigValidationError, match="EncoderConfig"):
@@ -155,3 +169,43 @@ def test_scenario_resolver_object_in_any_field(write_yaml):
         )
     )
     assert instantiate(cfg.fields).fields["anything"] is encoder
+
+
+def test_scenario_validate_before_instantiating(write_yaml):
+    """`~import` + `???` + overrides + `validate`: check the full config, then build."""
+    write_yaml("model.yaml", "$class: tests.schemas.Model\nkind: B\ndepth: ???\n")
+    path = write_yaml("main.yaml", "seed: 4\ntraining:\n  model: ~import model.yaml\n")
+    assert not is_valid(load_config(path), schema=schemas.AppConfig)
+    cfg = load_config(path, overrides=["training.model.depth=${seed}"])
+    validate(cfg, schema=schemas.AppConfig)
+    assert instantiate(cfg.training.model, schemas.Model).depth == 4
+
+
+EXAMPLES = Path(__file__).parents[2] / "docs" / "examples"
+SCHEMAS = {"app.schema.json": "AppConfig", "model.schema.json": "Model"}
+
+
+def _modeline_schema(path: Path) -> dict:
+    first_line = path.read_text().splitlines()[0]
+    name = first_line.removeprefix("# yaml-language-server: $schema=")
+    return json.loads((path.parent / name).read_text())
+
+
+@pytest.mark.parametrize(
+    "path", sorted(EXAMPLES.rglob("*.yaml")), ids=lambda path: path.name
+)
+def test_scenario_example_yaml_matches_its_schema(path: Path):
+    """Editor schema + real files: every example YAML validates, a typo does not."""
+    validator = Draft7Validator(_modeline_schema(path))
+    config = yaml.safe_load(path.read_text())
+    assert list(validator.iter_errors(config)) == []
+    assert list(validator.iter_errors({**config, "misspeled": 1}))
+
+
+@pytest.mark.parametrize(("file", "name"), SCHEMAS.items())
+def test_scenario_example_schemas_are_current(monkeypatch, file: str, name: str):
+    """Generator + committed files: the example schemas match the generator."""
+    monkeypatch.syspath_prepend(str(EXAMPLES))
+    editor_app = importlib.import_module("editor_app")
+    generated = generate_json_schema(getattr(editor_app, name))
+    assert json.loads((EXAMPLES / "editor" / file).read_text()) == generated

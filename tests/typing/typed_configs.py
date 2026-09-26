@@ -5,7 +5,7 @@ from typing import Any, Generic, Self, TypedDict, assert_type, override
 from omegaconf import DictConfig
 from typing_extensions import TypeVar
 
-from omegakit import Configurable, instantiate, node
+from omegakit import Configurable, instantiate, make_node
 from tests.schemas import (
     A,
     Animal,
@@ -33,7 +33,7 @@ class WrongModel(Configurable[ModelConfig]):
     def from_config(cls, config: ModelConfig, **kwargs: Any) -> Self:
         assert_type(config.kind, Kind)
         assert_type(config.encoder, Encoder | None)
-        kind = instantiate(node(A if config.kind is Kind.A else B), Base)
+        kind = instantiate(make_node(A if config.kind is Kind.A else B), Base)
         cls(config.kind, config.depth, config.encoder)  # pyright: ignore[reportArgumentType]
         return cls(kind, config.dpth, config.encoder)  # pyright: ignore[reportAttributeAccessIssue]
 
@@ -62,7 +62,7 @@ class CollectionConfig(TypedDict):
 
 @dataclass
 class Collection(Configurable[CollectionConfig], Generic[TRecord]):
-    """Mirrors graspdiff's TypedDict-typed `from_config` with an extra parameter."""
+    """Mirrors a TypedDict-typed `from_config` with an extra parameter."""
 
     records: list[TRecord]
     metadata: dict[str, Any] = field(default_factory=dict)

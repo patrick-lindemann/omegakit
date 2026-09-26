@@ -73,12 +73,12 @@ def test_load_import_resolves_config_interpolation(tmp_path: Path, write_yaml):
 def test_load_import_resolves_resolver_interpolation(
     tmp_path: Path, write_yaml, monkeypatch: pytest.MonkeyPatch
 ):
-    monkeypatch.setenv("GRASPDIFF_TEST_IMPORT_DIR", str(tmp_path))
+    monkeypatch.setenv("OMEGAKIT_TEST_IMPORT_DIR", str(tmp_path))
     write_yaml("leaf.yaml", "v: 42\n")
     cfg = load_config(
         write_yaml(
             "main.yaml",
-            "foo: ~import ${oc.env:GRASPDIFF_TEST_IMPORT_DIR}/leaf.yaml\n",
+            "foo: ~import ${oc.env:OMEGAKIT_TEST_IMPORT_DIR}/leaf.yaml\n",
         )
     )
     assert cfg.foo.v == 42

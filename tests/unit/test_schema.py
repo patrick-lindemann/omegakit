@@ -138,7 +138,7 @@ def test_schema_missing_required_object_field_raises():
 
 
 def test_schema_wrong_native_type_raises_with_path_and_schema_name():
-    with pytest.raises(ConfigValidationError, match=r"`point`.*FieldsConfig"):
+    with pytest.raises(ConfigValidationError, match=r"`point\.count`.*FieldsConfig"):
         instantiate(
             {
                 "$class": "tests.helpers.Container",

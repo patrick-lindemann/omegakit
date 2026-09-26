@@ -3,9 +3,11 @@ import dataclasses
 import enum
 import functools
 import inspect
+import operator
 import sys
 import types
 import typing
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any, Literal, TypeAliasType, get_args, get_origin, get_type_hints
 
@@ -33,10 +35,12 @@ _UNSUPPORTED_CONTAINERS = (
     collections.abc.Mapping,
     collections.abc.MutableMapping,
 )
+# A value may always be written as an interpolation, a missing value or an import.
+_PLACEHOLDER = {"type": "string", "pattern": r"^(\?\?\?$|~import\s|.*\$\{)"}
 
 
 class ConfigValidationError(ValueError):
-    """Raised when a config does not match the schema of the class it builds."""
+    """A config does not match the schema of the class it builds."""
 
 
 @functools.cache
@@ -77,7 +81,7 @@ def find_schema(cls: type) -> type | None:
 
 
 @functools.cache
-def schema_fields(schema: type) -> dict[str, tuple[FieldKind, Any]]:
+def classify_fields(schema: type) -> dict[str, tuple[FieldKind, Any]]:
     """Classify the fields of a schema dataclass.
 
     Args:
@@ -135,7 +139,7 @@ def check_schema(cls: type) -> None:
         "from_config" in vars(base) for base in cls.__mro__ if base is not Configurable
     ):
         return
-    fields = schema_fields(schema)
+    fields = classify_fields(schema)
     parameters = inspect.signature(cls).parameters
     try:
         hints = get_type_hints(cls.__init__)
@@ -171,7 +175,7 @@ def check_schema(cls: type) -> None:
                 f"parameter of `{cls.__qualname__}`, and `__init__` takes no "
                 "`**kwargs`."
             )
-        if name in hints and not _assignable(annotation, hints[name]):
+        if name in hints and not _is_assignable(annotation, hints[name]):
             raise ConfigValidationError(
                 f"Field `{name}` of schema `{schema.__qualname__}` has `{annotation}`, "
                 f"which is not assignable to `{hints[name]}` in "
@@ -196,7 +200,7 @@ def validate_native(
         ConfigValidationError: If a key is not a field, a required field is missing,
             or a native value does not match its annotation.
     """
-    fields = schema_fields(schema)
+    fields = classify_fields(schema)
     location = f"`{format_path(path)}` ({schema.__qualname__})"
     unknown = [key for key in values if key not in fields]
     if unknown:
@@ -216,17 +220,24 @@ def validate_native(
             )
     native = {key: value for key, value in values.items() if fields[key][0] == "native"}
     try:
-        typed = OmegaConf.to_object(
-            OmegaConf.merge(OmegaConf.structured(_native_schema(schema)), native)
+        merged = OmegaConf.to_container(
+            OmegaConf.merge(OmegaConf.structured(_native_schema(schema)), native),
+            resolve=True,
+            throw_on_missing=True,
         )
     except OmegaConfBaseException as error:
         message = str(error).splitlines()[0]
+        if error.full_key:
+            location = (
+                f"`{format_path((*path, error.full_key))}` ({schema.__qualname__})"
+            )
         raise ConfigValidationError(
             f"Invalid config in {location}: {message}"
         ) from error
+    merged = typing.cast(dict[str, Any], merged)
     return {
-        name: getattr(typed, name)
-        for name, (kind, _) in fields.items()
+        name: _build_native_value(merged[name], annotation, (*path, name))
+        for name, (kind, annotation) in fields.items()
         if kind == "native"
     }
 
@@ -273,6 +284,40 @@ def check_object(
             f"Field `{format_path(path)}` of schema `{schema.__qualname__}` expects "
             f"{expected}, but the config gave {type(value).__qualname__}."
         )
+
+
+def generate_json_schema(schema: type) -> dict[str, Any]:
+    """Generate a JSON Schema for YAML config files.
+
+    Every value may also be an interpolation (`${...}`), `???` or an `~import`, every
+    mapping accepts `$`-keys such as `$base` and `$class`, and nothing is required,
+    because values may come from `$base`, `$defaults` or overrides. Enums are given by
+    member name. An object field whose class is a `Configurable` with a dataclass
+    schema is checked against that schema when its `$class` names the class.
+
+    Args:
+        schema: A root schema dataclass, or a `Configurable` class whose schema
+            describes a fragment file.
+
+    Returns:
+        The JSON Schema (draft-07) as a dictionary.
+
+    Raises:
+        TypeError: If `schema` is neither a dataclass nor a `Configurable` with a
+            dataclass schema.
+    """
+    root = find_schema(schema) or schema
+    if not dataclasses.is_dataclass(root):
+        raise TypeError(
+            f"`{schema.__qualname__}` is neither a dataclass nor a `Configurable` with "
+            "a dataclass schema."
+        )
+    definitions: dict[str, Any] = {}
+    return {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        **_json_mapping(root, definitions),
+        "definitions": definitions,
+    }
 
 
 def _type_var_default(parameter: Any) -> Any:
@@ -333,6 +378,13 @@ def _field_kind(annotation: Any, schema: type, name: str) -> FieldKind:
     while isinstance(annotation, TypeAliasType):
         annotation = annotation.__value__
     origin = get_origin(annotation)
+    if origin is Literal:
+        if all(type(value) in (str, int, bool) for value in get_args(annotation)):
+            return "native"
+        raise ConfigValidationError(
+            f"Field `{name}` of schema `{schema.__qualname__}` has `{annotation}`, but "
+            "`Literal` values must be strings, integers or booleans."
+        )
     if annotation is Any:
         return "any"
     if annotation in _NATIVE_TYPES or (
@@ -340,7 +392,7 @@ def _field_kind(annotation: Any, schema: type, name: str) -> FieldKind:
     ):
         return "native"
     if isinstance(annotation, type) and dataclasses.is_dataclass(annotation):
-        kinds = {kind for kind, _ in schema_fields(annotation).values()}
+        kinds = {kind for kind, _ in classify_fields(annotation).values()}
         return "native" if kinds == {"native"} else "object"
     if origin in (typing.Union, types.UnionType):
         member_kinds: set[FieldKind] = {
@@ -389,26 +441,131 @@ def _field_kind(annotation: Any, schema: type, name: str) -> FieldKind:
     )
 
 
+# OmegaConf does not support `Literal`, so it validates against a derived structure
+# with plain value types. `_build_native_value` checks the literals and builds the
+# schema's own classes from the result.
 @functools.cache
 def _native_schema(schema: type) -> type:
-    fields = schema_fields(schema)
-    return dataclasses.make_dataclass(
-        schema.__name__,
-        [
-            (field.name, fields[field.name][1], _copy_default(field))
-            for field in dataclasses.fields(schema)
-            if fields[field.name][0] == "native"
-        ],
-    )
+    fields = classify_fields(schema)
+    structure = []
+    for field in dataclasses.fields(schema):
+        kind, annotation = fields[field.name]
+        if kind != "native":
+            continue
+        if field.default_factory is dataclasses.MISSING:
+            default = dataclasses.field(default=field.default)
+        else:
+            default = dataclasses.field(
+                default_factory=functools.partial(
+                    _structure_default, field.default_factory
+                )
+            )
+        structure.append((field.name, _structure_type(annotation), default))
+    return dataclasses.make_dataclass(schema.__name__, structure)
 
 
-def _copy_default(field: dataclasses.Field[Any]) -> Any:
-    if field.default_factory is not dataclasses.MISSING:
-        return dataclasses.field(default_factory=field.default_factory)
-    return dataclasses.field(default=field.default)
+def _structure_type(annotation: Any) -> Any:
+    while isinstance(annotation, TypeAliasType):
+        annotation = annotation.__value__
+    origin = get_origin(annotation)
+    arguments = get_args(annotation)
+    if origin is Literal:
+        return functools.reduce(
+            operator.or_, dict.fromkeys(type(value) for value in arguments)
+        )
+    if origin in (typing.Union, types.UnionType):
+        return functools.reduce(operator.or_, map(_structure_type, arguments))
+    if origin is list:
+        return list[_structure_type(arguments[0])]
+    if origin is dict:
+        return dict[arguments[0], _structure_type(arguments[1])]
+    if isinstance(annotation, type) and dataclasses.is_dataclass(annotation):
+        return _native_schema(annotation)
+    return annotation
 
 
-def _assignable(source: Any, target: Any) -> bool:
+def _structure_default(factory: Callable[[], Any]) -> Any:
+    return _to_structure(factory())
+
+
+def _to_structure(value: Any) -> Any:
+    if dataclasses.is_dataclass(value) and not isinstance(value, type):
+        return _native_schema(type(value))(
+            **{
+                field.name: _to_structure(getattr(value, field.name))
+                for field in dataclasses.fields(value)
+            }
+        )
+    if isinstance(value, list):
+        return [_to_structure(item) for item in value]
+    if isinstance(value, dict):
+        return {key: _to_structure(item) for key, item in value.items()}
+    return value
+
+
+def _build_native_value(
+    value: Any, annotation: Any, path: tuple[str | int, ...]
+) -> Any:
+    while isinstance(annotation, TypeAliasType):
+        annotation = annotation.__value__
+    origin = get_origin(annotation)
+    arguments = get_args(annotation)
+    if origin is Literal:
+        if not _is_match(value, annotation):
+            raise ConfigValidationError(
+                f"`{format_path(path)}` must be one of "
+                f"{', '.join(map(repr, arguments))}, but the config gives {value!r}."
+            )
+        return value
+    if origin in (typing.Union, types.UnionType):
+        members = [member for member in arguments if member is not type(None)]
+        if value is None:
+            return None
+        if len(members) == 1:
+            return _build_native_value(value, members[0], path)
+        if any(get_origin(member) is Literal for member in members) and not any(
+            _is_match(value, member) for member in members
+        ):
+            raise ConfigValidationError(
+                f"`{format_path(path)}` expects `{annotation}`, but the config gives "
+                f"{value!r}."
+            )
+        return value
+    if origin is list:
+        return [
+            _build_native_value(item, arguments[0], (*path, index))
+            for index, item in enumerate(value)
+        ]
+    if origin is dict:
+        return {
+            key: _build_native_value(item, arguments[1], (*path, key))
+            for key, item in value.items()
+        }
+    if isinstance(annotation, type) and dataclasses.is_dataclass(annotation):
+        hints = _type_hints(annotation)
+        return annotation(
+            **{
+                name: _build_native_value(item, hints[name], (*path, name))
+                for name, item in value.items()
+            }
+        )
+    return value
+
+
+def _is_match(value: Any, member: Any) -> bool:
+    while isinstance(member, TypeAliasType):
+        member = member.__value__
+    if get_origin(member) is Literal:
+        return any(
+            type(value) is type(allowed) and value == allowed
+            for allowed in get_args(member)
+        )
+    if isinstance(member, type):
+        return isinstance(value, member)
+    return True
+
+
+def _is_assignable(source: Any, target: Any) -> bool:
     while isinstance(source, TypeAliasType):
         source = source.__value__
     while isinstance(target, TypeAliasType):
@@ -416,9 +573,9 @@ def _assignable(source: Any, target: Any) -> bool:
     if source is Any or target is Any:
         return True
     if get_origin(source) in (typing.Union, types.UnionType):
-        return all(_assignable(member, target) for member in get_args(source))
+        return all(_is_assignable(member, target) for member in get_args(source))
     if get_origin(target) in (typing.Union, types.UnionType):
-        return any(_assignable(source, member) for member in get_args(target))
+        return any(_is_assignable(source, member) for member in get_args(target))
     if get_origin(source) is not None or get_origin(target) is not None:
         return True
     if not (isinstance(source, type) and isinstance(target, type)):
@@ -428,3 +585,80 @@ def _assignable(source: Any, target: Any) -> bool:
     if target is complex and source in (int, float):
         return True
     return issubclass(source, target)
+
+
+def _json_value(annotation: Any, definitions: dict[str, Any]) -> dict[str, Any]:
+    return {"anyOf": [_json_type(annotation, definitions), _PLACEHOLDER]}
+
+
+def _json_type(annotation: Any, definitions: dict[str, Any]) -> dict[str, Any]:
+    while isinstance(annotation, TypeAliasType):
+        annotation = annotation.__value__
+    origin = get_origin(annotation)
+    arguments = get_args(annotation)
+    if annotation is Any:
+        return {}
+    if annotation is type(None):
+        return {"type": "null"}
+    if origin in (typing.Union, types.UnionType):
+        return {"anyOf": [_json_type(argument, definitions) for argument in arguments]}
+    if annotation is bool:
+        return {"type": "boolean"}
+    if annotation is int:
+        return {"type": "integer"}
+    if annotation is float:
+        return {"type": "number"}
+    if annotation in (str, bytes, Path):
+        return {"type": "string"}
+    if isinstance(annotation, type) and issubclass(annotation, enum.Enum):
+        return {"enum": [member.name for member in annotation]}
+    if origin is Literal:
+        return {"enum": list(arguments)}
+    if annotation is list or origin is list:
+        items = _json_value(arguments[0], definitions) if arguments else {}
+        return {"type": "array", "items": items}
+    if annotation is dict or origin is dict:
+        values = _json_value(arguments[1], definitions) if arguments else {}
+        return {"type": "object", "additionalProperties": values}
+    if isinstance(annotation, type) and dataclasses.is_dataclass(annotation):
+        return {"$ref": f"#/definitions/{_json_definition(annotation, definitions)}"}
+    if isinstance(annotation, type):
+        return _json_object(annotation, definitions)
+    if isinstance(origin, type):
+        return _json_object(origin, definitions)
+    return {}
+
+
+def _json_object(cls: Any, definitions: dict[str, Any]) -> dict[str, Any]:
+    schema = find_schema(cls) if isinstance(cls, type) else None
+    if schema is None:
+        return {"type": "object"}
+    return {
+        "type": "object",
+        "if": {
+            "properties": {"$class": {"const": f"{cls.__module__}.{cls.__qualname__}"}},
+            "required": ["$class"],
+        },
+        "then": {"$ref": f"#/definitions/{_json_definition(schema, definitions)}"},
+    }
+
+
+def _json_definition(dataclass: type, definitions: dict[str, Any]) -> str:
+    name = f"{dataclass.__module__}.{dataclass.__qualname__}"
+    if name not in definitions:
+        definitions[name] = {}
+        definitions[name] = _json_mapping(dataclass, definitions)
+    return name
+
+
+def _json_mapping(dataclass: type, definitions: dict[str, Any]) -> dict[str, Any]:
+    hints = get_type_hints(dataclass)
+    return {
+        "type": "object",
+        "properties": {
+            field.name: _json_value(hints[field.name], definitions)
+            for field in dataclasses.fields(dataclass)
+        },
+        "patternProperties": {r"^\$": {}},
+        "additionalProperties": False,
+    }

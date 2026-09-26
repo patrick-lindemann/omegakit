@@ -4,7 +4,27 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
-## [0.2.0] - Unreleased
+## [0.3.0] - Unreleased
+
+### Added
+
+- `validate(config, *, schema=None)` checks a loaded config without building
+  anything: every `$class` node against the schema of its class, bottom-up, and
+  the root against an optional root schema dataclass. `is_valid` returns the result
+  as a boolean.
+- `generate_json_schema(schema)` and the command
+  `omegakit json-schema <import path> -o <file>` generate JSON Schemas for YAML
+  editors from root schemas and `Configurable` classes.
+- `Literal` fields of strings, integers or booleans in schemas, also inside lists,
+  dicts, optional fields and nested dataclasses.
+
+### Changed
+
+- `node` is renamed to `make_node`.
+- A schema validation error names the full key of the invalid value, such as
+  `model.encoder.width`, not only the node.
+
+## [0.2.0] - 2026-09-24
 
 ### Added
 
@@ -32,11 +52,10 @@ All notable changes to this project are documented here. The format follows
 
 ## [0.1.0] - 2026-09-23
 
-First release. omegakit is the configuration package from GraspDiff, extracted into
-a standalone library. The configuration language is specified in the
+First release. The configuration language is specified in the
 [configuration contracts](https://omegakit.readthedocs.io/en/latest/contracts.html).
 
-### Changed compared with the GraspDiff original
+### Changed compared with the pre-release version
 
 - A raw `dict` passed to `instantiate` or `prepare` is resolved like a `DictConfig`:
   `${…}` is resolved, `???` raises `MissingMandatoryValue`, and values OmegaConf
@@ -62,5 +81,6 @@ a standalone library. The configuration language is specified in the
   such as `omegakit.resolvers.paths`.
 - Python 3.12 is supported.
 
+[0.3.0]: https://github.com/patrick-lindemann/omegakit/releases/tag/v0.3.0
 [0.2.0]: https://github.com/patrick-lindemann/omegakit/releases/tag/v0.2.0
 [0.1.0]: https://github.com/patrick-lindemann/omegakit/releases/tag/v0.1.0

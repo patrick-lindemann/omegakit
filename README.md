@@ -61,7 +61,11 @@ the failing node. The complete rules are in the
 `Configurable` provides a default `from_config` implementation. With a dataclass
 schema, `class Model(Configurable[ModelConfig])`, the config is validated and typed
 before `from_config` receives it; see the
-[typed-configs guide](https://omegakit.readthedocs.io/en/latest/guide/typed-configs.html). `walk` traverses
+[typed-configs guide](https://omegakit.readthedocs.io/en/latest/guide/typed-configs.html). `validate(cfg, schema=AppConfig)`
+checks a loaded config without building anything; see the
+[validation guide](https://omegakit.readthedocs.io/en/latest/guide/validation.html).
+`omegakit json-schema` turns the same dataclasses into a JSON Schema for YAML
+editors; see the [editor-schemas guide](https://omegakit.readthedocs.io/en/latest/guide/editor-schemas.html). `walk` traverses
 mapping nodes depth-first, parents before children. The optional `expected` argument
 to `instantiate` and `prepare` is a typing hint, not runtime validation: with it, the
 result is typed as that class, and without it as `Any`. `overrides` is keyword-only.

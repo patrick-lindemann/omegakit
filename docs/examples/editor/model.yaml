@@ -1,0 +1,7 @@
+# yaml-language-server: $schema=model.schema.json
+$class: editor_app.Model
+kind: B
+depth: ${seed}
+encoder:
+  $class: editor_app.Encoder
+  width: 8

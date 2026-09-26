@@ -1,8 +1,8 @@
 import importlib.metadata
 
 project = "omegakit"
-author = "Patrick Lindemann"
-copyright = "2026, Patrick Lindemann"  # noqa: A001 (Sphinx setting)
+author = "Patrick Lindemann, Mustafa Mohsen"
+copyright = "2026, Patrick Lindemann, Mustafa Mohsen"  # noqa: A001 (Sphinx setting)
 release = importlib.metadata.version("omegakit")
 
 extensions = [

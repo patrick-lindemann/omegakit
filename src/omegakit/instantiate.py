@@ -7,12 +7,12 @@ from typing import Any, cast, overload
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
 from .keys import CLASS_KEY, META_KEY, PARTIAL_KEY, REF_KEY
-from .loading import cast_overrides
+from .loading import parse_overrides
 from .schema import (
     check_object,
     check_schema,
+    classify_fields,
     find_schema,
-    schema_fields,
     validate_native,
 )
 from .utils import format_path, import_object
@@ -113,7 +113,7 @@ def _instantiate(
         config = OmegaConf.create(config)
     if overrides is not None:
         config = config.copy()
-        overrides = cast_overrides(overrides)
+        overrides = parse_overrides(overrides)
         config.merge_with(overrides)
     plain_config = cast(
         dict[str, Any],
@@ -154,7 +154,7 @@ def _build(
             key: _materialize(value, (*path, key)) for key, value in values.items()
         }
     else:
-        config = _typed_config(schema, values, path)
+        config = _build_typed_config(schema, values, path)
     try:
         if hasattr(cls, "from_config"):
             return (
@@ -170,11 +170,11 @@ def _build(
         raise
 
 
-def _typed_config(
+def _build_typed_config(
     schema: type, values: dict[str, Any], path: tuple[str | int, ...]
 ) -> Any:
     fields = validate_native(schema, values, path)
-    for name, (kind, annotation) in schema_fields(schema).items():
+    for name, (kind, annotation) in classify_fields(schema).items():
         if kind == "native" or name not in values:
             continue
         fields[name] = _materialize(values[name], (*path, name))

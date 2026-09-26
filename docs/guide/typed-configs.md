@@ -31,8 +31,10 @@ built. Call it in a test to catch a mismatch without a config.
 Each schema field is one of three kinds:
 
 - **Native** fields hold plain values: `int`, `float`, `bool`, `str`, `bytes`,
-  `Path`, `Enum`, dataclasses of these, and `list` or `dict` of these. OmegaConf
-  validates and coerces them. Enums are written by member **name** (`kind: B`).
+  `Path`, `Enum`, `Literal`, dataclasses of these, and `list` or `dict` of these.
+  OmegaConf validates and coerces them, and omegakit checks `Literal` values, such
+  as `mode: Literal["train", "eval"]`. Enums are written by member **name**
+  (`kind: B`).
 - **Object** fields are typed by the class they build, such as
   `encoder: Encoder | None`. In YAML they hold a `$class` or `$ref` node. The built
   object must be an instance of the annotation.
@@ -43,7 +45,7 @@ Each schema field is one of three kinds:
 
 A custom `from_config` receives the typed config, with object fields already built,
 and calls the constructor itself. Pyright checks that call. Children chosen by code
-rather than by the user are created with `node`:
+rather than by the user are created with `make_node`:
 
 ```{literalinclude} ../examples/typed_model.py
 :language: python
@@ -51,7 +53,7 @@ rather than by the user are created with `node`:
 
 `kind` is an input choice in the YAML file, so overrides such as `model.kind=A` work.
 `encoder` is an object field, so users configure it. `A` and `B` are created by
-`node` inside `from_config`; users cannot reach them.
+`make_node` inside `from_config`; users cannot reach them.
 
 ## Factories
 

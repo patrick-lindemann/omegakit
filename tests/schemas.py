@@ -2,12 +2,12 @@ from collections.abc import Callable
 from dataclasses import InitVar, dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Any, Protocol, Self, override
+from typing import Any, Literal, Protocol, Self, override
 
 from omegaconf import MISSING
 from typing_extensions import TypeVar
 
-from omegakit import Configurable, instantiate, node
+from omegakit import Configurable, instantiate, make_node
 
 ConfigT = TypeVar("ConfigT")
 
@@ -36,6 +36,10 @@ class Encoder:
 
     def __init__(self, width: int = 1) -> None:
         self.width = width
+
+
+class WideEncoder(Encoder):
+    """A subclass accepted by `Encoder` fields."""
 
 
 class Decoder:
@@ -99,7 +103,7 @@ class Model(Configurable[ModelConfig]):
     @classmethod
     @override
     def from_config(cls, config: ModelConfig, **kwargs: Any) -> Self:
-        kind = instantiate(node(A if config.kind is Kind.A else B), Base)
+        kind = instantiate(make_node(A if config.kind is Kind.A else B), Base)
         return cls(kind, config.depth, config.encoder, **kwargs)
 
 
@@ -337,7 +341,7 @@ class Cat(Animal):
 
 
 def make_encoder(width: int) -> Encoder:
-    """A module-level factory function for `node`."""
+    """A module-level factory function for `make_node`."""
     return Encoder(width)
 
 
@@ -347,7 +351,7 @@ class WrapperConfig:
 
 
 class Wrapper(Configurable[WrapperConfig]):
-    """Builds a code-chosen `TypedEncoder` child with `node`."""
+    """Builds a code-chosen `TypedEncoder` child with `make_node`."""
 
     def __init__(self, inner: TypedEncoder) -> None:
         self.inner = inner
@@ -355,7 +359,9 @@ class Wrapper(Configurable[WrapperConfig]):
     @classmethod
     @override
     def from_config(cls, config: WrapperConfig, **kwargs: Any) -> Self:
-        return cls(instantiate(node(TypedEncoder, width=config.width), TypedEncoder))
+        return cls(
+            instantiate(make_node(TypedEncoder, width=config.width), TypedEncoder)
+        )
 
 
 @dataclass
@@ -364,4 +370,64 @@ class DataclassUnionConfig:
 
 
 class WithDataclassUnion(Configurable[DataclassUnionConfig]):
+    def __init__(self, **fields: Any) -> None: ...
+
+
+@dataclass
+class DataConfig:
+    """A plain-value section of the root schema."""
+
+    root: Path = Path("data")
+    batch_size: int = 32
+
+
+@dataclass
+class TrainingConfig:
+    """A root schema section holding a child object."""
+
+    model: Model
+    epochs: int = 1
+
+
+@dataclass
+class AppConfig:
+    """A root schema."""
+
+    training: TrainingConfig
+    seed: int = 0
+    data: DataConfig = field(default_factory=DataConfig)
+    callbacks: Any = None
+
+
+@dataclass
+class ModeSection:
+    """A nested section with a literal field."""
+
+    mode: Literal["fast", "slow"] = "fast"
+
+
+@dataclass
+class LiteralConfig:
+    """A schema with literal fields in every supported position."""
+
+    mode: Literal["train", "eval"] = "train"
+    level: Literal[1, 2, 3] = 1
+    batch: int | Literal["auto"] = "auto"
+    maybe: Literal["a", "b"] | None = None
+    modes: list[Literal["x", "y"]] = field(default_factory=list)
+    section: ModeSection = field(default_factory=ModeSection)
+    sections: list[ModeSection] = field(default_factory=list)
+
+
+class WithLiterals(Configurable[LiteralConfig]):
+    def __init__(self, **fields: Any) -> None:
+        self.fields = fields
+
+
+@dataclass
+class FloatLiteralConfig:
+    value: Literal[1.5] = 1.5  # pyright: ignore[reportInvalidTypeForm]
+
+
+class WithFloatLiteral(Configurable[FloatLiteralConfig]):
     def __init__(self, **fields: Any) -> None: ...

@@ -10,8 +10,9 @@ from .keys import (
     REF_KEY,
 )
 from .loading import load_config
-from .schema import ConfigValidationError, check_schema
-from .utils import node, walk
+from .schema import ConfigValidationError, check_schema, generate_json_schema
+from .utils import make_node, walk
+from .validation import is_valid, validate
 
 __all__ = [
     "BASE_KEY",
@@ -24,9 +25,12 @@ __all__ = [
     "ConfigValidationError",
     "Configurable",
     "check_schema",
+    "generate_json_schema",
     "instantiate",
+    "is_valid",
     "load_config",
-    "node",
+    "make_node",
     "prepare",
+    "validate",
     "walk",
 ]

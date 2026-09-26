@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=app.schema.json
+seed: 7
+data:
+  root: data
+  split: test
+  batch_size: 64
+training:
+  epochs: 3
+  model: ~import model.yaml

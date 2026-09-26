@@ -33,7 +33,7 @@ def resolve_imports(
             else:
                 value = node._value() if isinstance(node, Node) else None
                 if isinstance(value, str) and value.startswith(IMPORT_KEY):
-                    config[index] = _import_node(
+                    config[index] = _load_import(
                         config[index], config_path, visited_paths, cache
                     )
         return
@@ -41,10 +41,10 @@ def resolve_imports(
         if isinstance(value, (DictConfig, ListConfig)):
             resolve_imports(value, config_path, visited_paths, cache)
         elif isinstance(value, str) and value.startswith(IMPORT_KEY):
-            config[key] = _import_node(config[key], config_path, visited_paths, cache)
+            config[key] = _load_import(config[key], config_path, visited_paths, cache)
 
 
-def _import_node(
+def _load_import(
     statement: str,
     config_path: Path,
     visited_paths: set[Path],
@@ -100,7 +100,7 @@ def _import_node(
     return node
 
 
-def merge_base_recursive(config: DictConfig | ListConfig) -> None:
+def merge_bases(config: DictConfig | ListConfig) -> None:
     """Merge every `$base` underneath its node in place, children before parents.
 
     Args:
@@ -135,7 +135,7 @@ def merge_base_recursive(config: DictConfig | ListConfig) -> None:
             node[key] = merged_config._get_node(key)
 
 
-def resolve_defaults_recursive(config: DictConfig | ListConfig) -> None:
+def apply_defaults(config: DictConfig | ListConfig) -> None:
     """Merge every `$defaults` under its dict-valued siblings in place.
 
     Nested mappings are processed before their parents.
@@ -163,7 +163,7 @@ def resolve_defaults_recursive(config: DictConfig | ListConfig) -> None:
                 node[key] = OmegaConf.merge(defaults, item)
 
 
-def exclude_keys_recursive(config: DictConfig | ListConfig, exclude: set[str]) -> None:
+def strip_keys(config: DictConfig | ListConfig, exclude: set[str]) -> None:
     """Remove the given keys from every mapping in `config`, in place.
 
     Args:

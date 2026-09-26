@@ -188,7 +188,7 @@ such as `${.id}` resolves at the node's final position.
 | Schema that does not match `__init__` (§10) | `ConfigValidationError` | the field or parameter |
 | Unknown field, missing required field, or invalid native value | `ConfigValidationError` | the node path and the schema |
 | Object field built with the wrong class | `ConfigValidationError` | the field path, expected and actual class |
-| `node()` for a class or function not defined at module level | `ValueError` | `module level` |
+| `make_node()` for a class or function not defined at module level | `ValueError` | `module level` |
 | Type variable in a `Configurable` base that cannot be substituted | `TypeError` | `Cannot resolve type variable` |
 | Resolver registered twice without `replace=True` | `ValueError` | `already registered` |
 | Torch resolver without PyTorch installed | `ImportError` | `require PyTorch` |
@@ -227,11 +227,15 @@ has no schema. A type variable that cannot be substituted raises `TypeError`.
 
 | Annotation | Config value | Validated by | The typed config holds |
 |---|---|---|---|
-| **native**: `int`, `float`, `bool`, `str`, `bytes`, `Path`, `Enum`, dataclasses whose fields are all native, `list`/`dict` of these, unions of these, and these or `None` | plain values | OmegaConf | the coerced value |
+| **native**: `int`, `float`, `bool`, `str`, `bytes`, `Path`, `Enum`, `Literal` of strings, integers or booleans, dataclasses whose fields are all native, `list`/`dict` of these, unions of these, and these or `None` | plain values | OmegaConf, then omegakit for `Literal` | the coerced value |
 | **object**: any other class, a generic class, a union of classes, and these or `None`, also through a `type` alias | a `$class` or `$ref` node, or `null` if optional | its own class, then `isinstance` | the built object |
 | **`Any`** | anything | nothing | the value, with `$class` nodes inside built |
 
 - Enums are given by member **name** (`kind: B`); member values are rejected.
+- A `Literal` value is first coerced like its type, then compared by type and
+  value: `level: "2"` is valid for `Literal[1, 2]`, `level: true` is not. OmegaConf
+  does not support `Literal`, so omegakit gives it the literal's value type and
+  checks the values itself.
 - Unions of plain values are accepted, but OmegaConf does not coerce them.
 - Missing fields take their dataclass defaults. A field without a default is
   required.
@@ -245,7 +249,8 @@ and the fix, for:
 - `tuple`, `set`, `frozenset` and the abstract containers (`Sequence`, `Mapping`,
   …); use `list`, `dict` or `Any`
 - `list` or `dict` of objects; use `Any`
-- unions that mix plain values and classes, `Literal` and `TypedDict` fields
+- unions that mix plain values and classes, and `TypedDict` fields
+- `Literal` values other than strings, integers and booleans
 - annotations that `get_type_hints` cannot resolve, such as names imported under
   `TYPE_CHECKING`
 
@@ -283,7 +288,64 @@ plus `**kwargs` from a partial or a direct caller. It returns `Self`, or is
 annotated with a base class when it returns a subclass instance (a factory). Direct
 calls with a raw mapping still work, but are outside the contract.
 
-**`node(target, **kwargs)`** returns `{"$class": "<module>.<qualname>", **kwargs}`
+**`make_node(target, **kwargs)`** returns `{"$class": "<module>.<qualname>", **kwargs}`
 for a class or function defined at module level, for children that code chooses
 inside `from_config`. Such children cannot be reached by overrides. Children that
 users should configure belong in object fields.
+
+## 11. Validation
+
+`validate(config, *, schema=None)` checks a config that `load_config` has
+assembled, without building anything. It returns nothing and raises
+`ConfigValidationError` at the first problem. `is_valid(config, *, schema=None)`
+runs the same check and returns `False` in place of raising.
+
+Loading, validating and instantiating are separate steps:
+
+1. `load_config` assembles the full config (§1). It checks no schema.
+2. `validate` checks the assembled config. It is not called by `load_config` or
+   `instantiate`.
+3. `instantiate` builds objects and runs its own per-node checks (§10).
+
+The check:
+
+- The config is resolved first. An interpolation that fails, and a `???` anywhere,
+  make the config invalid.
+- Every node with `$class` is checked against the schema of its class (§10),
+  children before parents. `$class` is imported to find the schema, but nothing is
+  called. Classes without a schema only have their children checked.
+- `schema` is a dataclass for the root. The root and its nested dataclasses are
+  sections: unknown keys, invalid plain values and missing required fields raise.
+  Without `schema`, the root is not checked, but its `$class` nodes are.
+- An object field (§10) accepts a node whose `$class` is the annotated class or a
+  subclass, a `$ref` to an instance of it, or `None` when the annotation is
+  optional. A mapping without `$class` is accepted only when the annotation is a
+  dataclass, which is then checked as a section. The class check is skipped when
+  `$class` names a function, when the node has `$partial: true`, and when the
+  annotation is not a plain class or a union of plain classes.
+- `Any` fields are not checked, but their `$class` nodes are.
+- What `from_config` returns is not checked. A valid config is one whose every
+  node matches its schema; building it is left to `from_config`.
+- Reserved keys (§5) are checked as in `instantiate`, and `$meta` is ignored.
+- `check_schema` (§10) runs for every class with a schema.
+- Plain values are checked the way `instantiate` coerces them, so `"64"` is a valid
+  `int`. The config itself is not changed.
+
+## 12. Editor schemas
+
+`generate_json_schema(schema)` and the command
+`omegakit json-schema <import path> [-o file]` (also `python -m omegakit`) generate a
+JSON Schema (draft-07) for YAML files. The argument is a root schema dataclass (§11), or a
+`Configurable` class whose schema describes a fragment file.
+
+- Every value, scalar or whole node, may also be an interpolation (`${…}`), `???`
+  or an `~import`.
+- Every mapping accepts any `$` key. Other unknown keys are errors.
+- Nothing is required, because values may come from `$base`, `$defaults`, imports or
+  overrides. Missing values are caught by `validate` or `instantiate`.
+- Enums list member names, and `Literal` fields list their values.
+- An object field whose class is a `Configurable` with a dataclass schema
+  is checked against that schema (`if`/`then`), but only when its `$class` names the
+  class's defining module and qualified name. Any other `$class`, such as a
+  re-export or a subclass, accepts any mapping.
+- Field descriptions are not generated.
