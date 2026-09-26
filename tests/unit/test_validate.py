@@ -209,6 +209,15 @@ def test_validate_rejects_unimportable_classes():
         validate({"model": {"$class": "Nope"}})
 
 
+@pytest.mark.parametrize("key", ["$class", "$ref"])
+@pytest.mark.parametrize("value", [123, None, ["math.pi"]])
+def test_validate_rejects_import_paths_that_are_not_strings(key, value):
+    with pytest.raises(ConfigValidationError, match=rf"`\{key}` in `thing`"):
+        validate({"thing": {key: value}})
+    with pytest.raises(ConfigValidationError, match=rf"`\{key}` in `thing`"):
+        instantiate({"$class": "tests.helpers.Recorder", "thing": {key: value}})
+
+
 def test_validate_runs_the_schema_consistency_check():
     with pytest.raises(ConfigValidationError, match="required parameter `z`"):
         validate({"$class": "tests.schemas.MissingParameter"})

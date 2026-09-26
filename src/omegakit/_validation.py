@@ -169,7 +169,7 @@ def _check_untyped(
 def _check_class_node(
     node: dict[str, Any], path: tuple[str | int, ...], allow_missing: bool
 ) -> Any:
-    target = _import(node[CLASS_KEY], path)
+    target = _import(node, CLASS_KEY, path)
     _check_target(target, node, path, allow_missing)
     return target
 
@@ -309,10 +309,16 @@ def _import_ref(node: dict[str, Any], path: tuple[str | int, ...]) -> Any:
             f"A node using `{REF_KEY}` cannot contain any other keys, but "
             f"`{format_path(path)}` has {', '.join(map(repr, node))}."
         )
-    return _import(node[REF_KEY], path)
+    return _import(node, REF_KEY, path)
 
 
-def _import(import_path: str, path: tuple[str | int, ...]) -> Any:
+def _import(node: dict[str, Any], key: str, path: tuple[str | int, ...]) -> Any:
+    import_path = node[key]
+    if not isinstance(import_path, str):
+        raise ConfigValidationError(
+            f"`{key}` in `{format_path(path)}` must be an import path, such as "
+            f"`package.module.Name`, but the config gives `{import_path!r}`."
+        )
     try:
         return import_object(import_path)
     except (ImportError, ValueError) as error:
