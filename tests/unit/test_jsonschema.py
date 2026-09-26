@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Any
 
 import pytest
@@ -117,3 +118,23 @@ def test_json_schema_rejects_classes_without_schema():
 def test_json_schema_rejects_objects_that_are_not_classes(schema):
     with pytest.raises(TypeError, match="neither a dataclass"):
         generate_json_schema(schema)
+
+
+@dataclass
+class Numbers:
+    ratio: float = 0.5
+    enabled: bool = False
+
+
+@pytest.mark.parametrize(
+    ("config", "valid"),
+    [
+        ({"ratio": 0.25, "enabled": True}, True),
+        ({"ratio": 1}, True),
+        ({"ratio": "half"}, False),
+        ({"enabled": 1}, False),
+        ({"enabled": "yes"}, False),
+    ],
+)
+def test_json_schema_checks_floats_and_booleans(config, valid):
+    assert (_errors(Numbers, config) == []) is valid
