@@ -328,6 +328,14 @@ def _import(node: dict[str, Any], key: str, path: tuple[str | int, ...]) -> Any:
     try:
         return import_object(import_path)
     except ImportError as error:
+        # A module that the target's own module fails to import is a missing
+        # dependency, not a mistake in the config.
+        parts = import_path.split(".")
+        targets = {".".join(parts[:end]) for end in range(1, len(parts))}
+        if error.name != import_path and not (
+            isinstance(error, ModuleNotFoundError) and error.name in targets
+        ):
+            raise
         raise ConfigValidationError(
             f"Cannot import `{import_path}` in `{format_path(path)}`: {error}"
         ) from error

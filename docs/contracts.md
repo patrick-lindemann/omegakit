@@ -370,9 +370,12 @@ The check:
 - What `from_config` returns is not checked. A valid config is one whose every
   node matches its schema; building it is left to `from_config`.
 - Reserved keys (§6) are checked, and `$meta` is ignored.
-- A `$class` or `$ref` that is not a string, or cannot be imported, raises, naming
-  the node. So does a `$class` target that is neither callable nor has
-  `from_config`; `$ref` accepts any object.
+- A `$class` or `$ref` that is not a string, is not a dotted path, names a module
+  that does not exist (or whose parent package does not exist), or names a missing
+  attribute raises, naming the node. So does a `$class` target that is neither
+  callable nor has `from_config`; `$ref` accepts any object. An `ImportError` that
+  the named module raises while it is imported, such as one for a missing
+  dependency, propagates with its own type.
 - `check_schema` (§10) runs for every class with a schema.
 - Plain values are checked the way `instantiate` coerces them, so `"64"` is a valid
   `int`. The config itself is not changed.

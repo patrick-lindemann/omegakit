@@ -1,3 +1,4 @@
+import sys
 from dataclasses import dataclass
 from typing import Any
 
@@ -216,6 +217,30 @@ def test_validate_rejects_import_paths_that_are_not_strings(key, value):
         validate({"thing": {key: value}})
     with pytest.raises(ConfigValidationError, match=rf"`\{key}` in `thing`"):
         instantiate({"$class": "tests.helpers.Recorder", "thing": {key: value}})
+
+
+def test_validate_rejects_a_missing_target_module():
+    with pytest.raises(ConfigValidationError, match="Cannot import") as info:
+        validate({"thing": {"$class": "tests.no_such_module.Thing"}})
+    assert isinstance(info.value.__cause__, ModuleNotFoundError)
+
+
+@pytest.mark.parametrize(
+    ("source", "error"),
+    [
+        ("import no_such_dependency\n", ModuleNotFoundError),
+        ("from os import no_such_name\n", ImportError),
+    ],
+)
+def test_validate_propagates_import_errors_from_the_target_module(
+    tmp_path, monkeypatch, source, error
+):
+    (tmp_path / "broken_target.py").write_text(source + "class Thing: ...\n")
+    monkeypatch.syspath_prepend(tmp_path)
+    monkeypatch.delitem(sys.modules, "broken_target", raising=False)
+    with pytest.raises(error) as info:
+        validate({"thing": {"$class": "broken_target.Thing"}})
+    assert not isinstance(info.value, ConfigValidationError)
 
 
 @pytest.mark.parametrize("import_path", ["nodots", ".Foo", "..mod.X", "mod.", "a..b"])
