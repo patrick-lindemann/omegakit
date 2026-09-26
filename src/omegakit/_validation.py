@@ -327,7 +327,7 @@ def _import(node: dict[str, Any], key: str, path: tuple[str | int, ...]) -> Any:
         )
     try:
         return import_object(import_path)
-    except (ImportError, ValueError) as error:
+    except ImportError as error:
         raise ConfigValidationError(
             f"Cannot import `{import_path}` in `{format_path(path)}`: {error}"
         ) from error

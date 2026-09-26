@@ -218,6 +218,12 @@ def test_validate_rejects_import_paths_that_are_not_strings(key, value):
         instantiate({"$class": "tests.helpers.Recorder", "thing": {key: value}})
 
 
+@pytest.mark.parametrize("import_path", ["nodots", ".Foo", "..mod.X", "mod.", "a..b"])
+def test_validate_rejects_malformed_import_paths(import_path):
+    with pytest.raises(ConfigValidationError, match="is not an import path"):
+        validate({"thing": {"$class": import_path}})
+
+
 def test_validate_rejects_class_targets_that_cannot_be_built():
     with pytest.raises(ConfigValidationError, match=r"math\.pi` in `thing`"):
         validate({"thing": {"$class": "math.pi"}})

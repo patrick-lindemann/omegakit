@@ -54,7 +54,7 @@ def run(arguments: argparse.Namespace) -> None:
     if arguments.schema is not None:
         try:
             schema = import_object(arguments.schema)
-        except (ImportError, ValueError) as error:
+        except ImportError as error:
             parser.error(f"cannot import --schema: {error}")
     invalid = 0
     for path in paths:

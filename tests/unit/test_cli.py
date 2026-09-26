@@ -90,6 +90,13 @@ def test_cli_check_schema(write_yaml):
     assert _exit_code(["check", "--schema", "tests.schemas.Nope", str(path)]) == 2
 
 
+@pytest.mark.parametrize("import_path", ["nodots", "..mod.X"])
+def test_cli_check_rejects_a_malformed_schema_path(write_yaml, capsys, import_path):
+    path = write_yaml("frag.yaml", "depth: 2\n")
+    assert _exit_code(["check", "--schema", import_path, str(path)]) == 2
+    assert "is not an import path" in capsys.readouterr().err
+
+
 def test_cli_check_needs_a_config_file():
     assert _exit_code(["check", "a=1"]) == 2
 

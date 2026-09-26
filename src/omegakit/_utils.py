@@ -75,8 +75,13 @@ def import_object(import_path: str) -> Any:
         The imported object.
 
     Raises:
-        ImportError: If the module has no attribute of that name.
+        ImportError: If `import_path` is not a dotted path of at least two names, if
+            the module cannot be imported, or if it has no attribute of that name.
     """
+    if not all(import_path.split(".")) or "." not in import_path:
+        raise ImportError(
+            f"`{import_path}` is not an import path of the form `package.module.Name`."
+        )
     module_path, _, attr_name = import_path.rpartition(".")
     module = importlib.import_module(module_path)
     try:
