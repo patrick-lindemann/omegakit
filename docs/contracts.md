@@ -496,8 +496,9 @@ usage errors (a missing config file, an unknown option, an `--schema` or
 directory).
 
 - `omegakit check CONFIG... [KEY=VALUE...] [--schema IMPORT_PATH] [--allow-missing]
-  [--import-root DIR]`
-  loads each file with the overrides and validates it (§11). It prints one line per
+  [--allow-module NAME]... [--import-root DIR]`
+  loads each file with the overrides and validates it (§11). Each `--allow-module`
+  adds an entry to `allowed_modules` (§11); without one, every module is allowed. It prints one line per
   failing file, `<file>: <exception type>: <message>`, and nothing for valid files.
   Every exception from loading or validating counts as a failure of that file, and
   so does a `SystemExit` raised by a module that is imported; the other files are

@@ -36,6 +36,14 @@ def register(commands: argparse._SubParsersAction) -> None:
         help="accept ??? and other missing values, as in library files",
     )
     parser.add_argument(
+        "--allow-module",
+        action="append",
+        dest="allowed_modules",
+        metavar="NAME",
+        help="allow $class and $ref only from this module and its submodules; "
+        "repeatable (default: any module)",
+    )
+    parser.add_argument(
         "--import-root",
         type=Path,
         metavar="DIR",
@@ -71,7 +79,12 @@ def run(arguments: argparse.Namespace) -> None:
             config = load_config(
                 path, overrides=overrides or None, import_root=arguments.import_root
             )
-            validate(config, schema=schema, allow_missing=arguments.allow_missing)
+            validate(
+                config,
+                schema=schema,
+                allow_missing=arguments.allow_missing,
+                allowed_modules=arguments.allowed_modules,
+            )
         # A module that exits while it is imported must not pass the check.
         except (Exception, SystemExit) as error:
             invalid += 1

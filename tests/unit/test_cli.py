@@ -124,6 +124,13 @@ def test_cli_import_root(write_yaml, tmp_path, capsys, command):
     assert _exit_code([command, str(path), "--import-root", missing]) == 2
 
 
+def test_cli_check_allow_module(write_yaml, capsys):
+    path = write_yaml("a.yaml", MODEL)
+    main(["check", str(path), "--allow-module", "other", "--allow-module", "tests"])
+    assert _exit_code(["check", str(path), "--allow-module", "other"]) == 1
+    assert "allowed_modules" in capsys.readouterr().out
+
+
 def test_cli_check_needs_a_config_file():
     assert _exit_code(["check", "a=1"]) == 2
 
