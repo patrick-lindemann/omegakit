@@ -319,7 +319,7 @@ def _merge_in_dependency_order(
                     f"Cannot resolve `{first_error.full_key or key}`: "
                     f"{str(first_error).splitlines()[0]}"
                 ) from first_error
-            return ", ".join(f"`{node._get_full_key(None)}`" for node in waiting)
+            return ", ".join(f"`{_node_path(node)}`" for node in waiting)
 
 
 def _merge_base(node: DictConfig, base: Any) -> None:
@@ -329,15 +329,15 @@ def _merge_base(node: DictConfig, base: Any) -> None:
         bases = [base[index] for index in range(len(base))]
         if not all(isinstance(item, DictConfig) for item in bases):
             raise ConfigValidationError(
-                f"List-valued `{BASE_KEY}` in parent `{node}` must contain only "
-                f"dictionaries."
+                f"List-valued `{BASE_KEY}` in `{_node_path(node)}` must contain only "
+                "dictionaries."
             )
     elif isinstance(base, DictConfig):
         bases = [base]
     else:
         raise ConfigValidationError(
-            f"Node `{BASE_KEY}` in parent `{node}` is not a dictionary or a list of "
-            f"dictionaries."
+            f"`{BASE_KEY}` in `{_node_path(node)}` is not a dictionary or a list of "
+            "dictionaries."
         )
     node.pop(BASE_KEY)
     merged_config = cast(DictConfig, OmegaConf.merge(*bases, node))
@@ -348,7 +348,7 @@ def _merge_base(node: DictConfig, base: Any) -> None:
 def _merge_defaults(node: DictConfig, defaults: Any) -> None:
     if not isinstance(defaults, DictConfig):
         raise ConfigValidationError(
-            f"Node `{DEFAULTS_KEY}` in parent `{node}` is not a dictionary."
+            f"`{DEFAULTS_KEY}` in `{_node_path(node)}` is not a dictionary."
         )
     node.pop(DEFAULTS_KEY)
     for key in list(node.keys()):
@@ -357,6 +357,10 @@ def _merge_defaults(node: DictConfig, defaults: Any) -> None:
         item = node._get_node(key)
         if isinstance(item, DictConfig):
             node[key] = OmegaConf.merge(defaults, item)
+
+
+def _node_path(node: DictConfig) -> str:
+    return node._get_full_key(None) or "<root>"
 
 
 def _is_ancestor(node: DictConfig, other: DictConfig) -> bool:

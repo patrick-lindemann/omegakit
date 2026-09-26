@@ -80,6 +80,17 @@ def test_load_merges_list_base_from_imports(write_yaml):
     assert cfg.model.lr == 5
 
 
+def test_load_base_errors_name_the_node_path(write_yaml):
+    path = write_yaml("c.yaml", "outer:\n  inner:\n    $base: 5\n    token: abc\n")
+    with pytest.raises(ConfigValidationError, match=r"`outer\.inner`") as info:
+        load_config(path)
+    assert "abc" not in str(info.value)
+    path = write_yaml("d.yaml", "$base: [5]\ntoken: abc\n")
+    with pytest.raises(ConfigValidationError, match="`<root>`") as info:
+        load_config(path)
+    assert "abc" not in str(info.value)
+
+
 def test_load_list_base_non_dict_element_raises(write_yaml):
     with pytest.raises(ConfigValidationError, match="must contain only dictionaries"):
         load_config(write_yaml("c.yaml", "$base:\n  - { a: 1 }\n  - 5\n"))
