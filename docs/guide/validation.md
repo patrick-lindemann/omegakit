@@ -87,4 +87,4 @@ checked the way `instantiate` coerces them, so `batch_size: "64"` is valid for a
 `int` field. The config itself is not changed.
 
 To check files from a terminal, a pre-commit hook or CI, use
-[`omegakit check`](command-line.md).
+[`omegakit check`](command-line.md), on trusted branches only.

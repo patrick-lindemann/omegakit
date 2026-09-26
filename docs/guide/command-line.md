@@ -44,6 +44,9 @@ file fails.
   `schema`.
 - `--allow-missing` accepts `???` and other missing values, for library files and
   fragments.
+- `--allow-module NAME`, repeatable, allows `$class` and `$ref` only from those
+  modules and their submodules, as `validate`'s `allowed_modules`.
+- `--import-root DIR` rejects an `~import` of a file outside `DIR`.
 
 As a [pre-commit](https://pre-commit.com) hook:
 
@@ -53,10 +56,20 @@ repos:
     hooks:
       - id: omegakit-check
         name: omegakit check
-        entry: omegakit check
+        entry: omegakit check --allow-module myapp
         language: system
         files: ^configs/.*\.yaml$
 ```
+
+`check` runs code from the files it checks: it imports the modules that `$class`
+and `$ref` name and runs resolvers, including `oc.env`. Run it on trusted content
+only:
+
+- In CI, check your own branches. Do not run it in a `pull_request_target`
+  workflow, which runs with your repository's secrets on a fork's files.
+- Do not run pull requests from forks on self-hosted runners.
+- Pass `--allow-module` for your own packages and `--import-root` for your config
+  directory, to limit what a file can reach. They are limits, not a sandbox.
 
 ## `show`
 
