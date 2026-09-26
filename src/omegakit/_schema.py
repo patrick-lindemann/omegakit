@@ -17,7 +17,7 @@ from omegaconf.errors import OmegaConfBaseException
 from typing_extensions import NoDefault
 
 from ._configurable import Configurable
-from ._utils import format_path
+from ._utils import describe_value, format_path
 
 type FieldKind = Literal["native", "object", "any"]
 
@@ -699,7 +699,8 @@ def _build_native_value(
         if not _is_match(value, annotation):
             raise ConfigValidationError(
                 f"`{format_path(path)}` must be one of "
-                f"{', '.join(map(repr, arguments))}, but the config gives {value!r}."
+                f"{', '.join(map(repr, arguments))}, but the config gives "
+                f"{describe_value(value)}."
             )
         return value
     if origin in (typing.Union, types.UnionType):
@@ -732,7 +733,7 @@ def _build_native_value(
         if not isinstance(value, (list, tuple)) or len(value) != len(arguments):
             raise ConfigValidationError(
                 f"`{format_path(path)}` expects a list of {len(arguments)} items for "
-                f"`{annotation}`, but the config gives {value!r}."
+                f"`{annotation}`, but the config gives {describe_value(value)}."
             )
         return tuple(
             _coerce(item, item_annotation, (*path, index), allow_missing, build)
@@ -795,7 +796,8 @@ def _build_union_value(
     elif any(_is_match(value, member) for member in members):
         return value
     raise ConfigValidationError(
-        f"`{format_path(path)}` expects `{annotation}`, but the config gives {value!r}."
+        f"`{format_path(path)}` expects `{annotation}`, but the config gives "
+        f"{describe_value(value)}."
     )
 
 

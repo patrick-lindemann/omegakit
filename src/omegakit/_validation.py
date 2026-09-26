@@ -23,7 +23,7 @@ from ._schema import (
     find_section,
     validate_native,
 )
-from ._utils import format_path, import_object
+from ._utils import describe_value, format_path, import_object
 
 SECRET_WORDS = (
     ("password",),
@@ -438,7 +438,7 @@ def _check_target(
             if not isinstance(value, bool):
                 raise ConfigValidationError(
                     f"`{PARTIAL_KEY}` in `{format_path(path)}` must be `true` or "
-                    f"`false`, got `{value!r}`."
+                    f"`false`, got {describe_value(value)}."
                 )
             continue
         if isinstance(key, str) and key.startswith("$"):
@@ -533,7 +533,7 @@ def _check_object(
             return
         raise ConfigValidationError(
             f"`{format_path(path)}` expects `{classes[0]}`, but the config gives "
-            f"{value!r}."
+            f"{describe_value(value)}."
         )
     if isinstance(value, dict):
         value = {key: item for key, item in value.items() if key != META_KEY}
@@ -555,7 +555,7 @@ def _check_object(
         _check_type(isinstance, value, classes, path, "a mapping without `$class`")
         _check_untyped(value, path, allow_missing, allowed_modules)
         return
-    _check_type(isinstance, value, classes, path, f"`{value!r}`")
+    _check_type(isinstance, value, classes, path, describe_value(value))
     _check_untyped(value, path, allow_missing, allowed_modules)
 
 
@@ -602,7 +602,8 @@ def _import(
     if not isinstance(import_path, str):
         raise ConfigValidationError(
             f"`{key}` in `{format_path(path)}` must be an import path, such as "
-            f"`package.module.Name`, but the config gives `{import_path!r}`."
+            "`package.module.Name`, but the config gives "
+            f"{describe_value(import_path)}."
         )
     # Checked before the import, so that a module that is not allowed never runs.
     if not _is_allowed(import_path.rpartition(".")[0], allowed_modules):

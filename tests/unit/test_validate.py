@@ -254,6 +254,28 @@ def test_validate_checks_reserved_keys_under_untyped_object_fields(values, match
         instantiate(config)
 
 
+@pytest.mark.parametrize(
+    ("config", "described"),
+    [
+        (
+            {"$class": f"{__name__}.WithUntypedFields", "$partial": {"token": "abc"}},
+            "a mapping with keys `token`",
+        ),
+        ({"thing": {"$class": ["abc", "def"]}}, "a list of 2 items"),
+        (
+            {"$class": "tests.schemas.ObjectContainers", "encoders": {"token": "abc"}},
+            "a mapping with keys `token`",
+        ),
+        ({"$class": "tests.schemas.Types", "pair": [1, "abc", 3]}, "a list of 3"),
+        ({"$class": "tests.schemas.Types", "sub_or_int": ["abc"]}, "a list of 1"),
+    ],
+)
+def test_validate_errors_describe_containers_without_their_values(config, described):
+    with pytest.raises(ConfigValidationError, match=described) as info:
+        validate(config)
+    assert "abc" not in str(info.value)
+
+
 def test_validate_rejects_a_missing_target_module():
     with pytest.raises(ConfigValidationError, match="Cannot import") as info:
         validate({"thing": {"$class": "tests.no_such_module.Thing"}})

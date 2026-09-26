@@ -66,6 +66,24 @@ def format_path(path: tuple[str | int, ...]) -> str:
     return ".".join(map(str, path)) or "<root>"
 
 
+def describe_value(value: Any) -> str:
+    """Describe a config value for an error message, without a container's items.
+
+    Args:
+        value: The value.
+
+    Returns:
+        The `repr` of a scalar in backticks, the keys of a mapping, or the length of a
+        list.
+    """
+    if isinstance(value, dict):
+        keys = ", ".join(f"`{key}`" for key in value)
+        return f"a mapping with keys {keys}" if keys else "an empty mapping"
+    if isinstance(value, (list, tuple)):
+        return f"a list of {len(value)} items"
+    return f"`{value!r}`"
+
+
 def describe_error(error: Exception) -> str:
     """Describe an error from PyYAML, OmegaConf or Python in one line.
 
