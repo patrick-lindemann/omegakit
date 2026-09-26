@@ -166,12 +166,17 @@ def check_schema(cls: type) -> None:
             )
     for name, (_, annotation) in fields.items():
         if name not in keyword_names:
-            if takes_kwargs:
+            positional = name in parameters and (
+                parameters[name].kind is inspect.Parameter.POSITIONAL_ONLY
+            )
+            if takes_kwargs and not positional:
                 continue
+            reason = (
+                "takes it only positionally" if positional else "takes no `**kwargs`"
+            )
             raise ConfigValidationError(
                 f"Field `{name}` of schema `{schema.__qualname__}` is not a keyword "
-                f"parameter of `{cls.__qualname__}`, and `__init__` takes no "
-                "`**kwargs`."
+                f"parameter of `{cls.__qualname__}`, and `__init__` {reason}."
             )
         if name in hints and not _is_assignable(annotation, hints[name]):
             raise ConfigValidationError(

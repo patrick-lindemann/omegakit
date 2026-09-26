@@ -1,6 +1,9 @@
+from dataclasses import dataclass
+from typing import Any
+
 import pytest
 
-from omegakit import ConfigValidationError, check_schema, instantiate
+from omegakit import Configurable, ConfigValidationError, check_schema, instantiate
 from tests import schemas
 
 # Contracts: §10 Typed configs (consistency check).
@@ -19,6 +22,21 @@ def test_check_schema_extra_field_needs_kwargs():
     with pytest.raises(ConfigValidationError, match="Field `y`"):
         check_schema(schemas.ExtraField)
     check_schema(schemas.ExtraFieldWithKwargs)
+
+
+@dataclass
+class PositionalConfig:
+    x: int
+
+
+class PositionalBehindKwargs(Configurable[PositionalConfig]):
+    def __init__(self, x: int, /, **kwargs: Any) -> None:
+        self.x = x
+
+
+def test_check_schema_rejects_positional_only_parameters_behind_kwargs():
+    with pytest.raises(ConfigValidationError, match="Field `x`"):
+        check_schema(PositionalBehindKwargs)
 
 
 def test_check_schema_int_field_is_assignable_to_float():

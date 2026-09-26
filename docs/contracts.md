@@ -309,7 +309,8 @@ and the fix, for:
    `Configurable` overrides `from_config`. It runs before any child is built, and a
    successful check is cached:
    - every required `__init__` parameter has a field
-   - every field is a keyword parameter, unless `__init__` takes `**kwargs`
+   - every field is a keyword parameter, unless `__init__` takes `**kwargs`; a
+     field that names a positional-only parameter is rejected even then
    - every field annotation is assignable to its parameter's annotation (`int` to
      `float`, a subclass to its base, unions member by member). Generic and
      unresolvable annotations are skipped.
