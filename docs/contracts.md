@@ -312,8 +312,10 @@ and the fix, for:
    - every field is a keyword parameter, unless `__init__` takes `**kwargs`; a
      field that names a positional-only parameter is rejected even then
    - every field annotation is assignable to its parameter's annotation (`int` to
-     `float`, a subclass to its base, unions member by member). Generic and
-     unresolvable annotations are skipped.
+     `float`, a subclass to its base, unions member by member). Generic
+     annotations are skipped, and so is each parameter whose annotation does not
+     resolve, such as a type imported under `TYPE_CHECKING`; the other parameters
+     are still checked.
 3. **Native validation** (parent before children): unknown keys and missing required
    non-native fields raise. The native values are merged onto an OmegaConf structure
    of the native fields, with `Literal` replaced by its value type, and the result

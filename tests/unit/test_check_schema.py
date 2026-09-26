@@ -1,10 +1,13 @@
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any  # noqa: TID251
 
 import pytest
 
 from omegakit import Configurable, ConfigValidationError, check_schema, instantiate
 from tests import schemas
+
+if TYPE_CHECKING:
+    from decimal import Decimal
 
 # Contracts: §10 Typed configs (consistency check).
 
@@ -37,6 +40,26 @@ class PositionalBehindKwargs(Configurable[PositionalConfig]):
 def test_check_schema_rejects_positional_only_parameters_behind_kwargs():
     with pytest.raises(ConfigValidationError, match="Field `x`"):
         check_schema(PositionalBehindKwargs)
+
+
+@dataclass
+class PartlyResolvableConfig:
+    x: str
+    amount: int = 0
+
+
+class PartlyResolvable(Configurable[PartlyResolvableConfig]):
+    def __init__(self, x: int, amount: "Decimal | int" = 0) -> None: ...
+
+
+class Unresolvable(Configurable[PartlyResolvableConfig]):
+    def __init__(self, x: str, amount: "Decimal | int" = 0) -> None: ...
+
+
+def test_check_schema_checks_annotations_that_resolve_when_others_do_not():
+    with pytest.raises(ConfigValidationError, match="Field `x`"):
+        check_schema(PartlyResolvable)
+    check_schema(Unresolvable)
 
 
 def test_check_schema_int_field_is_assignable_to_float():

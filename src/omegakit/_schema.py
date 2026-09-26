@@ -142,7 +142,17 @@ def check_schema(cls: type) -> None:
     try:
         hints = get_type_hints(cls.__init__)
     except Exception:
+        # Annotations imported under `TYPE_CHECKING` do not resolve; check the rest.
         hints = {}
+        for name, annotation in getattr(cls.__init__, "__annotations__", {}).items():
+            try:
+                hints[name] = (
+                    eval(annotation, vars(sys.modules[cls.__init__.__module__]))
+                    if isinstance(annotation, str)
+                    else annotation
+                )
+            except Exception:
+                continue
     keyword_names = {
         name
         for name, parameter in parameters.items()
