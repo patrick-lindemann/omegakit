@@ -62,4 +62,14 @@ Alternatively, map files to schemas in the VS Code settings:
 
 ## Editor behaviour
 
-*To be recorded after the editor check (stage 7, task 4).*
+Checked in VS Code with the YAML extension by Red Hat, on the example files above:
+
+- Errors appear for values of the wrong type (`batch_size: many`) and for misspelled
+  keys, at the root (`sed: 1`) and inside a `$class` node (`widht: 8` under
+  `encoder`).
+- Interpolations (`${seed}`), `~import` values and `$` keys such as `$base` are
+  accepted without errors.
+- Completion offers the keys of the root schema, the values of `Literal` fields
+  (`split: train`), and the fields of a node whose `$class` names a `Configurable`.
+- Hover shows the field's type inside such a node.
+- Enums accept member names and values (`kind: B`, `kind: beta`).
