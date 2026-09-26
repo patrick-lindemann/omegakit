@@ -250,6 +250,36 @@ A malformed dotlist override such as `["a"]` is not an error: OmegaConf sets `a`
 - Configs import and call arbitrary Python objects. Load them only from trusted
   sources.
 
+### Masking secrets
+
+`mask_secrets(config, *, keys=())` takes an unresolved config, such as the result
+of `load_config`, and returns it resolved as plain `dict`s and `list`s for logging,
+with secrets replaced by `***`:
+
+1. **By key.** A key is split into words at `_`, `-`, `.` and camelCase
+   boundaries. It is secret when its words contain `password`, `passwd`, `pass`,
+   `passphrase`, `secret`, `token`, `credential`, `auth`, `bearer`, `cookie`,
+   `dsn`, `webhook` or `apikey`, or the sequences `api key`, `private key` or
+   `access key`, each also in the plural. Whole words only: `pad_token` is
+   secret, `tokenizer` is not. A secret key masks every value below it. `keys`
+   adds entries, each a word or a space-separated sequence; the defaults stay.
+2. **By environment variable.** A value whose unresolved text reads
+   `${oc.env:NAME}`, also with spaces or nested in another interpolation, is
+   masked when `NAME` is secret by the same rule: `DB_PASSWORD` is, `APP_ENV` and
+   `PWD` are not.
+3. **By value.** The resolved strings masked by 1 and 2 that are at least 8
+   characters long are replaced by `***` inside every other string, longest first,
+   such as a password inside a URL. Numbers and keys are never rewritten.
+
+A masked value is resolved only to collect it for 3; if that fails, it is masked
+anyway. A masked value that is not a string becomes the string `***`. A missing
+value prints as `???`. Any other resolution error raises `ConfigValidationError`.
+
+Not masked: a secret in a value whose key names no secret, a secret shorter than 8
+characters used elsewhere, a secret used as a key, a value read by a resolver other
+than `oc.env`, and objects built by `instantiate`. A secret equal to a common word
+masks that word in every other string.
+
 ## 10. Typed configs
 
 A class that subclasses `Configurable[TConfig]` with a dataclass `TConfig` has a

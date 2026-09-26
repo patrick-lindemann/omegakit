@@ -27,6 +27,7 @@
 
 ```{eval-rst}
 .. autofunction:: omegakit.validate
+.. autofunction:: omegakit.mask_secrets
 ```
 
 ## Editor schemas

@@ -12,7 +12,7 @@ from ._keys import (
 from ._loading import load_config
 from ._schema import ConfigValidationError, check_schema, generate_json_schema
 from ._utils import make_node, walk
-from ._validation import validate
+from ._validation import mask_secrets, validate
 
 __all__ = [
     "BASE_KEY",
@@ -29,6 +29,7 @@ __all__ = [
     "instantiate",
     "load_config",
     "make_node",
+    "mask_secrets",
     "prepare",
     "validate",
     "walk",

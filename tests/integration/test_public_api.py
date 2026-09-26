@@ -24,6 +24,7 @@ def test_public_api_exports():
         "instantiate",
         "load_config",
         "make_node",
+        "mask_secrets",
         "prepare",
         "validate",
         "walk",

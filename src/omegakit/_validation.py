@@ -1,10 +1,12 @@
+import contextlib
 import dataclasses
+import re
 import types
 import typing
 from collections.abc import Callable, Iterable
 from typing import Any, TypeAliasType, get_args, get_origin
 
-from omegaconf import MISSING, DictConfig, ListConfig, OmegaConf
+from omegaconf import MISSING, DictConfig, ListConfig, Node, OmegaConf
 from omegaconf.errors import (
     InterpolationKeyError,
     InterpolationToMissingValueError,
@@ -22,6 +24,28 @@ from ._schema import (
     validate_native,
 )
 from ._utils import format_path, import_object
+
+_SECRET_WORDS = (
+    ("password",),
+    ("passwd",),
+    ("pass",),
+    ("passphrase",),
+    ("secret",),
+    ("token",),
+    ("credential",),
+    ("auth",),
+    ("bearer",),
+    ("cookie",),
+    ("dsn",),
+    ("webhook",),
+    ("apikey",),
+    ("api", "key"),
+    ("private", "key"),
+    ("access", "key"),
+)
+_WORD = re.compile(r"[A-Z]+(?=[A-Z][a-z])|[A-Z]?[a-z]+|[A-Z]+|[0-9]+")
+_ENV_NAME = re.compile(r"\$\{\s*oc\.env\s*:\s*['\"]?([A-Za-z_][A-Za-z0-9_]*)")
+_MASK = "***"
 
 
 def validate(
@@ -103,6 +127,50 @@ def resolve_config(
         ) from error
 
 
+def mask_secrets(config: DictConfig, *, keys: Iterable[str] = ()) -> Any:
+    """Resolve a config for logging, with its secrets masked.
+
+    Give it the unresolved config from `load_config`: a resolved config no longer
+    shows which values come from environment variables. A value is masked as `***`
+    when its key, or a key above it, contains a secret word such as `password`,
+    `token`, `secret` or `api_key`, and when it reads a secret-named environment
+    variable with `${oc.env:...}`. Keys are split into words at `_`, `-`, `.` and
+    camelCase, so `pad_token` is masked and `tokenizer` is not. The masked strings
+    of 8 or more characters are also replaced by `***` inside every other string,
+    such as a password inside a URL. Missing values print as `???`.
+
+    It cannot see a secret in a value whose key names no secret, a secret shorter
+    than 8 characters used elsewhere, a secret used as a key, or one read by a
+    resolver other than `oc.env`. A secret equal to a common word masks that word
+    everywhere. Objects built by `instantiate` are not masked.
+
+    Args:
+        config: The unresolved config, such as the result of `load_config`.
+        keys: More secret words, added to the defaults. An entry is a lowercase
+            word, or several words separated by spaces that must appear in that
+            order, such as `"client secret"`. Defaults to `()`.
+
+    Returns:
+        The resolved config as plain dictionaries and lists, with secrets masked.
+
+    Raises:
+        ConfigValidationError: If an interpolation outside the masked values fails.
+    """
+    words = (
+        *_SECRET_WORDS,
+        *(tuple(key.lower().split()) for key in keys if key.strip()),
+    )
+    secrets: set[str] = set()
+    try:
+        masked = _mask(config, words, False, secrets)
+    except OmegaConfBaseException as error:
+        location = f" `{error.full_key}`" if error.full_key else " the config"
+        raise ConfigValidationError(
+            f"Cannot resolve{location}: {str(error).splitlines()[0]}"
+        ) from error
+    return _replace(masked, sorted(secrets, key=len, reverse=True))
+
+
 def check_resolved(
     config: Any,
     *,
@@ -178,6 +246,66 @@ def resolve_item(container: Any, key: Any) -> Any:
         return MISSING
     if isinstance(value, (DictConfig, ListConfig)):
         return _resolve_allowing_missing(value)
+    return value
+
+
+def _mask(
+    container: DictConfig | ListConfig,
+    words: tuple[tuple[str, ...], ...],
+    masked: bool,
+    secrets: set[str],
+) -> Any:
+    key: Any
+    result = {}
+    for key in (
+        range(len(container)) if isinstance(container, ListConfig) else container
+    ):
+        node = container._get_node(key)
+        secret = masked or (isinstance(key, str) and _is_secret(key, words))
+        if isinstance(node, (DictConfig, ListConfig)) and not (
+            node._is_missing() or node._is_interpolation()
+        ):
+            result[key] = _mask(node, words, secret, secrets)
+            continue
+        raw = node._value() if isinstance(node, Node) else None
+        if isinstance(raw, str) and not secret:
+            secret = any(_is_secret(name, words) for name in _ENV_NAME.findall(raw))
+        if raw == MISSING:
+            result[key] = MISSING
+        elif not secret:
+            result[key] = resolve_item(container, key)
+        else:
+            result[key] = _MASK
+            # Only to collect the value; a secret that cannot be resolved is hidden.
+            with contextlib.suppress(OmegaConfBaseException):
+                value = resolve_item(container, key)
+                if isinstance(value, str) and len(value) >= 8:
+                    secrets.add(value)
+    return list(result.values()) if isinstance(container, ListConfig) else result
+
+
+def _is_secret(key: str, words: tuple[tuple[str, ...], ...]) -> bool:
+    parts = [word.lower() for word in _WORD.findall(key)]
+    for entry in words:
+        for start in range(len(parts) - len(entry) + 1):
+            *head, last = parts[start : start + len(entry)]
+            if tuple(head) == entry[:-1] and last in (
+                entry[-1],
+                f"{entry[-1]}s",
+                f"{entry[-1]}es",
+            ):
+                return True
+    return False
+
+
+def _replace(value: Any, secrets: list[str]) -> Any:
+    if isinstance(value, dict):
+        return {key: _replace(item, secrets) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_replace(item, secrets) for item in value]
+    if isinstance(value, str):
+        for secret in secrets:
+            value = value.replace(secret, _MASK)
     return value
 
 
