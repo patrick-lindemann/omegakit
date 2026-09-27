@@ -94,7 +94,10 @@ and gets a note naming the node, such as `while instantiating jobs.digest
 - A target with a `from_config` attribute is built with `from_config(arguments)`
   instead. The lookup is by name, so any class with that classmethod works,
   `Configurable` or not. `arguments` is a `dict` of the built arguments, or the
-  typed config when the class has a schema ([Schemas](../schemas/index.md)).
+  typed config when the class is a `Configurable` with a schema
+  ([Schemas](../schemas/index.md)).
+- A dataclass target is its own schema: its arguments are checked and converted
+  against its fields before it is called ([Schemas](../schemas/index.md#rules)).
 - Nested `$class` nodes, in mappings and lists, are built before their parent,
   which receives the objects.
 - A `dict` passed in is converted with `OmegaConf.create` and treated like a

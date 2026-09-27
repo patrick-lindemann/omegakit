@@ -27,6 +27,12 @@ All notable changes to this project are documented here. The format follows
   schemas is now Editor support. The recipes have shorter titles, and their URLs
   follow them.
 
+### Fixed
+
+- A plain dataclass named by `$class` is checked and built as its own schema.
+  `validate` now rejects unknown keys and values of the wrong type in it, and
+  `instantiate` converts its values, so `epochs: "4"` gives the integer 4.
+
 ## [0.6.1] - 2026-09-27
 
 ### Fixed

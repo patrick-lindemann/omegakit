@@ -157,8 +157,10 @@ def _build(
         config = {
             key: _materialize(value, (*path, key)) for key, value in values.items()
         }
+    elif schema is cls:
+        config = _build_fields(schema, values, path)
     else:
-        config = _build_typed_config(schema, values, path)
+        config = schema(**_build_fields(schema, values, path))
     try:
         if hasattr(cls, "from_config"):
             return (
@@ -174,9 +176,9 @@ def _build(
         raise
 
 
-def _build_typed_config(
+def _build_fields(
     schema: type, values: dict[str, Any], path: tuple[str | int, ...]
-) -> Any:
+) -> dict[str, Any]:
     fields = validate_native(schema, values, path, build=True)
     for name, (kind, annotation) in classify_fields(schema).items():
         if kind == "native" or name not in values:
@@ -185,7 +187,7 @@ def _build_typed_config(
             fields[name] = _build_object(values[name], annotation, (*path, name))
         else:
             fields[name] = _materialize(values[name], (*path, name))
-    return schema(**fields)
+    return fields
 
 
 def _build_object(value: Any, annotation: Any, path: tuple[str | int, ...]) -> Any:
@@ -212,8 +214,10 @@ def _build_object(value: Any, annotation: Any, path: tuple[str | int, ...]) -> A
     )
     if section is None:
         return _materialize(value, path)
-    return _build_typed_config(
-        section, {key: item for key, item in value.items() if key != META_KEY}, path
+    return section(
+        **_build_fields(
+            section, {key: item for key, item in value.items() if key != META_KEY}, path
+        )
     )
 
 

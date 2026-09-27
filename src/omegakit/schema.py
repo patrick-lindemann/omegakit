@@ -57,37 +57,39 @@ class ConfigValidationError(ValueError):
 
 @functools.cache
 def find_schema(cls: type) -> type | None:
-    """Find the dataclass schema of a `Configurable` class.
+    """Find the dataclass schema of a class.
 
-    The schema is the `TConfig` argument of `Configurable`, found by walking the
+    The schema of a `Configurable` is its `TConfig` argument, found by walking the
     original bases and substituting type variables. An unparametrized generic class
-    uses the default of its type variable.
+    uses the default of its type variable. Any other dataclass is its own schema.
 
     Args:
         cls: The class to inspect.
 
     Returns:
-        The schema dataclass, or `None` when `cls` is not a `Configurable` or its
-        `TConfig` is not a dataclass.
+        The schema dataclass, or `None` when `cls` is neither a dataclass nor a
+        `Configurable` whose `TConfig` is a dataclass.
 
     Raises:
         ConfigValidationError: If the schema uses a dataclass feature outside the
             supported subset.
     """
-    if not issubclass(cls, Configurable):
-        return None
-    parameters = getattr(cls, "__parameters__", ())
-    config_type = _find_config_type(
-        cls, {parameter: _type_var_default(parameter) for parameter in parameters}
-    )
+    if issubclass(cls, Configurable):
+        parameters = getattr(cls, "__parameters__", ())
+        config_type = _find_config_type(
+            cls, {parameter: _type_var_default(parameter) for parameter in parameters}
+        )
+    else:
+        config_type = cls
     if not (isinstance(config_type, type) and dataclasses.is_dataclass(config_type)):
         return None
     try:
         OmegaConf.structured(_native_schema(config_type))
     except OmegaConfBaseException as error:
+        owner = "" if config_type is cls else f" of `{cls.__qualname__}`"
         raise ConfigValidationError(
-            f"Schema `{config_type.__qualname__}` of `{cls.__qualname__}` cannot be "
-            f"validated by OmegaConf: {str(error).splitlines()[0]}"
+            f"Schema `{config_type.__qualname__}`{owner} cannot be validated by "
+            f"OmegaConf: {str(error).splitlines()[0]}"
         ) from error
     return config_type
 
@@ -142,8 +144,9 @@ def check_schema(cls: type) -> None:
     """Check that the schema of `cls` matches its `__init__`.
 
     The check applies only to the default `from_config`, which passes every schema
-    field to the constructor. Classes without a schema, and classes whose MRO
-    overrides `from_config`, pass unchecked. A successful check is cached.
+    field to the constructor. Classes without a schema, dataclasses that are their
+    own schema, and classes whose MRO overrides `from_config`, pass unchecked. A
+    successful check is cached.
 
     Args:
         cls: The class to check.
@@ -154,8 +157,14 @@ def check_schema(cls: type) -> None:
             not assignable to its parameter's annotation.
     """
     schema = find_schema(cls)
-    if schema is None or any(
-        "from_config" in vars(base) for base in cls.__mro__ if base is not Configurable
+    if (
+        schema is None
+        or schema is cls
+        or any(
+            "from_config" in vars(base)
+            for base in cls.__mro__
+            if base is not Configurable
+        )
     ):
         return
     fields = classify_fields(schema)

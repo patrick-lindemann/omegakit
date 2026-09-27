@@ -92,8 +92,10 @@ A `TypedDict` `TConfig` gives `from_config` static types only: it receives a pla
 
 A class that subclasses `Configurable[TConfig]` with a dataclass `TConfig` has a
 **schema**. Its config is validated and built into a `TConfig` instance, the typed
-config, which `from_config` receives. Any other class, including a bare
-`Configurable` or one with a `TypedDict` or `Mapping` `TConfig`, is built as in
+config, which `from_config` receives. A dataclass that is not a `Configurable` is
+its own schema: its config is validated the same way, and the class is called with
+the checked fields. Any other class, including a bare `Configurable` or one with a
+`TypedDict` or `Mapping` `TConfig`, is built as in
 [Instantiation](../instantiation/index.md#rules).
 
 **Schema lookup.** The `TConfig` argument is found by walking the original bases
@@ -145,8 +147,8 @@ recursive: that field holds an object.
 **Per node, in order:**
 
 1. Look up the schema.
-2. Run `check_schema`, unless a class in the MRO below `Configurable` overrides
-   `from_config`. It is cached once it passes. Every required `__init__` parameter
+2. Run `check_schema`, unless the class is a dataclass that is its own schema, or a
+   class in the MRO below `Configurable` overrides `from_config`. It is cached once it passes. Every required `__init__` parameter
    needs a field. Every field must be a keyword parameter, unless `__init__` takes
    `**kwargs`; a positional-only parameter is rejected even then. Every field's
    annotation must be assignable to its parameter's: `int` to `float`, a subclass
@@ -164,6 +166,9 @@ recursive: that field holds an object.
 5. Call `TConfig(**fields)`, so `__post_init__` runs.
 6. Call `from_config(typed_config)`, or build a partial of it that passes
    call-time arguments as `**kwargs`.
+
+A dataclass that is its own schema skips steps 5 and 6: the class is called with
+the fields, or a partial of it is built.
 
 The whole node is validated before anything configured is built, so an error never
 leaves some children built. Errors name the node path and the schema class.
