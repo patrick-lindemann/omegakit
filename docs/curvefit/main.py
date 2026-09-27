@@ -1,6 +1,5 @@
 import random
 import sys
-from pathlib import Path
 
 from curvefit import Experiment
 from omegaconf import OmegaConf
@@ -15,7 +14,7 @@ config = load_config(experiment_file, overrides=overrides)
 random.seed(config.seed)
 experiment = instantiate(config, schema=Experiment)
 
-run_dir = Path(experiment.run_dir)
+run_dir = experiment.run_dir
 run_dir.mkdir(parents=True)
 OmegaConf.save(config, run_dir / "config.yaml")
 (run_dir / "overrides.txt").write_text("".join(f"{o}\n" for o in overrides))

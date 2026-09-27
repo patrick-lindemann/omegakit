@@ -112,5 +112,6 @@ test mse: 0.0377
 test mae: 0.1589
 ```
 
+[Reproducible runs](../reproducible-runs/index.md) explains what it saves and why.
 From here, the guide covers each feature, starting with
 [Loading](../configs/loading/index.md).

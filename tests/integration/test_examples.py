@@ -1,5 +1,7 @@
 import os
 import re
+import shlex
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -187,3 +189,33 @@ def test_curvefit_torch_variant_runs(dtype, tmp_path):
         text=True,
     ).stdout
     assert output.startswith(f"poly3-adam-torch: Adam, torch.{dtype}\n")
+
+
+# Pages whose shell sessions run in the curvefit directory.
+SESSION_PAGES = ["getting-started", "reproducible-runs"]
+PROGRAMS = {"python": [sys.executable], "omegakit": [sys.executable, "-m", "omegakit"]}
+
+
+@pytest.mark.parametrize("page", SESSION_PAGES)
+def test_page_sessions_show_real_output(page, tmp_path):
+    shutil.copytree(
+        CURVEFIT,
+        tmp_path,
+        dirs_exist_ok=True,
+        ignore=shutil.ignore_patterns("runs", "__pycache__"),
+    )
+    text = (DOCS / page / "index.md").read_text()
+    sessions = re.findall(r"```text\n(\$ .*?)```", text, re.S)
+    assert sessions
+    for session in sessions:
+        for command, output in re.findall(
+            r"^\$ (.*)\n((?:(?!\$ ).*\n)*)", session, re.M
+        ):
+            program, *arguments = shlex.split(command)
+            result = subprocess.run(
+                [*PROGRAMS[program], *arguments],
+                cwd=tmp_path,
+                capture_output=True,
+                text=True,
+            )
+            assert (command, result.stdout) == (command, output)

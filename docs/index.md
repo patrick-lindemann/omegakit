@@ -29,7 +29,8 @@ experiment = instantiate(config, schema=Experiment)
 
 ## Where to go
 
-- **New to omegakit:** [Getting started](getting-started/index.md), and how omegakit
+- **New to omegakit:** [Getting started](getting-started/index.md),
+  [Reproducible runs](reproducible-runs/index.md), and how omegakit
   [compares with Hydra and other libraries](comparison/index.md).
 - **Looking up a feature:** one page per feature, in the order you meet them.
   [Configs](configs/loading/index.md) covers how files are loaded and combined,
@@ -50,6 +51,7 @@ The Security section says [what runs](security/trust-model/index.md), how to
 :hidden:
 
 getting-started/index
+reproducible-runs/index
 tools/command-line/index
 comparison/index
 ```
