@@ -75,7 +75,7 @@ class TypedEncoder(Configurable[EncoderConfig]):
 
 @dataclass
 class ModelConfig:
-    """The schema of the design's worked example."""
+    """The schema of `Model`: an enum, a required value and an optional object."""
 
     kind: Kind = Kind.A
     depth: int = MISSING
@@ -83,7 +83,7 @@ class ModelConfig:
 
 
 class Model(Configurable[ModelConfig]):
-    """The design's worked example, with a custom `from_config`."""
+    """A class whose `from_config` picks a child by enum and passes extra arguments."""
 
     def __init__(
         self, kind: Base, depth: int, encoder: Encoder | None, **extra: Any
@@ -211,7 +211,7 @@ class TrainingConfig:
 
 @dataclass
 class AppConfig:
-    """A root schema."""
+    """A root schema with a section that holds an object field."""
 
     training: TrainingConfig
     seed: int = 0
