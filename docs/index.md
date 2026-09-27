@@ -69,8 +69,16 @@ guide/building-objects/index
 guide/typed-configs/index
 guide/validation/index
 guide/editor-schemas/index
-guide/resolvers/index
 guide/command-line/index
+```
+
+```{toctree}
+:caption: Resolvers
+:hidden:
+
+resolvers/overview/index
+resolvers/paths/index
+resolvers/torch/index
 ```
 
 ```{toctree}

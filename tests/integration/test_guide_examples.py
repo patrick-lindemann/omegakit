@@ -10,11 +10,14 @@ from omegakit import instantiate, load_config, validate
 
 DOCS = Path(__file__).parents[2] / "docs"
 WEBAPP = DOCS / "webapp"
-FOLDERS = [DOCS / "guide", DOCS / "recipes"]
-YAML_FILES = sorted(path for folder in FOLDERS for path in folder.glob("*/**/*.yaml"))
-SCRIPTS = sorted(
-    [DOCS / "security" / "main.py", *(p for f in FOLDERS for p in f.glob("*/main.py"))]
-)
+# Every docs section except the ones that test_examples.py runs as a whole.
+SECTIONS = [
+    path
+    for path in DOCS.iterdir()
+    if path.is_dir() and path.name not in {"_build", "webapp", "getting-started"}
+]
+YAML_FILES = sorted(path for section in SECTIONS for path in section.rglob("*.yaml"))
+SCRIPTS = sorted(path for section in SECTIONS for path in section.rglob("main.py"))
 
 
 @pytest.fixture(autouse=True)
@@ -32,7 +35,9 @@ def test_guide_yaml_loads_validates_and_builds(path: Path):
         instantiate(config)
 
 
-@pytest.mark.parametrize("script", SCRIPTS, ids=[p.parent.name for p in SCRIPTS])
+@pytest.mark.parametrize(
+    "script", SCRIPTS, ids=[str(p.parent.relative_to(DOCS)) for p in SCRIPTS]
+)
 def test_guide_script_runs(script: Path):
     subprocess.run(
         [sys.executable, str(script)],

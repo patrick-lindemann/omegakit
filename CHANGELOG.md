@@ -12,6 +12,8 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- Resolvers have their own section, with an overview and a page per resolver
+  module. The Resolvers guide page moved to `resolvers/overview/`.
 - The Errors page is removed. The Rules section of each guide page names the errors
   of its feature.
 
