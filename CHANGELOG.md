@@ -6,6 +6,10 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- A recipe for a sweep over settings: one run per combination of a few values.
+
 ### Changed
 
 - The Errors page is removed. The Rules section of each guide page names the errors

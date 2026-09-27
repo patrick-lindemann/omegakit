@@ -87,6 +87,7 @@ security/index
 recipes/swapping/index
 recipes/manifests/index
 recipes/tenants/index
+recipes/sweeps/index
 ```
 
 ```{toctree}
