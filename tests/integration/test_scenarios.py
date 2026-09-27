@@ -159,8 +159,7 @@ def test_scenario_forward_base_to_imported_node_then_instantiate(write_yaml):
         instantiate(cfg.shared)
 
 
-EDITOR = Path(__file__).parents[2] / "docs" / "examples" / "editor"
-SCHEMAS = {"app.schema.json": "AppConfig", "model.schema.json": "Model"}
+WEBAPP = Path(__file__).parents[2] / "docs" / "examples" / "webapp"
 
 
 def _modeline_schema(path: Path) -> dict:
@@ -170,7 +169,9 @@ def _modeline_schema(path: Path) -> dict:
 
 
 @pytest.mark.parametrize(
-    "path", sorted(EDITOR.glob("*.yaml")), ids=lambda path: path.name
+    "path",
+    sorted((WEBAPP / "configs").glob("**/*.yaml")),
+    ids=lambda path: path.name,
 )
 def test_scenario_example_yaml_matches_its_schema(path: Path):
     """Editor schema + real files: every example YAML validates, a typo does not."""
@@ -180,10 +181,9 @@ def test_scenario_example_yaml_matches_its_schema(path: Path):
     assert list(validator.iter_errors({**config, "misspeled": 1}))
 
 
-@pytest.mark.parametrize(("file", "name"), SCHEMAS.items())
-def test_scenario_example_schemas_are_current(monkeypatch, file: str, name: str):
-    """Generator + committed files: the example schemas match the generator."""
-    monkeypatch.syspath_prepend(str(EDITOR))
-    editor_app = importlib.import_module("editor_app")
-    generated = generate_json_schema(getattr(editor_app, name))
-    assert json.loads((EDITOR / file).read_text()) == generated
+def test_scenario_example_schema_is_current(monkeypatch):
+    """Generator + committed file: the example schema matches the generator."""
+    monkeypatch.syspath_prepend(str(WEBAPP))
+    webapp = importlib.import_module("webapp")
+    generated = generate_json_schema(webapp.App)
+    assert json.loads((WEBAPP / "app.schema.json").read_text()) == generated

@@ -1,2 +1,3 @@
+# yaml-language-server: $schema=../app.schema.json
 $class: webapp.App
 $base: ~import envs/${oc.env:APP_ENV,dev}.yaml

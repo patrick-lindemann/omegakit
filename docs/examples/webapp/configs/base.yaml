@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=../app.schema.json
 server:
   $class: webapp.server.Server
   host: 127.0.0.1

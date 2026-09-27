@@ -1,75 +1,47 @@
 # Editor schemas
 
-`generate_json_schema` turns the dataclasses that describe a config into a JSON
-Schema, so that YAML editors can check config files while you write them. The
-schemas are the same as for [validation](validation.md): a root schema dataclass
-for the whole file, and the schema of a `Configurable` class for its nodes.
-
-## Generating JSON Schemas
-
-Generate one schema for the root file and one for each fragment file whose content
-is a single `Configurable` node:
+The dataclasses that validate a config can also describe it to your YAML editor, as
+a JSON Schema: the editor then completes keys and marks mistakes while you type.
+From `webapp`'s directory:
 
 ```sh
-omegakit json-schema editor_app.AppConfig -o app.schema.json
-omegakit json-schema editor_app.Model -o model.schema.json
+omegakit json-schema webapp.App -o app.schema.json
 ```
 
-The import path must be importable from the current directory.
-`python -m omegakit json-schema …` works the same. `omegakit.generate_json_schema`
-returns the same schema as a dictionary.
+The first line of each config file names the schema, which is how the YAML
+extension for VS Code by Red Hat, and other editors that use yaml-language-server,
+find it:
 
-To keep committed schemas current, run the same commands with `--check` in CI: it
-writes nothing and exits with 1 when a file is out of date. See the
-[command line](command-line.md).
-
-## Connecting the editor
-
-With the YAML extension for VS Code (by Red Hat, based on yaml-language-server),
-name the schema in the first line of each file:
-
-```{literalinclude} ../examples/editor/app.yaml
+```{literalinclude} ../examples/webapp/configs/envs/prod.yaml
 :language: yaml
+:caption: configs/envs/prod.yaml
+:lines: 1-4
 ```
 
-```{literalinclude} ../examples/editor/model.yaml
-:language: yaml
-```
+The import path must be importable from the current directory, as for `$class`.
+`generate_json_schema(App)` returns the same schema as a dictionary. For a file that
+holds a single node, such as one job imported from its own file, generate the schema
+of that node's class instead, such as `webapp.jobs.Job`.
 
-Alternatively, map files to schemas in the VS Code settings:
+Run the same command with `--check` in CI. It writes nothing, and exits with 1 when
+the committed file no longer matches the classes.
 
-```json
-{
-  "yaml.schemas": {
-    "./app.schema.json": "configs/app.yaml",
-    "./model.schema.json": "configs/models/*.yaml"
-  }
-}
-```
+## What the editor checks
 
-## What the schema checks
+Misspelled keys and values of the wrong type are errors, at the root and inside a
+node whose `$class` names a `Configurable` with a dataclass schema. What the schema
+cannot know is allowed everywhere: interpolations, `???`, `~import` and keys that
+start with `$`. Nothing is required, because a value may still come from a `$base`,
+`$defaults`, an import or an override; `validate` reports what is missing. Enums
+accept their member names and values, and `Literal` fields their values.
 
-- Misspelled keys, and values of the wrong type, are errors.
-- Interpolations (`${…}`), `???` and `~import` are accepted wherever a value is
-  expected, and `$`-keys such as `$base`, `$defaults` and `$meta` are accepted in
-  every mapping.
-- Nothing is required, because a value may come from `$base`, `$defaults`, an
-  import or an override. Missing values are reported by `validate` or `instantiate`.
-- Enums accept member names, and `Literal` fields accept their values.
-- A child node whose `$class` names a `Configurable` class with a dataclass schema
-  is checked against that schema, for fields typed as that class. The `$class` must be the class's defining module
-  and name; other spellings, such as re-exports, are accepted without checks.
+A node is checked against its class's schema only when `$class` spells the class's
+defining module and name, such as `webapp.server.Server`. A re-export such as
+`webapp.Server` is accepted without checks.
 
-## Editor behaviour
-
-Checked in VS Code with the YAML extension by Red Hat, on the example files above:
-
-- Errors appear for values of the wrong type (`batch_size: many`) and for misspelled
-  keys, at the root (`sed: 1`) and inside a `$class` node (`widht: 8` under
-  `encoder`).
-- Interpolations (`${seed}`), `~import` values and `$` keys such as `$base` are
-  accepted without errors.
-- Completion offers the keys of the root schema, the values of `Literal` fields
-  (`split: train`), and the fields of a node whose `$class` names a `Configurable`.
-- Hover shows the field's type inside such a node.
-- Enums accept member names and values (`kind: B`, `kind: beta`).
+Checked in VS Code with the Red Hat YAML extension, with omegakit 0.5.0: errors
+appear for wrong types and misspelled keys, including inside a `$class` node;
+interpolations, `~import` and `$` keys raise no errors; completion offers the root's
+keys, `Literal` values and the fields of a `$class` node; hover shows a field's
+type. The generated schema is described in the contracts under
+[Editor schemas](../contracts.md#editor-schemas).

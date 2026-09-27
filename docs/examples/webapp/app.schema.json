@@ -1,0 +1,323 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "server": {
+      "anyOf": [
+        {
+          "type": "object",
+          "if": {
+            "properties": {
+              "$class": {
+                "const": "webapp.server.Server"
+              }
+            },
+            "required": [
+              "$class"
+            ]
+          },
+          "then": {
+            "$ref": "#/definitions/webapp.server.ServerConfig"
+          }
+        },
+        {
+          "type": "string",
+          "pattern": "^(\\?\\?\\?$|~import\\s|.*\\$\\{)"
+        }
+      ]
+    },
+    "database": {
+      "anyOf": [
+        {
+          "type": "object",
+          "if": {
+            "properties": {
+              "$class": {
+                "const": "webapp.db.Database"
+              }
+            },
+            "required": [
+              "$class"
+            ]
+          },
+          "then": {
+            "$ref": "#/definitions/webapp.db.DatabaseConfig"
+          }
+        },
+        {
+          "type": "string",
+          "pattern": "^(\\?\\?\\?$|~import\\s|.*\\$\\{)"
+        }
+      ]
+    },
+    "replica": {
+      "anyOf": [
+        {
+          "anyOf": [
+            {
+              "type": "object",
+              "if": {
+                "properties": {
+                  "$class": {
+                    "const": "webapp.db.Database"
+                  }
+                },
+                "required": [
+                  "$class"
+                ]
+              },
+              "then": {
+                "$ref": "#/definitions/webapp.db.DatabaseConfig"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        {
+          "type": "string",
+          "pattern": "^(\\?\\?\\?$|~import\\s|.*\\$\\{)"
+        }
+      ]
+    },
+    "cache": {
+      "anyOf": [
+        {
+          "anyOf": [
+            {
+              "type": "object",
+              "if": {
+                "properties": {
+                  "$class": {
+                    "const": "webapp.cache.Cache"
+                  }
+                },
+                "required": [
+                  "$class"
+                ]
+              },
+              "then": {
+                "$ref": "#/definitions/webapp.cache.CacheConfig"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        {
+          "type": "string",
+          "pattern": "^(\\?\\?\\?$|~import\\s|.*\\$\\{)"
+        }
+      ]
+    },
+    "jobs": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "object",
+                "if": {
+                  "properties": {
+                    "$class": {
+                      "const": "webapp.jobs.Job"
+                    }
+                  },
+                  "required": [
+                    "$class"
+                  ]
+                },
+                "then": {
+                  "$ref": "#/definitions/webapp.jobs.JobConfig"
+                }
+              },
+              {
+                "type": "string",
+                "pattern": "^(\\?\\?\\?$|~import\\s|.*\\$\\{)"
+              }
+            ]
+          }
+        },
+        {
+          "type": "string",
+          "pattern": "^(\\?\\?\\?$|~import\\s|.*\\$\\{)"
+        }
+      ]
+    },
+    "log_dir": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "string",
+          "pattern": "^(\\?\\?\\?$|~import\\s|.*\\$\\{)"
+        }
+      ]
+    }
+  },
+  "patternProperties": {
+    "^\\$": {}
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "webapp.server.ServerConfig": {
+      "type": "object",
+      "properties": {
+        "host": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\?\\?\\?$|~import\\s|.*\\$\\{)"
+            }
+          ]
+        },
+        "port": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\?\\?\\?$|~import\\s|.*\\$\\{)"
+            }
+          ]
+        },
+        "workers": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\?\\?\\?$|~import\\s|.*\\$\\{)"
+            }
+          ]
+        },
+        "secret_key": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\?\\?\\?$|~import\\s|.*\\$\\{)"
+            }
+          ]
+        }
+      },
+      "patternProperties": {
+        "^\\$": {}
+      },
+      "additionalProperties": false
+    },
+    "webapp.db.DatabaseConfig": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\?\\?\\?$|~import\\s|.*\\$\\{)"
+            }
+          ]
+        },
+        "pool_size": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\?\\?\\?$|~import\\s|.*\\$\\{)"
+            }
+          ]
+        }
+      },
+      "patternProperties": {
+        "^\\$": {}
+      },
+      "additionalProperties": false
+    },
+    "webapp.cache.CacheConfig": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\?\\?\\?$|~import\\s|.*\\$\\{)"
+            }
+          ]
+        },
+        "ttl": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\?\\?\\?$|~import\\s|.*\\$\\{)"
+            }
+          ]
+        }
+      },
+      "patternProperties": {
+        "^\\$": {}
+      },
+      "additionalProperties": false
+    },
+    "webapp.jobs.JobConfig": {
+      "type": "object",
+      "properties": {
+        "handler": {
+          "anyOf": [
+            {},
+            {
+              "type": "string",
+              "pattern": "^(\\?\\?\\?$|~import\\s|.*\\$\\{)"
+            }
+          ]
+        },
+        "every": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\?\\?\\?$|~import\\s|.*\\$\\{)"
+            }
+          ]
+        },
+        "retries": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\?\\?\\?$|~import\\s|.*\\$\\{)"
+            }
+          ]
+        }
+      },
+      "patternProperties": {
+        "^\\$": {}
+      },
+      "additionalProperties": false
+    }
+  }
+}

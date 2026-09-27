@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=../app.schema.json
 jobs:
   $defaults:
     $class: webapp.jobs.Job
