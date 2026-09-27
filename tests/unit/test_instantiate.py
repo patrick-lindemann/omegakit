@@ -150,8 +150,10 @@ def test_instantiate_resolves_nested_escaped_interpolation_once():
 def test_instantiate_error_keeps_type_and_message():
     with pytest.raises(TypeError) as info:
         instantiate({"$class": POINT, "x": 1})
+    with pytest.raises(TypeError) as direct:
+        Point(x=1)  # pyright: ignore[reportCallIssue]
     assert type(info.value) is TypeError
-    assert str(info.value).startswith("Point.__init__()")
+    assert str(info.value) == str(direct.value)
 
 
 def test_instantiate_error_with_multi_argument_constructor_propagates():

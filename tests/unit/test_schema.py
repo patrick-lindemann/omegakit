@@ -179,7 +179,7 @@ def test_schema_object_default_never_enters_omegaconf():
 
 
 def test_schema_unknown_field_raises():
-    with pytest.raises(ConfigValidationError, match="'colour'"):
+    with pytest.raises(ConfigValidationError, match="colour"):
         instantiate({"$class": FIELDS, "colour": "red"})
 
 

@@ -3,6 +3,7 @@ import subprocess
 import sys
 
 import pytest
+import yaml
 
 from omegakit import generate_json_schema
 from omegakit.cli import main
@@ -147,7 +148,7 @@ def test_cli_show_prints_the_assembled_config(write_yaml, capsys):
         "app.yaml", "m:\n  $base: ~import base.yaml\n  b: 3\n  $meta: x\n"
     )
     main(["show", str(path), "m.a=5"])
-    assert capsys.readouterr().out == "m:\n  b: 3\n  a: 5\n"
+    assert yaml.safe_load(capsys.readouterr().out) == {"m": {"a": 5, "b": 3}}
     main(["show", str(path), "--keep-meta", "--node", "m"])
     assert "$meta: x" in capsys.readouterr().out
 

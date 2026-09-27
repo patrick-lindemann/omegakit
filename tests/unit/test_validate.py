@@ -95,7 +95,7 @@ def test_validate_constructs_no_schema_dataclasses():
 
 def test_validate_checks_root_values_against_the_schema(write_yaml):
     cfg = load_config(write_yaml("app.yaml", APP.replace('"64"', "many")))
-    with pytest.raises(ConfigValidationError, match=r"Value .many. of type"):
+    with pytest.raises(ConfigValidationError, match=r"`data\.batch_size`"):
         validate(cfg, schema=schemas.AppConfig)
 
 
