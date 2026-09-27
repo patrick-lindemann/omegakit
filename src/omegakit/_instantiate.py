@@ -45,20 +45,24 @@ def instantiate(
     overrides: DictConfig | dict[str, Any] | list[str] | None = None,
     allowed_modules: Iterable[str] | None = None,
 ) -> Any:
-    """Instantiate an object from a configuration.
+    """Build the object that a config node describes.
+
+    The node is resolved and validated as `validate` does, and a problem raises
+    `ConfigValidationError` before any configured class is called. Then the node is
+    built children first: `$class` is called, or its `from_config` when it has one,
+    `$ref` is imported, and `$partial: true` gives a `functools.partial`.
 
     Args:
-        config: The configuration.
-        expected: The expected type of the instantiated object. It is a static typing
-            hint only and is not checked at runtime. Defaults to `None`.
-        overrides: Additional argument overrides. Can be provided as a DictConfig, a
-            regular dictionary, or a list of `key=value` strings (e.g.
-            `["foo=1.0", "bar=baz"]`). Defaults to `None`.
+        config: The node to build. It must have `$class`.
+        expected: The class of the result, for static typing only; it is not
+            checked. Defaults to `None`.
+        overrides: Values merged into the node first, as in `load_config`. Defaults
+            to `None`.
         allowed_modules: The modules that `$class` and `$ref` may name, as in
             `validate`. Defaults to `None`, which allows every module.
 
     Returns:
-        The instantiated object.
+        The built object.
     """
     return _instantiate(config, overrides, allowed_modules)
 
@@ -89,23 +93,23 @@ def prepare(
     overrides: DictConfig | dict[str, Any] | list[str] | None = None,
     allowed_modules: Iterable[str] | None = None,
 ) -> functools.partial[Any]:
-    """Prepare an object for instantiation from a configuration.
+    """Build a config node's children, and defer the call of the node itself.
 
-    The resulting function can be called later to perform the actual instantiation with
-    extra arguments.
+    Like `instantiate`, the node is validated first and its children are built; the
+    node's own `$class`, or its `from_config`, is wrapped in a `functools.partial`
+    that takes more keyword arguments when called.
 
     Args:
-        config: The configuration.
-        expected: The expected type of the instantiated object. It is a static typing
-            hint only and is not checked at runtime. Defaults to `None`.
-        overrides: Additional argument overrides. Can be provided as a DictConfig, a
-            regular dictionary, or a list of `key=value` strings (e.g.
-            `["foo=1.0", "bar=baz"]`). Defaults to `None`.
+        config: The node to prepare. It must have `$class`.
+        expected: The class that the partial builds, for static typing only; it is
+            not checked. Defaults to `None`.
+        overrides: Values merged into the node first, as in `load_config`. Defaults
+            to `None`.
         allowed_modules: The modules that `$class` and `$ref` may name, as in
             `validate`. Defaults to `None`, which allows every module.
 
     Returns:
-        The instantiating function.
+        The partial that builds the object.
     """
     return _instantiate(config, overrides, allowed_modules, wrap=functools.partial)
 

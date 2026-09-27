@@ -25,17 +25,22 @@ def load_config(
     keep_meta: bool = False,
     import_root: Path | str | None = None,
 ) -> DictConfig:
-    """Load a YAML configuration file from a given file path.
+    """Load a YAML config file and assemble it.
+
+    The file is read, then every `~import` is replaced, recursively, then every
+    `$base` is merged underneath its node and every `$defaults` under its siblings,
+    and finally the overrides are merged on top. Interpolations stay unresolved,
+    except in `~import` paths and in `$base` and `$defaults` values, which need them
+    while assembling.
 
     Args:
-        file_path: The path to the configuration file.
-        overrides: Additional configuration overrides. Can be provided as a
-            DictConfig, a regular dictionary, or a list of `key=value` strings (e.g.
-            `["foo=1.0", "bar=baz"]`). Defaults to `None`.
-        keep_targets: Whether to keep target fields needed for instantiation in the
-            parsed config. Defaults to `True`.
-        keep_meta: Whether to keep metadata fields in the parsed config. Defaults to
-            `False`.
+        file_path: The config file.
+        overrides: Values merged on top of the assembled config: a `DictConfig`, a
+            `dict`, or a list of `key=value` strings such as `["model.depth=4"]`.
+            Defaults to `None`.
+        keep_targets: Keep `$class`, `$ref` and `$partial`. Without them, the
+            config is plain data. Defaults to `True`.
+        keep_meta: Keep `$meta`. Defaults to `False`.
         import_root: A directory that every `~import` must stay in, after
             interpolations and symbolic links are resolved. An import outside it
             raises `ConfigValidationError`, and a directory that does not exist
