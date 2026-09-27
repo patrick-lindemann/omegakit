@@ -1,8 +1,6 @@
 # Configuration contracts
 
-This page is the normative description of the omegakit configuration language. Code,
-tests and the README follow it. A change to the language changes this page in the
-same commit.
+This page is the normative description of the omegakit configuration language.
 
 ## Pipeline
 
