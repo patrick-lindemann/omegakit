@@ -1,54 +1,65 @@
 # Imports
 
 A string value that starts with `~import` is replaced by another YAML file, or by one
-node of it.
+node of it. `webapp` keeps its scheduled jobs in their own file and imports them
+into the shared settings:
 
-## Example
-
-```{literalinclude} ../examples/imports/models/encoder.yaml
+```{literalinclude} ../examples/webapp/configs/jobs.yaml
 :language: yaml
-:caption: models/encoder.yaml
+:caption: configs/jobs.yaml
 ```
 
-```{literalinclude} ../examples/imports/models/decoder.yaml
+```{literalinclude} ../examples/webapp/configs/base.yaml
 :language: yaml
-:caption: models/decoder.yaml
+:caption: configs/base.yaml (excerpt)
+:start-at: "jobs:"
+:end-at: "jobs:"
 ```
 
-```{literalinclude} ../examples/imports/app.yaml
+`#jobs` selects the `jobs` node of the file, so `base.yaml` gets the two jobs and
+not a `jobs:` key around them. Without `#`, the whole file is imported. A node path
+has dots between keys and uses numbers for list items, counting from the end when
+negative: `#jobs.digest`, `#hosts.-1`.
+
+The path is relative to the file that holds it, and may contain interpolations. The
+root file uses one to pick the environment:
+
+```{literalinclude} ../examples/webapp/configs/app.yaml
 :language: yaml
-:caption: app.yaml
+:caption: configs/app.yaml
 ```
 
-```{literalinclude} ../examples/imports/main.py
+`${oc.env:APP_ENV,dev}` reads the `APP_ENV` environment variable, with `dev` as the
+default. An interpolation in an import path sees resolvers and the keys written in
+the same file, because the rest of the config is not assembled yet.
+
+Every import is an independent copy, so changing one imported node never changes
+another import of the same file. Imports are replaced before any `$base` is merged,
+which is why `$base: ~import ../base.yaml` works in the environment files.
+
+## Keeping imports inside a directory
+
+By default an import may read any file the process can read. `import_root` limits
+imports to one directory, after interpolations and symbolic links are resolved:
+
+```{literalinclude} ../examples/guide/imports/shared.yaml
+:language: yaml
+:caption: shared.yaml
+```
+
+```{literalinclude} ../examples/guide/imports/main.py
 :language: python
 :caption: main.py
 ```
 
-## Rules
+```text
+['digest', 'cleanup']
+Import `~import ../../webapp/configs/base.yaml#server` in `.../guide/imports/shared.yaml` reads `.../webapp/configs/base.yaml`, which is outside the import root `.../guide/imports`.
+```
 
-- The syntax is `~import <path>[#<node>]`. The path is relative to the importing
-  file; an absolute path is used as is.
-- `#<node>` selects a node by its dot-separated path. Segments on lists are indices,
-  and negative indices count from the end: `#small.layers.0`, `#stages.-1`.
-- An import can replace a mapping value or a list item, and the imported file may be
-  a mapping or a list.
-- Imports are resolved before `$base`, so `$base: ~import common.yaml` works.
-- Every import is an independent copy. Changing one never changes another import of
-  the same file.
-- The path may contain interpolations, such as `~import models/${size}.yaml`. They
-  see only the keys literally present in the importing file and registered
-  resolvers.
-- Importing the same file from two branches is fine. A file that imports itself,
-  directly or through other files, is an error.
+`omegakit check` and `omegakit show` take the same limit as `--import-root DIR`.
 
-## Errors
-
-| Problem | Exception |
-|---|---|
-| Circular import | `ConfigValidationError` (`Circular import detected`) |
-| Missing or invalid file | `ConfigValidationError` (`Cannot import`) |
-| `#<node>` that does not exist, walks through a scalar or is out of range | `ConfigValidationError` (`selects node`) |
-| More than one `#` | `ConfigValidationError` |
-
-The full rules are in the contracts under [Imports](../contracts.md#imports).
+An import of a file that does not exist raises `ConfigValidationError`, naming the
+statement and the importing file. The full rules, including cycles and node paths
+that do not exist, are in the contracts under
+[Imports](../contracts.md#imports).
