@@ -1,35 +1,30 @@
 # omegakit
 
-omegakit loads YAML configs that import and extend each other, and builds your
-Python objects from them. Keep one file per environment on a shared base, name the
-classes to build in the config, and add a dataclass schema that checks the config
-before any object is built. It is a library on top of
-[OmegaConf](https://omegaconf.readthedocs.io/). You call `load_config` from your
-own `main()`, and omegakit does not touch your working directory or logging.
+omegakit is a small library on top of [OmegaConf](https://omegaconf.readthedocs.io/)
+for experiment configs. Every experiment is a YAML file in git that names its base
+and its imports by path. You load it from your own `main()`, check it against a
+dataclass, and build your objects from it. The same file and seed give the same run.
+It was developed for machine learning, but nothing in it is specific to that.
 
 ```sh
 pip install omegakit
 ```
 
-Every example in these pages comes from one small web service, `webapp`. Its root
-config names the class to build and picks an environment file, and the production
-file takes the shared settings and replaces the database:
+Every example in these pages comes from `curvefit`, a small experiment in plain
+Python that fits a curve to noisy samples of a known function. One experiment file
+names its base, the model and the optimizer:
 
-```{literalinclude} webapp/configs/app.yaml
+```{literalinclude} curvefit/configs/experiments/poly3-adam.yaml
 :language: yaml
-:caption: configs/app.yaml
-```
-
-```{literalinclude} webapp/configs/envs/prod.yaml
-:language: yaml
-:caption: configs/envs/prod.yaml
+:caption: configs/experiments/poly3-adam.yaml
 ```
 
 ```python
+from curvefit import Experiment
 from omegakit import instantiate, load_config
-from webapp import App
 
-app = instantiate(load_config("configs/app.yaml"), schema=App)  # with APP_ENV=prod
+config = load_config("configs/experiments/poly3-adam.yaml")
+experiment = instantiate(config, schema=Experiment)
 ```
 
 ## Where to go
@@ -38,11 +33,11 @@ app = instantiate(load_config("configs/app.yaml"), schema=App)  # with APP_ENV=p
   [compares with Hydra and other libraries](comparison/index.md).
 - **Looking up a feature:** one page per feature, in the order you meet them.
   [Configs](configs/loading/index.md) covers how files are loaded and combined,
-  [Building objects](objects/instantiation/index.md) how objects are built and checked,
-  and [Tools](tools/command-line/index.md) the command line and editor support.
+  [Schemas](objects/validation/index.md) how a config is checked, and
+  [Building objects](objects/instantiation/index.md) how objects are built from it.
 - **A complete pattern:** the recipes, such as
-  [Swapping implementations](recipes/swapping-implementations/index.md) or
-  [Parameter sweeps](recipes/parameter-sweeps/index.md).
+  [Parameter sweeps](recipes/parameter-sweeps/index.md) or
+  [Swapping implementations](recipes/swapping-implementations/index.md).
 - **The exact rules:** the Rules section at the end of each feature page, and the
   [API](api/index.md).
 
@@ -55,6 +50,7 @@ The Security section says [what runs](security/trust-model/index.md), how to
 :hidden:
 
 getting-started/index
+tools/command-line/index
 comparison/index
 ```
 
@@ -73,20 +69,19 @@ configs/missing-values/index
 ```
 
 ```{toctree}
+:caption: Schemas
+:hidden:
+
+objects/validation/index
+tools/editor-support/index
+```
+
+```{toctree}
 :caption: Building objects
 :hidden:
 
 objects/instantiation/index
 objects/schemas/index
-objects/validation/index
-```
-
-```{toctree}
-:caption: Tools
-:hidden:
-
-tools/command-line/index
-tools/editor-support/index
 ```
 
 ```{toctree}
@@ -111,10 +106,10 @@ security/masking-secrets/index
 :caption: Recipes
 :hidden:
 
+recipes/parameter-sweeps/index
 recipes/swapping-implementations/index
 recipes/manifests/index
 recipes/per-tenant-configs/index
-recipes/parameter-sweeps/index
 ```
 
 ```{toctree}
