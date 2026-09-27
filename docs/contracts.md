@@ -71,6 +71,21 @@ in dependency order:
 - All bases are merged before any defaults are applied, so a `$base` sees a node
   without the keys that its parent's `$defaults` add later.
 
+A `${…}` base is a copy taken when it is merged, so it has three limits:
+
+- It cannot refer to keys that an enclosing node's own `$base` brings in. With
+  `$base: ~import common.yaml` at the root of a file, `replica: {$base: ${db}}`
+  raises when `db` comes from `common.yaml`.
+- Inside a file that another file uses as its `$base`, it is merged in that file,
+  before the using file's own keys apply. A `replica` in `lib.yaml` that copies
+  `lib.yaml`'s `db` keeps that copy when the using file replaces `db`.
+- Overrides arrive after assembly, so an override of the referenced node does not
+  reach the copy: `db.pool=9` leaves `replica.pool` as it was.
+
+A relative reference (`${..db}`) finds a sibling wherever the file ends up, so a
+`${…}` base placed next to the node it copies, in the file that defines both, copies
+that file's value even when the file is itself used as a `$base` or imported.
+
 Every other `${…}` stays an interpolation until it is accessed or instantiated, and
 then resolves against the assembled config. This includes interpolations inside
 imported files and inside `$base` and `$defaults` values. A relative interpolation
