@@ -30,4 +30,5 @@ redirects = {
     "guide/metadata": "building-objects.html#meta",
     "guide/configurable": "typed-configs.html#a-custom-from-config",
     "guide/walk": "../api.html#traversal",
+    "cookbook": "recipes/index.html",
 }

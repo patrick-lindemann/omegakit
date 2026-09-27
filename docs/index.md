@@ -38,7 +38,7 @@ app = instantiate(load_config("configs/app.yaml"), App)  # with APP_ENV=prod
 - **Looking up a feature:** the guide, from [Loading](guide/loading.md) and
   [Imports](guide/imports.md) to [Validation](guide/validation.md) and the
   [Command line](guide/command-line.md).
-- **A complete pattern:** the [Cookbook](cookbook.md).
+- **A complete pattern:** the [Recipes](recipes/index.md).
 - **The exact rules:** the [Contracts](contracts.md) and the [API](api.md).
 
 Configs import and call Python code, so load them only from trusted sources; the
@@ -74,7 +74,6 @@ guide/command-line
 :hidden:
 
 recipes/index
-cookbook
 ```
 
 ```{toctree}
