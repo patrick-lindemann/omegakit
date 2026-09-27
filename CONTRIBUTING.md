@@ -14,8 +14,9 @@ uv build
 ```
 
 `uv run pytest` includes a test that builds the wheel and installs it into a fresh
-environment; `-m "not distribution"` skips it. Tests that need a real Torch
-installation skip when it is absent; CI runs them in a job with CPU Torch.
+environment; `-m "not distribution"` skips it. Tests of resolvers for an optional
+library, such as Torch, skip when that library is absent; CI runs them in the
+`test-resolvers` job, which installs the libraries.
 
 To preview the documentation, build it and serve the result, then open
 http://localhost:8000:
