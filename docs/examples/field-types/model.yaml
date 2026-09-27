@@ -1,9 +1,0 @@
-$class: models.Model
-activation: gelu
-mode: eval
-kernel: [5, 3]
-schedule:
-  warmup: 100
-layers:
-  - {$class: models.Layer, width: 64}
-  - {$class: models.Layer, width: 32}

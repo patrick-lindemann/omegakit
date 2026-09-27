@@ -62,7 +62,6 @@ guide/defaults
 guide/overrides
 guide/interpolation-and-missing
 guide/building-objects
-guide/configurable
 guide/typed-configs
 guide/validation
 guide/editor-schemas
