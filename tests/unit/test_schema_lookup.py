@@ -1,9 +1,45 @@
+from typing import Any
+
 import pytest
 from typing_extensions import TypeVar
 
 from omegakit import Configurable, check_schema, instantiate
+from tests.schemas import EncoderConfig, TypedEncoder
 
 # Contracts: §10 Typed configs (schema lookup).
+
+
+ConfigT = TypeVar("ConfigT")
+
+
+class Mid(Configurable[ConfigT]):
+    """A generic intermediate class without a type variable default."""
+
+    def __init__(self, **fields: Any) -> None:
+        self.fields = fields
+
+
+DefaultT = TypeVar("DefaultT", default=EncoderConfig)
+
+
+class MidWithDefault(Configurable[DefaultT]):
+    """A generic intermediate class whose type variable defaults to a schema."""
+
+    def __init__(self, **fields: Any) -> None:
+        self.fields = fields
+
+
+class Leaf(Mid[EncoderConfig]):
+    """Parametrizes a generic intermediate class."""
+
+
+class Mixin[T]:
+    """A generic mixin that is not a `Configurable`."""
+
+
+class MixedIn(Mixin[int], TypedEncoder):
+    """Lists a generic mixin before its `Configurable` base."""
+
 
 Unbound = TypeVar("Unbound")
 
@@ -22,22 +58,22 @@ def test_lookup_parametrized_configurable():
 
 
 def test_lookup_through_parametrized_generic_intermediate():
-    obj = instantiate({"$class": "tests.schemas.Leaf", "width": "3"})
+    obj = instantiate({"$class": f"{__name__}.Leaf", "width": "3"})
     assert obj.fields == {"width": 3}
 
 
 def test_lookup_unparametrized_generic_uses_type_variable_default():
-    obj = instantiate({"$class": "tests.schemas.MidWithDefault", "width": "3"})
+    obj = instantiate({"$class": f"{__name__}.MidWithDefault", "width": "3"})
     assert obj.fields == {"width": 3}
 
 
 def test_lookup_unparametrized_generic_without_default_has_no_schema():
-    obj = instantiate({"$class": "tests.schemas.Mid", "width": "3", "other": 1})
+    obj = instantiate({"$class": f"{__name__}.Mid", "width": "3", "other": 1})
     assert obj.fields == {"width": "3", "other": 1}
 
 
 def test_lookup_generic_mixin_before_configurable_base():
-    obj = instantiate({"$class": "tests.schemas.MixedIn", "width": "3"})
+    obj = instantiate({"$class": f"{__name__}.MixedIn", "width": "3"})
     assert obj.width == 3
 
 

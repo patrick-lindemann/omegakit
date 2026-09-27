@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import InitVar, dataclass, field
 from typing import Any
 
 import pytest
@@ -8,6 +8,28 @@ from omegakit import Configurable, ConfigValidationError, instantiate, validate
 from tests import schemas
 
 # Contracts: §10 Typed configs (field kinds), §11 Validation.
+
+
+@dataclass
+class InitVarConfig:
+    value: int = 0
+    seed: InitVar[int] = 0
+
+
+class WithInitVar(Configurable[InitVarConfig]):
+    def __init__(self, **fields: Any) -> None:
+        self.fields = fields
+
+
+@dataclass(kw_only=True)
+class KwOnlyConfig:
+    value: int = 0
+
+
+class KwOnly(Configurable[KwOnlyConfig]):
+    def __init__(self, **fields: Any) -> None:
+        self.fields = fields
+
 
 TYPES = "tests.schemas.Types"
 CONTAINERS = "tests.schemas.ObjectContainers"
@@ -104,10 +126,10 @@ def test_types_init_false_fields_are_not_configurable():
 
 
 def test_types_init_var_with_default_and_keyword_only_fields():
-    assert instantiate({"$class": "tests.schemas.WithInitVar"}).fields == {"value": 0}
+    assert instantiate({"$class": f"{__name__}.WithInitVar"}).fields == {"value": 0}
     with pytest.raises(ConfigValidationError, match=r"Unknown field.*'seed'"):
-        instantiate({"$class": "tests.schemas.WithInitVar", "seed": 1})
-    assert instantiate({"$class": "tests.schemas.KwOnly", "value": 3}).fields == {
+        instantiate({"$class": f"{__name__}.WithInitVar", "seed": 1})
+    assert instantiate({"$class": f"{__name__}.KwOnly", "value": 3}).fields == {
         "value": 3
     }
 

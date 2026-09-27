@@ -1,16 +1,36 @@
+from dataclasses import dataclass
+from typing import Any, Literal
+
 import pytest
 
 from omegakit import (
+    Configurable,
     ConfigValidationError,
     generate_json_schema,
     instantiate,
     validate,
 )
 from tests import schemas
+from tests.schemas import LiteralConfig
 
 # Contracts: §10 Typed configs, §11 Validation, §12 Editor schemas.
 
-LITERALS = "tests.schemas.WithLiterals"
+
+class WithLiterals(Configurable[LiteralConfig]):
+    def __init__(self, **fields: Any) -> None:
+        self.fields = fields
+
+
+@dataclass
+class FloatLiteralConfig:
+    value: Literal[1.5] = 1.5  # pyright: ignore[reportInvalidTypeForm]
+
+
+class WithFloatLiteral(Configurable[FloatLiteralConfig]):
+    def __init__(self, **fields: Any) -> None: ...
+
+
+LITERALS = f"{__name__}.WithLiterals"
 
 
 def _fields(**values):
@@ -76,7 +96,7 @@ def test_literal_in_a_root_schema():
 
 def test_literal_values_must_be_plain():
     with pytest.raises(ConfigValidationError, match="strings, integers or booleans"):
-        instantiate({"$class": "tests.schemas.WithFloatLiteral"})
+        instantiate({"$class": f"{__name__}.WithFloatLiteral"})
 
 
 def test_literal_json_schema_lists_values():

@@ -20,6 +20,11 @@ from tests.helpers import FAILING
 
 MODEL = "tests.schemas.Model"
 
+
+class WideEncoder(schemas.Encoder):
+    """A subclass accepted by `Encoder` fields."""
+
+
 APP = """\
 seed: 3
 data:
@@ -132,7 +137,7 @@ def test_validate_accepts_subclasses_for_object_fields():
         {
             "$class": MODEL,
             "depth": 1,
-            "encoder": {"$class": "tests.schemas.WideEncoder"},
+            "encoder": {"$class": f"{__name__}.WideEncoder"},
         }
     )
     config = {"training": {"model": _model()}}

@@ -3,7 +3,6 @@ from omegaconf import OmegaConf
 from omegaconf.errors import UnsupportedValueType
 
 from omegakit import ConfigValidationError, instantiate
-from tests import schemas
 from tests.helpers import (
     CONFIGURABLE_POINT,
     CONTAINER,
@@ -16,6 +15,16 @@ from tests.helpers import (
 )
 
 # Contracts: §5 Instantiation, §6 Key namespace, §8 Error model.
+
+
+BUILT: list[str] = []
+
+
+class Recorded:
+    """Records every construction in `BUILT`."""
+
+    def __init__(self, name: str) -> None:
+        BUILT.append(name)
 
 
 def test_instantiate_builds_object():
@@ -203,12 +212,12 @@ def test_instantiate_expected_is_not_checked_at_runtime():
 
 
 def test_instantiate_validates_before_building_anything():
-    schemas.BUILT.clear()
+    BUILT.clear()
     config = {
         "$class": "tests.helpers.Container",
-        "name": {"$class": "tests.schemas.Recorded", "name": "first"},
+        "name": {"$class": f"{__name__}.Recorded", "name": "first"},
         "point": {"$class": "tests.schemas.Model", "depth": "deep"},
     }
     with pytest.raises(ConfigValidationError, match=r"`point\.depth`"):
         instantiate(config)
-    assert schemas.BUILT == []
+    assert BUILT == []

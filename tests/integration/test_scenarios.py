@@ -1,24 +1,49 @@
 import importlib
 import json
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Any, Self, override
 
 import pytest
 import yaml
 from jsonschema import Draft7Validator
 
 from omegakit import (
+    Configurable,
     ConfigValidationError,
     generate_json_schema,
     instantiate,
     load_config,
+    make_node,
     validate,
 )
 from omegakit.utils import register_resolver
 from tests import schemas
 from tests.helpers import POINT, RECORDER, Point
+from tests.schemas import TypedEncoder
 
 # Contracts: §3 Resolution timing, §4 `???` lifecycle, §5 Instantiation, §10 Typed
 # configs, §11 Validation, §12 Editor schemas.
+
+
+@dataclass
+class WrapperConfig:
+    width: Any = 1
+
+
+class Wrapper(Configurable[WrapperConfig]):
+    """Builds a code-chosen `TypedEncoder` child with `make_node`."""
+
+    def __init__(self, inner: TypedEncoder) -> None:
+        self.inner = inner
+
+    @classmethod
+    @override
+    def from_config(cls, config: WrapperConfig, **kwargs: Any) -> Self:
+        return cls(
+            instantiate(make_node(TypedEncoder, width=config.width), TypedEncoder)
+        )
+
 
 MODEL_YAML = "model:\n  $class: tests.schemas.Model\n  kind: A\n  depth: ???\n"
 
@@ -92,10 +117,10 @@ def test_scenario_golden_dataset_manifest(write_yaml):
 
 def test_scenario_node_child_validated_against_its_schema():
     """`make_node()` + schema: a code-chosen child is validated by its own schema."""
-    wrapper = instantiate({"$class": "tests.schemas.Wrapper", "width": "4"})
+    wrapper = instantiate({"$class": f"{__name__}.Wrapper", "width": "4"})
     assert wrapper.inner.width == 4
     with pytest.raises(ConfigValidationError, match="EncoderConfig"):
-        instantiate({"$class": "tests.schemas.Wrapper", "width": "wide"})
+        instantiate({"$class": f"{__name__}.Wrapper", "width": "wide"})
 
 
 def test_scenario_resolver_object_in_any_field(write_yaml):

@@ -3,7 +3,7 @@ import types
 from dataclasses import dataclass, field
 from decimal import Decimal
 from pathlib import Path
-from typing import ClassVar
+from typing import Any, ClassVar
 
 import pytest
 from omegaconf import OmegaConf
@@ -18,8 +18,56 @@ from omegakit import (
 )
 from omegakit.utils import register_resolver
 from tests import schemas
+from tests.schemas import Encoder, EncoderConfig, SectionWithObject, Sub
 
 # Contracts: §10 Typed configs (field kinds, supported subset, validation).
+
+
+@dataclass
+class SetConfig:
+    values: set[int] = field(default_factory=set)
+
+
+class WithSet(Configurable[SetConfig]):
+    def __init__(self, **fields: Any) -> None: ...
+
+
+@dataclass
+class MixedUnionConfig:
+    value: int | Encoder = 0
+
+
+class WithMixedUnion(Configurable[MixedUnionConfig]):
+    def __init__(self, **fields: Any) -> None: ...
+
+
+@dataclass
+class UnresolvableConfig:
+    value: "Missing" = None  # type: ignore[name-defined]  # noqa: F821
+
+
+class WithUnresolvable(Configurable[UnresolvableConfig]):
+    def __init__(self, **fields: Any) -> None: ...
+
+
+@dataclass
+class HolderConfig:
+    section: SectionWithObject | None = None
+
+
+class Holder(Configurable[HolderConfig]):
+    def __init__(self, section: SectionWithObject | None) -> None:
+        self.section = section
+
+
+@dataclass
+class AmbiguousUnionConfig:
+    value: Sub | EncoderConfig | None = None
+
+
+class WithAmbiguousUnion(Configurable[AmbiguousUnionConfig]):
+    def __init__(self, **fields: Any) -> None: ...
+
 
 FIELDS = "tests.schemas.Fields"
 ENCODER = "tests.schemas.Encoder"
@@ -169,10 +217,10 @@ def test_schema_validation_happens_at_prepare():
 @pytest.mark.parametrize(
     ("cls", "match"),
     [
-        (schemas.WithSet, "unsupported container"),
-        (schemas.WithMixedUnion, "mixes value types and classes"),
-        (schemas.WithUnresolvable, "field `value`"),
-        (schemas.WithAmbiguousUnion, "cannot be told apart"),
+        (WithSet, "unsupported container"),
+        (WithMixedUnion, "mixes value types and classes"),
+        (WithUnresolvable, "field `value`"),
+        (WithAmbiguousUnion, "cannot be told apart"),
     ],
 )
 def test_schema_outside_supported_subset_raises(cls, match):
@@ -183,10 +231,10 @@ def test_schema_outside_supported_subset_raises(cls, match):
 def test_schema_plain_mapping_in_dataclass_field_is_built_as_a_section():
     holder = instantiate(
         {
-            "$class": "tests.schemas.Holder",
+            "$class": f"{__name__}.Holder",
             "section": {"encoder": {"$class": "tests.schemas.Encoder", "width": 3}},
         },
-        schemas.Holder,
+        Holder,
     )
     assert isinstance(holder.section, schemas.SectionWithObject)
     assert isinstance(holder.section.encoder, schemas.Encoder)

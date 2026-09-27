@@ -1,15 +1,12 @@
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import InitVar, dataclass, field
+from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 from typing import Any, Literal, Protocol, Self, TypedDict, override
 
 from omegaconf import MISSING
-from typing_extensions import TypeVar
 
-from omegakit import Configurable, instantiate, make_node
-
-ConfigT = TypeVar("ConfigT")
+from omegakit import Configurable
 
 
 class Kind(Enum):
@@ -36,10 +33,6 @@ class Encoder:
 
     def __init__(self, width: int = 1) -> None:
         self.width = width
-
-
-class WideEncoder(Encoder):
-    """A subclass accepted by `Encoder` fields."""
 
 
 class Decoder:
@@ -103,7 +96,7 @@ class Model(Configurable[ModelConfig]):
     @classmethod
     @override
     def from_config(cls, config: ModelConfig, **kwargs: Any) -> Self:
-        kind = instantiate(make_node(A if config.kind is Kind.A else B), Base)
+        kind = A() if config.kind is Kind.A else B()
         return cls(kind, config.depth, config.encoder, **kwargs)
 
 
@@ -146,35 +139,6 @@ class RequiredObject(Configurable[RequiredObjectConfig]):
         self.encoder = encoder
 
 
-class Mid(Configurable[ConfigT]):
-    """A generic intermediate class without a type variable default."""
-
-    def __init__(self, **fields: Any) -> None:
-        self.fields = fields
-
-
-DefaultT = TypeVar("DefaultT", default=EncoderConfig)
-
-
-class MidWithDefault(Configurable[DefaultT]):
-    """A generic intermediate class whose type variable defaults to a schema."""
-
-    def __init__(self, **fields: Any) -> None:
-        self.fields = fields
-
-
-class Leaf(Mid[EncoderConfig]):
-    """Parametrizes a generic intermediate class."""
-
-
-class Mixin[T]:
-    """A generic mixin that is not a `Configurable`."""
-
-
-class MixedIn(Mixin[int], TypedEncoder):
-    """Lists a generic mixin before its `Configurable` base."""
-
-
 class Untyped(Configurable):
     """A bare `Configurable`, which has no schema."""
 
@@ -194,74 +158,6 @@ class InitFalse(Configurable[InitFalseConfig]):
 
 
 @dataclass
-class InitVarConfig:
-    value: int = 0
-    seed: InitVar[int] = 0
-
-
-class WithInitVar(Configurable[InitVarConfig]):
-    def __init__(self, **fields: Any) -> None:
-        self.fields = fields
-
-
-@dataclass(kw_only=True)
-class KwOnlyConfig:
-    value: int = 0
-
-
-class KwOnly(Configurable[KwOnlyConfig]):
-    def __init__(self, **fields: Any) -> None:
-        self.fields = fields
-
-
-@dataclass
-class TupleConfig:
-    values: tuple[int, ...] = ()
-
-
-class WithTuple(Configurable[TupleConfig]):
-    def __init__(self, **fields: Any) -> None:
-        self.fields = fields
-
-
-@dataclass
-class SetConfig:
-    values: set[int] = field(default_factory=set)
-
-
-class WithSet(Configurable[SetConfig]):
-    def __init__(self, **fields: Any) -> None: ...
-
-
-@dataclass
-class ObjectListConfig:
-    encoders: list[Encoder] = field(default_factory=list)
-
-
-class WithObjectList(Configurable[ObjectListConfig]):
-    def __init__(self, **fields: Any) -> None:
-        self.fields = fields
-
-
-@dataclass
-class MixedUnionConfig:
-    value: int | Encoder = 0
-
-
-class WithMixedUnion(Configurable[MixedUnionConfig]):
-    def __init__(self, **fields: Any) -> None: ...
-
-
-@dataclass
-class UnresolvableConfig:
-    value: "Missing" = None  # type: ignore[name-defined]  # noqa: F821
-
-
-class WithUnresolvable(Configurable[UnresolvableConfig]):
-    def __init__(self, **fields: Any) -> None: ...
-
-
-@dataclass
 class PointConfig:
     x: int = 0
     y: int = 0
@@ -269,59 +165,6 @@ class PointConfig:
 
 class MissingParameter(Configurable[PointConfig]):
     def __init__(self, x: int, y: int, z: int) -> None: ...
-
-
-class ExtraField(Configurable[PointConfig]):
-    def __init__(self, x: int) -> None: ...
-
-
-class ExtraFieldWithKwargs(Configurable[PointConfig]):
-    def __init__(self, x: int, **extra: Any) -> None: ...
-
-
-class FloatParameters(Configurable[PointConfig]):
-    def __init__(self, x: float, y: float) -> None: ...
-
-
-class StrParameter(Configurable[PointConfig]):
-    def __init__(self, x: str, y: int) -> None: ...
-
-
-class CustomFromConfig(Configurable[PointConfig]):
-    def __init__(self, z: int) -> None:
-        self.z = z
-
-    @classmethod
-    @override
-    def from_config(cls, config: PointConfig, **kwargs: Any) -> Self:
-        return cls(config.x + config.y)
-
-
-@dataclass
-class OptionalEncoderConfig:
-    encoder: Encoder | None = None
-
-
-class NeedsEncoder(Configurable[OptionalEncoderConfig]):
-    def __init__(self, encoder: Encoder) -> None: ...
-
-
-@dataclass
-class SubclassConfig:
-    child: A | None = None
-
-
-class TakesBase(Configurable[SubclassConfig]):
-    def __init__(self, child: Base | None) -> None: ...
-
-
-@dataclass
-class GenericConfig:
-    values: list[int] = field(default_factory=list)
-
-
-class GenericParameter(Configurable[GenericConfig]):
-    def __init__(self, values: list[str]) -> None: ...
 
 
 class Animal(Configurable[PointConfig]):
@@ -348,35 +191,6 @@ class Cat(Animal):
 def make_encoder(width: int) -> Encoder:
     """A module-level factory function for `make_node`."""
     return Encoder(width)
-
-
-@dataclass
-class WrapperConfig:
-    width: Any = 1
-
-
-class Wrapper(Configurable[WrapperConfig]):
-    """Builds a code-chosen `TypedEncoder` child with `make_node`."""
-
-    def __init__(self, inner: TypedEncoder) -> None:
-        self.inner = inner
-
-    @classmethod
-    @override
-    def from_config(cls, config: WrapperConfig, **kwargs: Any) -> Self:
-        return cls(
-            instantiate(make_node(TypedEncoder, width=config.width), TypedEncoder)
-        )
-
-
-@dataclass
-class DataclassUnionConfig:
-    value: Sub | int = 0
-
-
-class WithDataclassUnion(Configurable[DataclassUnionConfig]):
-    def __init__(self, **fields: Any) -> None:
-        self.fields = fields
 
 
 @dataclass
@@ -425,46 +239,12 @@ class LiteralConfig:
     sections: list[ModeSection] = field(default_factory=list)
 
 
-class WithLiterals(Configurable[LiteralConfig]):
-    def __init__(self, **fields: Any) -> None:
-        self.fields = fields
-
-
-@dataclass
-class FloatLiteralConfig:
-    value: Literal[1.5] = 1.5  # pyright: ignore[reportInvalidTypeForm]
-
-
-class WithFloatLiteral(Configurable[FloatLiteralConfig]):
-    def __init__(self, **fields: Any) -> None: ...
-
-
-BUILT: list[str] = []
-
-
-class Recorded:
-    """Records every construction in `BUILT`."""
-
-    def __init__(self, name: str) -> None:
-        BUILT.append(name)
-
-
 @dataclass
 class SectionWithObject:
     """A dataclass section that holds an object field."""
 
     encoder: Encoder
     size: int = 1
-
-
-@dataclass
-class HolderConfig:
-    section: SectionWithObject | None = None
-
-
-class Holder(Configurable[HolderConfig]):
-    def __init__(self, section: SectionWithObject | None) -> None:
-        self.section = section
 
 
 class Color(Enum):
@@ -514,15 +294,6 @@ class TypesConfig:
 class Types(Configurable[TypesConfig]):
     def __init__(self, **fields: Any) -> None:
         self.fields = fields
-
-
-@dataclass
-class AmbiguousUnionConfig:
-    value: Sub | EncoderConfig | None = None
-
-
-class WithAmbiguousUnion(Configurable[AmbiguousUnionConfig]):
-    def __init__(self, **fields: Any) -> None: ...
 
 
 @dataclass
