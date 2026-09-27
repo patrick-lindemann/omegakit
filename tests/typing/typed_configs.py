@@ -24,7 +24,7 @@ from tests.schemas import (
 
 
 class WrongModel(Configurable[ModelConfig]):
-    """The design's worked example with the two mistakes pyright must catch."""
+    """A `from_config` with a wrong argument type and a misspelled field."""
 
     def __init__(self, kind: Base, depth: int, encoder: Encoder | None) -> None: ...
 
