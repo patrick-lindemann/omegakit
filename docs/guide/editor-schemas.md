@@ -28,20 +28,36 @@ the committed file no longer matches the classes.
 
 ## What the editor checks
 
-Misspelled keys and values of the wrong type are errors, at the root and inside a
-node whose `$class` names a `Configurable` with a dataclass schema. What the schema
-cannot know is allowed everywhere: interpolations, `???`, `~import` and keys that
-start with `$`. Nothing is required, because a value may still come from a `$base`,
-`$defaults`, an import or an override; `validate` reports what is missing. Enums
-accept their member names and values, and `Literal` fields their values.
+Misspelled keys and values of the wrong type are errors at the root, and inside a
+node whose `$class` names exactly the class the field expects. The editor knows
+nothing about subclasses, so a `$class: webapp.db.Postgres` under
+`database: Database` is accepted as any mapping; `validate` still checks it.
 
-A node is checked against its class's schema only when `$class` spells the class's
-defining module and name, such as `webapp.server.Server`. A re-export such as
-`webapp.Server` is accepted without checks.
+What the schema cannot know is allowed everywhere: interpolations, `???`, `~import`
+and keys that start with `$`. Nothing is required, because a value may still come
+from a `$base`, `$defaults`, an import or an override; `validate` reports what is
+missing. Enums accept their member names and values, and `Literal` fields their
+values.
 
-Checked in VS Code with the Red Hat YAML extension, with omegakit 0.5.0: errors
-appear for wrong types and misspelled keys, including inside a `$class` node;
-interpolations, `~import` and `$` keys raise no errors; completion offers the root's
-keys, `Literal` values and the fields of a `$class` node; hover shows a field's
-type. The generated schema is described in the contracts under
-[Editor schemas](../contracts/command-line.md#editor-schemas).
+In VS Code with the Red Hat YAML extension, errors appear for wrong types and
+misspelled keys, completion offers the root's keys, `Literal` values and the fields
+of a `$class` node, and hover shows a field's type.
+
+## Rules
+
+`generate_json_schema(schema)` and `omegakit json-schema` produce a draft-07 JSON
+Schema for YAML files, from a root schema dataclass or from a `Configurable` class
+whose schema describes a fragment file. Anything else raises `TypeError`.
+
+- Any value, scalar or node, may also be `${…}`, `???` or an `~import`.
+- Any mapping accepts `$` keys. Other unknown keys are errors.
+- Nothing is required: values may come from `$base`, `$defaults`, imports or
+  overrides. `validate` reports what is missing.
+- Enums list their member names, and the `str` and `int` values that are not also
+  a name. `Literal` fields list their values. Fixed-length tuples have one schema
+  per position.
+- An object field of a `Configurable` class with a dataclass schema is checked
+  against that schema only when its `$class` is the class's defining module and
+  qualified name. Any other `$class`, such as a re-export or a subclass, accepts
+  any mapping.
+- No field descriptions are generated.

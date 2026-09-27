@@ -22,16 +22,10 @@ redis://example.com:6379
 
 `check` loads each file with the overrides and runs [`validate`](validation.md). It
 prints one line per invalid file and nothing for valid ones, and exits with 1 if
-any file is invalid.
-
-- `--schema IMPORT_PATH` names the class every root must build, as `validate`'s
-  `schema`.
-- `--allow-missing` accepts `???` and other missing values, for files such as
-  `base.yaml` that others complete:
-  `omegakit check configs/base.yaml --schema webapp.App --allow-missing`.
-- `--allow-module NAME`, repeatable, allows `$class` and `$ref` only from those
-  modules and their submodules, as `validate`'s `allowed_modules`.
-- `--import-root DIR` rejects an `~import` of a file outside `DIR`.
+any file is invalid. `--schema` names the class every root must build,
+`--allow-missing` accepts `???` in files such as `base.yaml` that others complete,
+`--allow-module` limits where `$class` and `$ref` may point, and `--import-root`
+limits where `~import` may read.
 
 As a [pre-commit](https://pre-commit.com) hook:
 
@@ -53,23 +47,60 @@ repos:
 
 `show` prints the assembled config: what imports, `$base`, `$defaults` and
 overrides produced. Values stay as written unless you pass `--resolve`, so an
-`${oc.env:...}` shows the variable's name, not its value.
+`${oc.env:...}` shows the variable's name, not its value. `--node` prints one node,
+by the same dotted path as `~import file#node`. Secrets are masked as by
+`mask_secrets` ([Security](../security.md#logging-without-secrets)).
 
-- `--node KEY` prints one node, by the same dotted path as `~import file#node`, such
-  as `jobs.digest` or `hosts.0`.
-- `--resolve` resolves interpolations, only in the selected node, and prints
-  missing values as `???`.
-- Secrets are masked as by `mask_secrets`: by key name always, and with `--resolve`
-  also by environment variable and inside other values. `--show-secrets` turns
-  masking off.
-- `--keep-meta` keeps `$meta` keys, and `--import-root DIR` works as for `check`.
+## `json-schema`
 
-## Arguments and exit codes
+`json-schema` writes the JSON Schema of a class for your editor; see
+[Editor schemas](editor-schemas.md).
 
-Config files and `key=value` overrides are given together. An argument that names
-an existing file is a config file, even if it contains `=`; another argument is an
-override if it has a `=` with no `/` before it. Overrides apply to every file.
+## Rules
 
-The exit code is 0 on success, 1 when a config is invalid or cannot be loaded, and 2
-for usage errors. The rules are in the contracts under
-[Command line](../contracts/command-line.md#command-line).
+`omegakit` puts the working directory first on the import path, so `$class`,
+`--schema` and `json-schema` paths resolve from there.
+
+**Arguments.** `check` and `show` take config files and `key=value` overrides,
+mixed in any order but before the options. An argument that names an existing file
+is a config file, even if it contains `=`. Otherwise it is an override if it has a
+`=` with no `/` before it, and a config file if not, which then fails to load.
+Overrides apply to every file.
+
+**Exit codes.** 0 on success. 1 when a config is invalid or cannot be loaded. 2 for
+a usage error: no config file, an unknown option, a `--schema` or `json-schema`
+path that cannot be imported, or an `--import-root` that is not a directory.
+
+**`omegakit check CONFIG... [KEY=VALUE...] [--schema IMPORT_PATH] [--allow-missing]
+[--allow-module NAME]... [--import-root DIR]`** validates each file
+([Validation](validation.md#rules)).
+
+- `--schema` is passed as `validate`'s `schema`, `--allow-missing` as
+  `allow_missing`, and each `--allow-module` adds an entry to `allowed_modules`
+  ([Security](../security.md#allowed-modules)). `--import-root` is passed to
+  `load_config` as `import_root` ([Imports](imports.md#rules)).
+- It prints `<file>: <exception type>: <message>` for each invalid file and
+  nothing for valid ones. Any exception, and a `SystemExit` raised by an imported
+  module, marks that file invalid, and the other files are still checked.
+  `KeyboardInterrupt` stops the command.
+
+**`omegakit show CONFIG [KEY=VALUE...] [--node KEY] [--resolve] [--keep-meta]
+[--show-secrets] [--import-root DIR]`** prints the assembled config, or the node at
+`KEY`, as YAML. A scalar prints as its value.
+
+- `KEY` is a dotted path, walked as `~import file#node` is: `items.0.name`,
+  `items.-1`. A node that does not exist, or a path through an interpolation
+  without `--resolve`, exits with 1.
+- Without `--resolve`, values print as written: `${…}`, `???`, `null`. With it,
+  interpolations on the path are followed and only the selected node is resolved.
+  Missing values print as `???`, and any other resolution error exits with 1 with
+  one line.
+- Secrets are masked as by `mask_secrets`, using the whole config even with
+  `--node`: by key always, and by environment variable and by value with
+  `--resolve`. `--show-secrets` turns masking off.
+- `--keep-meta` keeps `$meta` keys.
+
+**`omegakit json-schema IMPORT_PATH [-o FILE] [--check]`** prints or writes the
+JSON Schema of the class at `IMPORT_PATH`. `--check` needs `-o`, writes nothing,
+and exits with 1 if `FILE` is missing or differs from the generated schema,
+compared as JSON.

@@ -93,7 +93,6 @@ recipes/tenants
 :caption: Contracts
 :hidden:
 
-contracts/command-line
 contracts/errors
 ```
 
