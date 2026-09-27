@@ -106,7 +106,6 @@ def _load_import(
             f"Cannot resolve `{statement}` in `{config_path}`: "
             f"{str(error).splitlines()[0]}"
         ) from error
-    # Match the pattern ~import <file_path>[#<node_path>]
     args = statement[len(IMPORT_KEY) :].strip().split("#")
     if len(args) > 2:
         raise ConfigValidationError(
@@ -123,7 +122,6 @@ def _load_import(
             f"outside the import root `{import_root}`."
         )
     node_path = args[1].strip() if len(args) > 1 else ""
-    # Load the imported config file and resolve its own imports first
     if file_path in visited_paths:
         raise ConfigValidationError(
             f"Circular import detected: `{statement}` in `{config_path}` imports "
