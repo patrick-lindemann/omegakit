@@ -54,7 +54,7 @@ imports to one directory:
 
 ```text
 ['digest', 'cleanup']
-Import `~import ../../webapp/configs/base.yaml#server` in `.../guide/imports/shared.yaml` reads `.../webapp/configs/base.yaml`, which is outside the import root `.../guide/imports`.
+Import `~import ../../webapp/configs/base.yaml#server` in `.../configs/imports/shared.yaml` reads `.../webapp/configs/base.yaml`, which is outside the import root `.../configs/imports`.
 ```
 
 `omegakit check` and `omegakit show` take the same limit as `--import-root DIR`. It

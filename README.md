@@ -48,8 +48,8 @@ chose Postgres. `webapp` is the example application of the
 - Swap Postgres for SQLite in development and tests:
   [Swapping an implementation](https://omegakit.readthedocs.io/en/latest/recipes/swapping/)
 - Check configs before anything runs, and get completion in your editor:
-  [Validation](https://omegakit.readthedocs.io/en/latest/guide/validation/),
-  [Editor schemas](https://omegakit.readthedocs.io/en/latest/guide/editor-schemas/)
+  [Validation](https://omegakit.readthedocs.io/en/latest/objects/validation/),
+  [Editor schemas](https://omegakit.readthedocs.io/en/latest/tools/editor-schemas/)
 
 Start with [Getting started](https://omegakit.readthedocs.io/en/latest/getting-started/),
 or see how omegakit

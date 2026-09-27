@@ -23,5 +23,5 @@ does not touch comes from the files as usual.
 omegakit runs nothing in parallel and keeps no record of the runs. For sweeps with
 launchers, parallel jobs or a sweeper that picks the next values, see how omegakit
 [compares with Hydra](../../comparison/index.md#hydra). See
-[Overrides and environment variables](../../guide/overrides/index.md) and
-[Interpolation and missing values](../../guide/interpolation-and-missing/index.md).
+[Overrides and environment variables](../../configs/overrides/index.md) and
+[Interpolation and missing values](../../configs/interpolation-and-missing/index.md).

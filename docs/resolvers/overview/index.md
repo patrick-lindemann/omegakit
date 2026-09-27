@@ -2,7 +2,7 @@
 
 A resolver is a function inside an interpolation, such as `${oc.env:SECRET_KEY}`.
 OmegaConf's own resolvers, such as `oc.env`, are always available;
-[Overrides and environment variables](../../guide/overrides/index.md) shows `oc.env`
+[Overrides and environment variables](../../configs/overrides/index.md) shows `oc.env`
 in use.
 
 omegakit adds optional resolvers. Each module under `omegakit.resolvers` holds the

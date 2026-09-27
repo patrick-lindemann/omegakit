@@ -45,7 +45,7 @@ the key.
 A file such as `base.yaml` is incomplete on purpose. `validate(base,
 allow_missing=True)` still checks every value it does give, and
 `omegakit check base.yaml --allow-missing` does the same from the command line
-([Validation](../validation/index.md)).
+([Validation](../../objects/validation/index.md)).
 
 ## Rules
 

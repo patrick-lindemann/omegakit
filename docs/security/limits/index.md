@@ -7,7 +7,7 @@ config that passes them still runs code.
 
 `validate`, `instantiate` and `prepare` take `allowed_modules`, and
 `omegakit check` takes `--allow-module NAME`, repeatable. They limit which modules
-`$class` and `$ref` may name. [Building objects](../../guide/building-objects/index.md) shows
+`$class` and `$ref` may name. [Building objects](../../objects/building-objects/index.md) shows
 an override that is rejected.
 
 - `None`, the default, allows every module, and `[]` none. Any iterable of module
@@ -34,5 +34,5 @@ an override that is rejected.
 
 By default an `~import` may read any file the process can read. `load_config`
 takes `import_root`, and `omegakit check` and `omegakit show` take
-`--import-root DIR`, to keep imports inside one directory. [Imports](../../guide/imports/index.md)
+`--import-root DIR`, to keep imports inside one directory. [Imports](../../configs/imports/index.md)
 shows an example and lists the rules.

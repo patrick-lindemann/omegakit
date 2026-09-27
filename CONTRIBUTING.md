@@ -36,7 +36,7 @@ the newest OmegaConf pre-release in that range.
   `omegakit.__all__` plus the `omegakit.resolvers` subpackage; everything else is
   internal. Names used only in their own module get a leading underscore.
 - Any change to the configuration language updates the Rules section of the
-  affected guide page in the same commit.
+  affected page in the same commit.
 - A bug fix comes with a test that fails without the fix.
 
 ## Commits

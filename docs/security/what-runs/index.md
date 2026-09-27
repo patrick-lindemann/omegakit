@@ -16,7 +16,7 @@ a Python file: load it only from sources you trust.
 - Validating and building import the modules that `$class` and `$ref` name, which
   runs their import-time code. Validation calls no configured class, but some
   code of the schemas and imported classes still runs
-  ([Validation](../../guide/validation/index.md#rules)).
+  ([Validation](../../objects/validation/index.md#rules)).
 - Building calls the classes and functions the config names.
 - Overrides carry the same trust as the files. An override can set `$class` or
   `$ref`, or read an environment variable. Never build overrides from requests or

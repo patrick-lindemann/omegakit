@@ -16,8 +16,11 @@ All notable changes to this project are documented here. The format follows
   module. The Resolvers guide page moved to `resolvers/overview/`.
 - Security is split into three pages: what runs, limits, and secrets. The Security
   page moved to `security/what-runs/`.
-- The Errors page is removed. The Rules section of each guide page names the errors
-  of its feature.
+- The Errors page is removed. The Rules section of each feature page names the
+  errors of its feature.
+- The guide is split into three sections in the order you meet them: Configs,
+  Objects and Tools. Page URLs changed, for example `guide/loading/` is now
+  `configs/loading/`.
 
 ## [0.6.1] - 2026-09-27
 

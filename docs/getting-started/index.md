@@ -93,7 +93,7 @@ config = load_config("configs/app.yaml", overrides=["server.port=9000"])
 ```
 
 A slot that is still `???` fails when the config is validated or built, naming the
-key. See [Overrides and environment variables](../guide/overrides/index.md).
+key. See [Overrides and environment variables](../configs/overrides/index.md).
 
 ## 5. Add a schema
 
@@ -115,7 +115,7 @@ Invalid config in `server.port` (ServerConfig): Value 'abc' of type 'str' could 
 ```
 
 `instantiate` runs the same check before it builds anything. See
-[Typed configs](../guide/typed-configs/index.md) and [Validation](../guide/validation/index.md).
+[Typed configs](../objects/typed-configs/index.md) and [Validation](../objects/validation/index.md).
 
 ## 6. Use it in your service
 
@@ -168,5 +168,5 @@ Tests load the same config with an override that puts an in-memory database unde
 ```
 
 Your editor can complete and check these files too: see
-[Editor schemas](../guide/editor-schemas/index.md). From here, the guide covers each feature,
-starting with [Loading](../guide/loading/index.md).
+[Editor schemas](../tools/editor-schemas/index.md). From here, the guide covers each feature,
+starting with [Loading](../configs/loading/index.md).

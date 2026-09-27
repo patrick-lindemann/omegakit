@@ -20,7 +20,7 @@ redis://example.com:6379
 
 ## `check`
 
-`check` loads each file with the overrides and runs [`validate`](../validation/index.md). It
+`check` loads each file with the overrides and runs [`validate`](../../objects/validation/index.md). It
 prints one line per invalid file and nothing for valid ones, and exits with 1 if
 any file is invalid. `--schema` names the class every root must build,
 `--allow-missing` accepts `???` in files such as `base.yaml` that others complete,
@@ -73,12 +73,12 @@ path that cannot be imported, or an `--import-root` that is not a directory.
 
 **`omegakit check CONFIG... [KEY=VALUE...] [--schema IMPORT_PATH] [--allow-missing]
 [--allow-module NAME]... [--import-root DIR]`** validates each file
-([Validation](../validation/index.md#rules)).
+([Validation](../../objects/validation/index.md#rules)).
 
 - `--schema` is passed as `validate`'s `schema`, `--allow-missing` as
   `allow_missing`, and each `--allow-module` adds an entry to `allowed_modules`
   ([Security](../../security/limits/index.md#allowed-modules)). `--import-root` is passed to
-  `load_config` as `import_root` ([Imports](../imports/index.md#rules)).
+  `load_config` as `import_root` ([Imports](../../configs/imports/index.md#rules)).
 - It prints `<file>: <exception type>: <message>` for each invalid file and
   nothing for valid ones. Any exception, and a `SystemExit` raised by an imported
   module, marks that file invalid, and the other files are still checked.

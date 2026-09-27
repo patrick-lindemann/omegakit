@@ -62,7 +62,7 @@ arguments. Arguments passed to a partial win over the config's.
 
 `$meta` holds notes for people and tools, such as the `digest` job's owner. It is
 never passed to a constructor or to `from_config`, and `load_config` removes it
-unless you pass `keep_meta=True` ([Loading](../loading/index.md)).
+unless you pass `keep_meta=True` ([Loading](../../configs/loading/index.md)).
 
 ## Checking before building
 
@@ -85,7 +85,7 @@ and gets a note naming the node, such as `while instantiating jobs.digest
   the attribute is imported and called with the node's other keys as keyword
   arguments.
 - `instantiate` and `prepare` first merge `overrides`
-  ([Overrides](../overrides/index.md#rules)), resolve the node and validate it as
+  ([Overrides](../../configs/overrides/index.md#rules)), resolve the node and validate it as
   `validate` does ([Validation](../validation/index.md#rules)), with the same
   `allowed_modules`, and only then build. A config error, a `???`, a failing
   interpolation and an exception from a resolver all raise `ConfigValidationError`

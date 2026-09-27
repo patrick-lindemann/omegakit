@@ -36,13 +36,14 @@ app = instantiate(load_config("configs/app.yaml"), App)  # with APP_ENV=prod
 
 - **New to omegakit:** [Getting started](getting-started/index.md), and how omegakit
   [compares with Hydra and other libraries](comparison/index.md).
-- **Looking up a feature:** the guide, from [Loading](guide/loading/index.md) and
-  [Imports](guide/imports/index.md) to [Validation](guide/validation/index.md) and the
-  [Command line](guide/command-line/index.md).
+- **Looking up a feature:** one page per feature, in the order you meet them.
+  [Configs](configs/loading/index.md) covers how files are loaded and combined,
+  [Objects](objects/building-objects/index.md) how objects are built and checked,
+  and [Tools](tools/command-line/index.md) the command line and editor support.
 - **A complete pattern:** the recipes, such as
   [swapping an implementation](recipes/swapping/index.md) or
   [a manifest of similar things](recipes/manifests/index.md).
-- **The exact rules:** the Rules section at the end of each guide page, and the
+- **The exact rules:** the Rules section at the end of each feature page, and the
   [API](api/index.md).
 
 Configs import and call Python code, so load them only from sources you trust.
@@ -58,20 +59,32 @@ comparison/index
 ```
 
 ```{toctree}
-:caption: Guide
+:caption: Configs
 :hidden:
 
-guide/loading/index
-guide/imports/index
-guide/base/index
-guide/defaults/index
-guide/overrides/index
-guide/interpolation-and-missing/index
-guide/building-objects/index
-guide/typed-configs/index
-guide/validation/index
-guide/editor-schemas/index
-guide/command-line/index
+configs/loading/index
+configs/imports/index
+configs/base/index
+configs/defaults/index
+configs/overrides/index
+configs/interpolation-and-missing/index
+```
+
+```{toctree}
+:caption: Objects
+:hidden:
+
+objects/building-objects/index
+objects/typed-configs/index
+objects/validation/index
+```
+
+```{toctree}
+:caption: Tools
+:hidden:
+
+tools/command-line/index
+tools/editor-schemas/index
 ```
 
 ```{toctree}

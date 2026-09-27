@@ -22,4 +22,4 @@ globex 8002 4 20 logs/globex
 Each tenant gets its own `App`, built from `configs/app.yaml` with that tenant's
 values on top and its name in `log_dir`. Overrides win over the config files and are
 checked like them, so a misspelled key in `tenants.yaml` is reported for that
-tenant. See [Overrides and environment variables](../../guide/overrides/index.md).
+tenant. See [Overrides and environment variables](../../configs/overrides/index.md).
