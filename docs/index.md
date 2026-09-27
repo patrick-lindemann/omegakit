@@ -33,7 +33,8 @@ app = instantiate(load_config("configs/app.yaml"), App)  # with APP_ENV=prod
 
 ## Where to go
 
-- **New to omegakit:** [Getting started](getting-started.md).
+- **New to omegakit:** [Getting started](getting-started.md), and how omegakit
+  [compares with Hydra and other libraries](comparison.md).
 - **Looking up a feature:** the guide, from [Loading](guide/loading.md) and
   [Imports](guide/imports.md) to [Validation](guide/validation.md) and the
   [Command line](guide/command-line.md).
@@ -47,6 +48,7 @@ contracts' [Trust](contracts.md#trust) section lists what runs.
 :hidden:
 
 getting-started
+comparison
 ```
 
 ```{toctree}
