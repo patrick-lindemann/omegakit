@@ -39,8 +39,8 @@ app = instantiate(load_config("configs/app.yaml"), App)  # with APP_ENV=prod
   [Imports](guide/imports.md) to [Validation](guide/validation.md) and the
   [Command line](guide/command-line.md).
 - **A complete pattern:** the recipes, such as
-  [one config per environment](recipes/environments.md) or
-  [swapping an implementation](recipes/swapping.md).
+  [swapping an implementation](recipes/swapping.md) or
+  [a manifest of similar things](recipes/manifests.md).
 - **The exact rules:** the Rules section at the end of each guide page, and the
   [API](api.md).
 
@@ -83,17 +83,9 @@ security
 :caption: Recipes
 :hidden:
 
-recipes/environments
 recipes/swapping
 recipes/manifests
 recipes/tenants
-```
-
-```{toctree}
-:caption: Contracts
-:hidden:
-
-contracts/errors
 ```
 
 ```{toctree}
@@ -101,5 +93,6 @@ contracts/errors
 :hidden:
 
 api
+errors
 changelog
 ```

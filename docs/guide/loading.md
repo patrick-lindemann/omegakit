@@ -98,4 +98,4 @@ PyYAML, OmegaConf or the file system as its `__cause__`: invalid YAML, duplicate
 keys, unknown tags or a file that is not UTF-8, naming the file, the line and the
 column; a root file that holds a list; a file that holds a single value instead of
 a mapping or a list. An empty file, `null` or `~` is an empty mapping. The
-[Errors](../contracts/errors.md) table lists every exception.
+[Errors](../errors.md) table lists every exception.
