@@ -1,5 +1,3 @@
-"""Optional Torch resolvers. Torch is needed only when registering or resolving."""
-
 import importlib
 from typing import Any
 
@@ -30,13 +28,27 @@ def _resolve_dtype(dtype_str: str) -> Any:
 
 
 def register_torch_dtype_resolver(*, replace: bool = False) -> None:
-    """Register `${dtype:float32}`; require an existing Torch installation."""
+    """Register `${dtype:float32}`, which gives the Torch dtype of that name.
+
+    Args:
+        replace: Replace a resolver named `dtype`. Defaults to `False`.
+
+    Raises:
+        ImportError: If Torch is not installed.
+    """  # noqa: DOC502
     _import_torch()
     register_resolver("dtype", _resolve_dtype, replace=replace)
 
 
 def register_cuda_available_resolver(*, replace: bool = False) -> None:
-    """Register `${cuda_available:}`; require an existing Torch installation."""
+    """Register `${cuda_available:}`, which gives whether Torch can use CUDA.
+
+    Args:
+        replace: Replace a resolver named `cuda_available`. Defaults to `False`.
+
+    Raises:
+        ImportError: If Torch is not installed.
+    """  # noqa: DOC502
     torch = _import_torch()
     register_resolver(
         "cuda_available",
@@ -46,7 +58,17 @@ def register_cuda_available_resolver(*, replace: bool = False) -> None:
 
 
 def register_torch_resolvers(*, replace: bool = False) -> None:
-    """Register both Torch resolvers, without overwriting names by default."""
+    """Register `${dtype:...}` and `${cuda_available:}`.
+
+    Neither is registered if either name is taken and `replace` is `False`.
+
+    Args:
+        replace: Replace resolvers of the same names. Defaults to `False`.
+
+    Raises:
+        ImportError: If Torch is not installed.
+        ValueError: If a name is taken and `replace` is `False`.
+    """  # noqa: DOC503
     _import_torch()
     if not replace:
         for name in ("dtype", "cuda_available"):
