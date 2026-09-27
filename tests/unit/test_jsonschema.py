@@ -7,8 +7,6 @@ from jsonschema import Draft7Validator
 from omegakit import generate_json_schema
 from tests import schemas
 
-# Contracts: §12 Editor schemas.
-
 APP = {
     "seed": 3,
     "training": {

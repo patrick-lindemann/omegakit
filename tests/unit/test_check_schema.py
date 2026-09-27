@@ -10,8 +10,6 @@ from tests.schemas import A, Base, Encoder, PointConfig
 if TYPE_CHECKING:
     from decimal import Decimal
 
-# Contracts: §10 Typed configs (consistency check).
-
 
 class ExtraField(Configurable[PointConfig]):
     def __init__(self, x: int) -> None: ...

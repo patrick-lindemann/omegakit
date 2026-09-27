@@ -3,8 +3,6 @@ import pytest
 from omegakit import instantiate, make_node
 from tests import schemas
 
-# Contracts: §10 Typed configs (make_node).
-
 
 class Holder:
     class Inner:

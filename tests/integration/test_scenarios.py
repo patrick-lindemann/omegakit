@@ -22,9 +22,6 @@ from tests import schemas
 from tests.helpers import POINT, RECORDER, Point
 from tests.schemas import TypedEncoder
 
-# Contracts: §3 Resolution timing, §4 `???` lifecycle, §5 Instantiation, §10 Typed
-# configs, §11 Validation, §12 Editor schemas.
-
 
 @dataclass
 class WrapperConfig:

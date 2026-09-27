@@ -9,8 +9,6 @@ from omegakit import generate_json_schema
 from omegakit.cli import main
 from tests import schemas
 
-# Contracts: §12 Editor schemas, §13 Command line.
-
 
 def test_cli_json_schema_prints_the_schema(capsys):
     main(["json-schema", "tests.schemas.AppConfig"])

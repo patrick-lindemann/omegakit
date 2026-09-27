@@ -16,8 +16,6 @@ from omegakit import (
 from tests import schemas
 from tests.helpers import FAILING
 
-# Contracts: §11 Validation.
-
 MODEL = "tests.schemas.Model"
 
 

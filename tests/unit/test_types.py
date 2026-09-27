@@ -7,8 +7,6 @@ from omegaconf import OmegaConf
 from omegakit import Configurable, ConfigValidationError, instantiate, validate
 from tests import schemas
 
-# Contracts: §10 Typed configs (field kinds), §11 Validation.
-
 
 @dataclass
 class InitVarConfig:

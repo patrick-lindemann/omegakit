@@ -2,8 +2,6 @@ import pytest
 
 from omegakit import ConfigValidationError, load_config
 
-# Contracts: §2 Precedence, §3 Resolution timing.
-
 
 def test_load_merges_defaults_into_dict_siblings(write_yaml):
     cfg = load_config(

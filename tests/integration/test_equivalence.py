@@ -3,8 +3,7 @@ from omegaconf import OmegaConf
 
 from omegakit import load_config
 
-# Contracts: §1 Pipeline order, §2 Precedence. Each case is an assembled config and
-# the hand-written YAML it must equal.
+# Each case is an assembled config and the hand-written YAML it must equal.
 
 CASES = {
     "import": (

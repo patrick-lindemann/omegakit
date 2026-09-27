@@ -3,8 +3,6 @@ import yaml
 
 from omegakit import ConfigValidationError, load_config
 
-# Contracts: §6 Key namespace.
-
 
 def test_load_returns_values(write_yaml):
     cfg = load_config(write_yaml("c.yaml", "a: 1\nb: hello\n"))

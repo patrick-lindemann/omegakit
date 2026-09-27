@@ -3,8 +3,6 @@ import pytest
 from omegakit import ConfigValidationError, instantiate
 from tests.helpers import POINT
 
-# Contracts: §5 Instantiation.
-
 
 def test_instantiate_ref_imports_object():
     obj = instantiate({"$class": POINT, "x": {"$ref": "builtins.int"}, "y": 2})

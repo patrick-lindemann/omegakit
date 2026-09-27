@@ -6,9 +6,6 @@ from typing_extensions import TypeVar
 from omegakit import Configurable, check_schema, instantiate
 from tests.schemas import EncoderConfig, TypedEncoder
 
-# Contracts: §10 Typed configs (schema lookup).
-
-
 ConfigT = TypeVar("ConfigT")
 
 

@@ -6,8 +6,6 @@ from omegaconf import OmegaConf
 
 from omegakit import ConfigValidationError, load_config
 
-# Contracts: §3 Resolution timing, §7 Import semantics, §8 Error model.
-
 
 def test_load_resolves_import(write_yaml):
     write_yaml("base.yaml", "x: 10\n")
@@ -121,13 +119,10 @@ def test_load_import_resolves_relative_to_importer(write_yaml):
     write_yaml("sub/leaf.yaml", "v: 7\n")
     write_yaml("sub/mid.yaml", "bar: ~import leaf.yaml\n")
     cfg = load_config(write_yaml("main.yaml", "foo: ~import sub/mid.yaml\n"))
-    # `leaf.yaml` must resolve relative to sub/ (the importer), not the top dir.
     assert cfg.foo.bar.v == 7
 
 
 def test_load_leaf_import_resolves_against_root(write_yaml):
-    # An imported leaf interpolation resolves against the CONSUMER root, like a
-    # container import — not against the imported file's own scope.
     write_yaml("base.yaml", "p: base_p\nq: ${p}\n")
     cfg = load_config(
         write_yaml("main.yaml", 'leaf: "~import base.yaml#q"\np: root_p\n')
@@ -237,7 +232,6 @@ def test_import_repeated_subnode_gives_independent_copies(write_yaml):
 
 
 def test_import_path_does_not_see_base_keys(write_yaml):
-    # contracts §3: an `~import` path sees only keys literally present in its file
     write_yaml("leaf.yaml", "v: 1\n")
     with pytest.raises(ConfigValidationError, match="name"):
         load_config(

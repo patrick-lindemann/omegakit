@@ -11,8 +11,6 @@ from omegakit import ConfigValidationError, instantiate, load_config, prepare
 from omegakit.utils import register_resolver
 from tests.helpers import CONTAINER, POINT
 
-# Contracts: §4 `???` lifecycle.
-
 
 def test_load_top_level_missing_under_base_survives_load(write_yaml):
     write_yaml("lib.yaml", "a: 1\nb: ???\n")
@@ -46,8 +44,6 @@ def test_load_filled_missing_via_base(write_yaml):
 
 
 def test_load_missing_filled_via_base_resolves_relative_ref(write_yaml):
-    # The reusable-library pattern: a file declares a `???` slot and wires its internals
-    # to it with a relative interpolation; the consumer fills the slot via `$base`.
     write_yaml("lib.yaml", "manifold: ???\nsde:\n  manifold: ${..manifold}\n")
     cfg = load_config(
         write_yaml(
@@ -60,8 +56,6 @@ def test_load_missing_filled_via_base_resolves_relative_ref(write_yaml):
 
 
 def test_instantiate_raises_on_missing_value():
-    # `???` marks a consumer fill-in point; it must fail loudly rather than pass the
-    # literal string "???" to the constructor.
     config = OmegaConf.create({"$class": POINT, "x": "???", "y": 2})
     with pytest.raises(ConfigValidationError, match="`x`") as info:
         instantiate(config)

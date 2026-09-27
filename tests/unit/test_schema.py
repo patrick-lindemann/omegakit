@@ -20,8 +20,6 @@ from omegakit.utils import register_resolver
 from tests import schemas
 from tests.schemas import Encoder, EncoderConfig, SectionWithObject, Sub
 
-# Contracts: §10 Typed configs (field kinds, supported subset, validation).
-
 
 @dataclass
 class SetConfig:

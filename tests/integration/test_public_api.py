@@ -5,8 +5,6 @@ from types import ModuleType
 import omegakit
 import omegakit.resolvers
 
-# Contracts: §9 Environment.
-
 
 def test_public_api_exports():
     assert sorted(omegakit.__all__) == [

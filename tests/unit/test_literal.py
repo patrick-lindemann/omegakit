@@ -13,8 +13,6 @@ from omegakit import (
 from tests import schemas
 from tests.schemas import LiteralConfig
 
-# Contracts: §10 Typed configs, §11 Validation, §12 Editor schemas.
-
 
 class WithLiterals(Configurable[LiteralConfig]):
     def __init__(self, **fields: Any) -> None:

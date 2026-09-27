@@ -5,8 +5,6 @@ import pytest
 from omegakit import ConfigValidationError, instantiate, prepare
 from tests.helpers import CONFIGURABLE_POINT, CONTAINER, POINT, RECORDER, Point
 
-# Contracts: §5 Instantiation.
-
 
 def test_instantiate_partial_flag_returns_partial():
     partial = instantiate({"$class": POINT, "$partial": True, "x": 1})

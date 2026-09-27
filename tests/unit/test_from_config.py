@@ -3,8 +3,6 @@ import pytest
 from omegakit import ConfigValidationError, instantiate, prepare
 from tests import schemas
 
-# Contracts: §10 Typed configs (from_config).
-
 MODEL = "tests.schemas.Model"
 
 

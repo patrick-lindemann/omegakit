@@ -2,8 +2,7 @@ from omegaconf import OmegaConf
 
 from omegakit import load_config
 
-# Contracts: §1 Pipeline order. One test per edge of
-# parse → ~import → $base → $defaults → overrides → strip.
+# One test per edge of parse → ~import → $base → $defaults → overrides → strip.
 
 
 def test_pipeline_import_before_base(write_yaml):

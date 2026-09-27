@@ -14,9 +14,6 @@ from tests.helpers import (
     Point,
 )
 
-# Contracts: §5 Instantiation, §6 Key namespace, §8 Error model.
-
-
 BUILT: list[str] = []
 
 

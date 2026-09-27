@@ -12,8 +12,6 @@ from omegakit.resolvers.torch import (
 )
 from omegakit.utils import register_resolver
 
-# Contracts: §9 Environment.
-
 
 class FakeDtype:
     pass

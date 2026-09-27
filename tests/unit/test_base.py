@@ -4,8 +4,6 @@ from omegaconf.errors import InterpolationKeyError
 
 from omegakit import ConfigValidationError, load_config
 
-# Contracts: §1 Pipeline order, §2 Precedence, §3 Resolution timing.
-
 
 def test_load_merges_base_with_node_winning(write_yaml):
     cfg = load_config(write_yaml("c.yaml", "$base:\n  a: 1\n  b: 2\nb: 20\n"))
@@ -45,7 +43,6 @@ def test_load_base_populated_by_import(write_yaml):
             "model:\n  $base: ~import defaults.yaml\n  steps: 3\n",
         )
     )
-    # Imports resolve before base merging, so `$base: ~import ...` becomes a dict first.
     assert cfg.model.lr == 5
     assert cfg.model.steps == 3
 
