@@ -26,7 +26,7 @@ A file such as `base.yaml` is incomplete on purpose: it also has no model and no
 optimizer, which the schema requires. `allow_missing=True` accepts all of that, and
 the run directory that refers to the open name, and still checks every value the
 file does give. `omegakit check configs/base.yaml --allow-missing` does the same
-from the command line ([Validation](../../objects/validation/index.md)).
+from the command line ([Validation](../../schemas/validation/index.md)).
 
 ## Rules
 

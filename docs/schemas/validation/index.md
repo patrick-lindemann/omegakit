@@ -1,8 +1,8 @@
 # Validation
 
-`validate` checks a loaded config against the schemas of the classes it names, and
-raises `ConfigValidationError` at the first problem, naming the key.
-`instantiate` runs the same check before it builds anything.
+`validate` checks a loaded config against its schemas, and raises
+`ConfigValidationError` at the first problem, naming the key. `instantiate` and
+`prepare` run the same check before they build anything.
 
 ```{literalinclude} main.py
 :language: python
@@ -10,22 +10,24 @@ raises `ConfigValidationError` at the first problem, naming the key.
 ```
 
 ```text
-Invalid config in `server.workers` (ServerConfig): Value 'many' of type 'str' could not be converted to Integer
-`database` expects Database, but the config gives `$class: webapp.cache.RedisCache`.
+Invalid config in `model.degree` (Polynomial): Value 'three' of type 'str' could not be converted to Integer
+`trainer.schedule` must be one of 'constant', 'cosine', but the config gives `'linear'`.
+`model` expects Model, but the config gives `$class: curvefit.data.Synthetic`.
 ```
 
-`schema=App` says what the root must build. Every node with `$class` is checked
-against its own class's schema, children first, and every object field against the
-class it expects, so a cache in the database's place is caught before anything is
-built. To test a config without letting the error escape, catch it as above; the
-error is a `ValueError` too.
+`schema=Experiment` says what the root must match. The root has no `$class`, so it
+is checked against the plain dataclass `Experiment`, and every node with `$class`
+against its own class's schema, children first. The model's `degree` is checked
+against `Polynomial`'s field, and the trainer's `schedule` against the `Literal` of
+`TrainerConfig`. Each object field is also checked against the class it expects, so
+a dataset where the model should be is caught before anything is built. The error
+is a `ValueError` too.
 
 ## Files that are incomplete on purpose
 
-`base.yaml` leaves `secret_key` for each environment to fill.
-`validate(base, schema=App, allow_missing=True)` accepts the open `???` and still
-checks every value the file gives. Without `$class` at its root, `base.yaml` is
-checked against the schema of `App`.
+`base.yaml` leaves the name open and names no model or optimizer.
+`validate(base, schema=Experiment, allow_missing=True)` accepts what is missing and
+still checks every value the file gives ([Missing values](../../configs/missing-values/index.md)).
 
 Validation calls no configured class, but it imports the modules that `$class` and
 `$ref` name and runs every resolver. Validate only configs you trust, and limit the
@@ -46,11 +48,11 @@ run this check, with their own `schema`, before building.
 - Every `$class` node is checked against its class's schema. Nested `$class`
   nodes are checked before their parent. The class is imported, not called. A
   class without a schema has only its children checked.
-- `schema` says what the root must match. A dataclass checks the root as a
-  section. A class checks the root's `$class`, which must be that class or a
-  subclass. When the root has no `$class`, it is checked against the class's own
-  schema, as a fragment; a class without one raises. Anything that is not a class
-  raises `TypeError`. Without `schema`, only the `$class` nodes are checked.
+- `schema` says what the root must match. A root with `$class` must name
+  `schema` or a subclass. A root without `$class` is checked against the schema
+  of `schema`: a dataclass is its own, and a `Configurable` has its `TConfig`. A
+  class without one raises. Anything that is not a class raises `TypeError`.
+  Without `schema`, only the `$class` nodes are checked.
 - `allow_missing=True` accepts `???`, required fields that are not given, and
   interpolations to missing or unknown keys. Given values are still checked.
 - An object field accepts a `$class` node of the annotated class or a subclass, a

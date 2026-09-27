@@ -25,6 +25,7 @@ All notable changes to this project are documented here. The format follows
   page and the sidebar are reorganised: Command line is in the top group, and
   Schemas is its own section.
 - The Command line page moved from `tools/command-line/` to `command-line/`.
+- The Validation page moved from `objects/validation/` to `schemas/validation/`.
 - Resolvers have their own section, with an overview and a page per resolver
   module. The Resolvers guide page moved to `resolvers/overview/`.
 - Security is split into three pages: Trust model, Restricting imports and Masking

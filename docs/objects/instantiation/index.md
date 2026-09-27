@@ -66,7 +66,7 @@ unless you pass `keep_meta=True` ([Loading](../../configs/loading/index.md)).
 
 ## Checking before building
 
-`instantiate` and `prepare` check the node as [`validate`](../validation/index.md) does
+`instantiate` and `prepare` check the node as [`validate`](../../schemas/validation/index.md) does
 before they build anything, so a mistake raises `ConfigValidationError` before any
 configured class is called. `allowed_modules=["webapp"]` limits `$class` and `$ref`
 to your own package: the override above swapped in `subprocess.Popen`, and the
@@ -86,7 +86,7 @@ and gets a note naming the node, such as `while instantiating jobs.digest
   arguments.
 - `instantiate` and `prepare` first merge `overrides`
   ([Overrides](../../configs/overrides/index.md#rules)), resolve the node and validate it as
-  `validate` does ([Validation](../validation/index.md#rules)), with the same
+  `validate` does ([Validation](../../schemas/validation/index.md#rules)), with the same
   `schema` and `allowed_modules`, and only then build. A config error, a `???`, a failing
   interpolation and an exception from a resolver all raise `ConfigValidationError`
   before any configured class is called. OmegaConf's error is the `__cause__`, and

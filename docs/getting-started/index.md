@@ -93,7 +93,7 @@ Unknown field(s) 'degre' in `model` (Polynomial). Expected one of: degree, init_
 ```
 
 A typo, or a value of the wrong type, raises `ConfigValidationError` before any
-object is built. See [Validation](../objects/validation/index.md).
+object is built. See [Validation](../schemas/validation/index.md).
 
 ## 5. Run an experiment
 

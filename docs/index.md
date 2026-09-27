@@ -75,7 +75,7 @@ configs/missing-values/index
 :hidden:
 
 schemas/dataclass-schemas/index
-objects/validation/index
+schemas/validation/index
 tools/editor-support/index
 ```
 

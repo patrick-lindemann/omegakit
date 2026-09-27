@@ -64,7 +64,7 @@ A class can also carry a schema that differs from its constructor, through
 | Annotation | Config value | Checked by | The result holds |
 |---|---|---|---|
 | **native**: `int`, `float`, `bool`, `str`, `bytes`, `Path`, `Enum`, `Literal` of `str`, `int` or `bool`, `TypedDict`, dataclasses whose fields are all native, `list`, `dict`, `tuple`, `Sequence` and `Mapping` of these, and unions of these, optional or not | plain values | OmegaConf, then omegakit | the converted value |
-| **object**: any other class, generic classes, unions of classes, `list` or `dict` of these, optional or not, also through a `type` alias | a `$class` or `$ref` node, a list or mapping of them, or `null` if optional | the class check ([Validation](../../objects/validation/index.md#rules)), then the node's own schema | the built object |
+| **object**: any other class, generic classes, unions of classes, `list` or `dict` of these, optional or not, also through a `type` alias | a `$class` or `$ref` node, a list or mapping of them, or `null` if optional | the class check ([Validation](../validation/index.md#rules)), then the node's own schema | the built object |
 | **`Any`** | anything | not checked, but `$class` nodes inside are | the value, with `$class` nodes built |
 
 - Behaviour does not depend on the OmegaConf version.
@@ -117,7 +117,7 @@ recursive: that field holds an object.
 `instantiate` and `prepare` do before they build:
 
 1. Check each object and `Any` field, children first
-   ([Validation](../../objects/validation/index.md#rules)). A plain mapping in a
+   ([Validation](../validation/index.md#rules)). A plain mapping in a
    field annotated with a dataclass is a section, checked the same way.
 2. Check the node's own keys and values. An unknown key, a missing required field
    and a value that does not convert raise `ConfigValidationError`, naming the path
