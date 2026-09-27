@@ -1,4 +1,4 @@
-# Building objects
+# Instantiation
 
 `instantiate` builds Python objects from a config node. `$class` calls a class or
 function, `$ref` imports an object without calling it, and `$partial` defers a call.
@@ -24,7 +24,7 @@ sent 'Special offer'
 arguments. Nested nodes with `$class`, in mappings and lists, are built first, so
 `App` receives a built server, database and jobs. A class with a `from_config`
 method, such as every `Configurable`, receives the arguments through it instead;
-see [Typed configs](../typed-configs/index.md). The node passed to `instantiate` must have
+see [Schemas](../schemas/index.md). The node passed to `instantiate` must have
 `$class`.
 
 The second argument, `instantiate(config, App)`, gives the result its type for your
@@ -94,7 +94,7 @@ and gets a note naming the node, such as `while instantiating jobs.digest
 - A target with a `from_config` attribute is built with `from_config(arguments)`
   instead. The lookup is by name, so any class with that classmethod works,
   `Configurable` or not. `arguments` is a `dict` of the built arguments, or the
-  typed config when the class has a schema ([Typed configs](../typed-configs/index.md)).
+  typed config when the class has a schema ([Schemas](../schemas/index.md)).
 - Nested `$class` nodes, in mappings and lists, are built before their parent,
   which receives the objects.
 - A `dict` passed in is converted with `OmegaConf.create` and treated like a

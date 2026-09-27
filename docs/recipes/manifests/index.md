@@ -28,4 +28,4 @@ Every entry is a `Job`, because `$defaults` gives each one `$class`. The monthly
 digest copies the weekly one and changes its subject and schedule, and `cleanup`
 keeps its own `retries`. `keep_meta=True` keeps the owners for the report; a
 constructor never sees them. See [Shared defaults](../../configs/shared-defaults/index.md),
-[Inheritance](../../configs/inheritance/index.md) and [Building objects](../../objects/building-objects/index.md).
+[Inheritance](../../configs/inheritance/index.md) and [Instantiation](../../objects/instantiation/index.md).

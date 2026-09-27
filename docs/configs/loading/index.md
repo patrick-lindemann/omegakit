@@ -43,7 +43,7 @@ validated or built ([Interpolation](../interpolation/index.md)).
 
 ## Metadata and plain data
 
-`$meta` holds notes for people and tools ([Building objects](../../objects/building-objects/index.md)).
+`$meta` holds notes for people and tools ([Instantiation](../../objects/instantiation/index.md)).
 `load_config` removes it unless you ask for it. `walk` visits every mapping of a
 config, parents first, so a script can collect it:
 

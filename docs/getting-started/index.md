@@ -117,7 +117,7 @@ Invalid config in `server.port` (ServerConfig): Value 'abc' of type 'str' could 
 ```
 
 `instantiate` runs the same check before it builds anything. See
-[Typed configs](../objects/typed-configs/index.md) and [Validation](../objects/validation/index.md).
+[Schemas](../objects/schemas/index.md) and [Validation](../objects/validation/index.md).
 
 ## 6. Use it in your service
 

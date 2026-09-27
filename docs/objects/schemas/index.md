@@ -1,4 +1,4 @@
-# Typed configs
+# Schemas
 
 A class that subclasses `Configurable[TConfig]`, with a dataclass `TConfig`, has a
 schema. Its config is checked against the dataclass before any object is built, and
@@ -64,7 +64,7 @@ and the constructor differ, as the cache does with its `ttl`:
 
 Keep `**kwargs` in the signature: arguments given to a partial from `prepare` arrive
 there. Any class with a `from_config` classmethod works the same
-([Building objects](../building-objects/index.md#rules)).
+([Instantiation](../instantiation/index.md#rules)).
 
 Children that code chooses, rather than the user, are created with `make_node`.
 `App.from_config` builds an in-memory cache when the config has none, which is why
@@ -94,7 +94,7 @@ A class that subclasses `Configurable[TConfig]` with a dataclass `TConfig` has a
 **schema**. Its config is validated and built into a `TConfig` instance, the typed
 config, which `from_config` receives. Any other class, including a bare
 `Configurable` or one with a `TypedDict` or `Mapping` `TConfig`, is built as in
-[Building objects](../building-objects/index.md#rules).
+[Instantiation](../instantiation/index.md#rules).
 
 **Schema lookup.** The `TConfig` argument is found by walking the original bases
 of the `$class` and substituting type variables, so `class Sub(Mixin[int], Model)`
@@ -158,7 +158,7 @@ recursive: that field holds an object.
    converted into the schema's own types. Object and `Any` values never enter
    OmegaConf.
 4. Build the object and `Any` fields, children first, as in
-   [Building objects](../building-objects/index.md#rules). A plain mapping in a field
+   [Instantiation](../instantiation/index.md#rules). A plain mapping in a field
    annotated with a dataclass is a section, built the same way. A built object's
    type is not checked again.
 5. Call `TConfig(**fields)`, so `__post_init__` runs.

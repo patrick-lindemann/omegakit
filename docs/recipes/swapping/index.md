@@ -27,5 +27,5 @@ The code that uses `app.database` never names a class, and a class that is not a
 `Database` is rejected before anything is built. Override `$class` alone only when
 the new class takes the same settings; otherwise swap the whole node, so that no
 setting of the old class is left behind. See
-[Building objects](../../objects/building-objects/index.md) and
-[Typed configs](../../objects/typed-configs/index.md).
+[Instantiation](../../objects/instantiation/index.md) and
+[Schemas](../../objects/schemas/index.md).

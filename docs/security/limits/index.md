@@ -7,7 +7,7 @@ config that passes them still runs code.
 
 `validate`, `instantiate` and `prepare` take `allowed_modules`, and
 `omegakit check` takes `--allow-module NAME`, repeatable. They limit which modules
-`$class` and `$ref` may name. [Building objects](../../objects/building-objects/index.md) shows
+`$class` and `$ref` may name. [Instantiation](../../objects/instantiation/index.md) shows
 an override that is rejected.
 
 - `None`, the default, allows every module, and `[]` none. Any iterable of module

@@ -16,7 +16,7 @@
 .. autofunction:: omegakit.make_node
 ```
 
-## Typed configs
+## Schemas
 
 ```{eval-rst}
 .. autofunction:: omegakit.check_schema

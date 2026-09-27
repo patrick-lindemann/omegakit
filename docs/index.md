@@ -38,7 +38,7 @@ app = instantiate(load_config("configs/app.yaml"), App)  # with APP_ENV=prod
   [compares with Hydra and other libraries](comparison/index.md).
 - **Looking up a feature:** one page per feature, in the order you meet them.
   [Configs](configs/loading/index.md) covers how files are loaded and combined,
-  [Objects](objects/building-objects/index.md) how objects are built and checked,
+  [Building objects](objects/instantiation/index.md) how objects are built and checked,
   and [Tools](tools/command-line/index.md) the command line and editor support.
 - **A complete pattern:** the recipes, such as
   [swapping an implementation](recipes/swapping/index.md) or
@@ -73,11 +73,11 @@ configs/missing-values/index
 ```
 
 ```{toctree}
-:caption: Objects
+:caption: Building objects
 :hidden:
 
-objects/building-objects/index
-objects/typed-configs/index
+objects/instantiation/index
+objects/schemas/index
 objects/validation/index
 ```
 
