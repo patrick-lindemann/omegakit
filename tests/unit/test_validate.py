@@ -140,9 +140,15 @@ def test_validate_accepts_subclasses_for_object_fields():
 
 
 def test_validate_rejects_other_classes_for_object_fields():
-    config = _model(encoder={"$class": "tests.schemas.Decoder"})
-    with pytest.raises(ConfigValidationError, match="`encoder` expects Encoder"):
-        validate(config)
+    config = {
+        "$class": "tests.helpers.Recorder",
+        "model": _model(encoder={"$class": "tests.schemas.Decoder"}),
+    }
+    for check in (validate, instantiate):
+        with pytest.raises(
+            ConfigValidationError, match=r"`model\.encoder` expects Encoder.*Decoder"
+        ):
+            check(config)
 
 
 def test_validate_skips_the_class_check_for_functions_and_partials():

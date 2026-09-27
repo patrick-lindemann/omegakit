@@ -74,22 +74,6 @@ def test_schema_object_field_is_built():
     assert obj.fields["encoder"].width == 4
 
 
-def test_schema_object_field_of_wrong_type_raises_with_path():
-    with pytest.raises(
-        ConfigValidationError, match=r"`point\.encoder` expects Encoder.*Decoder"
-    ):
-        instantiate(
-            {
-                "$class": "tests.helpers.Container",
-                "name": "c",
-                "point": {
-                    "$class": FIELDS,
-                    "encoder": {"$class": "tests.schemas.Decoder"},
-                },
-            }
-        )
-
-
 def test_schema_object_field_rejects_plain_mapping():
     with pytest.raises(ConfigValidationError, match="mapping without `\\$class`"):
         instantiate({"$class": FIELDS, "encoder": {"width": 4}})

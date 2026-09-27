@@ -144,19 +144,6 @@ def test_scenario_node_child_validated_against_its_schema():
         instantiate({"$class": "tests.schemas.Wrapper", "width": "wide"})
 
 
-def test_scenario_object_field_of_wrong_class(write_yaml):
-    """Loaded config + object field: a wrong `$class` fails with the node path."""
-    cfg = load_config(
-        write_yaml(
-            "main.yaml",
-            MODEL_YAML + "  encoder:\n    $class: tests.schemas.Decoder\n",
-        ),
-        overrides=["model.depth=1"],
-    )
-    with pytest.raises(ConfigValidationError, match=r"`encoder`.*Decoder"):
-        instantiate(cfg.model)
-
-
 def test_scenario_resolver_object_in_any_field(write_yaml):
     """Resolver + `Any` field: an object returned by a resolver is passed through."""
     encoder = schemas.Encoder(9)
