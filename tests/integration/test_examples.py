@@ -8,10 +8,10 @@ import pytest
 
 from omegakit import instantiate
 
-# Runs the getting-started and webapp scripts as a reader would, from anywhere.
+# Runs the example applications as a reader would, from anywhere.
 
 DOCS = Path(__file__).parents[2] / "docs"
-EXAMPLES = [DOCS / "getting-started" / "main.py", DOCS / "webapp" / "main.py"]
+EXAMPLES = [DOCS / "webapp" / "main.py"]
 
 
 @pytest.mark.parametrize(

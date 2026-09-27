@@ -1,0 +1,15 @@
+data:
+  $class: curvefit.data.Synthetic
+  function:
+    $ref: curvefit.data.sine
+  noise: 0.1
+  n: 200
+  seed: 0
+model:
+  $class: curvefit.models.Polynomial
+  degree: 3
+optimizer:
+  $class: curvefit.optim.SGD
+  $partial: true
+  lr: 0.1
+  momentum: 0.9

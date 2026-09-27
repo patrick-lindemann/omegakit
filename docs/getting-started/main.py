@@ -1,31 +1,35 @@
 import os
-from pathlib import Path
+import random
 
-from plain import Database, Postgres, Server, SQLite
+from curvefit import Experiment
+from curvefit.metrics import mse
 
-from omegakit import instantiate, load_config
+from omegakit import ConfigValidationError, instantiate, load_config
 
-here = Path(__file__).parent
+config = load_config("experiment.yaml")
+model = instantiate(config.model)
+print(type(model).__name__, model.degree)
 
-# Step 1: load a file and read values.
-config = load_config(here / "step1.yaml")
-assert config.server.port == 8000
+random.seed(0)
+model = instantiate(config.model)
+data = instantiate(config.data)
+optimizer = instantiate(config.optimizer)(model.parameters())
 
-# Step 2: build an object from a node.
-config = load_config(here / "step2.yaml")
-server = instantiate(config.server, schema=Server)
-assert (server.host, server.port) == ("127.0.0.1", 8000)
+xs, ys = data.samples()
+for _ in range(100):
+    optimizer.zero_grad()
+    model.backward(xs, ys)
+    optimizer.step()
+print(f"mse {mse(model.predict(xs), ys):.4f}")
 
-# Steps 3 and 4: one file per environment, values from outside.
-os.environ["APP_ENV"] = "prod"
-os.environ["SECRET_KEY"] = "from-the-environment"
-config = load_config(here / "configs" / "app.yaml", overrides=["server.port=9000"])
-server = instantiate(config.server, schema=Server)
-database = instantiate(config.database, schema=Database)
-assert (server.host, server.port) == ("0.0.0.0", 9000)
-assert server.secret_key == "from-the-environment"
-assert isinstance(database, Postgres)
+os.chdir("../curvefit")
 
-os.environ["APP_ENV"] = "dev"
-config = load_config(here / "configs" / "app.yaml")
-assert isinstance(instantiate(config.database, schema=Database), SQLite)
+config = load_config("configs/experiments/linear-sgd.yaml")
+experiment = instantiate(config, schema=Experiment)
+print(experiment.name, type(experiment.model).__name__, experiment.run_dir)
+
+config = load_config("configs/experiments/poly3-adam.yaml", overrides=["model.degre=5"])
+try:
+    instantiate(config, schema=Experiment)
+except ConfigValidationError as error:
+    print(error)

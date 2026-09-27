@@ -15,8 +15,7 @@ CURVEFIT = DOCS / "curvefit"
 SECTIONS = [
     path
     for path in DOCS.iterdir()
-    if path.is_dir()
-    and path.name not in {"_build", "webapp", "curvefit", "getting-started"}
+    if path.is_dir() and path.name not in {"_build", "webapp", "curvefit"}
 ]
 YAML_FILES = sorted(path for section in SECTIONS for path in section.rglob("*.yaml"))
 SCRIPTS = sorted(path for section in SECTIONS for path in section.rglob("main.py"))
