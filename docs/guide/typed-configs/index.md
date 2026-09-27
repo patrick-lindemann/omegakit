@@ -7,12 +7,12 @@ Classes without a schema keep working as plain `$class` targets.
 
 `webapp`'s server is the simplest case:
 
-```{literalinclude} ../webapp/webapp/server.py
+```{literalinclude} ../../webapp/webapp/server.py
 :language: python
 :caption: webapp/server.py
 ```
 
-```{literalinclude} typed-configs/main.py
+```{literalinclude} main.py
 :language: python
 :caption: main.py
 ```
@@ -35,7 +35,7 @@ to catch a mismatch without a config.
 
 The application's schema shows the three kinds of field:
 
-```{literalinclude} ../webapp/webapp/__init__.py
+```{literalinclude} ../../webapp/webapp/__init__.py
 :language: python
 :caption: webapp/__init__.py (excerpt)
 :pyobject: AppConfig
@@ -57,20 +57,20 @@ The application's schema shows the three kinds of field:
 calls the constructor. The default passes every field. Override it when the config
 and the constructor differ, as the cache does with its `ttl`:
 
-```{literalinclude} ../webapp/webapp/cache.py
+```{literalinclude} ../../webapp/webapp/cache.py
 :language: python
 :caption: webapp/cache.py
 ```
 
 Keep `**kwargs` in the signature: arguments given to a partial from `prepare` arrive
 there. Any class with a `from_config` classmethod works the same
-([Building objects](building-objects.md#rules)).
+([Building objects](../building-objects/index.md#rules)).
 
 Children that code chooses, rather than the user, are created with `make_node`.
 `App.from_config` builds an in-memory cache when the config has none, which is why
 `cache=null` gave a `MemoryCache` above:
 
-```{literalinclude} ../webapp/webapp/__init__.py
+```{literalinclude} ../../webapp/webapp/__init__.py
 :language: python
 :pyobject: App.from_config
 ```
@@ -80,7 +80,7 @@ Children that code chooses, rather than the user, are created with `make_node`.
 A `from_config` that returns a subclass annotates the base class as its return
 type, since `Self` would claim the class it was called on:
 
-```{literalinclude} typed-configs/notify.py
+```{literalinclude} notify.py
 :language: python
 :caption: notify.py
 ```
@@ -94,7 +94,7 @@ A class that subclasses `Configurable[TConfig]` with a dataclass `TConfig` has a
 **schema**. Its config is validated and built into a `TConfig` instance, the typed
 config, which `from_config` receives. Any other class, including a bare
 `Configurable` or one with a `TypedDict` or `Mapping` `TConfig`, is built as in
-[Building objects](building-objects.md#rules).
+[Building objects](../building-objects/index.md#rules).
 
 **Schema lookup.** The `TConfig` argument is found by walking the original bases
 of the `$class` and substituting type variables, so `class Sub(Mixin[int], Model)`
@@ -107,7 +107,7 @@ raises `TypeError`. The result is cached per class.
 | Annotation | Config value | Checked by | Typed config holds |
 |---|---|---|---|
 | **native**: `int`, `float`, `bool`, `str`, `bytes`, `Path`, `Enum`, `Literal` of `str`, `int` or `bool`, `TypedDict`, dataclasses whose fields are all native, `list`, `dict`, `tuple`, `Sequence` and `Mapping` of these, and unions of these, optional or not | plain values | OmegaConf, then omegakit | the converted value |
-| **object**: any other class, generic classes, unions of classes, `list` or `dict` of these, optional or not, also through a `type` alias | a `$class` or `$ref` node, a list or mapping of them, or `null` if optional | the class check ([Validation](validation.md#rules)), then the node's own schema | the built object |
+| **object**: any other class, generic classes, unions of classes, `list` or `dict` of these, optional or not, also through a `type` alias | a `$class` or `$ref` node, a list or mapping of them, or `null` if optional | the class check ([Validation](../validation/index.md#rules)), then the node's own schema | the built object |
 | **`Any`** | anything | not checked, but `$class` nodes inside are | the value, with `$class` nodes built |
 
 - Behaviour does not depend on the OmegaConf version.
@@ -157,7 +157,7 @@ recursive: that field holds an object.
    converted into the schema's own types. Object and `Any` values never enter
    OmegaConf.
 4. Build the object and `Any` fields, children first, as in
-   [Building objects](building-objects.md#rules). A plain mapping in a field
+   [Building objects](../building-objects/index.md#rules). A plain mapping in a field
    annotated with a dataclass is a section, built the same way. A built object's
    type is not checked again.
 5. Call `TConfig(**fields)`, so `__post_init__` runs.

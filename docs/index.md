@@ -34,24 +34,24 @@ app = instantiate(load_config("configs/app.yaml"), App)  # with APP_ENV=prod
 
 ## Where to go
 
-- **New to omegakit:** [Getting started](getting-started.md), and how omegakit
+- **New to omegakit:** [Getting started](getting-started/index.md), and how omegakit
   [compares with Hydra and other libraries](comparison.md).
-- **Looking up a feature:** the guide, from [Loading](guide/loading.md) and
-  [Imports](guide/imports.md) to [Validation](guide/validation.md) and the
-  [Command line](guide/command-line.md).
+- **Looking up a feature:** the guide, from [Loading](guide/loading/index.md) and
+  [Imports](guide/imports/index.md) to [Validation](guide/validation/index.md) and the
+  [Command line](guide/command-line/index.md).
 - **A complete pattern:** the recipes, such as
-  [swapping an implementation](recipes/swapping.md) or
-  [a manifest of similar things](recipes/manifests.md).
+  [swapping an implementation](recipes/swapping/index.md) or
+  [a manifest of similar things](recipes/manifests/index.md).
 - **The exact rules:** the Rules section at the end of each guide page, and the
   [API](api.md).
 
 Configs import and call Python code, so load them only from sources you trust.
-[Security](security.md) lists what runs and how to log a config without its secrets.
+[Security](security/index.md) lists what runs and how to log a config without its secrets.
 
 ```{toctree}
 :hidden:
 
-getting-started
+getting-started/index
 comparison
 ```
 
@@ -59,34 +59,34 @@ comparison
 :caption: Guide
 :hidden:
 
-guide/loading
-guide/imports
-guide/base
-guide/defaults
-guide/overrides
-guide/interpolation-and-missing
-guide/building-objects
-guide/typed-configs
-guide/validation
-guide/editor-schemas
-guide/resolvers
-guide/command-line
+guide/loading/index
+guide/imports/index
+guide/base/index
+guide/defaults/index
+guide/overrides/index
+guide/interpolation-and-missing/index
+guide/building-objects/index
+guide/typed-configs/index
+guide/validation/index
+guide/editor-schemas/index
+guide/resolvers/index
+guide/command-line/index
 ```
 
 ```{toctree}
 :caption: Security
 :hidden:
 
-security
+security/index
 ```
 
 ```{toctree}
 :caption: Recipes
 :hidden:
 
-recipes/swapping
-recipes/manifests
-recipes/tenants
+recipes/swapping/index
+recipes/manifests/index
+recipes/tenants/index
 ```
 
 ```{toctree}

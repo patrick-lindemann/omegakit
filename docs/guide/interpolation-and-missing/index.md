@@ -6,19 +6,19 @@ resolve against the assembled config, when a value is read, validated or built.
 `webapp`'s shared settings build the cache URL from the server's host, and leave the
 secret key open for each environment to fill:
 
-```{literalinclude} ../webapp/configs/base.yaml
+```{literalinclude} ../../webapp/configs/base.yaml
 :language: yaml
 :caption: configs/base.yaml (excerpt)
 :end-before: "database:"
 ```
 
-```{literalinclude} ../webapp/configs/base.yaml
+```{literalinclude} ../../webapp/configs/base.yaml
 :language: yaml
 :start-at: "cache:"
 :end-before: "jobs:"
 ```
 
-```{literalinclude} interpolation-and-missing/main.py
+```{literalinclude} main.py
 :language: python
 :caption: main.py
 ```
@@ -45,11 +45,11 @@ the key.
 A file such as `base.yaml` is incomplete on purpose. `validate(base,
 allow_missing=True)` still checks every value it does give, and
 `omegakit check base.yaml --allow-missing` does the same from the command line
-([Validation](validation.md)).
+([Validation](../validation/index.md)).
 
 ## Rules
 
-- [Loading](loading.md#rules) says which few values resolve while loading. Every
+- [Loading](../loading/index.md#rules) says which few values resolve while loading. Every
   other `${…}` resolves when it is read, validated or built, against the
   assembled config. A relative interpolation resolves at the node's final
   position.

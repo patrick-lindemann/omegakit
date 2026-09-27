@@ -3,7 +3,7 @@
 Overrides change values after a config is assembled, and win over everything in the
 files. Environment variables come in through OmegaConf's `oc.env` resolver.
 
-```{literalinclude} overrides/main.py
+```{literalinclude} main.py
 :language: python
 :caption: main.py
 ```
@@ -26,7 +26,7 @@ node they build and leave the config you passed unchanged.
 
 Overrides arrive after the files are assembled, so an `~import`, `$base` or
 `$defaults` inside an override stays literal. They carry the same trust as the
-files, so never build them from untrusted input ([Security](../security.md)).
+files, so never build them from untrusted input ([Security](../../security/index.md)).
 
 ## Environment variables
 
@@ -42,7 +42,7 @@ before loading the config.
 
 A resolved config holds the real secret, as the third line of the output shows. To
 log a config with its secrets masked, see
-[Logging without secrets](../security.md#logging-without-secrets).
+[Logging without secrets](../../security/index.md#logging-without-secrets).
 
 ## Rules
 
@@ -57,5 +57,5 @@ log a config with its secrets masked, see
   override stays literal. `$meta`, and with `keep_targets=False` also `$class`,
   `$ref` and `$partial`, are stripped from overrides too.
 - Overrides win over every value from the files
-  ([Precedence](loading.md#rules)). `instantiate` and `prepare` merge theirs into
+  ([Precedence](../loading/index.md#rules)). `instantiate` and `prepare` merge theirs into
   a copy of the node and leave the config passed in unchanged.

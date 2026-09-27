@@ -4,7 +4,7 @@
 function, `$ref` imports an object without calling it, and `$partial` defers a call.
 `webapp` builds its whole application from the root file:
 
-```{literalinclude} building-objects/main.py
+```{literalinclude} main.py
 :language: python
 :caption: main.py
 ```
@@ -24,7 +24,7 @@ sent 'Special offer'
 arguments. Nested nodes with `$class`, in mappings and lists, are built first, so
 `App` receives a built server, database and jobs. A class with a `from_config`
 method, such as every `Configurable`, receives the arguments through it instead;
-see [Typed configs](typed-configs.md). The node passed to `instantiate` must have
+see [Typed configs](../typed-configs/index.md). The node passed to `instantiate` must have
 `$class`.
 
 The second argument, `instantiate(config, App)`, gives the result its type for your
@@ -36,7 +36,7 @@ built.
 A `$ref` node is replaced by the object it names, without calling it. The `cleanup`
 job's handler is the function itself:
 
-```{literalinclude} ../webapp/configs/jobs.yaml
+```{literalinclude} ../../webapp/configs/jobs.yaml
 :language: yaml
 :caption: configs/jobs.yaml
 :start-at: "cleanup:"
@@ -48,7 +48,7 @@ job's handler is the function itself:
 `digest` handler is `send_digest` with its subject filled in, and a call can still
 change the subject:
 
-```{literalinclude} ../webapp/configs/jobs.yaml
+```{literalinclude} ../../webapp/configs/jobs.yaml
 :language: yaml
 :start-at: "digest:"
 :end-before: "$meta:"
@@ -62,16 +62,16 @@ arguments. Arguments passed to a partial win over the config's.
 
 `$meta` holds notes for people and tools, such as the `digest` job's owner. It is
 never passed to a constructor or to `from_config`, and `load_config` removes it
-unless you pass `keep_meta=True` ([Loading](loading.md)).
+unless you pass `keep_meta=True` ([Loading](../loading/index.md)).
 
 ## Checking before building
 
-`instantiate` and `prepare` check the node as [`validate`](validation.md) does
+`instantiate` and `prepare` check the node as [`validate`](../validation/index.md) does
 before they build anything, so a mistake raises `ConfigValidationError` before any
 configured class is called. `allowed_modules=["webapp"]` limits `$class` and `$ref`
 to your own package: the override above swapped in `subprocess.Popen`, and the
 module was never imported. It is a limit, not a sandbox; see
-[Security](../security.md).
+[Security](../../security/index.md).
 
 An exception raised by a constructor or `from_config` keeps its type and message,
 and gets a note naming the node, such as `while instantiating jobs.digest
@@ -85,8 +85,8 @@ and gets a note naming the node, such as `while instantiating jobs.digest
   the attribute is imported and called with the node's other keys as keyword
   arguments.
 - `instantiate` and `prepare` first merge `overrides`
-  ([Overrides](overrides.md#rules)), resolve the node and validate it as
-  `validate` does ([Validation](validation.md#rules)), with the same
+  ([Overrides](../overrides/index.md#rules)), resolve the node and validate it as
+  `validate` does ([Validation](../validation/index.md#rules)), with the same
   `allowed_modules`, and only then build. A config error, a `???`, a failing
   interpolation and an exception from a resolver all raise `ConfigValidationError`
   before any configured class is called. OmegaConf's error is the `__cause__`, and
@@ -94,7 +94,7 @@ and gets a note naming the node, such as `while instantiating jobs.digest
 - A target with a `from_config` attribute is built with `from_config(arguments)`
   instead. The lookup is by name, so any class with that classmethod works,
   `Configurable` or not. `arguments` is a `dict` of the built arguments, or the
-  typed config when the class has a schema ([Typed configs](typed-configs.md)).
+  typed config when the class has a schema ([Typed configs](../typed-configs/index.md)).
 - Nested `$class` nodes, in mappings and lists, are built before their parent,
   which receives the objects.
 - A `dict` passed in is converted with `OmegaConf.create` and treated like a
@@ -127,7 +127,7 @@ It allows no other key except `$meta`. The node passed to `instantiate` must hav
 
 **Reserved keys.**
 
-- Every key that starts with `$` is reserved. The [API](../api.md#special-keys)
+- Every key that starts with `$` is reserved. The [API](../../api.md#special-keys)
   lists the defined ones. `~import` is a value prefix, not a key.
 - `load_config` keeps unknown `$` keys. Validating or building rejects a `$` key
   where it is not allowed, with `ConfigValidationError`: a `$class` node allows

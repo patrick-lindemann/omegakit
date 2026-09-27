@@ -8,6 +8,6 @@ Fixes go into the latest release only.
 
 omegakit is not meant for untrusted configs: loading, validating and checking a
 config import and run code. The
-[Security](https://omegakit.readthedocs.io/en/latest/security.html) page of the
+[Security](https://omegakit.readthedocs.io/en/latest/security/) page of the
 documentation lists what runs, and reports about behaviour it already describes are not
 vulnerabilities.

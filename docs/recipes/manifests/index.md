@@ -5,12 +5,12 @@ queues, feeds. Put them in one mapping, give it the shared settings with
 `$defaults`, let one entry extend another with `$base`, and record who owns each
 entry with `$meta`.
 
-```{literalinclude} manifests/jobs.yaml
+```{literalinclude} jobs.yaml
 :language: yaml
 :caption: jobs.yaml
 ```
 
-```{literalinclude} manifests/main.py
+```{literalinclude} main.py
 :language: python
 :caption: main.py
 ```
@@ -27,5 +27,5 @@ cleanup: every 1h, retries 1, owner platform
 Every entry is a `Job`, because `$defaults` gives each one `$class`. The monthly
 digest copies the weekly one and changes its subject and schedule, and `cleanup`
 keeps its own `retries`. `keep_meta=True` keeps the owners for the report; a
-constructor never sees them. See [Defaults](../guide/defaults.md),
-[Base](../guide/base.md) and [Building objects](../guide/building-objects.md).
+constructor never sees them. See [Defaults](../../guide/defaults/index.md),
+[Base](../../guide/base/index.md) and [Building objects](../../guide/building-objects/index.md).

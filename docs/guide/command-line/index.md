@@ -20,7 +20,7 @@ redis://example.com:6379
 
 ## `check`
 
-`check` loads each file with the overrides and runs [`validate`](validation.md). It
+`check` loads each file with the overrides and runs [`validate`](../validation/index.md). It
 prints one line per invalid file and nothing for valid ones, and exits with 1 if
 any file is invalid. `--schema` names the class every root must build,
 `--allow-missing` accepts `???` in files such as `base.yaml` that others complete,
@@ -41,7 +41,7 @@ repos:
 ```
 
 `check` runs code from the files it checks, so run it on trusted content only.
-[Security](../security.md) says what runs and how to set up CI.
+[Security](../../security/index.md) says what runs and how to set up CI.
 
 ## `show`
 
@@ -49,12 +49,12 @@ repos:
 overrides produced. Values stay as written unless you pass `--resolve`, so an
 `${oc.env:...}` shows the variable's name, not its value. `--node` prints one node,
 by the same dotted path as `~import file#node`. Secrets are masked as by
-`mask_secrets` ([Security](../security.md#logging-without-secrets)).
+`mask_secrets` ([Security](../../security/index.md#logging-without-secrets)).
 
 ## `json-schema`
 
 `json-schema` writes the JSON Schema of a class for your editor; see
-[Editor schemas](editor-schemas.md).
+[Editor schemas](../editor-schemas/index.md).
 
 ## Rules
 
@@ -73,12 +73,12 @@ path that cannot be imported, or an `--import-root` that is not a directory.
 
 **`omegakit check CONFIG... [KEY=VALUE...] [--schema IMPORT_PATH] [--allow-missing]
 [--allow-module NAME]... [--import-root DIR]`** validates each file
-([Validation](validation.md#rules)).
+([Validation](../validation/index.md#rules)).
 
 - `--schema` is passed as `validate`'s `schema`, `--allow-missing` as
   `allow_missing`, and each `--allow-module` adds an entry to `allowed_modules`
-  ([Security](../security.md#allowed-modules)). `--import-root` is passed to
-  `load_config` as `import_root` ([Imports](imports.md#rules)).
+  ([Security](../../security/index.md#allowed-modules)). `--import-root` is passed to
+  `load_config` as `import_root` ([Imports](../imports/index.md#rules)).
 - It prints `<file>: <exception type>: <message>` for each invalid file and
   nothing for valid ones. Any exception, and a `SystemExit` raised by an imported
   module, marks that file invalid, and the other files are still checked.

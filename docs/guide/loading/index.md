@@ -3,12 +3,12 @@
 `load_config` reads a YAML file and assembles it into an OmegaConf `DictConfig`.
 The `webapp` root file holds two keys, and everything else arrives while loading:
 
-```{literalinclude} ../webapp/configs/app.yaml
+```{literalinclude} ../../webapp/configs/app.yaml
 :language: yaml
 :caption: configs/app.yaml
 ```
 
-```{literalinclude} loading/main.py
+```{literalinclude} main.py
 :language: python
 :caption: main.py
 :end-before: keep_meta
@@ -25,11 +25,11 @@ them, not to the working directory, so the config loads from anywhere.
 
 ## The order of assembly
 
-1. Every `~import` is replaced by the file or node it names ([Imports](imports.md)).
-2. Every `$base` is merged underneath its node ([Base](base.md)).
-3. Every `$defaults` is merged under its siblings ([Defaults](defaults.md)).
+1. Every `~import` is replaced by the file or node it names ([Imports](../imports/index.md)).
+2. Every `$base` is merged underneath its node ([Base](../base/index.md)).
+3. Every `$defaults` is merged under its siblings ([Defaults](../defaults/index.md)).
 4. The overrides are merged on top
-   ([Overrides and environment variables](overrides.md)).
+   ([Overrides and environment variables](../overrides/index.md)).
 5. `$meta` is removed, unless you pass `keep_meta=True`.
 
 This order explains what works together. `$base: ~import base.yaml` works, because
@@ -39,15 +39,15 @@ add an `~import`, a `$base` or a `$defaults`, because it arrives after assembly.
 
 Only three things resolve while loading: `~import` paths, and the values of `$base`
 and `$defaults`. Every other `${…}` stays as written until a value is read,
-validated or built ([Interpolation and missing values](interpolation-and-missing.md)).
+validated or built ([Interpolation and missing values](../interpolation-and-missing/index.md)).
 
 ## Metadata and plain data
 
-`$meta` holds notes for people and tools ([Building objects](building-objects.md)).
+`$meta` holds notes for people and tools ([Building objects](../building-objects/index.md)).
 `load_config` removes it unless you ask for it. `walk` visits every mapping of a
 config, parents first, so a script can collect it:
 
-```{literalinclude} loading/main.py
+```{literalinclude} main.py
 :language: python
 :start-at: keep_meta
 ```
@@ -91,9 +91,9 @@ plain data for code that builds nothing.
   waits while its reference points at a node that still holds the same key, or at
   a key that does not exist yet, and the ancestors of a waiting node wait too. A
   reference that never resolves, and references that form a cycle, raise
-  `ConfigValidationError` naming the nodes. [Base](base.md#rules) and
-  [Defaults](defaults.md#rules) say what each reference sees.
+  `ConfigValidationError` naming the nodes. [Base](../base/index.md#rules) and
+  [Defaults](../defaults/index.md#rules) say what each reference sees.
 
 **Errors.** A missing root file raises `FileNotFoundError`. Every other problem in
 a file's content raises `ConfigValidationError`, with the original error as its
-`__cause__`. The [Errors](../errors.md) table lists them.
+`__cause__`. The [Errors](../../errors.md) table lists them.

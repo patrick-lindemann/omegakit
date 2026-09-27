@@ -18,7 +18,7 @@ a Python file: load it only from sources you trust.
 - Validating and building import the modules that `$class` and `$ref` name, which
   runs their import-time code. Validation calls no configured class, but some
   code of the schemas and imported classes still runs
-  ([Validation](guide/validation.md#rules)).
+  ([Validation](../guide/validation/index.md#rules)).
 - Building calls the classes and functions the config names.
 - Overrides carry the same trust as the files. An override can set `$class` or
   `$ref`, or read an environment variable. Never build overrides from requests or
@@ -43,7 +43,7 @@ config that passes them still runs code.
 
 `validate`, `instantiate` and `prepare` take `allowed_modules`, and
 `omegakit check` takes `--allow-module NAME`, repeatable. They limit which modules
-`$class` and `$ref` may name. [Building objects](guide/building-objects.md) shows
+`$class` and `$ref` may name. [Building objects](../guide/building-objects/index.md) shows
 an override that is rejected.
 
 - `None`, the default, allows every module, and `[]` none. Any iterable of module
@@ -70,7 +70,7 @@ an override that is rejected.
 
 By default an `~import` may read any file the process can read. `load_config`
 takes `import_root`, and `omegakit check` and `omegakit show` take
-`--import-root DIR`, to keep imports inside one directory. [Imports](guide/imports.md)
+`--import-root DIR`, to keep imports inside one directory. [Imports](../guide/imports/index.md)
 shows an example and lists the rules.
 
 ## Checking configs in CI
@@ -88,7 +88,7 @@ shows an example and lists the rules.
 A resolved config holds the real value of every secret, and so do the objects built
 from it. Log `mask_secrets(config)` instead:
 
-```{literalinclude} security/main.py
+```{literalinclude} main.py
 :language: python
 :caption: main.py
 ```
@@ -104,7 +104,7 @@ secret_key: '***'
 
 `mask_secrets(config, keys=["salt"])` adds your own words to the list below.
 `omegakit show` masks by key, and with `--resolve` also by environment variable and
-by value ([Command line](guide/command-line.md#rules)). Keep secrets out of arguments that components
+by value ([Command line](../guide/command-line/index.md#rules)). Keep secrets out of arguments that components
 save, such as hyperparameters in checkpoints.
 
 Masking is a safety net, not a guarantee. It cannot see a secret under a key that

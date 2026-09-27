@@ -2,7 +2,7 @@
 
 A resolver is a function inside an interpolation, such as `${oc.env:SECRET_KEY}`.
 OmegaConf provides `oc.env` and a few others, which are always available;
-[Overrides and environment variables](overrides.md) shows `oc.env` in use. omegakit
+[Overrides and environment variables](../overrides/index.md) shows `oc.env` in use. omegakit
 adds optional resolvers. Each lives in its own module under `omegakit.resolvers`,
 and you register the ones you need before loading a config.
 
@@ -11,7 +11,7 @@ and you register the ones you need before loading a config.
 `register_paths_resolver` registers `${paths:<key>}`, so a config can name
 directories that the application decides:
 
-```{literalinclude} resolvers/main.py
+```{literalinclude} main.py
 :language: python
 :caption: main.py
 ```
@@ -43,7 +43,7 @@ register_torch_resolvers()
 ```
 
 `register_torch_dtype_resolver()` and `register_cuda_available_resolver()` register
-one each. The [API](../api.md#resolvers) lists every resolver module.
+one each. The [API](../../api.md#resolvers) lists every resolver module.
 
 ## Rules
 

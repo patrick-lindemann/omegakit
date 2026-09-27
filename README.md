@@ -44,14 +44,14 @@ chose Postgres. `webapp` is the example application of the
 ## What you can do
 
 - One config per environment, sharing a base:
-  [One config per environment](https://omegakit.readthedocs.io/en/latest/recipes/environments.html)
+  [Getting started](https://omegakit.readthedocs.io/en/latest/getting-started/#one-file-per-environment)
 - Swap Postgres for SQLite in development and tests:
-  [Swapping an implementation](https://omegakit.readthedocs.io/en/latest/recipes/swapping.html)
+  [Swapping an implementation](https://omegakit.readthedocs.io/en/latest/recipes/swapping/)
 - Check configs before anything runs, and get completion in your editor:
-  [Validation](https://omegakit.readthedocs.io/en/latest/guide/validation.html),
-  [Editor schemas](https://omegakit.readthedocs.io/en/latest/guide/editor-schemas.html)
+  [Validation](https://omegakit.readthedocs.io/en/latest/guide/validation/),
+  [Editor schemas](https://omegakit.readthedocs.io/en/latest/guide/editor-schemas/)
 
-Start with [Getting started](https://omegakit.readthedocs.io/en/latest/getting-started.html),
+Start with [Getting started](https://omegakit.readthedocs.io/en/latest/getting-started/),
 or see how omegakit
 [compares with Hydra and other libraries](https://omegakit.readthedocs.io/en/latest/comparison.html).
 
@@ -60,7 +60,7 @@ or see how omegakit
 Configs import and call Python code: loading, validating and checking one imports
 the modules it names and runs its resolvers. Load configs only from trusted sources,
 and log them with `mask_secrets`. The
-[Security](https://omegakit.readthedocs.io/en/latest/security.html) page lists what
+[Security](https://omegakit.readthedocs.io/en/latest/security/) page lists what
 runs.
 
 omegakit supports OmegaConf 2.3 and 2.4. It builds on OmegaConf but is not affiliated

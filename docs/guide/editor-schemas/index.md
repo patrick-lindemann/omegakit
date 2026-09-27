@@ -12,7 +12,7 @@ The first line of each config file names the schema, which is how the YAML
 extension for VS Code by Red Hat, and other editors that use yaml-language-server,
 find it:
 
-```{literalinclude} ../webapp/configs/envs/prod.yaml
+```{literalinclude} ../../webapp/configs/envs/prod.yaml
 :language: yaml
 :caption: configs/envs/prod.yaml
 :lines: 1-4

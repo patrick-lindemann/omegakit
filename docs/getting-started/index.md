@@ -10,7 +10,7 @@ pip install omegakit
 
 ## 1. Load a file and read values
 
-```{literalinclude} getting-started/step1.yaml
+```{literalinclude} step1.yaml
 :language: yaml
 :caption: step1.yaml
 ```
@@ -29,7 +29,7 @@ works on it.
 
 The server is a plain class:
 
-```{literalinclude} getting-started/plain.py
+```{literalinclude} plain.py
 :language: python
 :caption: plain.py
 :pyobject: Server
@@ -38,7 +38,7 @@ The server is a plain class:
 `$class` on the node names the class to build, and `instantiate` calls it with the
 node's other keys:
 
-```{literalinclude} getting-started/step2.yaml
+```{literalinclude} step2.yaml
 :language: yaml
 :caption: step2.yaml
 ```
@@ -59,12 +59,12 @@ Development and production share most settings. They go into `base.yaml`, and ea
 environment file keeps only what differs. `~import` pastes another file in, and
 `$base` makes it the layer underneath the node, so the node's own keys win:
 
-```{literalinclude} getting-started/configs/base.yaml
+```{literalinclude} configs/base.yaml
 :language: yaml
 :caption: configs/base.yaml
 ```
 
-```{literalinclude} getting-started/configs/envs/prod.yaml
+```{literalinclude} configs/envs/prod.yaml
 :language: yaml
 :caption: configs/envs/prod.yaml
 ```
@@ -72,7 +72,7 @@ environment file keeps only what differs. `~import` pastes another file in, and
 The root file picks the environment from the `APP_ENV` variable, with `dev` as the
 default:
 
-```{literalinclude} getting-started/configs/app.yaml
+```{literalinclude} configs/app.yaml
 :language: yaml
 :caption: configs/app.yaml
 ```
@@ -93,7 +93,7 @@ config = load_config("configs/app.yaml", overrides=["server.port=9000"])
 ```
 
 A slot that is still `???` fails when the config is validated or built, naming the
-key. See [Overrides and environment variables](guide/overrides.md).
+key. See [Overrides and environment variables](../guide/overrides/index.md).
 
 ## 5. Add a schema
 
@@ -101,7 +101,7 @@ So far a typo such as `worker: 4` is a `TypeError` from the constructor, and
 `port: abc` is accepted without complaint. A dataclass schema catches both. The
 class subclasses `Configurable` with its schema:
 
-```{literalinclude} webapp/webapp/server.py
+```{literalinclude} ../webapp/webapp/server.py
 :language: python
 :caption: webapp/server.py
 ```
@@ -115,7 +115,7 @@ Invalid config in `server.port` (ServerConfig): Value 'abc' of type 'str' could 
 ```
 
 `instantiate` runs the same check before it builds anything. See
-[Typed configs](guide/typed-configs.md) and [Validation](guide/validation.md).
+[Typed configs](../guide/typed-configs/index.md) and [Validation](../guide/validation/index.md).
 
 ## 6. Use it in your service
 
@@ -123,7 +123,7 @@ The complete `webapp` has a root class, `App`, whose schema holds the server, th
 database, an optional cache and scheduled jobs. The entrypoint loads the config,
 logs it with its secrets masked, and builds the app:
 
-```{literalinclude} webapp/main.py
+```{literalinclude} ../webapp/main.py
 :language: python
 :caption: main.py
 ```
@@ -153,7 +153,7 @@ To check the configs before every commit, run `omegakit check` as a
 [pre-commit](https://pre-commit.com) hook. It validates each file against the
 schema of `App`. Checking runs code from the files, so run it only on changes from
 people you trust, and limit the modules a file can name with `--allow-module`
-([Security](security.md)):
+([Security](../security/index.md)):
 
 ```sh
 omegakit check configs/app.yaml --schema webapp.App --allow-module webapp
@@ -162,11 +162,11 @@ omegakit check configs/app.yaml --schema webapp.App --allow-module webapp
 Tests load the same config with an override that puts an in-memory database under
 `database`:
 
-```{literalinclude} webapp/tests/conftest.py
+```{literalinclude} ../webapp/tests/conftest.py
 :language: python
 :caption: tests/conftest.py
 ```
 
 Your editor can complete and check these files too: see
-[Editor schemas](guide/editor-schemas.md). From here, the guide covers each feature,
-starting with [Loading](guide/loading.md).
+[Editor schemas](../guide/editor-schemas/index.md). From here, the guide covers each feature,
+starting with [Loading](../guide/loading/index.md).

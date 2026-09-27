@@ -3,18 +3,18 @@
 `$base` merges shared settings underneath a node. Use it when several files share
 most of their values and differ in a few, as `webapp`'s environments do:
 
-```{literalinclude} ../webapp/configs/base.yaml
+```{literalinclude} ../../webapp/configs/base.yaml
 :language: yaml
 :caption: configs/base.yaml (excerpt)
 :end-before: "cache:"
 ```
 
-```{literalinclude} ../webapp/configs/envs/prod.yaml
+```{literalinclude} ../../webapp/configs/envs/prod.yaml
 :language: yaml
 :caption: configs/envs/prod.yaml
 ```
 
-```{literalinclude} base/main.py
+```{literalinclude} main.py
 :language: python
 :caption: main.py
 ```
@@ -36,7 +36,7 @@ wherever `prod.yaml` ends up, even under the root file's own `$base`.
 
 Lists are replaced, not joined:
 
-```{literalinclude} base/hosts.yaml
+```{literalinclude} hosts.yaml
 :language: yaml
 :caption: hosts.yaml
 ```
@@ -60,7 +60,7 @@ the node's own keys win over all of them.
 A `${…}` base is resolved while assembling, and is a copy taken when it is merged:
 
 - It sees the referenced node with that node's own `$base` merged, and waits
-  until that has happened ([Loading](loading.md#rules)).
+  until that has happened ([Loading](../loading/index.md#rules)).
 - It cannot refer to keys that an enclosing node's own `$base` brings in.
   `replica: {$base: ${db}}` in a file whose root has `$base: ~import common.yaml`,
   with `db` coming from `common.yaml`, raises.
