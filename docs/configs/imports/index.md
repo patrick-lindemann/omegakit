@@ -1,60 +1,67 @@
 # Imports
 
 A string value that starts with `~import` is replaced by another YAML file, or by one
-node of it. `webapp` keeps its scheduled jobs in their own file and imports them
-into the shared settings:
+node of it. `curvefit` keeps the curves it can fit in one file:
 
-```{literalinclude} ../../webapp/configs/jobs.yaml
+```{literalinclude} ../../curvefit/configs/data/presets.yaml
 :language: yaml
-:caption: configs/jobs.yaml
+:caption: configs/data/presets.yaml
 ```
 
-```{literalinclude} ../../webapp/configs/base.yaml
+`base.yaml` imports one of them as the shared settings of its data splits
+([Shared defaults](../shared-defaults/index.md)):
+
+```{literalinclude} ../../curvefit/configs/base.yaml
 :language: yaml
 :caption: configs/base.yaml (excerpt)
-:start-at: "jobs:"
-:end-at: "jobs:"
+:start-at: "data:"
+:end-at: "$defaults:"
 ```
 
-`#jobs` selects the `jobs` node of the file, so `base.yaml` gets the two jobs and
-not a `jobs:` key around them. Without `#`, the whole file is imported. A node path
-has dots between keys and uses numbers for list items, counting from the end when
-negative: `#jobs.digest`, `#hosts.-1`.
+`#sine` selects the `sine` node of the file, so the splits get its keys and not a
+`sine:` key around them. Without `#`, the whole file is imported. A node path has
+dots between keys and uses numbers for list items, counting from the end when
+negative: `#sine.function`, `#items.-1`.
 
-The path is relative to the file that holds it, and may contain interpolations. The
-root file uses one to pick the environment:
+An experiment on another curve imports the other node the same way:
 
-```{literalinclude} ../../webapp/configs/app.yaml
+```{literalinclude} cubic.yaml
 :language: yaml
-:caption: configs/app.yaml
-```
-
-`${oc.env:APP_ENV,dev}` reads the `APP_ENV` environment variable, with `dev` as the
-default. An interpolation in an import path sees resolvers and the keys written in
-the same file, because the rest of the config is not assembled yet.
-
-Every import is an independent copy, so changing one imported node never changes
-another import of the same file. Imports are replaced before any `$base` is merged,
-which is why `$base: ~import ../base.yaml` works in the environment files.
-
-## Keeping imports inside a directory
-
-By default an import may read any file the process can read. `import_root` limits
-imports to one directory:
-
-```{literalinclude} shared.yaml
-:language: yaml
-:caption: shared.yaml
+:caption: cubic.yaml
 ```
 
 ```{literalinclude} main.py
 :language: python
 :caption: main.py
+:end-before: import_root
 ```
 
 ```text
-['digest', 'cleanup']
-Import `~import ../../webapp/configs/base.yaml#server` in `.../configs/imports/shared.yaml` reads `.../webapp/configs/base.yaml`, which is outside the import root `.../configs/imports`.
+curvefit.data.cubic 0.05
+```
+
+The path is relative to the file that holds it, not to the working directory. It
+may contain interpolations, which see resolvers and the keys written in the same
+file, because the rest of the config is not assembled yet.
+
+Every import is an independent copy, so changing one imported node never changes
+another import of the same file. Imports are replaced before any `$base` is merged,
+which is why `$base: ~import ../base.yaml` works in the experiment files.
+
+## Keeping imports inside a directory
+
+By default an import may read any file the process can read. `import_root` limits
+imports to one directory. `curvefit`'s experiments stay inside its `configs`
+directory, and `cubic.yaml` reads from outside its own:
+
+```{literalinclude} main.py
+:language: python
+:start-at: import_root
+```
+
+```text
+['train', 'validation', 'test']
+Import `~import ../../curvefit/configs/experiments/poly3-adam.yaml` in `.../configs/imports/cubic.yaml` reads `.../curvefit/configs/experiments/poly3-adam.yaml`, which is outside the import root `.../configs/imports`.
 ```
 
 `omegakit check` and `omegakit show` take the same limit as `--import-root DIR`. It
