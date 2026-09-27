@@ -1,119 +1,68 @@
 # omegakit
 
-Composable YAML configuration and Python object construction, powered by OmegaConf.
-Requires Python 3.12 or newer. The runtime dependencies are OmegaConf and
-typing_extensions.
+YAML configs that import and extend each other, and build your Python objects. One
+file per environment, one base they share, and an optional dataclass schema that
+checks types and unknown keys before any configured object is built. A library on
+OmegaConf: you call `load_config`, and it does not take over `main()`. Install it with
+`pip install omegakit`, on Python 3.12 or newer.
 
-Install with `pip install omegakit`. omegakit builds on OmegaConf but is not affiliated
-with or endorsed by the OmegaConf project.
+```yaml
+# base.yaml
+server:
+  $class: webapp.server.Server
+  port: 8000
+  secret_key: ???
+database:
+  $class: webapp.db.SQLite
+  url: sqlite:///webapp.db
+```
+
+```yaml
+# prod.yaml
+$class: webapp.App
+$base: ~import base.yaml
+server:
+  secret_key: ${oc.env:SECRET_KEY}
+database:
+  $class: webapp.db.Postgres
+  url: postgres://db.internal/webapp
+```
 
 ```python
 from omegakit import instantiate, load_config
+from webapp import App
 
-config = load_config("app.yaml", overrides=["worker.timeout=30"])
-worker = instantiate(config.worker)
+app = instantiate(load_config("prod.yaml"), App)
 ```
 
-```yaml
-# defaults.yaml
-timeout: 10
-retries: 3
-```
+`prod.yaml` took everything from `base.yaml` and replaced the database, and the
+secret came from the environment. `App` is your class: `$class: webapp.App` at the
+top of the file tells omegakit to build it, and the same key on the database node
+chose Postgres. `webapp` is the example application of the
+[documentation](https://omegakit.readthedocs.io).
 
-```yaml
-# app.yaml
-worker:
-  $base: ~import defaults.yaml
-  $class: myapp.Worker
-  timeout: 20
-```
+## What you can do
 
-## Configuration syntax
+- One config per environment, sharing a base:
+  [One config per environment](https://omegakit.readthedocs.io/en/latest/recipes/environments.html)
+- Swap Postgres for SQLite in development and tests:
+  [Swapping an implementation](https://omegakit.readthedocs.io/en/latest/recipes/swapping.html)
+- Check configs before anything runs, and get completion in your editor:
+  [Validation](https://omegakit.readthedocs.io/en/latest/guide/validation.html),
+  [Editor schemas](https://omegakit.readthedocs.io/en/latest/guide/editor-schemas.html)
 
-- `~import file.yaml` replaces a node with another file. Paths are relative to the
-  importing file; `~import file.yaml#worker` selects a subnode. Cycles are rejected.
-- `$base` merges a mapping or list of mappings underneath the current node. Later
-  bases win over earlier bases; the current node wins over all bases.
-- `$defaults` supplies defaults to dict-valued siblings. Item values win.
-- `$class` imports and calls a Python class or callable with the node's arguments.
-  Nested class nodes are instantiated recursively. A `from_config` method, if present,
-  receives the materialized argument mapping instead of constructor keyword arguments.
-- `$ref` imports an object without calling it. It is supported inside an instantiated
-  tree and cannot have sibling arguments (except `$meta`).
-- `$partial: true` returns a `functools.partial`; the value must be `true` or
-  `false`. `prepare(config)` also defers the top-level call; nested objects are still
-  built during preparation. Call-time arguments win over config arguments.
-- `$meta` is removed by default; `load_config(..., keep_meta=True)` preserves it.
-  Instantiation always ignores metadata. `keep_targets=False` removes construction keys.
-- Every `$`-prefixed key is reserved. Loading keeps unknown ones, but instantiating a
-  node with a `$` key that is not allowed there raises.
-
-Assembly runs imports, bases, and defaults, then applies overrides. Only structural
-references are resolved during assembly; other interpolations stay lazy and resolve
-against the assembled configuration. `???` can be filled by consumers and fails when
-accessed or instantiated if still missing. Overrides accept dictionaries, DictConfig,
-or OmegaConf `key=value` dotlists; they do not rerun structural assembly.
-
-Errors raised by a constructor or `from_config` keep their type and get a note naming
-the failing node. The complete rules are in the
-[configuration contracts](https://omegakit.readthedocs.io/en/latest/contracts.html).
-
-`Configurable` provides a default `from_config` implementation. With a dataclass
-schema, `class Model(Configurable[ModelConfig])`, the config is validated and typed
-before `from_config` receives it; see the
-[typed-configs guide](https://omegakit.readthedocs.io/en/latest/guide/typed-configs.html). `validate(cfg, schema=AppConfig)`
-checks a loaded config before any object is built, and `instantiate` runs the same
-check before it builds; see the
-[validation guide](https://omegakit.readthedocs.io/en/latest/guide/validation.html).
-`omegakit json-schema` turns the same dataclasses into a JSON Schema for YAML
-editors; see the [editor-schemas guide](https://omegakit.readthedocs.io/en/latest/guide/editor-schemas.html).
-`omegakit check` validates config files from a terminal or a pre-commit hook; like
-`validate`, it imports the modules that `$class` and `$ref` name and runs resolvers,
-so use it on trusted files. `omegakit show` prints a config as it is assembled;
-see the [command-line guide](https://omegakit.readthedocs.io/en/latest/guide/command-line.html). `walk` traverses
-mapping nodes depth-first, parents before children. The optional `expected` argument
-to `instantiate` and `prepare` is a typing hint, not runtime validation: with it, the
-result is typed as that class, and without it as `Any`. `overrides` is keyword-only.
-
-## Optional resolvers
-
-Nothing is registered on import, and this library does not load `.env` files. Each
-resolver module carries its own dependencies, so `omegakit.resolvers` itself exports
-nothing; import from the module, such as `omegakit.resolvers.paths`.
-
-```python
-from pathlib import Path
-from omegakit.resolvers.paths import register_paths_resolver
-
-register_paths_resolver({"data_dir": Path("/srv/data")})
-# YAML: dataset: ${paths:data_dir}/training
-```
-
-Paths are copied as strings; relative paths remain relative and unknown keys return
-None. The caller defines the project layout.
-
-```python
-from omegakit.resolvers.torch import register_torch_resolvers
-
-register_torch_resolvers()
-# YAML: dtype: ${dtype:float32}
-# YAML: use_cuda: ${cuda_available:}
-```
-
-Install PyTorch separately for your platform before enabling these resolvers. It is
-not a package dependency. Importing the resolver module does not import Torch;
-registration without Torch raises an explanatory ImportError. Individual functions
-`register_torch_dtype_resolver` and `register_cuda_available_resolver` are available.
-
-Register resolvers before loading configs. Registration is global to OmegaConf and
-refuses existing names unless `replace=True` is supplied. Resolver results are cached
-per config; replacing a resolver does not clear caches on existing configs.
+Start with [Getting started](https://omegakit.readthedocs.io/en/latest/getting-started.html),
+or see how omegakit
+[compares with Hydra and other libraries](https://omegakit.readthedocs.io/en/latest/comparison.html).
 
 ## Trust
 
-This package imports and calls Python objects specified by configs, so configs must
-come from trusted sources.
+Configs import and call Python code: loading, validating and checking one imports
+the modules it names and runs its resolvers. Load configs only from trusted sources,
+and log them with `mask_secrets`. The
+[Trust section](https://omegakit.readthedocs.io/en/latest/contracts.html#trust) of
+the contracts lists what runs.
 
-## Development
-
-See [CONTRIBUTING.md](https://github.com/patrick-lindemann/omegakit/blob/main/CONTRIBUTING.md).
+omegakit supports OmegaConf 2.3 and 2.4. It builds on OmegaConf but is not affiliated
+with or endorsed by the OmegaConf project.
+[Contributing](https://github.com/patrick-lindemann/omegakit/blob/main/CONTRIBUTING.md).

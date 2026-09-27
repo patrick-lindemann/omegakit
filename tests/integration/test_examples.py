@@ -1,4 +1,5 @@
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -36,3 +37,23 @@ def test_webapp_builds_in_each_environment(environment, database):
     assert f"database: {database} " in output
     assert ":9000 " in output
     assert "prod-secret-value" not in output
+
+
+def test_readme_example_builds(tmp_path):
+    readme = (Path(__file__).parents[2] / "README.md").read_text()
+    for name, text in re.findall(r"```yaml\n# (\S+)\n(.*?)```", readme, re.S):
+        (tmp_path / name).write_text(text)
+    code = re.search(r"```python\n(.*?)```", readme, re.S)
+    assert code is not None
+    (tmp_path / "main.py").write_text(
+        code.group(1) + "print(type(app.database).__name__, app.server.secret_key)\n"
+    )
+    output = subprocess.run(
+        [sys.executable, "main.py"],
+        cwd=tmp_path,
+        env={**os.environ, "SECRET_KEY": "s3cret", "PYTHONPATH": str(WEBAPP.parent)},
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+    assert output == "Postgres s3cret\n"
