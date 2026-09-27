@@ -1,8 +1,6 @@
 import contextlib
 import dataclasses
 import re
-import types
-import typing
 from collections.abc import Callable, Iterable
 from typing import Any, TypeAliasType, cast, get_args, get_origin
 
@@ -21,6 +19,7 @@ from ._schema import (
     classify_fields,
     find_schema,
     find_section,
+    union_members,
     validate_native,
 )
 from ._utils import describe_value, format_path, import_object
@@ -484,19 +483,13 @@ def _check_object(
 ) -> None:
     if allow_missing and value == MISSING:
         return
-    while isinstance(annotation, TypeAliasType):
-        annotation = annotation.__value__
-    if get_origin(annotation) in (typing.Union, types.UnionType):
-        members = get_args(annotation)
-    else:
-        members = (annotation,)
+    members, optional = union_members(annotation)
     classes = tuple(
         member.__value__ if isinstance(member, TypeAliasType) else member
         for member in members
-        if member is not type(None)
     )
     if value is None:
-        if type(None) in members:
+        if optional:
             return
         _check_type(isinstance, None, classes, path, "`None`")
         return

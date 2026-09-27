@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 import functools
-import types
-import typing
 from collections.abc import Callable, Iterable
-from typing import Any, TypeAliasType, cast, get_args, get_origin, overload
+from typing import Any, cast, get_args, get_origin, overload
 
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
@@ -16,6 +14,7 @@ from ._schema import (
     classify_fields,
     find_schema,
     find_section,
+    union_members,
     validate_native,
 )
 from ._utils import format_path, import_object
@@ -190,17 +189,7 @@ def _build_typed_config(
 def _build_object(value: Any, annotation: Any, path: tuple[str | int, ...]) -> Any:
     # Follows the annotation into `list` and `dict` fields, where a plain mapping in a
     # dataclass item is a section, as in `validate`.
-    while isinstance(annotation, TypeAliasType):
-        annotation = annotation.__value__
-    members = [
-        member
-        for member in (
-            get_args(annotation)
-            if get_origin(annotation) in (typing.Union, types.UnionType)
-            else (annotation,)
-        )
-        if member is not type(None)
-    ]
+    members, _ = union_members(annotation)
     if len(members) == 1 and get_origin(members[0]) in (list, dict):
         item_annotation = get_args(members[0])[-1]
         if isinstance(value, list):

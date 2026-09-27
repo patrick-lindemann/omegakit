@@ -288,6 +288,26 @@ def validate_native(
     }
 
 
+def union_members(annotation: Any) -> tuple[tuple[Any, ...], bool]:
+    """Split an annotation into its members, following type aliases.
+
+    Args:
+        annotation: The annotation, possibly a union or a `type` alias.
+
+    Returns:
+        The members of a union other than `None`, or the annotation alone, and
+        whether the union contains `None`.
+    """
+    while isinstance(annotation, TypeAliasType):
+        annotation = annotation.__value__
+    if get_origin(annotation) not in (typing.Union, types.UnionType):
+        return (annotation,), False
+    members = tuple(
+        member for member in get_args(annotation) if member is not type(None)
+    )
+    return members, len(members) < len(get_args(annotation))
+
+
 def find_section(annotation: Any) -> type | None:
     """Find the dataclass in an object field's annotation, if there is one.
 
@@ -299,12 +319,7 @@ def find_section(annotation: Any) -> type | None:
     Returns:
         The first dataclass among the annotation's members, or `None`.
     """
-    while isinstance(annotation, TypeAliasType):
-        annotation = annotation.__value__
-    if get_origin(annotation) in (typing.Union, types.UnionType):
-        members = get_args(annotation)
-    else:
-        members = (annotation,)
+    members, _ = union_members(annotation)
     for member in members:
         if isinstance(member, type) and dataclasses.is_dataclass(member):
             return member
@@ -435,7 +450,7 @@ def _field_kind(
     if isinstance(annotation, type) and typing.is_typeddict(annotation):
         return "native"
     if origin in (typing.Union, types.UnionType):
-        members = [member for member in arguments if member is not type(None)]
+        members, _ = union_members(annotation)
         member_kinds: set[FieldKind] = {
             _field_kind(member, schema, name, outer) for member in members
         }
@@ -552,7 +567,7 @@ def _structure_type(annotation: Any) -> Any:
             operator.or_, dict.fromkeys(type(value) for value in arguments)
         )
     if origin in (typing.Union, types.UnionType):
-        members = [member for member in arguments if member is not type(None)]
+        members, _ = union_members(annotation)
         if len(members) == 1:
             return _structure_type(members[0]) | None
         if any(
@@ -611,7 +626,7 @@ def _normalize_enums(value: Any, annotation: Any) -> Any:
                     return member.name
         return value
     if origin in (typing.Union, types.UnionType):
-        members = [member for member in arguments if member is not type(None)]
+        members, _ = union_members(annotation)
         return _normalize_enums(value, members[0]) if len(members) == 1 else value
     if origin in (list, tuple, collections.abc.Sequence) and isinstance(value, list):
         if origin is tuple and not (len(arguments) == 2 and arguments[1] is Ellipsis):
@@ -780,8 +795,8 @@ def _build_union_value(
     allow_missing: bool,
     build: bool,
 ) -> Any:
-    members = [member for member in get_args(annotation) if member is not type(None)]
-    if value is None and len(members) < len(get_args(annotation)):
+    members, optional = union_members(annotation)
+    if value is None and optional:
         return None
     if len(members) == 1:
         return _build_native_value(value, given, members[0], path, allow_missing, build)
