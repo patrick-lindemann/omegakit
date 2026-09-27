@@ -1,7 +1,13 @@
 # Paths
 
-`omegakit.resolvers.paths` lets a config name directories that the application
-decides. `register_paths_resolver` registers `${paths:<key>}`:
+`omegakit.resolvers.paths` lets a config name directories that the machine decides.
+The same experiment runs on a laptop and on a cluster, with its runs and its data
+in different places. `register_paths_resolver` registers `${paths:<key>}`:
+
+```{literalinclude} cluster.yaml
+:language: yaml
+:caption: cluster.yaml
+```
 
 ```{literalinclude} main.py
 :language: python
@@ -9,11 +15,16 @@ decides. `register_paths_resolver` registers `${paths:<key>}`:
 ```
 
 ```text
-/var/log/webapp
+runs/poly3-adam/seed0 40
+/scratch/curvefit/runs/poly3-adam/seed0
+/datasets/curvefit/measurements.csv
 ```
 
-The override above uses the resolver inside a longer string, so `log_dir` ends up
-below the registered directory.
+`cluster.yaml` puts its runs under `${paths:runs}`, and the test split reads the
+measured data from under `${paths:data}`, inside a longer string. The test split is
+replaced in code, because an override would merge the new node into the old one
+([Overrides](../../configs/overrides/index.md#rules)). Register the paths once,
+when the program starts, from whatever tells your machines apart.
 
 ## Rules
 

@@ -4,19 +4,33 @@
 GPU. PyTorch is not a dependency of omegakit: install it for your platform first
 ([Overview](../overview/index.md#resolvers-for-other-libraries)).
 
-```python
-from omegakit.resolvers.torch import register_torch_resolvers
+The PyTorch variant of `curvefit` registers the resolvers before it loads its
+config:
 
-register_torch_resolvers()
+```{literalinclude} ../../curvefit/torch/main.py
+:language: python
+:caption: torch/main.py (excerpt)
+:lines: 9-12
 ```
 
-```yaml
-dtype: ${dtype:float16}
-use_cuda: ${cuda_available:}
+```{literalinclude} ../../curvefit/torch/experiment.yaml
+:language: yaml
+:caption: torch/experiment.yaml
 ```
 
-`dtype` resolves to `torch.float16`, and `use_cuda` to `True` when PyTorch can use
-CUDA on this machine.
+`${dtype:float32}` resolves to `torch.float32`, which the model receives as its
+`dtype`. An override picks another type, from `curvefit`'s directory:
+
+```text
+$ PYTHONPATH=. python torch/main.py 'model.dtype=${dtype:bfloat16}'
+poly3-adam-torch: Adam, torch.bfloat16
+train loss 0.04
+test mse: 0.04
+test mae: 0.16
+```
+
+`${cuda_available:}` resolves to `True` when PyTorch can use CUDA on this machine,
+for a config that chooses its device.
 
 ## Rules
 

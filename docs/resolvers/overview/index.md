@@ -1,6 +1,6 @@
 # Overview
 
-A resolver is a function inside an interpolation, such as `${oc.env:SECRET_KEY}`.
+A resolver is a function inside an interpolation, such as `${oc.env:TRACKER_TOKEN}`.
 OmegaConf's own resolvers, such as `oc.env`, are always available;
 [Environment variables](../../configs/environment-variables/index.md) shows `oc.env`
 in use.
@@ -12,7 +12,7 @@ need once, before loading the configs that use them:
 ```python
 from omegakit.resolvers.paths import register_paths_resolver
 
-register_paths_resolver({"logs": "/var/log"})
+register_paths_resolver({"runs": "/scratch/runs"})
 ```
 
 ## Resolvers for other libraries
@@ -33,4 +33,7 @@ build your platform needs.
   `ImportError`, naming what to install.
 - Registration is global to OmegaConf. Registering a name that exists raises
   `ValueError` unless `replace=True`.
+- omegakit's resolvers cache their results per config. A config that has resolved
+  `${paths:runs}` keeps that value after the resolver is replaced. A config loaded
+  afterwards sees the new one.
 - The [API](../../api/index.md#resolvers) lists every resolver module and function.
