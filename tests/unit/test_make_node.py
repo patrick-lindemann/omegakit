@@ -18,7 +18,9 @@ def test_node_creates_class_node():
 
 def test_node_is_instantiable():
     assert (
-        instantiate(make_node(schemas.make_encoder, width=3), schemas.Encoder).width
+        instantiate(
+            make_node(schemas.make_encoder, width=3), schema=schemas.Encoder
+        ).width
         == 3
     )
 

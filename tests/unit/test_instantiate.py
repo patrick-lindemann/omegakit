@@ -201,13 +201,9 @@ def test_instantiate_unknown_reserved_key_in_plain_mapping_raises():
         instantiate({"$class": POINT, "x": {"$foo": 1}, "y": 2})
 
 
-def test_instantiate_overrides_are_keyword_only():
+def test_instantiate_options_are_keyword_only():
     with pytest.raises(TypeError):
-        instantiate({"$class": POINT, "x": 1, "y": 2}, Point, {"x": 3})  # pyright: ignore[reportCallIssue]
-
-
-def test_instantiate_expected_is_not_checked_at_runtime():
-    assert isinstance(instantiate({"$class": POINT, "x": 1, "y": 2}, Container), Point)
+        instantiate({"$class": POINT, "x": 1, "y": 2}, Point)  # pyright: ignore[reportCallIssue]
 
 
 def test_instantiate_validates_before_building_anything():

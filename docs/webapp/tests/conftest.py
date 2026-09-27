@@ -15,4 +15,4 @@ def app() -> App:
         CONFIGS / "app.yaml",
         overrides={"database": {"$class": "webapp.db.SQLite", "url": "sqlite://"}},
     )
-    return instantiate(config, App)
+    return instantiate(config, schema=App)

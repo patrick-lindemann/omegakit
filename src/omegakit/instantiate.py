@@ -31,8 +31,8 @@ def instantiate(
 @overload
 def instantiate[T](
     config: DictConfig | dict[str, Any],
-    expected: type[T],
     *,
+    schema: type[T],
     overrides: DictConfig | dict[str, Any] | list[str] | None = None,
     allowed_modules: Iterable[str] | None = None,
 ) -> T: ...
@@ -40,8 +40,8 @@ def instantiate[T](
 
 def instantiate(
     config: DictConfig | dict[str, Any],
-    expected: type[Any] | None = None,
     *,
+    schema: type[Any] | None = None,
     overrides: DictConfig | dict[str, Any] | list[str] | None = None,
     allowed_modules: Iterable[str] | None = None,
 ) -> Any:
@@ -53,9 +53,12 @@ def instantiate(
     `$ref` is imported, and `$partial: true` gives a `functools.partial`.
 
     Args:
-        config: The node to build. It must have `$class`.
-        expected: The class of the result, for static typing only; it is not
-            checked. Defaults to `None`.
+        config: The node to build. It must have `$class`, unless `schema` is given.
+        schema: The class to build. A root with `$class` must name `schema` or a
+            subclass. A root without `$class` is built as if its `$class` named
+            `schema`: a dataclass gives an instance of itself, and a `Configurable`
+            is built through `from_config`. Defaults to `None`, which builds the
+            root's `$class`.
         overrides: Values merged into the node first, as in `load_config`. Defaults
             to `None`.
         allowed_modules: The modules that `$class` and `$ref` may name, as in
@@ -63,8 +66,13 @@ def instantiate(
 
     Returns:
         The built object.
-    """
-    return _instantiate(config, overrides, allowed_modules)
+
+    Raises:
+        ConfigValidationError: If the node has neither `$class` nor `schema`, or
+            does not match a schema.
+        TypeError: If `schema` is not a class.
+    """  # noqa: DOC502
+    return _instantiate(config, schema, overrides, allowed_modules)
 
 
 @overload
@@ -79,8 +87,8 @@ def prepare(
 @overload
 def prepare[T](
     config: DictConfig | dict[str, Any],
-    expected: type[T],
     *,
+    schema: type[T],
     overrides: DictConfig | dict[str, Any] | list[str] | None = None,
     allowed_modules: Iterable[str] | None = None,
 ) -> functools.partial[T]: ...
@@ -88,8 +96,8 @@ def prepare[T](
 
 def prepare(
     config: DictConfig | dict[str, Any],
-    expected: type[Any] | None = None,
     *,
+    schema: type[Any] | None = None,
     overrides: DictConfig | dict[str, Any] | list[str] | None = None,
     allowed_modules: Iterable[str] | None = None,
 ) -> functools.partial[Any]:
@@ -100,9 +108,10 @@ def prepare(
     that takes more keyword arguments when called.
 
     Args:
-        config: The node to prepare. It must have `$class`.
-        expected: The class that the partial builds, for static typing only; it is
-            not checked. Defaults to `None`.
+        config: The node to prepare. It must have `$class`, unless `schema` is
+            given.
+        schema: The class that the partial builds, as in `instantiate`. Defaults to
+            `None`, which builds the root's `$class`.
         overrides: Values merged into the node first, as in `load_config`. Defaults
             to `None`.
         allowed_modules: The modules that `$class` and `$ref` may name, as in
@@ -110,17 +119,25 @@ def prepare(
 
     Returns:
         The partial that builds the object.
-    """
-    return _instantiate(config, overrides, allowed_modules, wrap=functools.partial)
+
+    Raises:
+        ConfigValidationError: If the node has neither `$class` nor `schema`, or
+            does not match a schema.
+        TypeError: If `schema` is not a class.
+    """  # noqa: DOC502
+    return _instantiate(
+        config, schema, overrides, allowed_modules, wrap=functools.partial
+    )
 
 
 def _instantiate(
     config: DictConfig | dict[str, Any],
+    schema: type | None,
     overrides: DictConfig | dict[str, Any] | list[str] | None,
     allowed_modules: Iterable[str] | None,
     wrap: Callable | None = None,
 ) -> Any:
-    if CLASS_KEY not in config:
+    if CLASS_KEY not in config and (schema is None or REF_KEY in config):
         raise ConfigValidationError(
             f"`{format_path(())}` has no `{CLASS_KEY}`, so there is nothing to "
             "instantiate."
@@ -131,16 +148,20 @@ def _instantiate(
         config = config.copy()
         merge_overrides(config, overrides)
     plain_config = cast(dict[str, Any], resolve_config(config))
-    check_resolved(plain_config, allowed_modules=allowed_modules)
-    return _build(plain_config, wrap)
+    check_resolved(plain_config, schema=schema, allowed_modules=allowed_modules)
+    if CLASS_KEY in plain_config:
+        return _build(plain_config, wrap)
+    return _build(plain_config, wrap, target=schema)
 
 
 def _build(
     plain_config: dict[str, Any],
     wrap: Callable | None = None,
     path: tuple[str | int, ...] = (),
+    target: Any = None,
 ) -> Any:
-    cls = import_object(plain_config[CLASS_KEY])
+    # `target` stands in for the `$class` of a root that has none.
+    cls = import_object(plain_config[CLASS_KEY]) if target is None else target
     schema = find_schema(cls) if isinstance(cls, type) else None
     if schema is not None:
         check_schema(cls)
@@ -170,9 +191,8 @@ def _build(
             )
         return wrap(cls, **config) if wrap is not None else cls(**config)
     except Exception as error:
-        error.add_note(
-            f"while instantiating {format_path(path)} ({plain_config[CLASS_KEY]})"
-        )
+        name = plain_config.get(CLASS_KEY, f"{cls.__module__}.{cls.__qualname__}")
+        error.add_note(f"while instantiating {format_path(path)} ({name})")
         raise
 
 

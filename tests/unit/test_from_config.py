@@ -17,7 +17,9 @@ def test_from_config_default_call_time_arguments_win():
 
 
 def test_from_config_receives_typed_config():
-    model = instantiate({"$class": MODEL, "kind": "B", "depth": "3"}, schemas.Model)
+    model = instantiate(
+        {"$class": MODEL, "kind": "B", "depth": "3"}, schema=schemas.Model
+    )
     assert isinstance(model.kind, schemas.B)
     assert model.depth == 3
 

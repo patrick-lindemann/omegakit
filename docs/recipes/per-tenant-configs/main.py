@@ -14,7 +14,7 @@ for name, overrides in tenants.items():
     config = load_config(
         configs / "app.yaml", overrides={**overrides, "log_dir": f"logs/{name}"}
     )
-    app = instantiate(config, App)
+    app = instantiate(config, schema=App)
     print(
         name, app.server.port, app.server.workers, app.database.pool_size, app.log_dir
     )

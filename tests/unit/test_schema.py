@@ -232,7 +232,7 @@ def test_schema_plain_mapping_in_dataclass_field_is_built_as_a_section():
             "$class": f"{__name__}.Holder",
             "section": {"encoder": {"$class": "tests.schemas.Encoder", "width": 3}},
         },
-        Holder,
+        schema=Holder,
     )
     assert isinstance(holder.section, schemas.SectionWithObject)
     assert isinstance(holder.section.encoder, schemas.Encoder)

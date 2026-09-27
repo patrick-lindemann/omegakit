@@ -47,11 +47,11 @@ node's other keys:
 from omegakit import instantiate
 from plain import Server
 
-server = instantiate(config.server, Server)
+server = instantiate(config.server, schema=Server)
 ```
 
-`$class` decides what is built. The second argument only gives the result its type
-for your editor.
+`$class` decides what is built. `schema=Server` checks that the result is a
+`Server`, and gives it that type for your editor.
 
 ## 3. One file per environment
 
@@ -77,8 +77,8 @@ default:
 :caption: configs/app.yaml
 ```
 
-Production swaps the whole database node, so `instantiate(config.database,
-Database)` gives a `SQLite` in development and a `Postgres` in production. This is
+Production swaps the whole database node, so
+`instantiate(config.database, schema=Database)` gives a `SQLite` in development and a `Postgres` in production. This is
 why configs name classes: the code asks for a database, and the config decides
 which one.
 

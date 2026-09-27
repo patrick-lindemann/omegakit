@@ -24,12 +24,12 @@ sent 'Special offer'
 arguments. Nested nodes with `$class`, in mappings and lists, are built first, so
 `App` receives a built server, database and jobs. A class with a `from_config`
 method, such as every `Configurable`, receives the arguments through it instead;
-see [Schemas](../schemas/index.md). The node passed to `instantiate` must have
-`$class`.
+see [Schemas](../schemas/index.md).
 
-The second argument, `instantiate(config, App)`, gives the result its type for your
-editor and type checker. It is not checked at runtime: `$class` decides what is
-built.
+`schema=App` says what the result must be, and gives it that type for your editor
+and type checker. The root's `$class` must name `App` or a subclass. A root without
+`$class` is built as if it named `App`. Without `schema`, the root must have
+`$class`.
 
 ## `$ref`
 
@@ -87,7 +87,7 @@ and gets a note naming the node, such as `while instantiating jobs.digest
 - `instantiate` and `prepare` first merge `overrides`
   ([Overrides](../../configs/overrides/index.md#rules)), resolve the node and validate it as
   `validate` does ([Validation](../validation/index.md#rules)), with the same
-  `allowed_modules`, and only then build. A config error, a `???`, a failing
+  `schema` and `allowed_modules`, and only then build. A config error, a `???`, a failing
   interpolation and an exception from a resolver all raise `ConfigValidationError`
   before any configured class is called. OmegaConf's error is the `__cause__`, and
   the message names the full key.
@@ -108,10 +108,22 @@ and gets a note naming the node, such as `while instantiating jobs.digest
   `<root>`, and `<class>` the `$class` value. An error from calling a partial
   later gets no note.
 
+**The root and `schema`.**
+
+- Without `schema`, the node passed to `instantiate` or `prepare` must have
+  `$class`, or they raise `ConfigValidationError`.
+- With `schema`, a root with `$class` must name `schema` or a subclass, checked as
+  `validate(config, schema=...)` checks it. A root without `$class` is built as if
+  its `$class` named `schema`: a dataclass gives an instance of itself, and a
+  `Configurable` is built through `from_config`. A class without a dataclass schema
+  raises `ConfigValidationError`, and anything that is not a class raises
+  `TypeError`.
+- A root with `$ref` raises `ConfigValidationError`, with or without `schema`.
+- The result is typed as `schema`, or as a `functools.partial` of it from
+  `prepare`, and as `Any` without `schema`.
+
 **References.** A mapping with `$ref` is replaced by the imported object, uncalled.
 It allows no other key except `$meta`; another key raises `ConfigValidationError`.
-The node passed to `instantiate` or `prepare` must have `$class`, not `$ref`;
-without it they raise `ConfigValidationError`.
 
 **Partials.**
 

@@ -38,7 +38,9 @@ class Wrapper(Configurable[WrapperConfig]):
     @override
     def from_config(cls, config: WrapperConfig, **kwargs: Any) -> Self:
         return cls(
-            instantiate(make_node(TypedEncoder, width=config.width), TypedEncoder)
+            instantiate(
+                make_node(TypedEncoder, width=config.width), schema=TypedEncoder
+            )
         )
 
 
@@ -141,7 +143,7 @@ def test_scenario_validate_before_instantiating(write_yaml):
         validate(load_config(path), schema=schemas.AppConfig)
     cfg = load_config(path, overrides=["training.model.depth=${seed}"])
     validate(cfg, schema=schemas.AppConfig)
-    assert instantiate(cfg.training.model, schemas.Model).depth == 4
+    assert instantiate(cfg.training.model, schema=schemas.Model).depth == 4
 
 
 def test_scenario_forward_base_to_imported_node_then_instantiate(write_yaml):
@@ -154,7 +156,7 @@ def test_scenario_forward_base_to_imported_node_then_instantiate(write_yaml):
             "shared:\n  $base: ~import model.yaml\n  depth: ???\n",
         )
     )
-    assert instantiate(cfg.small, schemas.Model).depth == 2
+    assert instantiate(cfg.small, schema=schemas.Model).depth == 2
     with pytest.raises(ConfigValidationError, match=r"`shared\.depth`"):
         instantiate(cfg.shared)
 

@@ -41,7 +41,7 @@ class App(Configurable[AppConfig]):
     def from_config(cls, config: AppConfig, **kwargs: Any) -> Self:
         # Without a configured cache, the app keeps one in memory.
         cache = config.cache or instantiate(
-            make_node(MemoryCache, url="memory://", ttl="10m"), Cache
+            make_node(MemoryCache, url="memory://", ttl="10m"), schema=Cache
         )
         return cls(
             config.server,

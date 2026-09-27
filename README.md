@@ -32,7 +32,7 @@ database:
 from omegakit import instantiate, load_config
 from webapp import App
 
-app = instantiate(load_config("prod.yaml"), App)
+app = instantiate(load_config("prod.yaml"), schema=App)
 ```
 
 `prod.yaml` took everything from `base.yaml` and replaced the database, and the

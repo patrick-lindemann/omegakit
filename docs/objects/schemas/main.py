@@ -8,14 +8,16 @@ from omegakit import check_schema, instantiate, load_config
 
 check_schema(Server)
 server = instantiate(
-    {"$class": "webapp.server.Server", "port": "9000", "secret_key": "x"}, Server
+    {"$class": "webapp.server.Server", "port": "9000", "secret_key": "x"}, schema=Server
 )
 print(server.port, server.workers)
 
 configs = Path(__file__).parents[2] / "webapp" / "configs"
-app = instantiate(load_config(configs / "app.yaml"), App)
+app = instantiate(load_config(configs / "app.yaml"), schema=App)
 print(type(app.cache).__name__, app.cache.ttl_seconds)
-app = instantiate(load_config(configs / "app.yaml", overrides=["cache=null"]), App)
+app = instantiate(
+    load_config(configs / "app.yaml", overrides=["cache=null"]), schema=App
+)
 print(type(app.cache).__name__)
 
 notifier = instantiate({"$class": "notify.Notifier", "url": "mailto:ops@example.com"})

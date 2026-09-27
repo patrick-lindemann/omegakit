@@ -12,7 +12,7 @@ config = load_config(
 )
 print(OmegaConf.to_yaml(mask_secrets(config)))
 
-app = instantiate(config, App)
+app = instantiate(config, schema=App)
 print(
     f"serving on {app.server.host}:{app.server.port} with {app.server.workers} workers"
 )

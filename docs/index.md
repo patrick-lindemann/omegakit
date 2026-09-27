@@ -29,7 +29,7 @@ file takes the shared settings and replaces the database:
 from omegakit import instantiate, load_config
 from webapp import App
 
-app = instantiate(load_config("configs/app.yaml"), App)  # with APP_ENV=prod
+app = instantiate(load_config("configs/app.yaml"), schema=App)  # with APP_ENV=prod
 ```
 
 ## Where to go

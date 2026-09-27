@@ -52,7 +52,7 @@ def make_node(target: Callable[..., Any], /, **kwargs: Any) -> dict[str, Any]:
     """Create an instantiable config node for a class or function.
 
     Use it inside `from_config` for children that code chooses, such as
-    `instantiate(make_node(Postgres, pool_size=5), Postgres)`.
+    `instantiate(make_node(Postgres, pool_size=5), schema=Postgres)`.
 
     Args:
         target: The class or function to build. It must be defined at module level.

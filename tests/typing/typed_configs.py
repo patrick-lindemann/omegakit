@@ -33,7 +33,7 @@ class WrongModel(Configurable[ModelConfig]):
     def from_config(cls, config: ModelConfig, **kwargs: Any) -> Self:
         assert_type(config.kind, Kind)
         assert_type(config.encoder, Encoder | None)
-        kind = instantiate(make_node(A if config.kind is Kind.A else B), Base)
+        kind = instantiate(make_node(A if config.kind is Kind.A else B), schema=Base)
         cls(config.kind, config.depth, config.encoder)  # pyright: ignore[reportArgumentType]
         return cls(kind, config.dpth, config.encoder)  # pyright: ignore[reportAttributeAccessIssue]
 
@@ -48,8 +48,8 @@ class SelfFactory(Animal):
 
 
 def check_instantiate_types(config: DictConfig) -> None:
-    assert_type(instantiate(config, Model), Model)
-    assert_type(instantiate(config, Animal), Animal)
+    assert_type(instantiate(config, schema=Model), Model)
+    assert_type(instantiate(config, schema=Animal), Animal)
     assert_type(Model.from_config(ModelConfig(depth=1)), Model)
 
 

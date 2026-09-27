@@ -39,7 +39,7 @@ To check files from a terminal, a pre-commit hook or CI, use
 `validate(config, *, schema=None, allow_missing=False, allowed_modules=None)`
 checks an assembled config, or any node of it, and raises `ConfigValidationError`
 at the first problem. `load_config` checks no schema. `instantiate` and `prepare`
-run this check before building.
+run this check, with their own `schema`, before building.
 
 - The config is resolved first. A failing interpolation or a `???` is invalid
   unless `allow_missing`. The error names the full key.

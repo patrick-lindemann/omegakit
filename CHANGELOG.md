@@ -12,6 +12,11 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- **Breaking:** `instantiate` and `prepare` take the class of the result as the
+  keyword-only `schema=` instead of the positional `expected`. Write
+  `instantiate(config, schema=App)` for `instantiate(config, App)`. `schema` is now
+  checked: a root with `$class` must name `schema` or a subclass, and a root without
+  `$class` is built as `schema`, so a plain root dataclass gives a typed result.
 - Resolvers have their own section, with an overview and a page per resolver
   module. The Resolvers guide page moved to `resolvers/overview/`.
 - Security is split into three pages: Trust model, Restricting imports and Masking
