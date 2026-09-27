@@ -1,11 +1,13 @@
 from pathlib import Path
 
-from omegaconf import OmegaConf
-
 from omegakit import load_config
 
-configs = Path(__file__).parents[2] / "webapp" / "configs"
+here = Path(__file__).parent
+experiments = here.parents[1] / "curvefit" / "configs" / "experiments"
 
-config = load_config(configs / "envs" / "prod.yaml", keep_targets=False)
-print(OmegaConf.to_container(config.server))
-print(OmegaConf.to_container(config.replica))
+config = load_config(experiments / "linear-sgd.yaml")
+print(config.name, config.seed, config.trainer.epochs)
+print(config.data.test.n, config.data.test.seed)
+
+config = load_config(here / "sweep.yaml")
+print(config.quick.seeds, config.quick.degrees)
