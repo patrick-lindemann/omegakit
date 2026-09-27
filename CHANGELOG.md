@@ -31,6 +31,9 @@ All notable changes to this project are documented here. The format follows
   `schemas/editor-support/`.
 - Schemas is now Configurable classes, at `objects/configurable-classes/`, and
   covers only what a class adds. Field kinds moved to Dataclass schemas.
+- The comparison page compares omegakit with experiment config tools: Hydra and
+  hydra-zen, jsonargparse and LightningCLI, Fiddle, gin-config, ml_collections,
+  Sacred and OmegaConf. It no longer compares pydantic-settings and Dynaconf.
 
 - Resolvers have their own section, with an overview and a page per resolver
   module. The Resolvers guide page moved to `resolvers/overview/`.
