@@ -8,4 +8,5 @@ result.
 
 environments
 swapping
+manifests
 ```
