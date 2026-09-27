@@ -19,6 +19,7 @@ def test_public_api_exports():
         "OmegaKitBaseException",
         "PARTIAL_KEY",
         "REF_KEY",
+        "SchemaDefinitionError",
         "check_schema",
         "generate_json_schema",
         "instantiate",

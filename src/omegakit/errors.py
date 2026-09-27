@@ -17,3 +17,9 @@ class ConfigValidationError(OmegaKitBaseException, ValidationError):
     """A config does not match the schema of the class it builds."""
 
     __module__ = "omegakit"
+
+
+class SchemaDefinitionError(OmegaKitBaseException, ValueError):
+    """A class cannot serve as a schema."""
+
+    __module__ = "omegakit"

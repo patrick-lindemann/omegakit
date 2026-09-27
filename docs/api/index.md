@@ -46,6 +46,7 @@
 .. autoexception:: omegakit.OmegaKitBaseException
 .. autoexception:: omegakit.ConfigLoadError
 .. autoexception:: omegakit.ConfigValidationError
+.. autoexception:: omegakit.SchemaDefinitionError
 ```
 
 ## Special keys

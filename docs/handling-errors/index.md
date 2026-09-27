@@ -29,10 +29,33 @@ ConfigValidationError: Invalid config in `trainer.epochs` (TrainerConfig): Value
 - `OmegaKitBaseException` catches only omegakit's errors. Below it,
   `ConfigLoadError` means a file, an import, a `$base`, a `$defaults` or an
   override is invalid: fix the file or the override. `ConfigValidationError` means
-  the values do not match the schema: fix the values.
+  the values do not match the schema: fix the values. `SchemaDefinitionError` means
+  a class cannot serve as a schema: fix the class.
 
 `instantiate` validates the config too. Call `validate` on its own to check a config
 without building anything, as `omegakit check` does.
+
+## Errors in a sweep
+
+A sweep runs one experiment per combination of values
+([Parameter sweeps](../recipes/parameter-sweeps/index.md)). A combination with an
+invalid value can be skipped, but a class that cannot serve as a schema breaks every
+run, so the sweep stops:
+
+```{literalinclude} main.py
+:language: python
+:start-at: for degree in
+```
+
+```text
+Built degree=3
+Skipped degree=three: Invalid config in `model.degree` (Polynomial): Value 'three' of type 'str' could not be converted to Integer
+Built degree=5
+```
+
+`SchemaDefinitionError` is not a `ConfigValidationError`, so
+`except ConfigValidationError` never skips a broken class. A config can still
+reach one, when its `$class` names that class.
 
 ## Errors when you read the config
 
@@ -42,7 +65,7 @@ fail later. OmegaConf raises its own error then, and the same handler catches it
 ```{literalinclude} main.py
 :language: python
 :start-at: config = load_config(f"{configs}/base.yaml")
-:end-at: print(f"{type(error).__name__}: {error}")
+:end-at: print(type(error).__name__, error, sep=": ")
 ```
 
 ```text
@@ -62,7 +85,9 @@ names the node. The tracker has no schema, so a key it does not take reaches its
 
 ```{literalinclude} main.py
 :language: python
-:start-at: run("experiments/poly3-adam.yaml", ["tracker.token=abc"])
+:start-after: print(type(error).__name__, error, sep=": ")
+:end-at: print(error.__notes__)
+:lines: 2-
 ```
 
 ```text
@@ -82,14 +107,18 @@ Give the class a schema to have a key like this rejected with
   omegaconf.errors.OmegaConfBaseException
   └── omegakit.OmegaKitBaseException
       ├── omegakit.ConfigLoadError
-      └── omegakit.ConfigValidationError   (also omegaconf.errors.ValidationError)
+      ├── omegakit.ConfigValidationError   (also omegaconf.errors.ValidationError)
+      └── omegakit.SchemaDefinitionError
   ```
 
 - `load_config` raises `ConfigLoadError`, and so does an invalid override in any
   function. `validate`, `instantiate` and `prepare` raise `ConfigValidationError`
   for what they check.
-- `ConfigLoadError` and `ConfigValidationError` are `ValueError`s.
-  `OmegaKitBaseException` is not.
+- A class that cannot serve as a schema raises `SchemaDefinitionError` wherever it
+  is reached: in `check_schema`, `generate_json_schema`, or a `$class` that
+  `validate`, `instantiate` or `prepare` checks.
+- `ConfigLoadError`, `ConfigValidationError` and `SchemaDefinitionError` are
+  `ValueError`s. `OmegaKitBaseException` is not.
 - An error of omegakit carries its message, with OmegaConf's error or another cause
   as `__cause__` where there is one.
 - A missing root file raises `FileNotFoundError`. An `import_root` that is not a

@@ -27,7 +27,7 @@ from omegaconf.errors import OmegaConfBaseException
 from typing_extensions import NoDefault
 
 from .configurable import Configurable
-from .errors import ConfigValidationError, OmegaKitBaseException
+from .errors import ConfigValidationError, OmegaKitBaseException, SchemaDefinitionError
 from .utils import describe_value, format_path
 
 type FieldKind = Literal["native", "object", "any"]
@@ -66,8 +66,9 @@ def find_schema(cls: type) -> type | None:
         `Configurable` whose `TConfig` is a dataclass.
 
     Raises:
-        ConfigValidationError: If the schema uses a dataclass feature outside the
-            supported subset.
+        SchemaDefinitionError: If the schema uses a dataclass feature outside the
+            supported subset, or a type variable in the bases of `cls` cannot be
+            resolved.
     """  # noqa: DOC503
     if issubclass(cls, Configurable):
         parameters = getattr(cls, "__parameters__", ())
@@ -84,7 +85,7 @@ def find_schema(cls: type) -> type | None:
         raise
     except OmegaConfBaseException as error:
         owner = "" if config_type is cls else f" of `{cls.__qualname__}`"
-        raise ConfigValidationError(
+        raise SchemaDefinitionError(
             f"Schema `{config_type.__qualname__}`{owner} cannot be validated by "
             f"OmegaConf: {str(error).splitlines()[0]}"
         ) from error
@@ -109,12 +110,12 @@ def classify_fields(
         The kind and resolved annotation of every configurable field, by field name.
 
     Raises:
-        ConfigValidationError: If the schema uses a dataclass feature outside the
+        SchemaDefinitionError: If the schema uses a dataclass feature outside the
             supported subset, or contains itself.
     """
     if schema in outer:
         cycle = (*outer[outer.index(schema) :], schema)
-        raise ConfigValidationError(
+        raise SchemaDefinitionError(
             f"Schema `{schema.__qualname__}` contains itself: "
             f"{' -> '.join(cls.__qualname__ for cls in cycle)}. Recursive schemas are "
             "not supported."
@@ -122,7 +123,7 @@ def classify_fields(
     hints = _type_hints(schema)
     for name, hint in hints.items():
         if isinstance(hint, dataclasses.InitVar) and not hasattr(schema, name):
-            raise ConfigValidationError(
+            raise SchemaDefinitionError(
                 f"Field `{name}` of schema `{schema.__qualname__}` is an `InitVar` "
                 "without a default, which a config cannot set. Give it a default."
             )
@@ -149,9 +150,10 @@ def check_schema(cls: type) -> None:
         cls: The class to check.
 
     Raises:
-        ConfigValidationError: If a required parameter has no field, a field has no
-            parameter and `__init__` takes no `**kwargs`, or a field's annotation is
-            not assignable to its parameter's annotation.
+        SchemaDefinitionError: If the schema is not supported, a required parameter
+            has no field, a field has no parameter and `__init__` takes no
+            `**kwargs`, or a field's annotation is not assignable to its
+            parameter's annotation.
     """
     schema = find_schema(cls)
     if (
@@ -197,7 +199,7 @@ def check_schema(cls: type) -> None:
             not in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
             and name not in fields
         ):
-            raise ConfigValidationError(
+            raise SchemaDefinitionError(
                 f"Schema `{schema.__qualname__}` of `{cls.__qualname__}` has no field "
                 f"for the required parameter `{name}`."
             )
@@ -211,12 +213,12 @@ def check_schema(cls: type) -> None:
             reason = (
                 "takes it only positionally" if positional else "takes no `**kwargs`"
             )
-            raise ConfigValidationError(
+            raise SchemaDefinitionError(
                 f"Field `{name}` of schema `{schema.__qualname__}` is not a keyword "
                 f"parameter of `{cls.__qualname__}`, and `__init__` {reason}."
             )
         if name in hints and not _is_assignable(annotation, hints[name]):
-            raise ConfigValidationError(
+            raise SchemaDefinitionError(
                 f"Field `{name}` of schema `{schema.__qualname__}` has `{annotation}`, "
                 f"which is not assignable to `{hints[name]}` in "
                 f"`{cls.__qualname__}.__init__`."
@@ -364,7 +366,8 @@ def generate_json_schema(schema: type) -> dict[str, Any]:
     Raises:
         TypeError: If `schema` is neither a dataclass nor a `Configurable` with a
             dataclass schema.
-    """
+        SchemaDefinitionError: If a schema that it reaches is not supported.
+    """  # noqa: DOC503
     root = (find_schema(schema) or schema) if isinstance(schema, type) else None
     if not (isinstance(root, type) and dataclasses.is_dataclass(root)):
         name = getattr(schema, "__qualname__", repr(schema))
@@ -405,7 +408,7 @@ def _substitute(argument: Any, substitutions: dict[Any, Any], cls: type) -> Any:
     if not isinstance(argument, TypeVar):
         return argument
     if argument not in substitutions:
-        raise TypeError(
+        raise SchemaDefinitionError(
             f"Cannot resolve type variable `{argument}` in the bases of "
             f"`{cls.__qualname__}`."
         )
@@ -432,12 +435,12 @@ def _type_hints(schema: type) -> dict[str, Any]:
                     dict(vars(owner)),
                 )
             except NameError:
-                raise ConfigValidationError(
+                raise SchemaDefinitionError(
                     f"Cannot resolve the annotation of field `{field.name}` of schema "
                     f"`{schema.__qualname__}`: {error}. Import the type at module "
                     "level, not under `TYPE_CHECKING` or inside a function."
                 ) from error
-        raise ConfigValidationError(
+        raise SchemaDefinitionError(
             f"Cannot resolve the annotations of schema `{schema.__qualname__}`: "
             f"{error}."
         ) from error
@@ -453,7 +456,7 @@ def _field_kind(
     if origin is Literal:
         if all(type(value) in (str, int, bool) for value in arguments):
             return "native"
-        raise ConfigValidationError(
+        raise SchemaDefinitionError(
             f"Field `{name}` of schema `{schema.__qualname__}` has `{annotation}`, but "
             "`Literal` values must be strings, integers or booleans."
         )
@@ -474,7 +477,7 @@ def _field_kind(
             _field_kind(member, schema, name, outer) for member in members
         }
         if len(member_kinds) > 1:
-            raise ConfigValidationError(
+            raise SchemaDefinitionError(
                 f"Field `{name}` of schema `{schema.__qualname__}` mixes value types "
                 f"and classes in `{annotation}`. Use a union of plain values, a union "
                 "of classes, or `Any`."
@@ -484,7 +487,7 @@ def _field_kind(
             sum(_is_mapping_type(member) for member in members) > 1
             or sum(_is_sequence_type(member) for member in members) > 1
         ):
-            raise ConfigValidationError(
+            raise SchemaDefinitionError(
                 f"Field `{name}` of schema `{schema.__qualname__}` has `{annotation}`, "
                 "whose mapping or list members cannot be told apart. Use at most one "
                 "mapping type and one list type in a union, or `Any`."
@@ -509,13 +512,13 @@ def _field_kind(
             return "object"
         if kinds == {"any"}:
             return "any"
-        raise ConfigValidationError(
+        raise SchemaDefinitionError(
             f"Field `{name}` of schema `{schema.__qualname__}` has `{annotation}`, "
             "but a container can hold either plain values or objects, and objects "
             "only in `list` and `dict`. Use `Any` otherwise."
         )
     if annotation in _UNSUPPORTED_CONTAINERS or origin in _UNSUPPORTED_CONTAINERS:
-        raise ConfigValidationError(
+        raise SchemaDefinitionError(
             f"Field `{name}` of schema `{schema.__qualname__}` has the unsupported "
             f"container `{annotation}`. Use `list`, `dict`, `tuple` or `Any`."
         )
@@ -523,7 +526,7 @@ def _field_kind(
         return "object"
     if isinstance(origin, type):
         return "object"
-    raise ConfigValidationError(
+    raise SchemaDefinitionError(
         f"Field `{name}` of schema `{schema.__qualname__}` has the unsupported "
         f"annotation `{annotation}`."
     )

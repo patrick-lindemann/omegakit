@@ -103,7 +103,9 @@ Loss.MAE
 ```
 
 
-**Unsupported**, raising `ConfigValidationError` that names the field and the fix:
+**Unsupported**, raising `SchemaDefinitionError` that names the field and the fix,
+wherever the class is reached: in `check_schema`, `generate_json_schema`, or a
+`$class` that `validate` or `instantiate` checks:
 an `InitVar` without a default; `set`, `frozenset` and other abstract containers;
 a container that mixes values and objects; a `tuple`, `Sequence` or `Mapping` of
 objects; a union that mixes values and classes, or has two mapping or two list

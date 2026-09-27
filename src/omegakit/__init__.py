@@ -1,5 +1,10 @@
 from .configurable import Configurable
-from .errors import ConfigLoadError, ConfigValidationError, OmegaKitBaseException
+from .errors import (
+    ConfigLoadError,
+    ConfigValidationError,
+    OmegaKitBaseException,
+    SchemaDefinitionError,
+)
 from .instantiate import instantiate, prepare
 from .keys import (
     BASE_KEY,
@@ -27,6 +32,7 @@ __all__ = [
     "ConfigValidationError",
     "Configurable",
     "OmegaKitBaseException",
+    "SchemaDefinitionError",
     "check_schema",
     "generate_json_schema",
     "instantiate",

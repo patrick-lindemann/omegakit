@@ -11,6 +11,7 @@ from omegaconf import OmegaConf
 from omegakit import (
     Configurable,
     ConfigValidationError,
+    SchemaDefinitionError,
     check_schema,
     instantiate,
     prepare,
@@ -222,7 +223,7 @@ def test_schema_validation_happens_at_prepare():
     ],
 )
 def test_schema_outside_supported_subset_raises(cls, match):
-    with pytest.raises(ConfigValidationError, match=match):
+    with pytest.raises(SchemaDefinitionError, match=match):
         check_schema(cls)
 
 
@@ -258,7 +259,7 @@ def test_schema_unresolvable_annotation_blames_its_own_field(monkeypatch):
     module.InheritedBase = InheritedBase  # pyright: ignore[reportAttributeAccessIssue]
     monkeypatch.setitem(sys.modules, module.__name__, module)
     exec(SUBCLASS_MODULE, vars(module))
-    with pytest.raises(ConfigValidationError, match="field `other`"):
+    with pytest.raises(SchemaDefinitionError, match="field `other`"):
         validate({}, schema=module.Subclass)
 
 
@@ -286,12 +287,12 @@ class WithTree(Configurable[Tree]):
     [(Tree, "Tree -> Tree"), (Outer, "Outer -> Inner -> Outer")],
 )
 def test_schema_recursive_dataclasses_raise(schema, cycle):
-    with pytest.raises(ConfigValidationError, match=cycle):
+    with pytest.raises(SchemaDefinitionError, match=cycle):
         validate({}, schema=schema)
 
 
 def test_schema_recursive_schema_of_a_class_raises():
-    with pytest.raises(ConfigValidationError, match="Tree -> Tree"):
+    with pytest.raises(SchemaDefinitionError, match="Tree -> Tree"):
         check_schema(WithTree)
 
 
@@ -315,11 +316,11 @@ class UnresolvableClassVar:
 
 def test_schema_forward_reference_that_does_not_resolve_names_its_field():
     with pytest.raises(
-        ConfigValidationError, match=r"field `missing`.*Import the type at module level"
+        SchemaDefinitionError, match=r"field `missing`.*Import the type at module level"
     ):
         validate({}, schema=ForwardReferences)
 
 
 def test_schema_annotation_outside_the_fields_that_does_not_resolve_raises():
-    with pytest.raises(ConfigValidationError, match="Cannot resolve the annotations"):
+    with pytest.raises(SchemaDefinitionError, match="Cannot resolve the annotations"):
         validate({}, schema=UnresolvableClassVar)

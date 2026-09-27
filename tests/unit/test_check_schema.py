@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any, Self, override  # noqa: TID251
 
 import pytest
 
-from omegakit import Configurable, ConfigValidationError, check_schema, instantiate
+from omegakit import Configurable, SchemaDefinitionError, check_schema, instantiate
 from tests import schemas
 from tests.schemas import A, Base, Encoder, PointConfig
 
@@ -69,12 +69,12 @@ def test_check_schema_accepts_matching_class():
 
 
 def test_check_schema_required_parameter_needs_a_field():
-    with pytest.raises(ConfigValidationError, match="required parameter `z`"):
+    with pytest.raises(SchemaDefinitionError, match="required parameter `z`"):
         check_schema(schemas.MissingParameter)
 
 
 def test_check_schema_extra_field_needs_kwargs():
-    with pytest.raises(ConfigValidationError, match="Field `y`"):
+    with pytest.raises(SchemaDefinitionError, match="Field `y`"):
         check_schema(ExtraField)
     check_schema(ExtraFieldWithKwargs)
 
@@ -90,7 +90,7 @@ class PositionalBehindKwargs(Configurable[PositionalConfig]):
 
 
 def test_check_schema_rejects_positional_only_parameters_behind_kwargs():
-    with pytest.raises(ConfigValidationError, match="Field `x`"):
+    with pytest.raises(SchemaDefinitionError, match="Field `x`"):
         check_schema(PositionalBehindKwargs)
 
 
@@ -109,7 +109,7 @@ class Unresolvable(Configurable[PartlyResolvableConfig]):
 
 
 def test_check_schema_checks_annotations_that_resolve_when_others_do_not():
-    with pytest.raises(ConfigValidationError, match="Field `x`"):
+    with pytest.raises(SchemaDefinitionError, match="Field `x`"):
         check_schema(PartlyResolvable)
     check_schema(Unresolvable)
 
@@ -119,7 +119,7 @@ def test_check_schema_int_field_is_assignable_to_float():
 
 
 def test_check_schema_rejects_unassignable_annotation():
-    with pytest.raises(ConfigValidationError, match="not assignable"):
+    with pytest.raises(SchemaDefinitionError, match="not assignable"):
         check_schema(StrParameter)
 
 
@@ -128,7 +128,7 @@ def test_check_schema_subclass_field_is_assignable_to_base():
 
 
 def test_check_schema_optional_field_is_not_assignable_to_required():
-    with pytest.raises(ConfigValidationError, match="not assignable"):
+    with pytest.raises(SchemaDefinitionError, match="not assignable"):
         check_schema(NeedsEncoder)
 
 
@@ -147,7 +147,7 @@ def test_check_schema_ignores_classes_without_schema():
 
 
 def test_check_schema_runs_before_children_are_built():
-    with pytest.raises(ConfigValidationError, match="required parameter `z`"):
+    with pytest.raises(SchemaDefinitionError, match="required parameter `z`"):
         instantiate(
             {
                 "$class": "tests.schemas.MissingParameter",

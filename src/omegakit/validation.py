@@ -61,6 +61,8 @@ def validate(
     Raises:
         ConfigValidationError: If the config cannot be resolved, does not match a
             schema, or names a module that is not allowed.
+        SchemaDefinitionError: If `schema`, or a class that a `$class` names,
+            cannot serve as a schema.
         TypeError: If `schema` is not a class, or `allowed_modules` is a string.
     """  # noqa: DOC502
     if not isinstance(config, DictConfig):

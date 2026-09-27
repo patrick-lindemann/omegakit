@@ -35,6 +35,11 @@ All notable changes to this project are documented here. The format follows
   override. Replace `except ConfigValidationError` there with
   `except ConfigLoadError` or `except OmegaKitBaseException`. `except ValueError`
   still catches it.
+- **Breaking:** A class that cannot serve as a schema raises the new
+  `SchemaDefinitionError` instead of `ConfigValidationError`, from `check_schema`,
+  `generate_json_schema`, and from `validate`, `instantiate` and `prepare` for a
+  `$class` that names it. A type variable that cannot be resolved raises it instead
+  of `TypeError`. `except ValueError` still catches it.
 - `ConfigValidationError` is now an `OmegaKitBaseException` and an
   `omegaconf.ValidationError`, so `except omegaconf.ValidationError`,
   `except OmegaConfBaseException` and `contextlib.suppress(OmegaConfBaseException)`

@@ -70,7 +70,7 @@ a `TConfig` instance, the typed config, which `from_config` receives.
 of the `$class` and substituting type variables, so `class Sub(Mixin[int], Model)`
 and `class Leaf(Mid[Config])` work. An unparametrized generic class uses its type
 variable's default, or has no schema. A type variable that cannot be substituted
-raises `TypeError`. The result is cached per class.
+raises `SchemaDefinitionError`. The result is cached per class.
 
 **Building a typed node**, in order:
 
@@ -96,7 +96,7 @@ keyword parameter, unless `__init__` takes `**kwargs`; a positional-only paramet
 is rejected even then. Every field's annotation must be assignable to its
 parameter's: `int` to `float`, a subclass to its base, unions member by member.
 Generic annotations are skipped, and so is each parameter whose annotation does not
-resolve. A mismatch raises `ConfigValidationError` naming the field or parameter. It
+resolve. A mismatch raises `SchemaDefinitionError` naming the field or parameter. It
 passes unchecked a class without a schema, a dataclass that is its own schema, and a
 class whose MRO overrides `from_config`.
 

@@ -1,5 +1,6 @@
 import dataclasses
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -15,6 +16,7 @@ from omegakit import (
     Configurable,
     ConfigValidationError,
     OmegaKitBaseException,
+    SchemaDefinitionError,
     check_schema,
     generate_json_schema,
     instantiate,
@@ -34,6 +36,16 @@ class UsesUnsupported(Configurable[Unsupported]):
         self.tags = tags
 
 
+@dataclasses.dataclass
+class PathKeys:
+    counts: dict[Path, int] = dataclasses.field(default_factory=dict)
+
+
+class UsesPathKeys(Configurable[PathKeys]):
+    def __init__(self, counts: dict[Path, int]) -> None:
+        self.counts = counts
+
+
 BAD_NODE = {"$class": "tests.helpers.Point", "$partial": "yes"}
 
 
@@ -48,6 +60,14 @@ def test_config_validation_error_is_an_omegaconf_validation_error():
 
 def test_config_load_error_is_not_a_validation_error():
     error = ConfigLoadError("message")
+    assert isinstance(error, OmegaKitBaseException)
+    assert isinstance(error, ValueError)
+    assert not isinstance(error, ValidationError)
+    assert not isinstance(error, ConfigValidationError)
+
+
+def test_schema_definition_error_is_not_a_validation_error():
+    error = SchemaDefinitionError("message")
     assert isinstance(error, OmegaKitBaseException)
     assert isinstance(error, ValueError)
     assert not isinstance(error, ValidationError)
@@ -96,6 +116,29 @@ def test_override_errors_are_load_errors_in_every_function(write_yaml, overrides
     for build in (instantiate, prepare):
         with pytest.raises(ConfigLoadError, match="override"):
             build({"$class": "tests.helpers.Point", "x": 1}, overrides=overrides)
+
+
+@pytest.mark.parametrize(
+    "call",
+    [
+        lambda: check_schema(UsesUnsupported),
+        lambda: generate_json_schema(Unsupported),
+        lambda: validate({"$class": "tests.unit.test_errors.UsesUnsupported"}),
+        lambda: instantiate({"$class": "tests.unit.test_errors.UsesUnsupported"}),
+        lambda: validate({"tags": ["a"]}, schema=UsesUnsupported),
+    ],
+    ids=["check_schema", "generate_json_schema", "validate", "instantiate", "schema"],
+)
+def test_unusable_schema_raises_a_definition_error_wherever_it_is_reached(
+    call: Callable[[], Any],
+):
+    with pytest.raises(SchemaDefinitionError, match="unsupported container"):
+        call()
+
+
+def test_schema_that_omegaconf_rejects_raises_a_definition_error():
+    with pytest.raises(SchemaDefinitionError, match="cannot be validated by OmegaConf"):
+        check_schema(UsesPathKeys)
 
 
 def test_omegakit_handler_lets_omegaconf_errors_through():

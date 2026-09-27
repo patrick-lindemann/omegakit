@@ -71,6 +71,8 @@ def instantiate(
         ConfigValidationError: If the node has neither `$class` nor `schema`, or
             does not match a schema.
         ConfigLoadError: If an override is invalid.
+        SchemaDefinitionError: If `schema`, or a class that a `$class` names,
+            cannot serve as a schema.
         TypeError: If `schema` is not a class.
     """  # noqa: DOC502
     return _instantiate(config, schema, overrides, allowed_modules)
@@ -125,6 +127,8 @@ def prepare(
         ConfigValidationError: If the node has neither `$class` nor `schema`, or
             does not match a schema.
         ConfigLoadError: If an override is invalid.
+        SchemaDefinitionError: If `schema`, or a class that a `$class` names,
+            cannot serve as a schema.
         TypeError: If `schema` is not a class.
     """  # noqa: DOC502
     return _instantiate(
