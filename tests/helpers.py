@@ -1,11 +1,10 @@
-from typing import Any, override
+from typing import Any
 
 from omegakit import Configurable
 
 POINT = "tests.helpers.Point"
 CONFIGURABLE_POINT = "tests.helpers.ConfigurablePoint"
 CONTAINER = "tests.helpers.Container"
-DOUBLED_POINT = "tests.helpers.DoubledPoint"
 FAILING = "tests.helpers.Failing"
 RECORDER = "tests.helpers.Recorder"
 
@@ -32,15 +31,6 @@ class Container:
     def __init__(self, name: str, point: Point) -> None:
         self.name = name
         self.point = point
-
-
-class DoubledPoint(ConfigurablePoint):
-    """A `Configurable` point with a custom `from_config` that doubles `x`."""
-
-    @classmethod
-    @override
-    def from_config(cls, config: Any, **kwargs: Any) -> "DoubledPoint":
-        return cls(x=config["x"] * 2, y=config["y"])
 
 
 class Recorder:
