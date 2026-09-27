@@ -73,6 +73,7 @@ guide/command-line
 :caption: Recipes
 :hidden:
 
+recipes/index
 cookbook
 ```
 

@@ -96,7 +96,8 @@ pythonVersion = "3.12" # the floor; development runs on 3.13
 typeCheckingMode = "standard"
 reportImplicitOverride = "error"
 reportUnnecessaryTypeIgnoreComment = "error"
-# The guide examples import the webapp example application, as their test does.
+# The guide and recipe examples import the webapp example, as their test does.
 executionEnvironments = [
     { root = "docs/examples/guide", extraPaths = ["docs/examples/webapp"] },
+    { root = "docs/examples/recipes", extraPaths = ["docs/examples/webapp"] },
 ]

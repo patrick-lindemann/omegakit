@@ -10,8 +10,9 @@ from omegakit import instantiate, load_config, validate
 
 EXAMPLES = Path(__file__).parents[2] / "docs" / "examples"
 WEBAPP = EXAMPLES / "webapp"
-YAML_FILES = sorted((EXAMPLES / "guide").glob("*/**/*.yaml"))
-SCRIPTS = sorted((EXAMPLES / "guide").glob("*/main.py"))
+FOLDERS = [EXAMPLES / "guide", EXAMPLES / "recipes"]
+YAML_FILES = sorted(path for folder in FOLDERS for path in folder.glob("*/**/*.yaml"))
+SCRIPTS = sorted(path for folder in FOLDERS for path in folder.glob("*/main.py"))
 
 
 @pytest.fixture(autouse=True)
