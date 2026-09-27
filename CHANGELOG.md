@@ -23,8 +23,9 @@ All notable changes to this project are documented here. The format follows
   secrets replaced by `***`: by key name (`password`, `token`, `api_key`, ...), by
   secret-named `${oc.env:...}` variables, and by value inside other strings, such as
   a password in a URL.
-- A Trust section in the contracts: what loading, validating, checking and showing
-  run and read, and how to log a config without its secrets.
+- A Security page: what loading, validating, checking and showing run and read,
+  the `allowed_modules` and `import_root` limits, CI advice, and how to log a config
+  without its secrets.
 - A page that compares omegakit with Hydra, OmegaConf, jsonargparse and
   LightningCLI, pydantic-settings and Dynaconf.
 
@@ -70,13 +71,13 @@ All notable changes to this project are documented here. The format follows
   config even with `--node`. `--show-secrets` turns masking off.
 - `validate` no longer constructs the schema's nested dataclasses, so their
   `__post_init__` runs once, while building, and not during validation. The
-  `validate` docstring and the contracts list the code that still runs during
+  `validate` docstring and the Validation guide list the code that still runs during
   validation: module imports, resolvers, `__instancecheck__`/`__subclasscheck__` and
   `default_factory`.
 - Only a missing `$class`/`$ref` module (or parent package) and a missing attribute
   raise `ConfigValidationError`. An `ImportError` raised by the named module itself,
   such as a missing dependency, propagates with its own type.
-- The contracts name `ConfigValidationError`, which the code already raised, for
+- The documentation names `ConfigValidationError`, which the code already raised, for
   reserved `$` keys, a non-boolean `$partial` and a `$ref` with siblings.
 - Whitespace before `#` in an `~import` path is ignored: `~import lib.yaml #a`
   imports `lib.yaml`, not `lib.yaml `.
@@ -87,8 +88,10 @@ All notable changes to this project are documented here. The format follows
 - Releases publish only a commit on `main` that passes CI, from actions pinned to
   commit SHAs, and upload PEP 740 attestations.
 - The documentation is rebuilt around one example application, `webapp`, with a new
-  Getting started, a guide page per feature and four recipes. The contracts are split
-  into six pages. Old guide and contracts URLs redirect to their new pages.
+  Getting started, a guide page per feature and three recipes. The exact rules of
+  each feature are in a Rules section on its guide page, and the Contracts section
+  is gone. Page URLs changed, for example `guide/loading.html` is now
+  `guide/loading/`, and old URLs do not redirect.
 
 ### Removed
 
@@ -274,6 +277,7 @@ First release. The configuration language is specified in the
   such as `omegakit.resolvers.paths`.
 - Python 3.12 is supported.
 
+[0.6.0]: https://github.com/patrick-lindemann/omegakit/releases/tag/v0.6.0
 [0.5.0]: https://github.com/patrick-lindemann/omegakit/releases/tag/v0.5.0
 [0.4.0]: https://github.com/patrick-lindemann/omegakit/releases/tag/v0.4.0
 [0.3.0]: https://github.com/patrick-lindemann/omegakit/releases/tag/v0.3.0
