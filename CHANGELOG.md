@@ -34,6 +34,7 @@ All notable changes to this project are documented here. The format follows
 - The comparison page compares omegakit with experiment config tools: Hydra and
   hydra-zen, jsonargparse and LightningCLI, Fiddle, gin-config, ml_collections,
   Sacred and OmegaConf. It no longer compares pydantic-settings and Dynaconf.
+- The README shows an experiment with a shared base and a root dataclass.
 
 - Resolvers have their own section, with an overview and a page per resolver
   module. The Resolvers guide page moved to `resolvers/overview/`.
