@@ -41,7 +41,7 @@ repos:
 ```
 
 `check` runs code from the files it checks, so run it on trusted content only.
-[Security](../../security/index.md) says what runs and how to set up CI.
+[Security](../../security/what-runs/index.md) says what runs and how to set up CI.
 
 ## `show`
 
@@ -49,7 +49,7 @@ repos:
 overrides produced. Values stay as written unless you pass `--resolve`, so an
 `${oc.env:...}` shows the variable's name, not its value. `--node` prints one node,
 by the same dotted path as `~import file#node`. Secrets are masked as by
-`mask_secrets` ([Security](../../security/index.md#logging-without-secrets)).
+`mask_secrets` ([Security](../../security/secrets/index.md)).
 
 ## `json-schema`
 
@@ -77,7 +77,7 @@ path that cannot be imported, or an `--import-root` that is not a directory.
 
 - `--schema` is passed as `validate`'s `schema`, `--allow-missing` as
   `allow_missing`, and each `--allow-module` adds an entry to `allowed_modules`
-  ([Security](../../security/index.md#allowed-modules)). `--import-root` is passed to
+  ([Security](../../security/limits/index.md#allowed-modules)). `--import-root` is passed to
   `load_config` as `import_root` ([Imports](../imports/index.md#rules)).
 - It prints `<file>: <exception type>: <message>` for each invalid file and
   nothing for valid ones. Any exception, and a `SystemExit` raised by an imported

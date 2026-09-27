@@ -26,7 +26,7 @@ node they build and leave the config you passed unchanged.
 
 Overrides arrive after the files are assembled, so an `~import`, `$base` or
 `$defaults` inside an override stays literal. They carry the same trust as the
-files, so never build them from untrusted input ([Security](../../security/index.md)).
+files, so never build them from untrusted input ([Security](../../security/what-runs/index.md)).
 
 ## Environment variables
 
@@ -42,7 +42,7 @@ before loading the config.
 
 A resolved config holds the real secret, as the third line of the output shows. To
 log a config with its secrets masked, see
-[Logging without secrets](../../security/index.md#logging-without-secrets).
+[Logging without secrets](../../security/secrets/index.md).
 
 ## Rules
 

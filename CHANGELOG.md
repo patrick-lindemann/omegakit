@@ -14,6 +14,8 @@ All notable changes to this project are documented here. The format follows
 
 - Resolvers have their own section, with an overview and a page per resolver
   module. The Resolvers guide page moved to `resolvers/overview/`.
+- Security is split into three pages: what runs, limits, and secrets. The Security
+  page moved to `security/what-runs/`.
 - The Errors page is removed. The Rules section of each guide page names the errors
   of its feature.
 

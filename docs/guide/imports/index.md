@@ -58,7 +58,7 @@ Import `~import ../../webapp/configs/base.yaml#server` in `.../guide/imports/sha
 ```
 
 `omegakit check` and `omegakit show` take the same limit as `--import-root DIR`. It
-is a limit, not a sandbox; see [Security](../../security/index.md#import-root).
+is a limit, not a sandbox; see [Security](../../security/limits/index.md#import-root).
 
 ## Rules
 

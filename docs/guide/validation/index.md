@@ -29,7 +29,7 @@ checked against the schema of `App`.
 
 Validation calls no configured class, but it imports the modules that `$class` and
 `$ref` name and runs every resolver. Validate only configs you trust, and limit the
-modules a config can name with `allowed_modules` ([Security](../../security/index.md)).
+modules a config can name with `allowed_modules` ([Security](../../security/what-runs/index.md)).
 
 To check files from a terminal, a pre-commit hook or CI, use
 [`omegakit check`](../command-line/index.md).
@@ -71,7 +71,7 @@ run this check before building.
 - Plain values are checked as `instantiate` converts them: `"64"` is a valid
   `int`. The config is not changed.
 - `allowed_modules` limits which modules `$class` and `$ref` may name
-  ([Security](../../security/index.md#allowed-modules)).
+  ([Security](../../security/limits/index.md#allowed-modules)).
 
 **What runs.** No `$class` target, `from_config` or schema dataclass is called;
 their `__post_init__` runs once, when building. But the modules named by `$class`
