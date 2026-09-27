@@ -1,51 +1,50 @@
 # Base
 
-`$base` merges one mapping, or a list of mappings, underneath the node it appears in.
-It is how a node extends shared settings.
+`$base` merges shared settings underneath a node. Use it when several files share
+most of their values and differ in a few, as `webapp`'s environments do:
 
-## Example
-
-```{literalinclude} ../examples/base/common.yaml
+```{literalinclude} ../examples/webapp/configs/base.yaml
 :language: yaml
-:caption: common.yaml
+:caption: configs/base.yaml (excerpt)
+:end-before: "cache:"
 ```
 
-```{literalinclude} ../examples/base/app.yaml
+```{literalinclude} ../examples/webapp/configs/envs/prod.yaml
 :language: yaml
-:caption: app.yaml
+:caption: configs/envs/prod.yaml
 ```
 
-```{literalinclude} ../examples/base/main.py
+```{literalinclude} ../examples/guide/base/main.py
 :language: python
 :caption: main.py
 ```
 
-## Precedence
+```text
+{'host': '0.0.0.0', 'port': 8000, 'workers': 8, 'secret_key': '${oc.env:SECRET_KEY}'}
+{'url': 'postgres://db-replica.internal/webapp', 'pool_size': 20}
+```
 
-From strongest to weakest:
+`workers` is 8 because `prod.yaml`'s own keys win over the base, and `port` comes
+from `base.yaml`. Overrides win over both. The database is swapped by giving the
+whole node, `$class` and `url` included, so nothing of the SQLite settings is left
+behind.
 
-1. Overrides.
-2. The node's own keys.
-3. Later items of a `$base` list.
-4. Earlier items of a `$base` list.
+The base can also be a node of the same file, referenced with `${…}`. The replica
+above is a second Postgres with its own URL and the primary's pool size. The
+reference is relative (`..` is the parent of `replica`), so it finds `database`
+wherever `prod.yaml` ends up, even under the root file's own `$base`.
 
-## Rules
+Lists are replaced, not joined:
 
-- The value is usually an `~import` or an interpolation such as `${_fast}`. An
-  interpolation sees the referenced node as assembled so far.
-- Bases are merged children before parents, so a nested `$base` is merged before the
-  node that contains it.
-- The `$base` key itself is removed after merging.
-- Helper nodes such as `_fast` stay in the config. omegakit gives no meaning to a
-  leading underscore.
+```{literalinclude} ../examples/guide/base/hosts.yaml
+:language: yaml
+:caption: hosts.yaml
+```
 
-- An interpolation sees the referenced node fully merged, wherever it is in the
-  file: a node waits until the node it refers to has merged its own `$base`.
-- A `$base` sees a node without the keys that its parent's `$defaults` add, because
-  all bases are merged before any defaults.
+`site.allowed_hosts` is `[c.example.com]`, and `timeout` is 30.
 
-## Errors
-
-A `$base` that is not a mapping or a list of mappings raises `ConfigValidationError`,
-and so do `$base` interpolations that refer to each other (`references form a
-cycle`) and an interpolation to a key that never appears.
+A `$base` may also be a list of mappings: later entries win over earlier ones, and
+the node's own keys win over all of them. A `$base` that is not a mapping or a list
+of mappings raises `ConfigValidationError`. The contracts cover merge order and
+precedence in [Precedence](../contracts.md#precedence), and what a `${…}` base can
+see in [Resolution timing](../contracts.md#resolution-timing).

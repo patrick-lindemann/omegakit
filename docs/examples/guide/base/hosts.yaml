@@ -1,0 +1,6 @@
+defaults:
+  allowed_hosts: [a.example.com, b.example.com]
+  timeout: 30
+site:
+  $base: ${..defaults}
+  allowed_hosts: [c.example.com]
