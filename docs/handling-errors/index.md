@@ -18,6 +18,7 @@ classes raise passes through unchanged.
 ```text
 poly3-adam: runs/poly3-adam/seed3
 No such file: poly3-adma.yaml
+ConfigLoadError: Cannot parse the override `trainer.epochs=[50`: while parsing a flow sequence: expected ',' or ']', but got '<stream end>' (line 1, column 4)
 ConfigValidationError: Invalid config in `trainer.epochs` (TrainerConfig): Value 'many' of type 'str' could not be converted to Integer
 ```
 
@@ -25,8 +26,10 @@ ConfigValidationError: Invalid config in `trainer.epochs` (TrainerConfig): Value
 - `OmegaConfBaseException` catches every error that omegakit raises about a config,
   and every error of OmegaConf. Import it from `omegaconf.errors`; the top-level
   `omegaconf` package does not export it.
-- `OmegaKitBaseException` catches only omegakit's errors, and
-  `ConfigValidationError` only a config that does not match its schema.
+- `OmegaKitBaseException` catches only omegakit's errors. Below it,
+  `ConfigLoadError` means a file, an import, a `$base`, a `$defaults` or an
+  override is invalid: fix the file or the override. `ConfigValidationError` means
+  the values do not match the schema: fix the values.
 
 `instantiate` validates the config too. Call `validate` on its own to check a config
 without building anything, as `omegakit check` does.
@@ -78,10 +81,15 @@ Give the class a schema to have a key like this rejected with
   ```text
   omegaconf.errors.OmegaConfBaseException
   └── omegakit.OmegaKitBaseException
+      ├── omegakit.ConfigLoadError
       └── omegakit.ConfigValidationError   (also omegaconf.errors.ValidationError)
   ```
 
-- `ConfigValidationError` is a `ValueError`. `OmegaKitBaseException` is not.
+- `load_config` raises `ConfigLoadError`, and so does an invalid override in any
+  function. `validate`, `instantiate` and `prepare` raise `ConfigValidationError`
+  for what they check.
+- `ConfigLoadError` and `ConfigValidationError` are `ValueError`s.
+  `OmegaKitBaseException` is not.
 - An error of omegakit carries its message, with OmegaConf's error or another cause
   as `__cause__` where there is one.
 - A missing root file raises `FileNotFoundError`. An `import_root` that is not a

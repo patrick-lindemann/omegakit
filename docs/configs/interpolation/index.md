@@ -41,5 +41,6 @@ lets an imported file refer to its neighbours wherever it is placed.
   position.
 - An interpolation that cannot be resolved, or a resolver that raises, raises
   OmegaConf's error when read, such as `InterpolationKeyError`. Validating or
-  building raises `ConfigValidationError` instead, with OmegaConf's error as its
-  `__cause__` and the full key in the message.
+  building raises `ConfigValidationError` instead, with the full key in the
+  message, and loading raises `ConfigLoadError` for the values it resolves. Both
+  have OmegaConf's error as their `__cause__`.

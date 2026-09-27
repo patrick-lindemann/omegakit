@@ -2,7 +2,7 @@ import pytest
 from omegaconf import OmegaConf
 from omegaconf.errors import InterpolationKeyError
 
-from omegakit import ConfigValidationError, load_config
+from omegakit import ConfigLoadError, load_config
 
 
 def test_load_merges_base_with_node_winning(write_yaml):
@@ -48,7 +48,7 @@ def test_load_base_populated_by_import(write_yaml):
 
 
 def test_load_base_non_dict_raises(write_yaml):
-    with pytest.raises(ConfigValidationError, match="is not a dictionary or a list"):
+    with pytest.raises(ConfigLoadError, match="is not a dictionary or a list"):
         load_config(write_yaml("c.yaml", "$base: 5\na: 1\n"))
 
 
@@ -80,17 +80,17 @@ def test_load_merges_list_base_from_imports(write_yaml):
 
 def test_load_base_errors_name_the_node_path(write_yaml):
     path = write_yaml("c.yaml", "outer:\n  inner:\n    $base: 5\n    token: abc\n")
-    with pytest.raises(ConfigValidationError, match=r"`outer\.inner`") as info:
+    with pytest.raises(ConfigLoadError, match=r"`outer\.inner`") as info:
         load_config(path)
     assert "abc" not in str(info.value)
     path = write_yaml("d.yaml", "$base: [5]\ntoken: abc\n")
-    with pytest.raises(ConfigValidationError, match="`<root>`") as info:
+    with pytest.raises(ConfigLoadError, match="`<root>`") as info:
         load_config(path)
     assert "abc" not in str(info.value)
 
 
 def test_load_list_base_non_dict_element_raises(write_yaml):
-    with pytest.raises(ConfigValidationError, match="must contain only dictionaries"):
+    with pytest.raises(ConfigLoadError, match="must contain only dictionaries"):
         load_config(write_yaml("c.yaml", "$base:\n  - { a: 1 }\n  - 5\n"))
 
 
@@ -188,11 +188,11 @@ def test_base_ancestor_with_its_own_base_waits_for_its_children(write_yaml):
 
 def test_base_cycle_raises(write_yaml):
     path = write_yaml("c.yaml", "m:\n  $base: ${c}\nc:\n  $base: ${m}\n")
-    with pytest.raises(ConfigValidationError, match=r"cycle between `m`, `c`"):
+    with pytest.raises(ConfigLoadError, match=r"cycle between `m`, `c`"):
         load_config(path)
 
 
 def test_base_interpolation_to_unknown_key_raises_a_config_error(write_yaml):
-    with pytest.raises(ConfigValidationError, match="nope") as info:
+    with pytest.raises(ConfigLoadError, match="nope") as info:
         load_config(write_yaml("c.yaml", "m:\n  $base: ${nope}\n"))
     assert isinstance(info.value.__cause__, InterpolationKeyError)

@@ -1,7 +1,7 @@
 import pytest
 import yaml
 
-from omegakit import ConfigValidationError, load_config
+from omegakit import ConfigLoadError, load_config
 
 
 def test_load_returns_values(write_yaml):
@@ -25,7 +25,7 @@ def test_load_keeps_unknown_reserved_keys(write_yaml):
 )
 def test_load_rejects_invalid_yaml(write_yaml, text, match):
     path = write_yaml("c.yaml", text)
-    with pytest.raises(ConfigValidationError, match=match) as info:
+    with pytest.raises(ConfigLoadError, match=match) as info:
         load_config(path)
     assert str(path) in str(info.value)
     assert isinstance(info.value.__cause__, yaml.YAMLError)
@@ -34,7 +34,7 @@ def test_load_rejects_invalid_yaml(write_yaml, text, match):
 def test_load_rejects_a_file_that_is_not_utf8(tmp_path):
     path = tmp_path / "c.yaml"
     path.write_bytes(b"a: \xff\n")
-    with pytest.raises(ConfigValidationError, match="utf-8") as info:
+    with pytest.raises(ConfigLoadError, match="utf-8") as info:
         load_config(path)
     assert isinstance(info.value.__cause__, UnicodeDecodeError)
 
@@ -46,7 +46,7 @@ def test_load_missing_root_file_raises_file_not_found(tmp_path):
 
 @pytest.mark.parametrize("text", ["hello\n", "5\n", '"a: 1"\n'])
 def test_load_rejects_a_file_with_a_single_value(write_yaml, text):
-    with pytest.raises(ConfigValidationError, match="single value"):
+    with pytest.raises(ConfigLoadError, match="single value"):
         load_config(write_yaml("c.yaml", text))
 
 
@@ -56,7 +56,7 @@ def test_load_empty_files_are_empty_mappings(write_yaml, text):
 
 
 def test_load_rejects_a_list_at_the_root(write_yaml):
-    with pytest.raises(ConfigValidationError, match="root is a list"):
+    with pytest.raises(ConfigLoadError, match="root is a list"):
         load_config(write_yaml("c.yaml", "- a\n- b\n"))
 
 

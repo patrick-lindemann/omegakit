@@ -4,7 +4,7 @@ from unittest.mock import Mock
 import pytest
 from omegaconf import OmegaConf
 
-from omegakit import ConfigValidationError, load_config
+from omegakit import ConfigLoadError, load_config
 
 
 def test_load_resolves_import(write_yaml):
@@ -16,7 +16,7 @@ def test_load_resolves_import(write_yaml):
 def test_load_circular_import_raises(tmp_path: Path, write_yaml):
     write_yaml("a.yaml", "foo: ~import b.yaml\n")
     write_yaml("b.yaml", "bar: ~import a.yaml\n")
-    with pytest.raises(ConfigValidationError, match="Circular import"):
+    with pytest.raises(ConfigLoadError, match="Circular import"):
         load_config(tmp_path / "a.yaml")
 
 
@@ -104,14 +104,14 @@ def test_load_import_resolves_interpolation_in_list(tmp_path: Path, write_yaml):
 
 
 def test_load_import_unresolvable_interpolation_raises(write_yaml):
-    with pytest.raises(ConfigValidationError, match=r"~import \$\{missing\}"):
+    with pytest.raises(ConfigLoadError, match=r"~import \$\{missing\}"):
         load_config(write_yaml("main.yaml", "foo: ~import ${missing}/leaf.yaml\n"))
 
 
 def test_load_import_unset_environment_variable_raises(write_yaml, monkeypatch):
     monkeypatch.delenv("OMEGAKIT_UNSET", raising=False)
     path = write_yaml("main.yaml", "foo: ~import ${oc.env:OMEGAKIT_UNSET}/a.yaml\n")
-    with pytest.raises(ConfigValidationError, match="OMEGAKIT_UNSET"):
+    with pytest.raises(ConfigLoadError, match="OMEGAKIT_UNSET"):
         load_config(path)
 
 
@@ -155,13 +155,13 @@ def test_import_prefix_only_counts_at_the_start(write_yaml):
 
 def test_import_missing_node_raises(write_yaml):
     write_yaml("lib.yaml", "a: 1\n")
-    with pytest.raises(ConfigValidationError, match="selects node"):
+    with pytest.raises(ConfigLoadError, match="selects node"):
         load_config(write_yaml("main.yaml", 'n: "~import lib.yaml#b"\n'))
 
 
 def test_import_missing_file_raises(write_yaml):
     path = write_yaml("main.yaml", "n: ~import missing.yaml\n")
-    with pytest.raises(ConfigValidationError, match=r"~import missing\.yaml") as info:
+    with pytest.raises(ConfigLoadError, match=r"~import missing\.yaml") as info:
         load_config(path)
     assert str(path) in str(info.value)
     assert isinstance(info.value.__cause__, FileNotFoundError)
@@ -170,7 +170,7 @@ def test_import_missing_file_raises(write_yaml):
 def test_import_rejects_a_file_with_a_single_value(write_yaml):
     write_yaml("lib.yaml", "hello\n")
     path = write_yaml("main.yaml", "n: ~import lib.yaml\n")
-    with pytest.raises(ConfigValidationError, match="single value") as info:
+    with pytest.raises(ConfigLoadError, match="single value") as info:
         load_config(path)
     assert str(path) in str(info.value)
 
@@ -184,13 +184,13 @@ def test_import_of_an_empty_file_is_an_empty_mapping(write_yaml, text):
 def test_import_of_invalid_yaml_names_the_importing_file(write_yaml):
     write_yaml("lib.yaml", "a: [1\n")
     path = write_yaml("main.yaml", "n: ~import lib.yaml\n")
-    with pytest.raises(ConfigValidationError, match=r"~import lib\.yaml") as info:
+    with pytest.raises(ConfigLoadError, match=r"~import lib\.yaml") as info:
         load_config(path)
     assert str(path) in str(info.value)
 
 
 def test_import_self_raises(write_yaml):
-    with pytest.raises(ConfigValidationError, match="Circular import"):
+    with pytest.raises(ConfigLoadError, match="Circular import"):
         load_config(write_yaml("main.yaml", "n: ~import main.yaml\n"))
 
 
@@ -233,7 +233,7 @@ def test_import_repeated_subnode_gives_independent_copies(write_yaml):
 
 def test_import_path_does_not_see_base_keys(write_yaml):
     write_yaml("leaf.yaml", "v: 1\n")
-    with pytest.raises(ConfigValidationError, match="name"):
+    with pytest.raises(ConfigLoadError, match="name"):
         load_config(
             write_yaml("main.yaml", "$base: {name: leaf}\nn: ~import ${name}.yaml\n")
         )
@@ -241,7 +241,7 @@ def test_import_path_does_not_see_base_keys(write_yaml):
 
 def test_import_path_does_not_see_overrides(write_yaml):
     write_yaml("leaf.yaml", "v: 1\n")
-    with pytest.raises(ConfigValidationError, match="name"):
+    with pytest.raises(ConfigLoadError, match="name"):
         load_config(
             write_yaml("main.yaml", "n: ~import ${name}.yaml\n"),
             overrides=["name=leaf"],
@@ -277,21 +277,21 @@ def test_import_ignores_whitespace_around_the_hash(write_yaml):
 
 def test_import_with_more_than_one_hash_raises(write_yaml):
     write_yaml("lib.yaml", "a:\n  b: 1\n")
-    with pytest.raises(ConfigValidationError, match="more than one `#`"):
+    with pytest.raises(ConfigLoadError, match="more than one `#`"):
         load_config(write_yaml("main.yaml", 'n: "~import lib.yaml#a#b"\n'))
 
 
 @pytest.mark.parametrize("selector", ["c.d", "a.b.x", "a.b.5"])
 def test_import_invalid_selector_raises_missing_node(write_yaml, selector):
     write_yaml("lib.yaml", "a:\n  b: [0, 1]\nc: 3\n")
-    with pytest.raises(ConfigValidationError, match="selects node"):
+    with pytest.raises(ConfigLoadError, match="selects node"):
         load_config(write_yaml("main.yaml", f'n: "~import lib.yaml#{selector}"\n'))
 
 
 def test_import_selector_through_an_interpolation_raises(write_yaml):
     write_yaml("lib.yaml", "a: ${b}\nb:\n  c: 1\n")
     path = write_yaml("main.yaml", 'n: "~import lib.yaml#a.c"\n')
-    with pytest.raises(ConfigValidationError, match="`a`, which is an interpolation"):
+    with pytest.raises(ConfigLoadError, match="`a`, which is an interpolation"):
         load_config(path)
 
 
@@ -323,7 +323,7 @@ def test_import_root_rejects_files_outside_it(tmp_path, outside, statement):
     (root / "link.yaml").symlink_to(outside)
     path = root / "main.yaml"
     path.write_text(f'dir: {root}\nn: "{statement.format(outside=outside)}"\n')
-    with pytest.raises(ConfigValidationError, match="outside the import root"):
+    with pytest.raises(ConfigLoadError, match="outside the import root"):
         load_config(path, import_root=root)
     assert load_config(path).n.secret == 1
 

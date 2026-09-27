@@ -1,5 +1,5 @@
 from .configurable import Configurable
-from .errors import ConfigValidationError, OmegaKitBaseException
+from .errors import ConfigLoadError, ConfigValidationError, OmegaKitBaseException
 from .instantiate import instantiate, prepare
 from .keys import (
     BASE_KEY,
@@ -23,6 +23,7 @@ __all__ = [
     "META_KEY",
     "PARTIAL_KEY",
     "REF_KEY",
+    "ConfigLoadError",
     "ConfigValidationError",
     "Configurable",
     "OmegaKitBaseException",

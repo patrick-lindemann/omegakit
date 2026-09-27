@@ -89,7 +89,7 @@ is a limit, not a sandbox; see [Restricting imports](../../security/restricting-
   symbolic links are resolved. The error names both paths. A `DIR` that does not exist raises
   `FileNotFoundError`, and a `DIR` that is a file `NotADirectoryError`. The root
   file is not checked. The default allows any file.
-- These raise `ConfigValidationError`, naming the statement and the importing
+- These raise `ConfigLoadError`, naming the statement and the importing
   file, with the original error as its `__cause__` where there is one: a file that
   does not exist, cannot be read or is invalid; a cycle; an
   interpolation in the path that fails; more than one `#`, so a file name with `#`

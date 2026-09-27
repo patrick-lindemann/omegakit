@@ -89,7 +89,8 @@ and gets a note naming the node, such as
 - `instantiate` and `prepare` first merge `overrides`
   ([Overrides](../../configs/overrides/index.md#rules)), resolve the node and validate it as
   `validate` does ([Validation](../../schemas/validation/index.md#rules)), with the same
-  `schema` and `allowed_modules`, and only then build. A config error, a `???`, a failing
+  `schema` and `allowed_modules`, and only then build. An invalid override raises
+  `ConfigLoadError`. A config error, a `???`, a failing
   interpolation and an exception from a resolver all raise `ConfigValidationError`
   before any configured class is called. OmegaConf's error is the `__cause__`, and
   the message names the full key.

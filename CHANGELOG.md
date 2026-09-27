@@ -30,6 +30,11 @@ All notable changes to this project are documented here. The format follows
   `instantiate(config, schema=App)` for `instantiate(config, App)`. `schema` is now
   checked: a root with `$class` must name `schema` or a subclass, and a root without
   `$class` is built as `schema`, so a plain root dataclass gives a typed result.
+- **Breaking:** `load_config` raises the new `ConfigLoadError` for an invalid file,
+  `~import`, `$base` or `$defaults`, and every function raises it for an invalid
+  override. Replace `except ConfigValidationError` there with
+  `except ConfigLoadError` or `except OmegaKitBaseException`. `except ValueError`
+  still catches it.
 - `ConfigValidationError` is now an `OmegaKitBaseException` and an
   `omegaconf.ValidationError`, so `except omegaconf.ValidationError`,
   `except OmegaConfBaseException` and `contextlib.suppress(OmegaConfBaseException)`

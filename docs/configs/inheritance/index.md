@@ -57,7 +57,7 @@ the node's own keys win over all of them.
 ## Rules
 
 - `$base` is a mapping or a list of mappings. Anything else raises
-  `ConfigValidationError` naming the node.
+  `ConfigLoadError` naming the node.
 - Precedence, strongest first: the node's own keys, later list items, earlier list
   items. Lists inside the merged mappings are replaced, not joined.
 - Every `$base` is merged before any `$defaults` is applied. A `$base` therefore

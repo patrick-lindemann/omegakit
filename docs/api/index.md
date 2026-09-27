@@ -44,6 +44,7 @@
 
 ```{eval-rst}
 .. autoexception:: omegakit.OmegaKitBaseException
+.. autoexception:: omegakit.ConfigLoadError
 .. autoexception:: omegakit.ConfigValidationError
 ```
 

@@ -32,8 +32,8 @@ the training split with `$base` and still get the defaults.
 
 ## Rules
 
-- `$defaults` is a mapping. Anything else raises `ConfigValidationError` naming
-  the node.
+- `$defaults` is a mapping. Anything else raises `ConfigLoadError` naming the
+  node.
 - It reaches only the mapping-valued siblings in its own mapping. Scalars, lists
   and `$` keys are untouched, and grandchildren only through the sibling's own
   keys.

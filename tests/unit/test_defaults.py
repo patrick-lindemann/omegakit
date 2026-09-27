@@ -1,6 +1,6 @@
 import pytest
 
-from omegakit import ConfigValidationError, load_config
+from omegakit import ConfigLoadError, load_config
 
 
 def test_load_merges_defaults_into_dict_siblings(write_yaml):
@@ -47,13 +47,13 @@ def test_load_defaults_skips_special_keys(write_yaml):
 
 def test_load_defaults_error_names_the_node_path(write_yaml):
     path = write_yaml("c.yaml", "outer:\n  $defaults: 5\n  a: {token: abc}\n")
-    with pytest.raises(ConfigValidationError, match="`outer`") as info:
+    with pytest.raises(ConfigLoadError, match="`outer`") as info:
         load_config(path)
     assert "abc" not in str(info.value)
 
 
 def test_load_defaults_non_dict_raises(write_yaml):
-    with pytest.raises(ConfigValidationError, match="is not a dictionary"):
+    with pytest.raises(ConfigLoadError, match="is not a dictionary"):
         load_config(write_yaml("c.yaml", "node:\n  $defaults: 5\n  a: {}\n"))
 
 
@@ -177,7 +177,5 @@ def test_defaults_cycle_raises(write_yaml):
     path = write_yaml(
         "c.yaml", "m:\n  $defaults: ${c}\n  k: {}\nc:\n  $defaults: ${m}\n  d: {}\n"
     )
-    with pytest.raises(
-        ConfigValidationError, match=r"`\$defaults` references form a cycle"
-    ):
+    with pytest.raises(ConfigLoadError, match=r"`\$defaults` references form a cycle"):
         load_config(path)

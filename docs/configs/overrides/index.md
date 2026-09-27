@@ -34,7 +34,7 @@ files, so never build them from untrusted input
 - Each value in a list is parsed as YAML: `trainer.epochs=50` is an integer,
   `seeds=[0, 1]` a list. A string without `=`, such as `a`, sets `a` to `null`.
 - An override that does not parse, has a value OmegaConf does not support, or is
-  rejected by a struct config raises `ConfigValidationError` from `load_config`,
+  rejected by a struct config raises `ConfigLoadError` from `load_config`,
   `instantiate` and `prepare`, naming the override or its key.
 - Overrides are merged after assembly. An `~import`, `$base` or `$defaults` in an
   override stays literal. `$meta`, and with `keep_targets=False` also `$class`,

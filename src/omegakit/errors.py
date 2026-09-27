@@ -7,6 +7,12 @@ class OmegaKitBaseException(OmegaConfBaseException):
     __module__ = "omegakit"
 
 
+class ConfigLoadError(OmegaKitBaseException, ValueError):
+    """A config file, an import, a `$base`, a `$defaults` or an override is invalid."""
+
+    __module__ = "omegakit"
+
+
 class ConfigValidationError(OmegaKitBaseException, ValidationError):
     """A config does not match the schema of the class it builds."""
 

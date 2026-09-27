@@ -12,7 +12,7 @@ from .assembly import (
     resolve_imports,
     strip_keys,
 )
-from .errors import ConfigValidationError, OmegaKitBaseException
+from .errors import ConfigLoadError, OmegaKitBaseException
 from .keys import CLASS_KEY, META_KEY, PARTIAL_KEY, REF_KEY
 from .utils import describe_error
 
@@ -43,15 +43,16 @@ def load_config(
         keep_meta: Keep `$meta`. Defaults to `False`.
         import_root: A directory that every `~import` must stay in, after
             interpolations and symbolic links are resolved. An import outside it
-            raises `ConfigValidationError`, and a directory that does not exist
-            raises `FileNotFoundError`. Defaults to `None`, which allows any file.
+            raises `ConfigLoadError`, and a directory that does not exist raises
+            `FileNotFoundError`. Defaults to `None`, which allows any file.
 
     Returns:
         The parsed configuration.
 
     Raises:
-        ConfigValidationError: If a file, an import or a `$base` or `$defaults`
-            value is invalid. A missing root file raises `FileNotFoundError`.
+        ConfigLoadError: If a file, an import, a `$base` or `$defaults` value, or
+            an override is invalid. A missing root file raises
+            `FileNotFoundError`.
         NotADirectoryError: If `import_root` is not a directory.
     """  # noqa: DOC503
     if import_root is not None:
@@ -61,7 +62,7 @@ def load_config(
     file_path = Path(file_path).resolve()
     config = load_file(file_path)
     if not isinstance(config, DictConfig):
-        raise ConfigValidationError(
+        raise ConfigLoadError(
             f"Cannot load `{file_path}`: its root is a list, but the root of a config "
             "must be a mapping."
         )
@@ -78,7 +79,7 @@ def load_config(
     except OmegaKitBaseException:
         raise
     except OmegaConfBaseException as error:
-        raise ConfigValidationError(
+        raise ConfigLoadError(
             f"Cannot load `{file_path}`: {str(error).splitlines()[0]}"
         ) from error
     if overrides is not None:
@@ -106,7 +107,7 @@ def merge_overrides(
         overrides: A `DictConfig`, a dictionary, or a list of `key=value` strings.
 
     Raises:
-        ConfigValidationError: If an override does not parse, has a value of an
+        ConfigLoadError: If an override does not parse, has a value of an
             unsupported type, or is rejected by `config`.
     """  # noqa: DOC503
     try:
@@ -115,7 +116,7 @@ def merge_overrides(
         raise
     except OmegaConfBaseException as error:
         location = f" `{error.full_key}`" if error.full_key else ""
-        raise ConfigValidationError(
+        raise ConfigLoadError(
             f"Cannot apply the override{location}: {describe_error(error)}"
         ) from error
 
@@ -133,7 +134,7 @@ def _parse_overrides(
             try:
                 parsed.merge_with_dotlist([override])
             except (yaml.YAMLError, OmegaConfBaseException) as error:
-                raise ConfigValidationError(
+                raise ConfigLoadError(
                     f"Cannot parse the override `{override}`: {describe_error(error)}"
                 ) from error
         return parsed

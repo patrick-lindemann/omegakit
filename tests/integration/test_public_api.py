@@ -10,6 +10,7 @@ def test_public_api_exports():
     assert sorted(omegakit.__all__) == [
         "BASE_KEY",
         "CLASS_KEY",
+        "ConfigLoadError",
         "ConfigValidationError",
         "Configurable",
         "DEFAULTS_KEY",

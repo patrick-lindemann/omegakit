@@ -22,6 +22,7 @@ def run(experiment_file: str, overrides: list[str]) -> None:
 
 run("experiments/poly3-adam.yaml", ["seed=3"])
 run("experiments/poly3-adma.yaml", [])
+run("experiments/poly3-adam.yaml", ["trainer.epochs=[50"])
 run("experiments/poly3-adam.yaml", ["trainer.epochs=many"])
 
 config = load_config(f"{configs}/base.yaml")

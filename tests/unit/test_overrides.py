@@ -1,7 +1,7 @@
 import pytest
 from omegaconf import OmegaConf
 
-from omegakit import ConfigValidationError, instantiate, load_config, prepare
+from omegakit import ConfigLoadError, instantiate, load_config, prepare
 
 
 def test_load_applies_list_overrides(write_yaml):
@@ -39,17 +39,17 @@ def test_overrides_invalid_type_raises(write_yaml, overrides):
 )
 def test_overrides_invalid_values_raise(write_yaml, overrides, match):
     path = write_yaml("c.yaml", "a: 1\n")
-    with pytest.raises(ConfigValidationError, match=match):
+    with pytest.raises(ConfigLoadError, match=match):
         load_config(path, overrides=overrides)
     for build in (instantiate, prepare):
-        with pytest.raises(ConfigValidationError, match=match):
+        with pytest.raises(ConfigLoadError, match=match):
             build({"$class": "tests.helpers.Recorder"}, overrides=overrides)
 
 
 def test_overrides_rejected_by_a_struct_config_raise():
     config = OmegaConf.create({"$class": "tests.helpers.Recorder", "a": 1})
     OmegaConf.set_struct(config, True)
-    with pytest.raises(ConfigValidationError, match="`b`"):
+    with pytest.raises(ConfigLoadError, match="`b`"):
         instantiate(config, overrides=["b=2"])
 
 
