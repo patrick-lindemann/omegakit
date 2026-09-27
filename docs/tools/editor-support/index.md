@@ -1,4 +1,4 @@
-# Editor schemas
+# Editor support
 
 The dataclasses that validate a config can also describe it to your YAML editor, as
 a JSON Schema: the editor then completes keys and marks mistakes while you type.

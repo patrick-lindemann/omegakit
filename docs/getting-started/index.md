@@ -170,5 +170,5 @@ Tests load the same config with an override that puts an in-memory database unde
 ```
 
 Your editor can complete and check these files too: see
-[Editor schemas](../tools/editor-schemas/index.md). From here, the guide covers each feature,
+[Editor support](../tools/editor-support/index.md). From here, the guide covers each feature,
 starting with [Loading](../configs/loading/index.md).

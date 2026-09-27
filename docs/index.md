@@ -86,7 +86,7 @@ objects/validation/index
 :hidden:
 
 tools/command-line/index
-tools/editor-schemas/index
+tools/editor-support/index
 ```
 
 ```{toctree}

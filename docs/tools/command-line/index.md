@@ -54,7 +54,7 @@ by the same dotted path as `~import file#node`. Secrets are masked as by
 ## `json-schema`
 
 `json-schema` writes the JSON Schema of a class for your editor; see
-[Editor schemas](../editor-schemas/index.md).
+[Editor support](../editor-support/index.md).
 
 ## Rules
 

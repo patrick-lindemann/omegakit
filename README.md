@@ -49,7 +49,7 @@ chose Postgres. `webapp` is the example application of the
   [Swapping an implementation](https://omegakit.readthedocs.io/en/latest/recipes/swapping/)
 - Check configs before anything runs, and get completion in your editor:
   [Validation](https://omegakit.readthedocs.io/en/latest/objects/validation/),
-  [Editor schemas](https://omegakit.readthedocs.io/en/latest/tools/editor-schemas/)
+  [Editor support](https://omegakit.readthedocs.io/en/latest/tools/editor-support/)
 
 Start with [Getting started](https://omegakit.readthedocs.io/en/latest/getting-started/),
 or see how omegakit
