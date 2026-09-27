@@ -66,7 +66,6 @@ guide/typed-configs
 guide/validation
 guide/editor-schemas
 guide/resolvers
-guide/walk
 guide/command-line
 ```
 
