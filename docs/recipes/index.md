@@ -7,4 +7,5 @@ result.
 :maxdepth: 1
 
 environments
+swapping
 ```
