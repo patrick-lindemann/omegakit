@@ -1,4 +1,4 @@
-# Swapping an implementation
+# Swapping implementations
 
 The application needs a database; production uses Postgres, development and tests
 use SQLite. Type the field with the base class, name the implementation with

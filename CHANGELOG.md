@@ -8,7 +8,7 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
-- A recipe for a sweep over settings: one run per combination of a few values.
+- A Parameter sweeps recipe: one run per combination of a few values.
 
 ### Changed
 
@@ -24,7 +24,8 @@ All notable changes to this project are documented here. The format follows
 - Overrides, environment variables, interpolation and missing values each have
   their own page. Base is now Inheritance, Defaults is now Shared defaults,
   Building objects is now Instantiation, Typed configs is now Schemas, and Editor
-  schemas is now Editor support.
+  schemas is now Editor support. The recipes have shorter titles, and their URLs
+  follow them.
 
 ## [0.6.1] - 2026-09-27
 

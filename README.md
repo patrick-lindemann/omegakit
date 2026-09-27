@@ -46,7 +46,7 @@ chose Postgres. `webapp` is the example application of the
 - One config per environment, sharing a base:
   [Getting started](https://omegakit.readthedocs.io/en/latest/getting-started/#one-file-per-environment)
 - Swap Postgres for SQLite in development and tests:
-  [Swapping an implementation](https://omegakit.readthedocs.io/en/latest/recipes/swapping/)
+  [Swapping implementations](https://omegakit.readthedocs.io/en/latest/recipes/swapping-implementations/)
 - Check configs before anything runs, and get completion in your editor:
   [Validation](https://omegakit.readthedocs.io/en/latest/objects/validation/),
   [Editor support](https://omegakit.readthedocs.io/en/latest/tools/editor-support/)

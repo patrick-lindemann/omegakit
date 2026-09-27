@@ -1,4 +1,4 @@
-# One config per tenant from one file
+# Per-tenant configs
 
 A service that runs once per customer needs the same config many times, with a few
 values changed for each. Keep the differences in one file and apply each tenant's

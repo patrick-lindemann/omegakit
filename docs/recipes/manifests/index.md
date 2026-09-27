@@ -1,4 +1,4 @@
-# A manifest of similar things
+# Manifests
 
 An application often has a list of things that share most settings: scheduled jobs,
 queues, feeds. Put them in one mapping, give it the shared settings with

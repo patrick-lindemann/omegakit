@@ -41,8 +41,8 @@ app = instantiate(load_config("configs/app.yaml"), App)  # with APP_ENV=prod
   [Building objects](objects/instantiation/index.md) how objects are built and checked,
   and [Tools](tools/command-line/index.md) the command line and editor support.
 - **A complete pattern:** the recipes, such as
-  [swapping an implementation](recipes/swapping/index.md) or
-  [a manifest of similar things](recipes/manifests/index.md).
+  [Swapping implementations](recipes/swapping-implementations/index.md) or
+  [Parameter sweeps](recipes/parameter-sweeps/index.md).
 - **The exact rules:** the Rules section at the end of each feature page, and the
   [API](api/index.md).
 
@@ -111,10 +111,10 @@ security/masking-secrets/index
 :caption: Recipes
 :hidden:
 
-recipes/swapping/index
+recipes/swapping-implementations/index
 recipes/manifests/index
-recipes/tenants/index
-recipes/sweeps/index
+recipes/per-tenant-configs/index
+recipes/parameter-sweeps/index
 ```
 
 ```{toctree}

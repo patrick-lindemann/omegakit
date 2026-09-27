@@ -1,4 +1,4 @@
-# A sweep over settings
+# Parameter sweeps
 
 A benchmark or an experiment runs the same config many times, once for each
 combination of a few values. Build the combinations in Python and give each one to
