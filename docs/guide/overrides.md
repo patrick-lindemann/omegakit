@@ -43,5 +43,19 @@ before loading the config.
 A resolved config holds the real secret, as the third line of the output shows. To
 log a config with its secrets masked, see
 [Logging without secrets](../security.md#logging-without-secrets).
-[Precedence](../contracts/assembly.md#precedence) places overrides among the other
-sources.
+
+## Rules
+
+- `overrides` is a `DictConfig`, a `dict`, or a list of `key=value` strings. Any
+  other type, including a `ListConfig`, raises `TypeError`.
+- Each value in a list is parsed as YAML: `port=9000` is an integer, `tags=[a, b]`
+  a list. A string without `=`, such as `a`, sets `a` to `null`.
+- An override that does not parse, has a value OmegaConf does not support, or is
+  rejected by a struct config raises `ConfigValidationError` from `load_config`,
+  `instantiate` and `prepare`, naming the override or its key.
+- Overrides are merged after assembly. An `~import`, `$base` or `$defaults` in an
+  override stays literal, and `$meta` and construction keys in one are stripped
+  like any other.
+- Overrides win over every value from the files
+  ([Precedence](loading.md#rules)). `instantiate` and `prepare` merge theirs into
+  a copy of the node and leave the config passed in unchanged.

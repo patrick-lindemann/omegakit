@@ -40,13 +40,25 @@ it is placed.
 that uses this one as its `$base`, or an override, can fill it: `dev.yaml` sets
 `secret_key`, and production reads it from the environment. A `???` that is still
 open when the config is validated or built raises `ConfigValidationError`, naming
-the key; reading it directly raises OmegaConf's `MissingMandatoryValue`.
+the key.
 
 A file such as `base.yaml` is incomplete on purpose. `validate(base,
 allow_missing=True)` still checks every value it does give, and
-`omegakit check base.yaml --allow-missing` does the same from the command line.
+`omegakit check base.yaml --allow-missing` does the same from the command line
+([Validation](validation.md)).
 
-Only a few values resolve during loading: `~import` paths, and the values of `$base`
-and `$defaults`. The details are in the contracts under
-[Resolution timing](../contracts/assembly.md#resolution-timing) and
-[Missing values](../contracts/assembly.md#missing-values).
+## Rules
+
+- Only three things resolve while loading: `~import` paths, and the values of
+  `$base` and `$defaults` ([Loading](loading.md#rules)). Every other `${…}`
+  resolves when it is read, validated or built, against the assembled config. A
+  relative interpolation resolves at the node's final position.
+- `???` survives loading. A node that uses its file as `$base`, or an override,
+  can fill it.
+- Reading a value that is still `???` raises OmegaConf's `MissingMandatoryValue`.
+  Validating or building a node that contains one raises `ConfigValidationError`,
+  caused by it. Both name the full key. `allow_missing=True` accepts it in
+  `validate` and `omegakit check`.
+- An interpolation that cannot be resolved, or a resolver that raises, behaves the
+  same: OmegaConf's error when read, `ConfigValidationError` caused by it when
+  validated or built.

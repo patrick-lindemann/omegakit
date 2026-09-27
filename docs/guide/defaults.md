@@ -24,8 +24,24 @@ scalars, lists and `$` keys next to `$defaults` stay as they are, and nested
 mappings are reached only through a job's own keys.
 
 Defaults are applied after every `$base` is merged, so a job can extend another job
-with `$base` and still get the defaults. When `$defaults` are nested, the inner one
-wins, because it has already been applied when the outer one is.
+with `$base` and still get the defaults.
 
-A `$defaults` that is not a mapping raises `ConfigValidationError`. Precedence in
-full is in the contracts under [Precedence](../contracts/assembly.md#precedence).
+## Rules
+
+- `$defaults` is a mapping. Anything else raises `ConfigValidationError` naming
+  the node.
+- It reaches only the mapping-valued siblings in its own mapping. Scalars, lists
+  and `$` keys are untouched, and grandchildren only through the sibling's own
+  keys.
+- It is weaker than the sibling's own keys, including the keys the sibling's own
+  `$base` brought in, because bases are merged first. When `$defaults` are nested,
+  the inner one wins, because it is applied first.
+- It is applied after every `$base` in the config, so a `$defaults` that arrives
+  through a `$base` or an `~import` works. A `$defaults` copied through a `${…}`
+  base applies at the new place too ([Base](base.md#rules)).
+- A `${…}` value of `$defaults` is resolved while assembling. It sees the
+  referenced node with that node's own `$base` merged and `$defaults` applied. A
+  node waits while its reference points at a node that still holds a `$defaults`,
+  or at a key that does not exist yet, and the ancestors of a waiting node wait
+  too. A reference that never resolves, and references that form a cycle, raise
+  `ConfigValidationError` naming the nodes.

@@ -10,7 +10,7 @@ mixed in any order but before the options. An argument that names an existing fi
 is a config file, even with a `=`; otherwise it is an override if it has a `=` with
 no `/` before it, else a config file (which then fails to load). Overrides apply to
 every file. `--import-root DIR` passes `import_root` to `load_config`
-([Imports](assembly.md#imports)).
+([Imports](../guide/imports.md#rules)).
 
 **Exit codes.** 0 on success; 1 when a config is invalid or cannot be loaded; 2 for
 usage errors (no config file, an unknown option, a `--schema` or `json-schema` path

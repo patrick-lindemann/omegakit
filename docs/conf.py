@@ -31,6 +31,7 @@ redirects = {
     "guide/configurable": "typed-configs.html#a-custom-from-config",
     "guide/walk": "../api.html#traversal",
     "cookbook": "recipes/environments.html",
-    "contracts": "contracts/assembly.html",
+    "contracts": "guide/loading.html#rules",
+    "contracts/assembly": "../guide/loading.html#rules",
     "contracts/environment": "../security.html",
 }

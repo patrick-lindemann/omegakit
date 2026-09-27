@@ -41,7 +41,8 @@ app = instantiate(load_config("configs/app.yaml"), App)  # with APP_ENV=prod
 - **A complete pattern:** the recipes, such as
   [one config per environment](recipes/environments.md) or
   [swapping an implementation](recipes/swapping.md).
-- **The exact rules:** the [Contracts](contracts/assembly.md) and the [API](api.md).
+- **The exact rules:** the Rules section at the end of each guide page, and the
+  [API](api.md).
 
 Configs import and call Python code, so load them only from sources you trust.
 [Security](security.md) lists what runs and how to log a config without its secrets.
@@ -92,7 +93,6 @@ recipes/tenants
 :caption: Contracts
 :hidden:
 
-contracts/assembly
 contracts/instantiation
 contracts/typed-configs
 contracts/command-line

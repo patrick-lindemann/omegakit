@@ -1,7 +1,7 @@
 # Loading
 
 `load_config` reads a YAML file and assembles it into an OmegaConf `DictConfig`.
-The `webapp` root file is two lines, and everything else arrives while loading:
+The `webapp` root file holds two keys, and everything else arrives while loading:
 
 ```{literalinclude} ../examples/webapp/configs/app.yaml
 :language: yaml
@@ -32,23 +32,20 @@ them, not to the working directory, so the config loads from anywhere.
    ([Overrides and environment variables](overrides.md)).
 5. `$meta` is removed, unless you pass `keep_meta=True`.
 
-The order explains what works together:
+This order explains what works together. `$base: ~import base.yaml` works, because
+the import is replaced before bases are merged. A `$defaults` that arrives through
+a `$base` works, because defaults are applied after all bases. An override cannot
+add an `~import`, a `$base` or a `$defaults`, because it arrives after assembly.
 
-- `$base: ~import base.yaml` works, because the import has already replaced the
-  string when bases are merged.
-- A `$defaults` that arrives through a `$base` or an `~import` works, because
-  defaults are applied after all bases.
-- An override cannot add an `~import`, a `$base` or a `$defaults`: it arrives after
-  assembly, so those stay literal.
-
-Every other `${…}` stays unresolved until a value is read or built
-([Interpolation and missing values](interpolation-and-missing.md)).
+Only three things resolve while loading: `~import` paths, and the values of `$base`
+and `$defaults`. Every other `${…}` stays as written until a value is read,
+validated or built ([Interpolation and missing values](interpolation-and-missing.md)).
 
 ## Metadata and plain data
 
-`$meta` holds notes for people and tools, such as who owns a job. It is removed
-while loading unless you ask for it, and never reaches a constructor. `walk` visits
-every mapping of a config, parents first, so a script can collect it:
+`$meta` holds notes for people and tools ([Building objects](building-objects.md)).
+`load_config` removes it unless you ask for it. `walk` visits every mapping of a
+config, parents first, so a script can collect it:
 
 ```{literalinclude} ../examples/guide/loading/main.py
 :language: python
@@ -62,6 +59,43 @@ webapp.jobs.Job growth
 `keep_targets=False` removes `$class`, `$ref` and `$partial` instead, which leaves
 plain data for code that builds nothing.
 
-A file that is not valid YAML, or an import that fails, raises
-`ConfigValidationError` naming the file and the line. The full order is in the
-contracts under [Pipeline](../contracts/assembly.md#pipeline).
+## Rules
+
+**Pipeline.** `load_config` runs these steps in order:
+
+1. Parse the root file. It must hold a mapping.
+2. Replace `~import` values, depth-first. Each imported file resolves its own
+   imports first.
+3. Merge every `$base` underneath its node, children before parents.
+4. Apply every `$defaults` to its siblings, children before parents.
+5. Merge the overrides.
+6. Strip `$meta`, unless `keep_meta=True`, and `$class`, `$ref` and `$partial` if
+   `keep_targets=False`.
+
+**Precedence**, strongest first:
+
+1. Overrides.
+2. The node's own keys.
+3. Later items of a list-valued `$base`.
+4. Earlier items of a list-valued `$base`.
+5. `$defaults`, which is weaker than the item it is applied to.
+
+**Resolution timing.**
+
+- Resolved while assembling: the path of an `~import`, including any `${…}` in it,
+  and the values of `$base` and `$defaults`.
+- Every other `${…}` resolves when it is read, validated or built, against the
+  assembled config. A relative one, such as `${.id}`, resolves at the node's final
+  position.
+- `instantiate` and `prepare` resolve a copy and never change the config passed in.
+- A `${…}` value of `$base` or `$defaults` waits until the node it points at is
+  ready. [Base](base.md#rules) and [Defaults](defaults.md#rules) say what each one
+  sees.
+
+**Errors.** A missing root file raises `FileNotFoundError`. Every other problem in
+a file's content raises `ConfigValidationError`, with the original error from
+PyYAML, OmegaConf or the file system as its `__cause__`: invalid YAML, duplicate
+keys, unknown tags or a file that is not UTF-8, naming the file, the line and the
+column; a root file that holds a list; a file that holds a single value instead of
+a mapping or a list. An empty file, `null` or `~` is an empty mapping. The
+[Errors](../contracts/errors.md) table lists every exception.

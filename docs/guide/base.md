@@ -43,8 +43,32 @@ Lists are replaced, not joined:
 
 `site.allowed_hosts` is `[c.example.com]`, and `timeout` is 30.
 
-A `$base` may also be a list of mappings: later entries win over earlier ones, and
-the node's own keys win over all of them. A `$base` that is not a mapping or a list
-of mappings raises `ConfigValidationError`. The contracts cover merge order and
-precedence in [Precedence](../contracts/assembly.md#precedence), and what a `${…}` base can
-see in [Resolution timing](../contracts/assembly.md#resolution-timing).
+A `$base` may also be a list of mappings. Later entries win over earlier ones, and
+the node's own keys win over all of them.
+
+## Rules
+
+- `$base` is a mapping or a list of mappings. Anything else raises
+  `ConfigValidationError` naming the node.
+- Precedence, strongest first: the node's own keys, later list items, earlier list
+  items. Lists inside the merged mappings are replaced, not joined.
+- Every `$base` is merged before any `$defaults` is applied. A `$base` therefore
+  does not see keys that a `$defaults` adds. A `$defaults` key inside a
+  referenced node is copied as written, and then applies to the new node's
+  children too.
+
+A `${…}` base is resolved while assembling, and is a copy taken when it is merged:
+
+- It sees the referenced node with that node's own `$base` merged. A node waits
+  while its reference points at a node that still holds a `$base`, or at a key
+  that does not exist yet, and the ancestors of a waiting node wait too.
+- A reference that never resolves, and references that form a cycle, raise
+  `ConfigValidationError` naming the nodes.
+- It cannot refer to keys that an enclosing node's own `$base` brings in.
+  `replica: {$base: ${db}}` in a file whose root has `$base: ~import common.yaml`,
+  with `db` coming from `common.yaml`, raises.
+- In a file used as another file's `$base`, the copy is taken there, before the
+  other file's keys apply. Replacing `db` later does not change the copy.
+- Overrides do not reach the copy: `db.pool=9` leaves `replica.pool` unchanged.
+- A relative reference to a sibling in the same file, `${..db}`, works wherever
+  that file ends up.
