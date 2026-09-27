@@ -168,3 +168,22 @@ def test_curvefit_measurements_load(monkeypatch):
         {"$class": "curvefit.data.CsvData", "path": str(path)}
     ).samples()
     assert len(xs) == len(ys) == 40
+
+
+@pytest.mark.parametrize("dtype", ["float32", "bfloat16"])
+def test_curvefit_torch_variant_runs(dtype, tmp_path):
+    # Only the `test-resolvers` CI job installs Torch.
+    pytest.importorskip("torch")
+    output = subprocess.run(
+        [
+            sys.executable,
+            str(CURVEFIT / "torch" / "main.py"),
+            f"model.dtype=${{dtype:{dtype}}}",
+        ],
+        cwd=tmp_path,
+        env={**os.environ, "PYTHONPATH": str(CURVEFIT)},
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+    assert output.startswith(f"poly3-adam-torch: Adam, torch.{dtype}\n")

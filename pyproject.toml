@@ -100,3 +100,5 @@ reportUnnecessaryTypeIgnoreComment = "error"
 executionEnvironments = [
     { root = "docs", extraPaths = ["docs/webapp", "docs/curvefit"] },
 ]
+# The PyTorch variant needs Torch, which the lint job does not install.
+exclude = ["docs/curvefit/torch"]

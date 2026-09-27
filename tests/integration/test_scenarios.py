@@ -167,7 +167,7 @@ CURVEFIT = Path(__file__).parents[2] / "docs" / "curvefit"
 EXAMPLE_CONFIGS = sorted(
     path
     for example in (WEBAPP, CURVEFIT)
-    for path in (example / "configs").glob("**/*.yaml")
+    for path in example.glob("**/*.yaml")
     if path.read_text().startswith("# yaml-language-server:")
 )
 
@@ -179,7 +179,7 @@ def _modeline_schema(path: Path) -> dict:
 
 
 @pytest.mark.parametrize(
-    "path", EXAMPLE_CONFIGS, ids=lambda path: f"{path.parents[1].name}/{path.name}"
+    "path", EXAMPLE_CONFIGS, ids=lambda path: str(path.relative_to(WEBAPP.parent))
 )
 def test_scenario_example_yaml_matches_its_schema(path: Path):
     """Editor schema + real files: every example YAML validates, a typo does not."""
