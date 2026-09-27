@@ -7,7 +7,6 @@ from omegaconf.errors import InterpolationResolutionError
 
 from omegakit._utils import register_resolver
 from omegakit.resolvers.torch import (
-    _resolve_dtype,
     register_cuda_available_resolver,
     register_torch_dtype_resolver,
     register_torch_resolvers,
@@ -57,8 +56,9 @@ def test_real_torch_resolvers():
     assert cfg.dtype is torch.float32
     assert cfg.cuda == torch.cuda.is_available()
     for invalid in ("not_a_dtype", "pi"):
-        with pytest.raises(ValueError, match="Invalid torch dtype"):
-            _resolve_dtype(invalid)
+        cfg = OmegaConf.create({"dtype": f"${{dtype:{invalid}}}"})
+        with pytest.raises(InterpolationResolutionError, match="Invalid torch dtype"):
+            _ = cfg.dtype
     with pytest.raises(ValueError, match="already registered"):
         register_torch_resolvers()
     register_torch_resolvers(replace=True)
