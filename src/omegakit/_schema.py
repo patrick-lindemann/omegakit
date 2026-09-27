@@ -342,8 +342,9 @@ def generate_json_schema(schema: type) -> dict[str, Any]:
     Every value may also be an interpolation (`${...}`), `???` or an `~import`, every
     mapping accepts `$`-keys such as `$base` and `$class`, and nothing is required,
     because values may come from `$base`, `$defaults` or overrides. An enum accepts
-    its member names, and also the string and integer values that are not a name. An object field whose class is a `Configurable` with a dataclass
-    schema is checked against that schema when its `$class` names the class.
+    its member names, and also the string and integer values that are not a name.
+    An object field whose class is a `Configurable` with a dataclass schema is
+    checked against that schema when its `$class` names the class.
 
     Args:
         schema: A root schema dataclass, or a `Configurable` class whose schema
