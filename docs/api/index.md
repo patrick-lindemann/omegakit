@@ -27,7 +27,6 @@
 
 ```{eval-rst}
 .. autofunction:: omegakit.validate
-.. autofunction:: omegakit.mask_secrets
 ```
 
 ## Editor schemas
@@ -85,6 +84,8 @@
 
 ```{eval-rst}
 .. automodule:: omegakit.resolvers.paths
+   :members:
+.. automodule:: omegakit.resolvers.secrets
    :members:
 .. automodule:: omegakit.resolvers.torch
    :members:

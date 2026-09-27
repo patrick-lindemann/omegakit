@@ -1,13 +1,13 @@
 import os
 from pathlib import Path
 
-from omegakit import ConfigValidationError, load_config, validate
+from omegakit import load_config
 
-config = load_config(Path(__file__).parent / "tracked.yaml")
-try:
-    validate(config)
-except ConfigValidationError as error:
-    print(error)
+here = Path(__file__).parent
 
-os.environ["TRACKER_TOKEN"] = "tok-5f3a9c1e7b2d4f60"
-print(config.tracker.url)
+config = load_config(here / "array.yaml")
+print(config.seed, config.run_dir)
+
+os.environ["SLURM_ARRAY_TASK_ID"] = "3"
+config = load_config(here / "array.yaml")
+print(repr(config.seed), config.run_dir)

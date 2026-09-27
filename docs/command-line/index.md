@@ -54,8 +54,8 @@ overrides produced. The test split above got `$class`, `function` and `noise` fr
 `--resolve`, so an `${oc.env:...}` shows the variable's name, not its value.
 `--resolve` shows the values a run will get; look at a run with it before you
 launch it. `--node` prints one node, by the same dotted path as
-`~import file#node`. Secrets are masked as by `mask_secrets`
-([Masking secrets](../security/masking-secrets/index.md)).
+`~import file#node`. With `--resolve`, the values of `${secret:...}` print as `***`
+([Secrets](../security/secrets/index.md)).
 
 ## `json-schema`
 
@@ -102,9 +102,10 @@ path that cannot be imported, or an `--import-root` that is not a directory.
   interpolations on the path are followed and only the selected node is resolved.
   Missing values print as `???`, and any other resolution error exits with 1 with
   one line.
-- Secrets are masked as `mask_secrets` does. Keys are always masked. Environment
-  variables and values are masked only with `--resolve`. The secrets are collected
-  from the whole config, also with `--node`. `--show-secrets` turns masking off.
+- With `--resolve`, every value that `${secret:...}` gives is printed as `***`,
+  also inside longer strings and also when it is read outside `--node`.
+  `--show-secrets` turns this off ([Secrets](../security/secrets/index.md#rules)).
+- The command registers `${secret:...}` for `check` and `show`.
 - `--keep-meta` keeps `$meta` keys.
 
 **`omegakit json-schema IMPORT_PATH [-o FILE] [--check]`** prints or writes the

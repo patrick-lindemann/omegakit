@@ -219,7 +219,7 @@ def test_cli_show_reports_resolution_errors(write_yaml, capsys, arguments):
 
 SECRETS = """\
 db:
-  password: ${oc.env:OMEGAKIT_TEST_PASSWORD}
+  password: ${secret:OMEGAKIT_TEST_PASSWORD}
   url: postgres://u:${.password}@h/db
   user: ${oc.env:OMEGAKIT_TEST_USER}
 tokens:
@@ -232,29 +232,38 @@ tokens:
     [
         (
             [],
-            "db:\n  password: '***'\n  url: postgres://u:${.password}@h/db\n"
-            "  user: ${oc.env:OMEGAKIT_TEST_USER}\ntokens:\n  api: '***'\n",
+            "db:\n  password: ${secret:OMEGAKIT_TEST_PASSWORD}\n"
+            "  url: postgres://u:${.password}@h/db\n"
+            "  user: ${oc.env:OMEGAKIT_TEST_USER}\ntokens:\n  api: literal-token\n",
         ),
         (
             ["--resolve"],
             "db:\n  password: '***'\n  url: postgres://u:***@h/db\n  user: app\n"
-            "tokens:\n  api: '***'\n",
+            "tokens:\n  api: literal-token\n",
         ),
         (["--node", "db.url", "--resolve"], "postgres://u:***@h/db\n"),
-        (["--node", "db.password"], "***\n"),
-        (["--node", "tokens.api"], "***\n"),
-        (["--node", "tokens"], "api: '***'\n"),
+        (["--node", "db.password", "--resolve"], "***\n"),
+        (["--node", "db.password"], "${secret:OMEGAKIT_TEST_PASSWORD}\n"),
         (
             ["--node", "db.url", "--resolve", "--show-secrets"],
             "postgres://u:correct-horse@h/db\n",
         ),
     ],
 )
-def test_cli_show_masks_secrets(write_yaml, capsys, monkeypatch, arguments, output):
+def test_cli_show_masks_secret_values(
+    write_yaml, capsys, monkeypatch, arguments, output
+):
     monkeypatch.setenv("OMEGAKIT_TEST_PASSWORD", "correct-horse")
     monkeypatch.setenv("OMEGAKIT_TEST_USER", "app")
     main(["show", str(write_yaml("app.yaml", SECRETS)), *arguments])
     assert capsys.readouterr().out == output
+
+
+def test_cli_check_reads_secrets(write_yaml, capsys, monkeypatch):
+    monkeypatch.setenv("OMEGAKIT_TEST_PASSWORD", "correct-horse")
+    monkeypatch.setenv("OMEGAKIT_TEST_USER", "app")
+    main(["check", str(write_yaml("app.yaml", SECRETS))])
+    assert capsys.readouterr().out == ""
 
 
 def test_cli_show_errors(write_yaml, capsys):

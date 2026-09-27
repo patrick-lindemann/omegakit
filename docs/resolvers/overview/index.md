@@ -6,8 +6,9 @@ OmegaConf's own resolvers, such as `oc.env`, are always available;
 in use.
 
 omegakit adds optional resolvers. Each module under `omegakit.resolvers` holds the
-resolvers for one purpose, and has a page in this section. Register the ones you
-need once, before loading the configs that use them:
+resolvers for one purpose, and has a page in this section, except
+`omegakit.resolvers.secrets`, which is on [Secrets](../../security/secrets/index.md).
+Register the ones you need once, before loading the configs that use them:
 
 ```python
 from omegakit.resolvers.paths import register_paths_resolver

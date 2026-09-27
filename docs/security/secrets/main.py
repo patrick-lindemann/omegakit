@@ -3,12 +3,14 @@ from pathlib import Path
 
 from omegaconf import OmegaConf
 
-from omegakit import load_config, mask_secrets
+from omegakit import instantiate, load_config
+from omegakit.resolvers.secrets import register_secret_resolver
 
-configs = Path(__file__).parents[2] / "webapp" / "configs"
-os.environ["APP_ENV"] = "prod"
-os.environ["SECRET_KEY"] = "s3cr3t-from-the-vault"
+os.environ["TRACKER_TOKEN"] = "tok-5f3a9c1e7b2d4f60"
+register_secret_resolver()
 
-config = load_config(configs / "app.yaml")
-print(config.server.secret_key)
-print(OmegaConf.to_yaml(mask_secrets(config)["server"]), end="")
+config = load_config(Path(__file__).parent / "tracked.yaml")
+print(OmegaConf.to_yaml(config.tracker), end="")
+
+tracker = instantiate(config.tracker)
+print(tracker.url.endswith("token=tok-5f3a9c1e7b2d4f60"))

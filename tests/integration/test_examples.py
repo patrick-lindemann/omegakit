@@ -149,7 +149,8 @@ def test_curvefit_torch_variant_runs(dtype, tmp_path):
     assert output.startswith(f"poly3-adam-torch: Adam, torch.{dtype}\n")
 
 
-# Pages whose shell sessions run in the curvefit directory.
+# Pages whose shell sessions run in a copy of the curvefit directory, and pages
+# whose sessions only read files and run in their own directory.
 SESSION_PAGES = [
     "getting-started",
     "reproducible-runs",
@@ -157,17 +158,22 @@ SESSION_PAGES = [
     "schemas/editor-support",
     "recipes/checking-experiments-in-ci",
 ]
+READ_ONLY_SESSION_PAGES = ["security/secrets"]
 PROGRAMS = {"python": [sys.executable], "omegakit": [sys.executable, "-m", "omegakit"]}
 
 
-@pytest.mark.parametrize("page", SESSION_PAGES)
-def test_page_sessions_show_real_output(page, tmp_path):
-    shutil.copytree(
-        CURVEFIT,
-        tmp_path,
-        dirs_exist_ok=True,
-        ignore=shutil.ignore_patterns("runs", "__pycache__"),
-    )
+@pytest.mark.parametrize("page", SESSION_PAGES + READ_ONLY_SESSION_PAGES)
+def test_page_sessions_show_real_output(page, tmp_path, monkeypatch):
+    monkeypatch.setenv("TRACKER_TOKEN", "tok-5f3a9c1e7b2d4f60")
+    directory = DOCS / page
+    if page in SESSION_PAGES:
+        shutil.copytree(
+            CURVEFIT,
+            tmp_path,
+            dirs_exist_ok=True,
+            ignore=shutil.ignore_patterns("runs", "__pycache__"),
+        )
+        directory = tmp_path
     text = (DOCS / page / "index.md").read_text()
     sessions = re.findall(r"```text\n(\$ .*?)```", text, re.S)
     assert sessions
@@ -180,14 +186,14 @@ def test_page_sessions_show_real_output(page, tmp_path):
                 name
                 for argument in arguments
                 for name in (
-                    sorted(glob.glob(argument, root_dir=tmp_path))
+                    sorted(glob.glob(argument, root_dir=directory))
                     if "*" in argument
                     else [argument]
                 )
             ]
             result = subprocess.run(
                 [*PROGRAMS[program], *arguments],
-                cwd=tmp_path,
+                cwd=directory,
                 capture_output=True,
                 text=True,
             )

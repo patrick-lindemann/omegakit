@@ -38,8 +38,8 @@ exists, so a run never overwrites another.
 
 `main.py` saves the config it built from, and the overrides it was given. The
 saved config is assembled: the imports, bases and defaults are merged in, and the
-overrides are applied. It is not resolved: `${seed}` and `${oc.env:...}` stay as
-written, so the file holds no secret values. Load it again to repeat the run:
+overrides are applied. It is not resolved: `${seed}` stays as written, and so does
+every other interpolation. Load it again to repeat the run:
 
 ```text
 $ python main.py configs/experiments/poly3-adam.yaml model.degree=5
@@ -54,10 +54,8 @@ test mae: 0.1427
 
 The saved config names its own run directory, so the repeat passes a new one.
 
-To show a run to people, you can also save a resolved copy with its secrets masked,
-`OmegaConf.save(mask_secrets(config), run_dir / "config.masked.yaml")`. Do not
-repeat a run from it: masked values load back as `***`
-([Masking secrets](../security/masking-secrets/index.md)).
+A secret read with `${secret:NAME}` stays in the saved file as written, so the run
+directory holds no token ([Secrets](../security/secrets/index.md)).
 
 ## Check before running
 

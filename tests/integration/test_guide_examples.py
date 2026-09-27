@@ -8,6 +8,7 @@ from omegaconf import OmegaConf
 
 from omegakit import instantiate, load_config, validate
 from omegakit.resolvers.paths import register_paths_resolver
+from omegakit.resolvers.secrets import register_secret_resolver
 
 DOCS = Path(__file__).parents[2] / "docs"
 WEBAPP = DOCS / "webapp"
@@ -32,9 +33,10 @@ def examples_importable(monkeypatch):
     "path", YAML_FILES, ids=[str(p.relative_to(DOCS)) for p in YAML_FILES]
 )
 def test_guide_yaml_loads_validates_and_builds(path: Path, monkeypatch):
-    # The environment variables page reads a token from the environment, and the
-    # paths page names directories through the paths resolver.
+    # The secrets page reads a token from the environment, and the paths page
+    # names directories through the paths resolver.
     monkeypatch.setenv("TRACKER_TOKEN", "tok-for-the-guide-tests")
+    register_secret_resolver()
     register_paths_resolver({"runs": "runs", "data": "data"})
     config = load_config(path)
     validate(config, allow_missing=True)

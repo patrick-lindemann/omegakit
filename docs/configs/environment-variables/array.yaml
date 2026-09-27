@@ -1,0 +1,2 @@
+$base: ~import ../../curvefit/configs/experiments/poly3-adam.yaml
+seed: ${oc.decode:${oc.env:SLURM_ARRAY_TASK_ID,0}}

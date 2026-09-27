@@ -8,6 +8,11 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- `${secret:NAME}` reads an environment variable, as `oc.env` does, and
+  `omegakit show --resolve` prints each value it gave as `***`, also inside longer
+  strings. Register it with `omegakit.resolvers.secrets.register_secret_resolver()`;
+  the `omegakit` command registers it itself.
+- A Secrets page, which replaces Masking secrets, at `security/secrets/`.
 - A Dataclass schemas page: a plain dataclass as the schema of a config, its field
   kinds and how a node is checked.
 - Two recipes: Using with PyTorch, and Checking experiments in CI.
@@ -53,6 +58,10 @@ All notable changes to this project are documented here. The format follows
 
 ### Removed
 
+- **Breaking:** `mask_secrets`, and the guessing of secrets by key and variable
+  names in `omegakit show`. Save and log the config from `load_config` unresolved:
+  it holds `${secret:NAME}`, not the value. `--show-secrets` now only turns off the
+  masking of `${secret:...}` values.
 - The Manifests and Per-tenant configs recipes. Shared defaults covers what
   Manifests showed.
 

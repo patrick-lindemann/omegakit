@@ -44,8 +44,8 @@ experiment = instantiate(config, schema=Experiment)
 
 Configs import and call Python code, so load them only from sources you trust.
 The Security section says [what runs](security/trust-model/index.md), how to
-[limit it](security/restricting-imports/index.md) and how to log a config
-[without its secrets](security/masking-secrets/index.md).
+[limit it](security/restricting-imports/index.md) and how to keep
+[secrets](security/secrets/index.md) out of saved configs and logs.
 
 ```{toctree}
 :hidden:
@@ -102,7 +102,7 @@ resolvers/torch/index
 
 security/trust-model/index
 security/restricting-imports/index
-security/masking-secrets/index
+security/secrets/index
 ```
 
 ```{toctree}

@@ -4,13 +4,13 @@ from pathlib import Path
 from omegaconf import OmegaConf
 from webapp import App
 
-from omegakit import instantiate, load_config, mask_secrets
+from omegakit import instantiate, load_config
 
 # Overrides from the command line, such as `server.port=9000`.
 config = load_config(
     Path(__file__).parent / "configs" / "app.yaml", overrides=sys.argv[1:]
 )
-print(OmegaConf.to_yaml(mask_secrets(config)))
+print(OmegaConf.to_yaml(config))
 
 app = instantiate(config, schema=App)
 print(

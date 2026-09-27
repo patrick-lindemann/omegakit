@@ -1,13 +1,12 @@
 # Environment variables
 
 A config reads environment variables through OmegaConf's `oc.env` resolver. It is
-built into OmegaConf, so it works without any registration. `curvefit`'s tracker
-can post its metrics to a server, and the URL holds a token that must stay out of
-git:
+built into OmegaConf, so it works without any registration. On a cluster, a job
+array can pick each run's seed from the task number:
 
-```{literalinclude} tracked.yaml
+```{literalinclude} array.yaml
 :language: yaml
-:caption: tracked.yaml
+:caption: array.yaml
 ```
 
 ```{literalinclude} main.py
@@ -16,22 +15,24 @@ git:
 ```
 
 ```text
-Cannot resolve `tracker.url`: KeyError raised while resolving interpolation: "Environment variable 'TRACKER_TOKEN' not found"
-https://tracker.example.com/api/runs?token=tok-5f3a9c1e7b2d4f60
+0 runs/poly3-adam/seed0
+3 runs/poly3-adam/seed3
 ```
 
-The variable is read when the value is resolved, not while loading. So the config
-loads without it, and fails when it is validated, built or read. The resolved URL
-holds the real token, as the second line shows. To log a config with its secrets
-masked, see [Masking secrets](../../security/masking-secrets/index.md).
+Without `SLURM_ARRAY_TASK_ID`, the default `0` applies. `oc.env` gives a string, and
+`oc.decode` parses it as YAML, so the seed is the integer 3. That matters where the
+value is used as it is: `random.seed("3")` seeds differently from `random.seed(3)`.
 
-omegakit does not read `.env` files. Load them with a tool such as `python-dotenv`
-before loading the config.
+The variable is read when the value is resolved, not while loading. For a secret,
+such as a token, use `${secret:NAME}` instead, which keeps it out of printed
+configs ([Secrets](../../security/secrets/index.md)). omegakit does not read `.env`
+files. Load them with a tool such as `python-dotenv` before loading the config.
 
 ## Rules
 
 - `${oc.env:NAME}` reads the variable `NAME` when the value is resolved, and
-  `${oc.env:NAME,default}` falls back to `default`.
+  `${oc.env:NAME,default}` falls back to `default`. The value is a string;
+  `${oc.decode:${oc.env:NAME}}` parses it as YAML.
 - In an `~import` path, and in the values of `$base` and `$defaults`, the variable
   is read while loading ([Loading](../loading/index.md#rules)). Everywhere else it
   is read when the value is read, validated or built.
