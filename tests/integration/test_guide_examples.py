@@ -30,7 +30,9 @@ def examples_importable(monkeypatch):
 @pytest.mark.parametrize(
     "path", YAML_FILES, ids=[str(p.relative_to(DOCS)) for p in YAML_FILES]
 )
-def test_guide_yaml_loads_validates_and_builds(path: Path):
+def test_guide_yaml_loads_validates_and_builds(path: Path, monkeypatch):
+    # The environment variables page reads a token from the environment.
+    monkeypatch.setenv("TRACKER_TOKEN", "tok-for-the-guide-tests")
     config = load_config(path)
     validate(config, allow_missing=True)
     if "$class" in config and not OmegaConf.missing_keys(config):

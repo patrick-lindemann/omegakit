@@ -1,18 +1,13 @@
 # Environment variables
 
 A config reads environment variables through OmegaConf's `oc.env` resolver. It is
-built into OmegaConf, so it works without any registration. `webapp` uses it twice:
-the root file picks the environment, and production reads its secret key.
+built into OmegaConf, so it works without any registration. `curvefit`'s tracker
+can post its metrics to a server, and the URL holds a token that must stay out of
+git:
 
-```{literalinclude} ../../webapp/configs/app.yaml
+```{literalinclude} tracked.yaml
 :language: yaml
-:caption: configs/app.yaml
-```
-
-```{literalinclude} ../../webapp/configs/envs/prod.yaml
-:language: yaml
-:caption: configs/envs/prod.yaml (excerpt)
-:lines: 3-6
+:caption: tracked.yaml
 ```
 
 ```{literalinclude} main.py
@@ -21,14 +16,14 @@ the root file picks the environment, and production reads its secret key.
 ```
 
 ```text
-webapp.db.Postgres
-s3cr3t-from-the-vault
+Cannot resolve `tracker.url`: KeyError raised while resolving interpolation: "Environment variable 'TRACKER_TOKEN' not found"
+https://tracker.example.com/api/runs?token=tok-5f3a9c1e7b2d4f60
 ```
 
-`APP_ENV=prod` made the root file import `envs/prod.yaml`, and the secret key came
-from `SECRET_KEY`. A resolved config holds the real secret, as the second line
-shows. To log a config with its secrets masked, see
-[Masking secrets](../../security/masking-secrets/index.md).
+The variable is read when the value is resolved, not while loading. So the config
+loads without it, and fails when it is validated, built or read. The resolved URL
+holds the real token, as the second line shows. To log a config with its secrets
+masked, see [Masking secrets](../../security/masking-secrets/index.md).
 
 omegakit does not read `.env` files. Load them with a tool such as `python-dotenv`
 before loading the config.
@@ -41,4 +36,5 @@ before loading the config.
   is read while loading ([Loading](../loading/index.md#rules)). Everywhere else it
   is read when the value is read, validated or built.
 - A variable that is not set and has no default fails like any interpolation
-  ([Interpolation](../interpolation/index.md#rules)).
+  ([Interpolation](../interpolation/index.md#rules)), also with
+  `allow_missing=True`.

@@ -1,12 +1,13 @@
 import os
 from pathlib import Path
 
-from omegakit import CLASS_KEY, load_config
+from omegakit import ConfigValidationError, load_config, validate
 
-configs = Path(__file__).parents[2] / "webapp" / "configs"
+config = load_config(Path(__file__).parent / "tracked.yaml")
+try:
+    validate(config)
+except ConfigValidationError as error:
+    print(error)
 
-os.environ["APP_ENV"] = "prod"
-os.environ["SECRET_KEY"] = "s3cr3t-from-the-vault"
-config = load_config(configs / "app.yaml")
-print(config.database[CLASS_KEY])
-print(config.server.secret_key)
+os.environ["TRACKER_TOKEN"] = "tok-5f3a9c1e7b2d4f60"
+print(config.tracker.url)
