@@ -76,7 +76,7 @@ configs/missing-values/index
 
 schemas/dataclass-schemas/index
 schemas/validation/index
-tools/editor-support/index
+schemas/editor-support/index
 ```
 
 ```{toctree}

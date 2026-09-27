@@ -59,7 +59,7 @@ launch it. `--node` prints one node, by the same dotted path as
 ## `json-schema`
 
 `json-schema` writes the JSON Schema of a class for your editor; see
-[Editor support](../tools/editor-support/index.md).
+[Editor support](../schemas/editor-support/index.md).
 
 ## Rules
 

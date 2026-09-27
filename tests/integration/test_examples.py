@@ -149,7 +149,12 @@ def test_curvefit_torch_variant_runs(dtype, tmp_path):
 
 
 # Pages whose shell sessions run in the curvefit directory.
-SESSION_PAGES = ["getting-started", "reproducible-runs", "command-line"]
+SESSION_PAGES = [
+    "getting-started",
+    "reproducible-runs",
+    "command-line",
+    "schemas/editor-support",
+]
 PROGRAMS = {"python": [sys.executable], "omegakit": [sys.executable, "-m", "omegakit"]}
 
 

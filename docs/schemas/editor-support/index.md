@@ -2,36 +2,41 @@
 
 The dataclasses that validate a config can also describe it to your YAML editor, as
 a JSON Schema: the editor then completes keys and marks mistakes while you type.
-From `webapp`'s directory:
+From `curvefit`'s directory:
 
-```sh
-omegakit json-schema webapp.App -o app.schema.json
+```text
+$ omegakit json-schema curvefit.Experiment -o experiment.schema.json
 ```
 
-The first line of each config file names the schema, which is how the YAML
+The first line of each experiment file names the schema, which is how the YAML
 extension for VS Code by Red Hat, and other editors that use yaml-language-server,
 find it:
 
-```{literalinclude} ../../webapp/configs/envs/prod.yaml
+```{literalinclude} ../../curvefit/configs/experiments/linear-sgd.yaml
 :language: yaml
-:caption: configs/envs/prod.yaml
-:lines: 1-4
+:caption: configs/experiments/linear-sgd.yaml
+:lines: 1-3
 ```
 
 The import path must be importable from the current directory, as for `$class`.
-`generate_json_schema(App)` returns the same schema as a dictionary. For a file that
-holds a single node, such as one job imported from its own file, generate the schema
-of that node's class instead, such as `webapp.jobs.Job`.
+`generate_json_schema(Experiment)` returns the same schema as a dictionary. For a
+file that holds a single node, such as one dataset, generate the schema of that
+node's class instead, such as `curvefit.data.Synthetic`.
 
 Run the same command with `--check` in CI. It writes nothing, and exits with 1 when
-the committed file no longer matches the classes.
+the committed file no longer matches the classes:
+
+```text
+$ omegakit json-schema curvefit.Experiment -o experiment.schema.json --check
+```
 
 ## What the editor checks
 
-Misspelled keys and values of the wrong type are errors at the root, and inside a
-node whose `$class` names exactly the class the field expects. The editor knows
-nothing about subclasses, so a `$class: webapp.db.Postgres` under
-`database: Database` is accepted as any mapping; `validate` still checks it.
+Misspelled keys and values of the wrong type are errors at the root, in sections
+such as `data`, and inside a node whose `$class` names exactly the class the field
+expects, such as the trainer. The editor knows nothing about subclasses, so under
+`model: Model` a `$class: curvefit.models.Polynomial` node is accepted as any
+mapping; `validate` still checks it.
 
 What the schema cannot know is allowed everywhere: interpolations, `???`, `~import`
 and keys that start with `$`. Nothing is required, because a value may still come
