@@ -1,42 +1,52 @@
-# Interpolation and `???`
+# Interpolation and missing values
 
-omegakit keeps OmegaConf's `${…}` interpolations and `???` missing values, and
-resolves them against the fully assembled config.
+omegakit keeps OmegaConf's `${…}` interpolations and `???` missing values. Both
+resolve against the assembled config, when a value is read, validated or built.
 
-## Example
+`webapp`'s shared settings build the cache URL from the server's host, and leave the
+secret key open for each environment to fill:
 
-A library file leaves `host` open with `???` and builds `url` from interpolations:
-
-```{literalinclude} ../examples/interpolation-and-missing/library.yaml
+```{literalinclude} ../examples/webapp/configs/base.yaml
 :language: yaml
-:caption: library.yaml
+:caption: configs/base.yaml (excerpt)
+:end-before: "database:"
 ```
 
-```{literalinclude} ../examples/interpolation-and-missing/app.yaml
+```{literalinclude} ../examples/webapp/configs/base.yaml
 :language: yaml
-:caption: app.yaml
+:start-at: "cache:"
+:end-before: "jobs:"
 ```
 
-```{literalinclude} ../examples/interpolation-and-missing/main.py
+```{literalinclude} ../examples/guide/interpolation-and-missing/main.py
 :language: python
 :caption: main.py
 ```
 
-## When interpolations resolve
+```text
+redis://127.0.0.1:6379
+redis://10.0.0.5:6379
+Cannot resolve `server.secret_key`: Missing mandatory value: secret_key
+```
 
-- Only structural values resolve during loading: the path of an `~import`, and the
-  values of `$base` and `$defaults`.
-- Every other `${…}` resolves when it is read or instantiated, against the assembled
-  config. `${database}` in the library file finds the key in `app.yaml`.
-- A relative interpolation such as `${.host}` resolves at the node's final position,
-  so each consumer of the library gets its own `url`.
+`${server.host}` was not resolved while loading, so the override of `server.host`
+reached the cache URL. A relative interpolation such as `${.host}` resolves from the
+node's final position, which lets an imported file refer to its neighbours wherever
+it is placed.
 
-## `???`
+## Missing values
 
-- A `???` survives loading. A consumer of the `$base` that carries it, or an
-  override, can fill it.
-- Reading a value that is still missing raises `MissingMandatoryValue`, naming the
-  full key. Reading an interpolation that points at it raises
-  `InterpolationToMissingValueError`.
-- `instantiate` raises for any `???` in the node it builds, and `validate` reports it
-  too.
+`???` marks a value that someone else must fill. It survives loading, and a file
+that uses this one as its `$base`, or an override, can fill it: `dev.yaml` sets
+`secret_key`, and production reads it from the environment. A `???` that is still
+open when the config is validated or built raises `ConfigValidationError`, naming
+the key; reading it directly raises OmegaConf's `MissingMandatoryValue`.
+
+A file such as `base.yaml` is incomplete on purpose. `validate(base,
+allow_missing=True)` still checks every value it does give, and
+`omegakit check base.yaml --allow-missing` does the same from the command line.
+
+Only a few values resolve during loading: `~import` paths, and the values of `$base`
+and `$defaults`. The details are in the contracts under
+[Resolution timing](../contracts.md#resolution-timing) and
+[Missing values](../contracts.md#missing-values).
