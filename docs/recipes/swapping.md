@@ -4,7 +4,7 @@ The application needs a database; production uses Postgres, development and test
 use SQLite. Type the field with the base class, name the implementation with
 `$class` in the config, and swap the whole node per environment or per test.
 
-```{literalinclude} ../examples/webapp/webapp/db.py
+```{literalinclude} ../webapp/webapp/db.py
 :language: python
 :caption: webapp/db.py
 ```
@@ -13,7 +13,7 @@ use SQLite. Type the field with the base class, name the implementation with
 `base.yaml` names `webapp.db.SQLite`, and `envs/prod.yaml` replaces the whole node
 with a Postgres one. A test swaps it once more, with a dict override:
 
-```{literalinclude} ../examples/recipes/swapping/main.py
+```{literalinclude} swapping/main.py
 :language: python
 :caption: main.py
 ```

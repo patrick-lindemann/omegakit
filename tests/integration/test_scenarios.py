@@ -159,7 +159,7 @@ def test_scenario_forward_base_to_imported_node_then_instantiate(write_yaml):
         instantiate(cfg.shared)
 
 
-WEBAPP = Path(__file__).parents[2] / "docs" / "examples" / "webapp"
+WEBAPP = Path(__file__).parents[2] / "docs" / "webapp"
 
 
 def _modeline_schema(path: Path) -> dict:

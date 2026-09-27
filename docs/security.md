@@ -88,7 +88,7 @@ shows an example and lists the rules.
 A resolved config holds the real value of every secret, and so do the objects built
 from it. Log `mask_secrets(config)` instead:
 
-```{literalinclude} examples/guide/security/main.py
+```{literalinclude} security/main.py
 :language: python
 :caption: main.py
 ```

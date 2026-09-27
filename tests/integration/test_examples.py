@@ -6,11 +6,10 @@ from pathlib import Path
 
 import pytest
 
-# Runs every docs/examples/<name>/main.py as a script, the way a reader would.
+# Runs the getting-started and webapp scripts as a reader would, from anywhere.
 
-EXAMPLES = sorted(
-    Path(__file__).parents[2].joinpath("docs", "examples").glob("*/main.py")
-)
+DOCS = Path(__file__).parents[2] / "docs"
+EXAMPLES = [DOCS / "getting-started" / "main.py", DOCS / "webapp" / "main.py"]
 
 
 @pytest.mark.parametrize(
@@ -20,7 +19,7 @@ def test_example_runs(example: Path):
     subprocess.run([sys.executable, str(example)], check=True)
 
 
-WEBAPP = Path(__file__).parents[2] / "docs" / "examples" / "webapp" / "main.py"
+WEBAPP = DOCS / "webapp" / "main.py"
 
 
 @pytest.mark.parametrize(

@@ -82,7 +82,7 @@ convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["D"]
-"docs/examples/**" = ["D", "PT"]
+"docs/**" = ["D", "PT"]
 
 [tool.pydoclint]
 style = "google"
@@ -91,13 +91,10 @@ check-return-types = false
 check-yield-types = false
 
 [tool.pyright]
-include = ["src", "tests", "docs/examples"]
+include = ["src", "tests", "docs"]
 pythonVersion = "3.12" # the floor; development runs on 3.13
 typeCheckingMode = "standard"
 reportImplicitOverride = "error"
 reportUnnecessaryTypeIgnoreComment = "error"
-# The guide and recipe examples import the webapp example, as their test does.
-executionEnvironments = [
-    { root = "docs/examples/guide", extraPaths = ["docs/examples/webapp"] },
-    { root = "docs/examples/recipes", extraPaths = ["docs/examples/webapp"] },
-]
+# The page examples import the webapp example, as their test does.
+executionEnvironments = [{ root = "docs", extraPaths = ["docs/webapp"] }]

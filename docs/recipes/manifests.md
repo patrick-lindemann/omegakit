@@ -5,12 +5,12 @@ queues, feeds. Put them in one mapping, give it the shared settings with
 `$defaults`, let one entry extend another with `$base`, and record who owns each
 entry with `$meta`.
 
-```{literalinclude} ../examples/recipes/manifests/jobs.yaml
+```{literalinclude} manifests/jobs.yaml
 :language: yaml
 :caption: jobs.yaml
 ```
 
-```{literalinclude} ../examples/recipes/manifests/main.py
+```{literalinclude} manifests/main.py
 :language: python
 :caption: main.py
 ```

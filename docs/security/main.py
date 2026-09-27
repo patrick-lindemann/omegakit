@@ -5,7 +5,7 @@ from omegaconf import OmegaConf
 
 from omegakit import load_config, mask_secrets
 
-configs = Path(__file__).parents[2] / "webapp" / "configs"
+configs = Path(__file__).parents[1] / "webapp" / "configs"
 os.environ["APP_ENV"] = "prod"
 os.environ["SECRET_KEY"] = "s3cr3t-from-the-vault"
 

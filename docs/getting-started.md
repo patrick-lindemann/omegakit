@@ -10,7 +10,7 @@ pip install omegakit
 
 ## 1. Load a file and read values
 
-```{literalinclude} examples/getting-started/step1.yaml
+```{literalinclude} getting-started/step1.yaml
 :language: yaml
 :caption: step1.yaml
 ```
@@ -29,7 +29,7 @@ works on it.
 
 The server is a plain class:
 
-```{literalinclude} examples/getting-started/plain.py
+```{literalinclude} getting-started/plain.py
 :language: python
 :caption: plain.py
 :pyobject: Server
@@ -38,7 +38,7 @@ The server is a plain class:
 `$class` on the node names the class to build, and `instantiate` calls it with the
 node's other keys:
 
-```{literalinclude} examples/getting-started/step2.yaml
+```{literalinclude} getting-started/step2.yaml
 :language: yaml
 :caption: step2.yaml
 ```
@@ -59,12 +59,12 @@ Development and production share most settings. They go into `base.yaml`, and ea
 environment file keeps only what differs. `~import` pastes another file in, and
 `$base` makes it the layer underneath the node, so the node's own keys win:
 
-```{literalinclude} examples/getting-started/configs/base.yaml
+```{literalinclude} getting-started/configs/base.yaml
 :language: yaml
 :caption: configs/base.yaml
 ```
 
-```{literalinclude} examples/getting-started/configs/envs/prod.yaml
+```{literalinclude} getting-started/configs/envs/prod.yaml
 :language: yaml
 :caption: configs/envs/prod.yaml
 ```
@@ -72,7 +72,7 @@ environment file keeps only what differs. `~import` pastes another file in, and
 The root file picks the environment from the `APP_ENV` variable, with `dev` as the
 default:
 
-```{literalinclude} examples/getting-started/configs/app.yaml
+```{literalinclude} getting-started/configs/app.yaml
 :language: yaml
 :caption: configs/app.yaml
 ```
@@ -101,7 +101,7 @@ So far a typo such as `worker: 4` is a `TypeError` from the constructor, and
 `port: abc` is accepted without complaint. A dataclass schema catches both. The
 class subclasses `Configurable` with its schema:
 
-```{literalinclude} examples/webapp/webapp/server.py
+```{literalinclude} webapp/webapp/server.py
 :language: python
 :caption: webapp/server.py
 ```
@@ -123,7 +123,7 @@ The complete `webapp` has a root class, `App`, whose schema holds the server, th
 database, an optional cache and scheduled jobs. The entrypoint loads the config,
 logs it with its secrets masked, and builds the app:
 
-```{literalinclude} examples/webapp/main.py
+```{literalinclude} webapp/main.py
 :language: python
 :caption: main.py
 ```
@@ -162,7 +162,7 @@ omegakit check configs/app.yaml --schema webapp.App --allow-module webapp
 Tests load the same config with an override that puts an in-memory database under
 `database`:
 
-```{literalinclude} examples/webapp/tests/conftest.py
+```{literalinclude} webapp/tests/conftest.py
 :language: python
 :caption: tests/conftest.py
 ```

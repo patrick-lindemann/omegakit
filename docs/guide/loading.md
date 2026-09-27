@@ -3,12 +3,12 @@
 `load_config` reads a YAML file and assembles it into an OmegaConf `DictConfig`.
 The `webapp` root file holds two keys, and everything else arrives while loading:
 
-```{literalinclude} ../examples/webapp/configs/app.yaml
+```{literalinclude} ../webapp/configs/app.yaml
 :language: yaml
 :caption: configs/app.yaml
 ```
 
-```{literalinclude} ../examples/guide/loading/main.py
+```{literalinclude} loading/main.py
 :language: python
 :caption: main.py
 :end-before: keep_meta
@@ -47,7 +47,7 @@ validated or built ([Interpolation and missing values](interpolation-and-missing
 `load_config` removes it unless you ask for it. `walk` visits every mapping of a
 config, parents first, so a script can collect it:
 
-```{literalinclude} ../examples/guide/loading/main.py
+```{literalinclude} loading/main.py
 :language: python
 :start-at: keep_meta
 ```

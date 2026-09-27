@@ -11,7 +11,7 @@ and you register the ones you need before loading a config.
 `register_paths_resolver` registers `${paths:<key>}`, so a config can name
 directories that the application decides:
 
-```{literalinclude} ../examples/guide/resolvers/main.py
+```{literalinclude} resolvers/main.py
 :language: python
 :caption: main.py
 ```

@@ -8,11 +8,13 @@ from omegaconf import OmegaConf
 
 from omegakit import instantiate, load_config, validate
 
-EXAMPLES = Path(__file__).parents[2] / "docs" / "examples"
-WEBAPP = EXAMPLES / "webapp"
-FOLDERS = [EXAMPLES / "guide", EXAMPLES / "recipes"]
+DOCS = Path(__file__).parents[2] / "docs"
+WEBAPP = DOCS / "webapp"
+FOLDERS = [DOCS / "guide", DOCS / "recipes"]
 YAML_FILES = sorted(path for folder in FOLDERS for path in folder.glob("*/**/*.yaml"))
-SCRIPTS = sorted(path for folder in FOLDERS for path in folder.glob("*/main.py"))
+SCRIPTS = sorted(
+    [DOCS / "security" / "main.py", *(p for f in FOLDERS for p in f.glob("*/main.py"))]
+)
 
 
 @pytest.fixture(autouse=True)
@@ -21,7 +23,7 @@ def webapp_importable(monkeypatch):
 
 
 @pytest.mark.parametrize(
-    "path", YAML_FILES, ids=[str(p.relative_to(EXAMPLES)) for p in YAML_FILES]
+    "path", YAML_FILES, ids=[str(p.relative_to(DOCS)) for p in YAML_FILES]
 )
 def test_guide_yaml_loads_validates_and_builds(path: Path):
     config = load_config(path)

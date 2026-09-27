@@ -3,18 +3,18 @@
 `$base` merges shared settings underneath a node. Use it when several files share
 most of their values and differ in a few, as `webapp`'s environments do:
 
-```{literalinclude} ../examples/webapp/configs/base.yaml
+```{literalinclude} ../webapp/configs/base.yaml
 :language: yaml
 :caption: configs/base.yaml (excerpt)
 :end-before: "cache:"
 ```
 
-```{literalinclude} ../examples/webapp/configs/envs/prod.yaml
+```{literalinclude} ../webapp/configs/envs/prod.yaml
 :language: yaml
 :caption: configs/envs/prod.yaml
 ```
 
-```{literalinclude} ../examples/guide/base/main.py
+```{literalinclude} base/main.py
 :language: python
 :caption: main.py
 ```
@@ -36,7 +36,7 @@ wherever `prod.yaml` ends up, even under the root file's own `$base`.
 
 Lists are replaced, not joined:
 
-```{literalinclude} ../examples/guide/base/hosts.yaml
+```{literalinclude} base/hosts.yaml
 :language: yaml
 :caption: hosts.yaml
 ```

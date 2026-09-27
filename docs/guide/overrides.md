@@ -3,7 +3,7 @@
 Overrides change values after a config is assembled, and win over everything in the
 files. Environment variables come in through OmegaConf's `oc.env` resolver.
 
-```{literalinclude} ../examples/guide/overrides/main.py
+```{literalinclude} overrides/main.py
 :language: python
 :caption: main.py
 ```

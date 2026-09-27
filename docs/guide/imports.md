@@ -4,12 +4,12 @@ A string value that starts with `~import` is replaced by another YAML file, or b
 node of it. `webapp` keeps its scheduled jobs in their own file and imports them
 into the shared settings:
 
-```{literalinclude} ../examples/webapp/configs/jobs.yaml
+```{literalinclude} ../webapp/configs/jobs.yaml
 :language: yaml
 :caption: configs/jobs.yaml
 ```
 
-```{literalinclude} ../examples/webapp/configs/base.yaml
+```{literalinclude} ../webapp/configs/base.yaml
 :language: yaml
 :caption: configs/base.yaml (excerpt)
 :start-at: "jobs:"
@@ -24,7 +24,7 @@ negative: `#jobs.digest`, `#hosts.-1`.
 The path is relative to the file that holds it, and may contain interpolations. The
 root file uses one to pick the environment:
 
-```{literalinclude} ../examples/webapp/configs/app.yaml
+```{literalinclude} ../webapp/configs/app.yaml
 :language: yaml
 :caption: configs/app.yaml
 ```
@@ -42,12 +42,12 @@ which is why `$base: ~import ../base.yaml` works in the environment files.
 By default an import may read any file the process can read. `import_root` limits
 imports to one directory:
 
-```{literalinclude} ../examples/guide/imports/shared.yaml
+```{literalinclude} imports/shared.yaml
 :language: yaml
 :caption: shared.yaml
 ```
 
-```{literalinclude} ../examples/guide/imports/main.py
+```{literalinclude} imports/main.py
 :language: python
 :caption: main.py
 ```

@@ -6,19 +6,19 @@ resolve against the assembled config, when a value is read, validated or built.
 `webapp`'s shared settings build the cache URL from the server's host, and leave the
 secret key open for each environment to fill:
 
-```{literalinclude} ../examples/webapp/configs/base.yaml
+```{literalinclude} ../webapp/configs/base.yaml
 :language: yaml
 :caption: configs/base.yaml (excerpt)
 :end-before: "database:"
 ```
 
-```{literalinclude} ../examples/webapp/configs/base.yaml
+```{literalinclude} ../webapp/configs/base.yaml
 :language: yaml
 :start-at: "cache:"
 :end-before: "jobs:"
 ```
 
-```{literalinclude} ../examples/guide/interpolation-and-missing/main.py
+```{literalinclude} interpolation-and-missing/main.py
 :language: python
 :caption: main.py
 ```

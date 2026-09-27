@@ -15,12 +15,12 @@ Every example in these pages comes from one small web service, `webapp`. Its roo
 config names the class to build and picks an environment file, and the production
 file takes the shared settings and replaces the database:
 
-```{literalinclude} examples/webapp/configs/app.yaml
+```{literalinclude} webapp/configs/app.yaml
 :language: yaml
 :caption: configs/app.yaml
 ```
 
-```{literalinclude} examples/webapp/configs/envs/prod.yaml
+```{literalinclude} webapp/configs/envs/prod.yaml
 :language: yaml
 :caption: configs/envs/prod.yaml
 ```

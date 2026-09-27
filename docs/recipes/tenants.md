@@ -4,12 +4,12 @@ A service that runs once per customer needs the same config many times, with a f
 values changed for each. Keep the differences in one file and apply each tenant's
 entry as overrides to the shared config.
 
-```{literalinclude} ../examples/recipes/tenants/tenants.yaml
+```{literalinclude} tenants/tenants.yaml
 :language: yaml
 :caption: tenants.yaml
 ```
 
-```{literalinclude} ../examples/recipes/tenants/main.py
+```{literalinclude} tenants/main.py
 :language: python
 :caption: main.py
 ```

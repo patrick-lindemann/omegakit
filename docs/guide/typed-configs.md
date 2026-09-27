@@ -7,12 +7,12 @@ Classes without a schema keep working as plain `$class` targets.
 
 `webapp`'s server is the simplest case:
 
-```{literalinclude} ../examples/webapp/webapp/server.py
+```{literalinclude} ../webapp/webapp/server.py
 :language: python
 :caption: webapp/server.py
 ```
 
-```{literalinclude} ../examples/guide/typed-configs/main.py
+```{literalinclude} typed-configs/main.py
 :language: python
 :caption: main.py
 ```
@@ -35,7 +35,7 @@ to catch a mismatch without a config.
 
 The application's schema shows the three kinds of field:
 
-```{literalinclude} ../examples/webapp/webapp/__init__.py
+```{literalinclude} ../webapp/webapp/__init__.py
 :language: python
 :caption: webapp/__init__.py (excerpt)
 :pyobject: AppConfig
@@ -57,7 +57,7 @@ The application's schema shows the three kinds of field:
 calls the constructor. The default passes every field. Override it when the config
 and the constructor differ, as the cache does with its `ttl`:
 
-```{literalinclude} ../examples/webapp/webapp/cache.py
+```{literalinclude} ../webapp/webapp/cache.py
 :language: python
 :caption: webapp/cache.py
 ```
@@ -70,7 +70,7 @@ Children that code chooses, rather than the user, are created with `make_node`.
 `App.from_config` builds an in-memory cache when the config has none, which is why
 `cache=null` gave a `MemoryCache` above:
 
-```{literalinclude} ../examples/webapp/webapp/__init__.py
+```{literalinclude} ../webapp/webapp/__init__.py
 :language: python
 :pyobject: App.from_config
 ```
@@ -80,7 +80,7 @@ Children that code chooses, rather than the user, are created with `make_node`.
 A `from_config` that returns a subclass annotates the base class as its return
 type, since `Self` would claim the class it was called on:
 
-```{literalinclude} ../examples/guide/typed-configs/notify.py
+```{literalinclude} typed-configs/notify.py
 :language: python
 :caption: notify.py
 ```

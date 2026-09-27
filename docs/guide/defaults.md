@@ -3,12 +3,12 @@
 `$defaults` gives every mapping next to it the same settings, and each mapping's own
 values win. It suits lists of similar things, such as `webapp`'s scheduled jobs:
 
-```{literalinclude} ../examples/webapp/configs/jobs.yaml
+```{literalinclude} ../webapp/configs/jobs.yaml
 :language: yaml
 :caption: configs/jobs.yaml
 ```
 
-```{literalinclude} ../examples/guide/defaults/main.py
+```{literalinclude} defaults/main.py
 :language: python
 :caption: main.py
 ```

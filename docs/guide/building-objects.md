@@ -4,7 +4,7 @@
 function, `$ref` imports an object without calling it, and `$partial` defers a call.
 `webapp` builds its whole application from the root file:
 
-```{literalinclude} ../examples/guide/building-objects/main.py
+```{literalinclude} building-objects/main.py
 :language: python
 :caption: main.py
 ```
@@ -36,7 +36,7 @@ built.
 A `$ref` node is replaced by the object it names, without calling it. The `cleanup`
 job's handler is the function itself:
 
-```{literalinclude} ../examples/webapp/configs/jobs.yaml
+```{literalinclude} ../webapp/configs/jobs.yaml
 :language: yaml
 :caption: configs/jobs.yaml
 :start-at: "cleanup:"
@@ -48,7 +48,7 @@ job's handler is the function itself:
 `digest` handler is `send_digest` with its subject filled in, and a call can still
 change the subject:
 
-```{literalinclude} ../examples/webapp/configs/jobs.yaml
+```{literalinclude} ../webapp/configs/jobs.yaml
 :language: yaml
 :start-at: "digest:"
 :end-before: "$meta:"

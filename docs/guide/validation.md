@@ -4,7 +4,7 @@
 raises `ConfigValidationError` at the first problem, naming the key.
 `instantiate` runs the same check before it builds anything.
 
-```{literalinclude} ../examples/guide/validation/main.py
+```{literalinclude} validation/main.py
 :language: python
 :caption: main.py
 ```
