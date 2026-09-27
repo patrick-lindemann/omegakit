@@ -44,4 +44,5 @@ that contains them, not to the working directory.
 | Overrides of another type | `TypeError` (`Unsupported overrides type`) |
 
 Unknown `$` keys are kept by `load_config`; `instantiate` rejects them. The complete
-order and its consequences are in the [contracts](../contracts.md), section 1.
+order and its consequences are in the contracts under
+[Pipeline](../contracts.md#pipeline).

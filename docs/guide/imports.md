@@ -51,4 +51,4 @@ node of it.
 | `#<node>` that does not exist, walks through a scalar or is out of range | `ConfigValidationError` (`selects node`) |
 | More than one `#` | `ConfigValidationError` |
 
-The full rules are in the [contracts](../contracts.md), section 7.
+The full rules are in the contracts under [Imports](../contracts.md#imports).

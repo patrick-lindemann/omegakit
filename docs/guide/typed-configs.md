@@ -10,7 +10,7 @@ half** is what the constructor receives. With typed configs, both are typed:
   against `__init__`, and `check_schema` checks the default one at runtime.
 
 Classes without a schema keep working exactly as before. The normative rules are in
-the [configuration contracts](../contracts.md), section 10.
+the contracts under [Typed configs](../contracts.md#typed-configs).
 
 ## A schema with the default `from_config`
 

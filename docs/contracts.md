@@ -4,7 +4,7 @@ This page is the normative description of the omegakit configuration language. C
 tests and the README follow it. A change to the language changes this page in the
 same commit.
 
-## 1. Pipeline order
+## Pipeline
 
 `load_config` assembles a file in this order:
 
@@ -28,7 +28,7 @@ Consequences:
 - `$meta` and construction keys introduced by overrides are stripped like any
   other.
 
-## 2. Precedence
+## Precedence
 
 From strongest to weakest:
 
@@ -45,7 +45,7 @@ an item when an outer `$defaults` is merged underneath it, so the inner one wins
 lists and `$`-prefixed siblings are untouched, and grandchildren are reached only
 through the merged sibling's own keys.
 
-## 3. Resolution timing
+## Resolution timing
 
 Only structural references are resolved during assembly:
 
@@ -78,7 +78,7 @@ such as `${.id}` resolves at the node's final position.
 
 `instantiate` and `prepare` resolve a copy. They never mutate the config passed in.
 
-## 4. `???` lifecycle
+## Missing values
 
 - A `???` value survives `load_config`.
 - A consumer of the `$base` that carries it, or an override, can fill it.
@@ -87,69 +87,7 @@ such as `${.id}` resolves at the node's final position.
   `ConfigValidationError`, caused by `MissingMandatoryValue`. Both name the full
   key.
 
-## 5. Instantiation
-
-- A mapping with `$class` is instantiable. `$class` is a dotted import path
-  `module.attribute`; the attribute is imported and called.
-- `instantiate` and `prepare` resolve the node (after `overrides`), then validate it
-  as `validate` does (§11), with the same `allowed_modules`, then build it. A config error therefore raises
-  `ConfigValidationError` before any configured target or `from_config` is called. So
-  does a resolution error: a `???`, an interpolation that fails, or an exception
-  from a resolver, which OmegaConf wraps in `InterpolationResolutionError`.
-  OmegaConf's error is the `__cause__`, and the message names the full key.
-- If the imported object has a `from_config` attribute, `from_config(arguments)` is
-  called instead of the object. This is duck-typed: `Configurable` is one
-  implementation, not a requirement. `arguments` is a plain `dict` of the
-  materialized arguments, or the typed config when the class has a schema (§10).
-- Nested instantiable nodes, in mappings and lists, are built before their parent,
-  and the parent receives the built objects.
-- `$meta` is never passed to a constructor or to `from_config`.
-- A mapping with `$ref` is replaced by the imported object, without calling it.
-  `$ref` allows no sibling keys except `$meta`. A top-level `$ref` is not
-  instantiable: `instantiate` requires `$class` at the top.
-- `$partial: true` returns a `functools.partial` of the class (or of its
-  `from_config`) with the materialized arguments. Nested objects are still built
-  immediately.
-- `prepare(config)` is `instantiate` with the top-level call deferred. Nested nodes
-  are built during `prepare`, and nested `$partial` nodes stay partials.
-- Call-time keyword arguments to a partial from `prepare` or `$partial`:
-  - For a class without `from_config`, they reach the constructor, and a call-time
-    value wins over a config value of the same name.
-  - For a class with `from_config`, they reach `from_config` as `**kwargs`. The
-    arguments mapping stays the first positional argument.
-  - The default `Configurable.from_config` forwards `**kwargs` to the constructor:
-    it calls `cls(**fields, **kwargs)`, where `fields` are the typed config's fields
-    (shallow) or the arguments mapping. A call-time value wins over a field of the
-    same name, as it does for plain classes.
-- `$partial: true` makes a node partial, and `$partial: false` does not. Any other
-  value, including the string `"true"` and `1`, raises `ConfigValidationError`.
-- A raw `dict` is resolved exactly like a `DictConfig`: `${…}` is resolved, and
-  `???` raises `MissingMandatoryValue`. It is converted with `OmegaConf.create`, so
-  its values must be types OmegaConf supports. A value such as an arbitrary Python
-  object raises `UnsupportedValueType`.
-- Errors from a constructor or `from_config`:
-  - Any `Exception` raised by the call propagates unchanged, with the same type,
-    arguments and traceback.
-  - It gets one note, `while instantiating <path> (<class>)`. `<path>` is the
-    dotted key path of the failing node from the config passed to `instantiate`,
-    with list indices as segments (`items.0.model`), or `<root>` for the top node.
-    `<class>` is the `$class` value.
-  - A partial from `prepare` or `$partial` is called outside omegakit, so its errors
-    get no note.
-
-## 6. Key namespace
-
-- Every key that starts with `$` is reserved for omegakit. The defined keys are
-  `$class`, `$ref`, `$partial`, `$meta`, `$base` and `$defaults`.
-- `~import` is a value prefix, not a key. Only a string value that starts with
-  `~import` is an import. Elsewhere in a string it is literal text.
-- `load_config` keeps unknown `$` keys untouched.
-- When validating or instantiating, any mapping with a `$` key that is not allowed
-  there raises `ConfigValidationError`. A `$class` node allows `$meta` and `$partial`, a `$ref` node allows
-  `$meta`, and a plain mapping allows only `$meta`. In particular, `$class` and
-  `$ref` cannot be combined.
-
-## 7. Import semantics
+## Imports
 
 - The syntax is `~import <path>[#<node>]`. Whitespace around `<path>` and around
   `<node>` is ignored.
@@ -182,143 +120,83 @@ such as `${.id}` resolves at the node's final position.
   node. A path that goes through an interpolation in the imported file raises
   `ConfigValidationError` too; interpolations are not resolved while importing.
 
-## 8. Error model
+## Instantiation
 
-`ConfigValidationError` covers every problem in a config's content, including those
-that `load_config` finds while loading; the error it wraps, from PyYAML, OmegaConf
-or the file system, is its `__cause__`. Only a missing root file passed to
-`load_config` raises `FileNotFoundError`.
+- A mapping with `$class` is instantiable. `$class` is a dotted import path
+  `module.attribute`; the attribute is imported and called.
+- `instantiate` and `prepare` resolve the node (after `overrides`), then validate it
+  as `validate` does ([Validation](#validation)), with the same `allowed_modules`, then build it. A config error therefore raises
+  `ConfigValidationError` before any configured target or `from_config` is called. So
+  does a resolution error: a `???`, an interpolation that fails, or an exception
+  from a resolver, which OmegaConf wraps in `InterpolationResolutionError`.
+  OmegaConf's error is the `__cause__`, and the message names the full key.
+- If the imported object has a `from_config` attribute, `from_config(arguments)` is
+  called instead of the object. This is duck-typed: `Configurable` is one
+  implementation, not a requirement. `arguments` is a plain `dict` of the
+  materialized arguments, or the typed config when the class has a schema ([Typed configs](#typed-configs)).
+- Nested instantiable nodes, in mappings and lists, are built before their parent,
+  and the parent receives the built objects.
+- A raw `dict` is resolved exactly like a `DictConfig`: `${…}` is resolved, and
+  `???` raises `MissingMandatoryValue`. It is converted with `OmegaConf.create`, so
+  its values must be types OmegaConf supports. A value such as an arbitrary Python
+  object raises `UnsupportedValueType`.
+- Errors from a constructor or `from_config`:
+  - Any `Exception` raised by the call propagates unchanged, with the same type,
+    arguments and traceback.
+  - It gets one note, `while instantiating <path> (<class>)`. `<path>` is the
+    dotted key path of the failing node from the config passed to `instantiate`,
+    with list indices as segments (`items.0.model`), or `<root>` for the top node.
+    `<class>` is the `$class` value.
+  - A partial from `prepare` or `$partial` is called outside omegakit, so its errors
+    get no note.
 
-| Misuse | Exception | Message contains |
-|---|---|---|
-| Root file passed to `load_config` does not exist | `FileNotFoundError` | the path |
-| A file that is not valid YAML, has duplicate keys or unknown tags, or is not UTF-8 | `ConfigValidationError`, caused by PyYAML's error or `UnicodeDecodeError` | `Cannot load`, the file, the line and column |
-| A file that holds a single value, not a mapping or a list | `ConfigValidationError` | `single value` and the file |
-| A root file passed to `load_config` that holds a list | `ConfigValidationError` | `root is a list` and the file |
-| Circular `~import` | `ConfigValidationError` | `Circular import detected`, the statement and the files |
-| `~import` of a missing or unreadable file, or of an invalid file | `ConfigValidationError`, caused by the `OSError` or the load error | `Cannot import`, the statement and the importing file |
-| `~import` of a missing node | `ConfigValidationError` | `selects node`, the node and the files |
-| `~import` selector through a scalar, or a bad or out-of-range list index | `ConfigValidationError` | as missing node |
-| `~import` with more than one `#` | `ConfigValidationError` | `more than one` `#` |
-| `~import` of a file outside `import_root` | `ConfigValidationError` | `outside the import root`, the statement and both paths |
-| `~import` path with an interpolation that fails | `ConfigValidationError`, caused by OmegaConf's error | `Cannot resolve`, the statement and the importing file |
-| `$base` not a mapping or list of mappings | `ConfigValidationError` | `$base` |
-| `$base` or `$defaults` interpolation to a key that never appears | `ConfigValidationError`, caused by OmegaConf's error | `Cannot resolve` and the full key |
-| `$base` or `$defaults` interpolations that refer to each other | `ConfigValidationError` | `references form a cycle` and the nodes |
-| `$defaults` not a mapping | `ConfigValidationError` | `$defaults` |
-| Overrides of another type than `DictConfig`, `dict` or `list`, including a `ListConfig` | `TypeError` | `Unsupported overrides type` |
-| An override that does not parse, has an unsupported value type, or is rejected by a struct config, in `load_config`, `instantiate` or `prepare` | `ConfigValidationError`, caused by PyYAML's or OmegaConf's error | `override`, and the override or its key |
-| `instantiate`/`prepare` on a node without `$class` | `ConfigValidationError` | `<root>` and `has no` `$class` |
-| `$class`/`$ref` module not found | `ConfigValidationError`, caused by `ModuleNotFoundError` | `Cannot import`, the node path and the module |
-| `$class`/`$ref` attribute not found | `ConfigValidationError`, caused by `ImportError` | `Cannot import`, the node path, `Could not import` |
-| `$ref` with sibling keys other than `$meta` | `ConfigValidationError` | `cannot contain any other keys` |
-| `$class`/`$ref` in a module that `allowed_modules` does not allow (§11) | `ConfigValidationError` | the path, the node and `allowed_modules` |
-| `allowed_modules` given as a string | `TypeError` | `not the string` |
-| Raw dict value that OmegaConf does not support | `UnsupportedValueType` | the key |
-| Unknown `$` key, or `$class` with `$ref`, at validation or instantiation | `ConfigValidationError` | the key and `reserved` |
-| `$partial` not a boolean | `ConfigValidationError` | `$partial` |
-| `???` accessed | `MissingMandatoryValue` | the full key |
-| Unresolvable `${…}` accessed | `InterpolationKeyError` (or another OmegaConf error) | the key |
-| `???`, unresolvable `${…}` or a failing resolver, validated or instantiated | `ConfigValidationError`, caused by OmegaConf's error | `Cannot resolve` and the full key |
-| Exception from a constructor or `from_config` | unchanged | original message, plus the note from §5 |
-| Schema outside the supported subset (§10) | `ConfigValidationError` | the field and the fix |
-| Schema that does not match `__init__` (§10) | `ConfigValidationError` | the field or parameter |
-| Unknown field, missing required field, or invalid native value | `ConfigValidationError` | the node path and the schema |
-| Object field whose `$class` is not the annotated class or a subclass, or a `$ref` that is not an instance | `ConfigValidationError` | the field path, the expected class and the given node |
-| `make_node()` for a class or function not defined at module level | `ValueError` | `module level` |
-| Type variable in a `Configurable` base that cannot be substituted | `TypeError` | `Cannot resolve type variable` |
-| Resolver registered twice without `replace=True` | `ValueError` | `already registered` |
-| Torch resolver without PyTorch installed | `ImportError` | `require PyTorch` |
+## References
 
-A malformed dotlist override such as `["a"]` is not an error: OmegaConf sets `a` to
-`None`.
+- A mapping with `$ref` is replaced by the imported object, without calling it.
+  `$ref` allows no sibling keys except `$meta`. A top-level `$ref` is not
+  instantiable: `instantiate` requires `$class` at the top.
 
-## 9. Environment
+## Partials
 
-- Importing `omegakit` or any of its modules has no side effects: no resolver is
-  registered, and `torch` is not imported.
-- Resolvers are opt-in. Registration is global to OmegaConf, and an existing name
-  raises unless `replace=True` is passed. `omegakit.resolvers` exports nothing:
-  each resolver is imported from its own module, which carries its own
-  dependencies.
-- omegakit does not load `.env` files.
-- omegakit supports OmegaConf 2.3 and 2.4 (`omegaconf>=2.3,<2.5`) and behaves the
-  same on both. Assembly uses private OmegaConf node APIs, so CI tests the lowest
-  supported version, the locked version and the newest pre-release in the range.
-- Resolvers are registered with the API of the installed OmegaConf
-  (`register_resolver` on 2.4, `register_new_resolver` on 2.3), so neither warns.
-- Configs import and call arbitrary Python objects. Load them only from trusted
-  sources (see Trust below).
+- `$partial: true` returns a `functools.partial` of the class (or of its
+  `from_config`) with the materialized arguments. Nested objects are still built
+  immediately.
+- `prepare(config)` is `instantiate` with the top-level call deferred. Nested nodes
+  are built during `prepare`, and nested `$partial` nodes stay partials.
+- Call-time keyword arguments to a partial from `prepare` or `$partial`:
+  - For a class without `from_config`, they reach the constructor, and a call-time
+    value wins over a config value of the same name.
+  - For a class with `from_config`, they reach `from_config` as `**kwargs`. The
+    arguments mapping stays the first positional argument.
+  - The default `Configurable.from_config` forwards `**kwargs` to the constructor:
+    it calls `cls(**fields, **kwargs)`, where `fields` are the typed config's fields
+    (shallow) or the arguments mapping. A call-time value wins over a field of the
+    same name, as it does for plain classes.
+- `$partial: true` makes a node partial, and `$partial: false` does not. Any other
+  value, including the string `"true"` and `1`, raises `ConfigValidationError`.
 
-### Trust
+## Metadata
 
-Loading, validating, checking and showing a config are not safe on untrusted
-input. Validation checks the shape of values; it is not input sanitisation. Code
-and I/O happen without anything being built:
+- `$meta` is never passed to a constructor or to `from_config`.
 
-- The modules named by `$class` and `$ref` are imported, which runs their
-  import-time code, unless `allowed_modules` limits them (§11). `allowed_modules`
-  is not a sandbox.
-- Resolvers run, including OmegaConf's `oc.env`, which reads any environment
-  variable of the process. `load_config` itself evaluates interpolations in
-  `~import` paths and in `$base` and `$defaults` values. An application that does
-  not need `oc.env` can call `OmegaConf.clear_resolver("oc.env")` before loading.
-- Every `default_factory` of a schema runs during validation (§11).
-- `~import` reads any file the process can read, unless `import_root` is set (§7).
-  `keep_targets=False` does not make loading safe.
-- Overrides carry the same trust as the config file: an override can set `$class`,
-  `$ref` and interpolations such as `${oc.env:...}`.
-- The command line puts the working directory first on `sys.path` (§13), so a
-  module there can shadow a `$class` target.
-- Reading a special file, such as a FIFO, blocks.
-- `~import` fan-out can grow exponentially, because every import is a deep copy,
-  and a long chain of `$base` references costs time quadratic in its size.
-- Any string value that starts with `~import` is an import, so a tool that writes
-  YAML from untrusted strings must not let them start with it.
-- Error messages, and so CI logs, can contain scalar config values; mappings are
-  described by their keys.
+## Reserved keys
 
-Resolved configs and objects built by `instantiate` contain the real values of
-secrets read with `${oc.env:...}`. Log `mask_secrets(config)` instead of a resolved
-config, and keep secrets out of arguments that components save, such as
-hyperparameters written into checkpoints.
+- Every key that starts with `$` is reserved for omegakit. The defined keys are
+  `$class`, `$ref`, `$partial`, `$meta`, `$base` and `$defaults`.
+- `~import` is a value prefix, not a key. Only a string value that starts with
+  `~import` is an import. Elsewhere in a string it is literal text.
+- `load_config` keeps unknown `$` keys untouched.
+- When validating or instantiating, any mapping with a `$` key that is not allowed
+  there raises `ConfigValidationError`. A `$class` node allows `$meta` and `$partial`, a `$ref` node allows
+  `$meta`, and a plain mapping allows only `$meta`. In particular, `$class` and
+  `$ref` cannot be combined.
 
-### Masking secrets
-
-`mask_secrets(config, *, keys=())` takes an unresolved config, such as the result
-of `load_config`, and returns it resolved as plain `dict`s and `list`s for logging,
-with secrets replaced by `***`:
-
-1. **By key.** A key is split into words at `_`, `-`, `.` and camelCase
-   boundaries. It is secret when its words contain `password`, `passwd`, `pass`,
-   `passphrase`, `secret`, `token`, `credential`, `auth`, `bearer`, `cookie`,
-   `dsn`, `webhook` or `apikey`, or the sequences `api key`, `private key` or
-   `access key`, each also in the plural. Whole words only: `pad_token` is
-   secret, `tokenizer` is not. A secret key masks every value below it. `keys`
-   adds entries, each a word or a space-separated sequence; the defaults stay.
-2. **By environment variable.** A value whose unresolved text reads
-   `${oc.env:NAME}`, also with spaces or nested in another interpolation, is
-   masked when `NAME` is secret by the same rule: `DB_PASSWORD` is, `APP_ENV` and
-   `PWD` are not.
-3. **By value.** The resolved strings masked by 1 and 2 that are at least 8
-   characters long are replaced by `***` inside every other string, longest first,
-   such as a password inside a URL. Numbers and keys are never rewritten.
-
-A masked value is resolved only to collect it for 3; if that fails, it is masked
-anyway. A masked value that is not a string becomes the string `***`. A missing
-value prints as `???`. Any other resolution error raises `ConfigValidationError`.
-
-Not masked: a secret in a value whose key names no secret, a secret shorter than 8
-characters used elsewhere, a secret used as a key, a value read by a resolver other
-than `oc.env`, and objects built by `instantiate`. A secret equal to a common word
-masks that word in every other string.
-
-## 10. Typed configs
+## Typed configs
 
 A class that subclasses `Configurable[TConfig]` with a dataclass `TConfig` has a
 **schema**. Its config is validated and built into a `TConfig` instance, the typed
 config, which `from_config` receives. Every other class, including a bare
-`Configurable` and a `TypedDict` or `Mapping` `TConfig`, behaves as in §5.
+`Configurable` and a `TypedDict` or `Mapping` `TConfig`, behaves as in [Instantiation](#instantiation).
 `ConfigValidationError` is a `ValueError`.
 
 **Schema lookup.** The schema is the `TConfig` argument found by walking the
@@ -332,7 +210,7 @@ has no schema. A type variable that cannot be substituted raises `TypeError`.
 | Annotation | Config value | Validated by | The typed config holds |
 |---|---|---|---|
 | **native**: `int`, `float`, `bool`, `str`, `bytes`, `Path`, `Enum`, `Literal` of strings, integers or booleans, `TypedDict`, dataclasses whose fields are all native, `list`/`dict`/`tuple`/`Sequence`/`Mapping` of these, unions of these, and these or `None` | plain values | OmegaConf, then omegakit (see below) | the coerced value |
-| **object**: any other class, a generic class, a union of classes, `list`/`dict` of these, and these or `None`, also through a `type` alias | a `$class` or `$ref` node, a list or mapping of them, or `null` if optional | the `$class` against the annotation (§11), then its own schema | the built object |
+| **object**: any other class, a generic class, a union of classes, `list`/`dict` of these, and these or `None`, also through a `type` alias | a `$class` or `$ref` node, a list or mapping of them, or `null` if optional | the `$class` against the annotation ([Validation](#validation)), then its own schema | the built object |
 | **`Any`** | anything | nothing | the value, with `$class` nodes inside built |
 
 - omegakit behaves the same on every supported OmegaConf. Where OmegaConf 2.3 lacks
@@ -402,10 +280,10 @@ and the fix, for:
    is checked for literals and converted back into the schema's own classes. Object
    and `Any` values never enter OmegaConf, so resolver-returned objects and object
    defaults work.
-4. **Object and `Any` fields** (children before parent) are built as in §5. A plain
+4. **Object and `Any` fields** (children before parent) are built as in [Instantiation](#instantiation). A plain
    mapping in a field whose annotation includes a dataclass is a section: it is
    built as that dataclass, with the same steps. The type of a built object is not
-   checked; the `$class` was checked before building (§11), and what `from_config`
+   checked; the `$class` was checked before building ([Validation](#validation)), and what `from_config`
    returns is its own contract.
 5. **Assembly:** `TConfig(**fields)`, so `__post_init__` runs. Nested native
    dataclasses, including those in `list` and `dict` fields, are the user's classes.
@@ -414,7 +292,7 @@ and the fix, for:
    the partial is created; a `???` never reaches it.
 
 Validation errors name the node path and the schema class. The whole node is
-validated before any configured target is built (§5), so a config error never
+validated before any configured target is built ([Instantiation](#instantiation)), so a config error never
 leaves some children built.
 
 **`from_config` contract.** It receives the typed config with its children built,
@@ -427,23 +305,23 @@ for a class or function defined at module level, for children that code chooses
 inside `from_config`. Such children cannot be reached by overrides. Children that
 users should configure belong in object fields.
 
-## 11. Validation
+## Validation
 
 `validate(config, *, schema=None, allow_missing=False, allowed_modules=None)`
 checks a config that
 `load_config` has assembled. It returns nothing and raises `ConfigValidationError`
 at the first problem.
 
-1. `load_config` assembles the full config (§1). It checks no schema.
+1. `load_config` assembles the full config ([Pipeline](#pipeline)). It checks no schema.
 2. `validate` checks the assembled config, or any node of it.
 3. `instantiate` and `prepare` run the same check on the node they build before
-   building it (§5).
+   building it ([Instantiation](#instantiation)).
 
 The check:
 
 - The config is resolved first. An interpolation that fails, and a `???` anywhere,
   make the config invalid (unless `allow_missing`). The error names the full key.
-- Every node with `$class` is checked against the schema of its class (§10),
+- Every node with `$class` is checked against the schema of its class ([Typed configs](#typed-configs)),
   children before parents. `$class` is imported to find the schema, but the class
   is not called. Classes without a schema only have their children checked.
 - `schema` is the class the root must match:
@@ -458,7 +336,7 @@ The check:
 - `allow_missing=True` accepts missing values: `???`, required fields that are not
   given, and interpolations to missing or unknown keys (as in a library file that
   its consumers complete). Every value that is given is still checked.
-- An object field (§10) accepts a node whose `$class` is the annotated class or a
+- An object field ([Typed configs](#typed-configs)) accepts a node whose `$class` is the annotated class or a
   subclass, a `$ref` to an instance of it, or `None` when the annotation is
   optional. A mapping without `$class` is accepted only when the annotation is a
   dataclass, which is then checked as a section. The class check is skipped when
@@ -469,14 +347,14 @@ The check:
 - `Any` fields are not checked, but their `$class` nodes are.
 - What `from_config` returns is not checked. A valid config is one whose every
   node matches its schema; building it is left to `from_config`.
-- Reserved keys (§6) are checked, and `$meta` is ignored.
+- Reserved keys ([Reserved keys](#reserved-keys)) are checked, and `$meta` is ignored.
 - A `$class` or `$ref` that is not a string, is not a dotted path, names a module
   that does not exist (or whose parent package does not exist), or names a missing
   attribute raises, naming the node. So does a `$class` target that is neither
   callable nor has `from_config`; `$ref` accepts any object. An `ImportError` that
   the named module raises while it is imported, such as one for a missing
   dependency, propagates with its own type.
-- `check_schema` (§10) runs for every class with a schema.
+- `check_schema` ([Typed configs](#typed-configs)) runs for every class with a schema.
 - Plain values are checked the way `instantiate` coerces them, so `"64"` is a valid
   `int`. The config itself is not changed.
 
@@ -522,11 +400,11 @@ modules that `$class` and `$ref` may name. It is not a sandbox.
 - Not covered: resolvers, the `schema` argument and `--schema`, `json-schema`
   import paths, and `instantiate` calls made inside your own `from_config`.
 
-## 12. Editor schemas
+## Editor schemas
 
-`generate_json_schema(schema)` and the command `omegakit json-schema` (§13)
+`generate_json_schema(schema)` and the command `omegakit json-schema` ([Command line](#command-line))
 generate a JSON Schema (draft-07) for YAML files. The argument is a root schema
-dataclass (§11), or a `Configurable` class whose schema describes a fragment file.
+dataclass ([Validation](#validation)), or a `Configurable` class whose schema describes a fragment file.
 
 - Every value, scalar or whole node, may also be an interpolation (`${…}`), `???`
   or an `~import`.
@@ -541,7 +419,7 @@ dataclass (§11), or a `Configurable` class whose schema describes a fragment fi
   re-export or a subclass, accepts any mapping.
 - Field descriptions are not generated.
 
-## 13. Command line
+## Command line
 
 The `omegakit` command (also `python -m omegakit`) has one subcommand per task. It
 puts the working directory on the import path, so `$class`, `--schema` and
@@ -551,7 +429,7 @@ puts the working directory on the import path, so `$class`, `--schema` and
 any order. An argument that names an existing file is a config file, even if it
 contains `=`. Otherwise it is an override if it has a `=` with no `/` before it, and
 a config file (which then fails to load) if not. Overrides apply to every file.
-Their `--import-root DIR` passes `import_root` to `load_config` (§7).
+Their `--import-root DIR` passes `import_root` to `load_config` ([Imports](#imports)).
 
 **Exit codes.** 0 on success, 1 when a config is invalid or cannot be loaded, 2 for
 usage errors (a missing config file, an unknown option, an `--schema` or
@@ -560,8 +438,8 @@ directory).
 
 - `omegakit check CONFIG... [KEY=VALUE...] [--schema IMPORT_PATH] [--allow-missing]
   [--allow-module NAME]... [--import-root DIR]`
-  loads each file with the overrides and validates it (§11). Each `--allow-module`
-  adds an entry to `allowed_modules` (§11); without one, every module is allowed. It prints one line per
+  loads each file with the overrides and validates it ([Validation](#validation)). Each `--allow-module`
+  adds an entry to `allowed_modules` ([Validation](#validation)); without one, every module is allowed. It prints one line per
   failing file, `<file>: <exception type>: <message>`, and nothing for valid files.
   Every exception from loading or validating counts as a failure of that file, and
   so does a `SystemExit` raised by a module that is imported; the other files are
@@ -569,16 +447,150 @@ directory).
 - `omegakit show CONFIG [KEY=VALUE...] [--node KEY] [--resolve] [--keep-meta]
   [--show-secrets] [--import-root DIR]`
   prints the assembled config as YAML, or the node at `KEY`. `KEY` is a dotted path
-  with the same syntax and walk as `~import file#node` (§7): `items.0.name`, and
+  with the same syntax and walk as `~import file#node` ([Imports](#imports)): `items.0.name`, and
   `items.-1` from the end. The node is printed unresolved: an interpolation prints
   as written, `???` as `???` and `null` as `null`. A path that goes through an
   interpolation, or a node that does not exist, exits with 1. `--resolve` follows
   interpolations on the path, and resolves only the selected node (the whole config
   without `--node`); missing values print as `???`, and any other resolution error
   exits with 1 and one line, like a load error. A scalar node prints as its value.
-  Secrets are masked as by `mask_secrets` (§9), with the secrets of the whole
+  Secrets are masked as by `mask_secrets` ([Environment](#environment)), with the secrets of the whole
   config, even with `--node`: by key in every mode, and by environment variable and
   by value with `--resolve`. `--show-secrets` turns masking off.
 - `omegakit json-schema IMPORT_PATH [-o FILE] [--check]` prints or writes the JSON
-  Schema (§12). With `--check`, which needs `-o`, it writes nothing and exits with 1
+  Schema ([Editor schemas](#editor-schemas)). With `--check`, which needs `-o`, it writes nothing and exits with 1
   if `FILE` is missing or differs from the generated schema (compared as JSON).
+
+## Resolvers
+
+- Resolvers are opt-in. Registration is global to OmegaConf, and an existing name
+  raises unless `replace=True` is passed. `omegakit.resolvers` exports nothing:
+  each resolver is imported from its own module, which carries its own
+  dependencies.
+- Resolvers are registered with the API of the installed OmegaConf
+  (`register_resolver` on 2.4, `register_new_resolver` on 2.3), so neither warns.
+
+## Errors
+
+`ConfigValidationError` covers every problem in a config's content, including those
+that `load_config` finds while loading; the error it wraps, from PyYAML, OmegaConf
+or the file system, is its `__cause__`. Only a missing root file passed to
+`load_config` raises `FileNotFoundError`.
+
+| Misuse | Exception | Message contains |
+|---|---|---|
+| Root file passed to `load_config` does not exist | `FileNotFoundError` | the path |
+| A file that is not valid YAML, has duplicate keys or unknown tags, or is not UTF-8 | `ConfigValidationError`, caused by PyYAML's error or `UnicodeDecodeError` | `Cannot load`, the file, the line and column |
+| A file that holds a single value, not a mapping or a list | `ConfigValidationError` | `single value` and the file |
+| A root file passed to `load_config` that holds a list | `ConfigValidationError` | `root is a list` and the file |
+| Circular `~import` | `ConfigValidationError` | `Circular import detected`, the statement and the files |
+| `~import` of a missing or unreadable file, or of an invalid file | `ConfigValidationError`, caused by the `OSError` or the load error | `Cannot import`, the statement and the importing file |
+| `~import` of a missing node | `ConfigValidationError` | `selects node`, the node and the files |
+| `~import` selector through a scalar, or a bad or out-of-range list index | `ConfigValidationError` | as missing node |
+| `~import` with more than one `#` | `ConfigValidationError` | `more than one` `#` |
+| `~import` of a file outside `import_root` | `ConfigValidationError` | `outside the import root`, the statement and both paths |
+| `~import` path with an interpolation that fails | `ConfigValidationError`, caused by OmegaConf's error | `Cannot resolve`, the statement and the importing file |
+| `$base` not a mapping or list of mappings | `ConfigValidationError` | `$base` |
+| `$base` or `$defaults` interpolation to a key that never appears | `ConfigValidationError`, caused by OmegaConf's error | `Cannot resolve` and the full key |
+| `$base` or `$defaults` interpolations that refer to each other | `ConfigValidationError` | `references form a cycle` and the nodes |
+| `$defaults` not a mapping | `ConfigValidationError` | `$defaults` |
+| Overrides of another type than `DictConfig`, `dict` or `list`, including a `ListConfig` | `TypeError` | `Unsupported overrides type` |
+| An override that does not parse, has an unsupported value type, or is rejected by a struct config, in `load_config`, `instantiate` or `prepare` | `ConfigValidationError`, caused by PyYAML's or OmegaConf's error | `override`, and the override or its key |
+| `instantiate`/`prepare` on a node without `$class` | `ConfigValidationError` | `<root>` and `has no` `$class` |
+| `$class`/`$ref` module not found | `ConfigValidationError`, caused by `ModuleNotFoundError` | `Cannot import`, the node path and the module |
+| `$class`/`$ref` attribute not found | `ConfigValidationError`, caused by `ImportError` | `Cannot import`, the node path, `Could not import` |
+| `$ref` with sibling keys other than `$meta` | `ConfigValidationError` | `cannot contain any other keys` |
+| `$class`/`$ref` in a module that `allowed_modules` does not allow ([Validation](#validation)) | `ConfigValidationError` | the path, the node and `allowed_modules` |
+| `allowed_modules` given as a string | `TypeError` | `not the string` |
+| Raw dict value that OmegaConf does not support | `UnsupportedValueType` | the key |
+| Unknown `$` key, or `$class` with `$ref`, at validation or instantiation | `ConfigValidationError` | the key and `reserved` |
+| `$partial` not a boolean | `ConfigValidationError` | `$partial` |
+| `???` accessed | `MissingMandatoryValue` | the full key |
+| Unresolvable `${…}` accessed | `InterpolationKeyError` (or another OmegaConf error) | the key |
+| `???`, unresolvable `${…}` or a failing resolver, validated or instantiated | `ConfigValidationError`, caused by OmegaConf's error | `Cannot resolve` and the full key |
+| Exception from a constructor or `from_config` | unchanged | original message, plus the note from [Instantiation](#instantiation) |
+| Schema outside the supported subset ([Typed configs](#typed-configs)) | `ConfigValidationError` | the field and the fix |
+| Schema that does not match `__init__` ([Typed configs](#typed-configs)) | `ConfigValidationError` | the field or parameter |
+| Unknown field, missing required field, or invalid native value | `ConfigValidationError` | the node path and the schema |
+| Object field whose `$class` is not the annotated class or a subclass, or a `$ref` that is not an instance | `ConfigValidationError` | the field path, the expected class and the given node |
+| `make_node()` for a class or function not defined at module level | `ValueError` | `module level` |
+| Type variable in a `Configurable` base that cannot be substituted | `TypeError` | `Cannot resolve type variable` |
+| Resolver registered twice without `replace=True` | `ValueError` | `already registered` |
+| Torch resolver without PyTorch installed | `ImportError` | `require PyTorch` |
+
+A malformed dotlist override such as `["a"]` is not an error: OmegaConf sets `a` to
+`None`.
+
+## Environment
+
+- Importing `omegakit` or any of its modules has no side effects: no resolver is
+  registered, and `torch` is not imported.
+- omegakit does not load `.env` files.
+- omegakit supports OmegaConf 2.3 and 2.4 (`omegaconf>=2.3,<2.5`) and behaves the
+  same on both. Assembly uses private OmegaConf node APIs, so CI tests the lowest
+  supported version, the locked version and the newest pre-release in the range.
+- Configs import and call arbitrary Python objects. Load them only from trusted
+  sources (see Trust below).
+
+### Trust
+
+Loading, validating, checking and showing a config are not safe on untrusted
+input. Validation checks the shape of values; it is not input sanitisation. Code
+and I/O happen without anything being built:
+
+- The modules named by `$class` and `$ref` are imported, which runs their
+  import-time code, unless `allowed_modules` limits them ([Validation](#validation)). `allowed_modules`
+  is not a sandbox.
+- Resolvers run, including OmegaConf's `oc.env`, which reads any environment
+  variable of the process. `load_config` itself evaluates interpolations in
+  `~import` paths and in `$base` and `$defaults` values. An application that does
+  not need `oc.env` can call `OmegaConf.clear_resolver("oc.env")` before loading.
+- Every `default_factory` of a schema runs during validation ([Validation](#validation)).
+- `~import` reads any file the process can read, unless `import_root` is set ([Imports](#imports)).
+  `keep_targets=False` does not make loading safe.
+- Overrides carry the same trust as the config file: an override can set `$class`,
+  `$ref` and interpolations such as `${oc.env:...}`.
+- The command line puts the working directory first on `sys.path` ([Command line](#command-line)), so a
+  module there can shadow a `$class` target.
+- Reading a special file, such as a FIFO, blocks.
+- `~import` fan-out can grow exponentially, because every import is a deep copy,
+  and a long chain of `$base` references costs time quadratic in its size.
+- Any string value that starts with `~import` is an import, so a tool that writes
+  YAML from untrusted strings must not let them start with it.
+- Error messages, and so CI logs, can contain scalar config values; mappings are
+  described by their keys.
+
+Resolved configs and objects built by `instantiate` contain the real values of
+secrets read with `${oc.env:...}`. Log `mask_secrets(config)` instead of a resolved
+config, and keep secrets out of arguments that components save, such as
+hyperparameters written into checkpoints.
+
+### Masking secrets
+
+`mask_secrets(config, *, keys=())` takes an unresolved config, such as the result
+of `load_config`, and returns it resolved as plain `dict`s and `list`s for logging,
+with secrets replaced by `***`:
+
+1. **By key.** A key is split into words at `_`, `-`, `.` and camelCase
+   boundaries. It is secret when its words contain `password`, `passwd`, `pass`,
+   `passphrase`, `secret`, `token`, `credential`, `auth`, `bearer`, `cookie`,
+   `dsn`, `webhook` or `apikey`, or the sequences `api key`, `private key` or
+   `access key`, each also in the plural. Whole words only: `pad_token` is
+   secret, `tokenizer` is not. A secret key masks every value below it. `keys`
+   adds entries, each a word or a space-separated sequence; the defaults stay.
+2. **By environment variable.** A value whose unresolved text reads
+   `${oc.env:NAME}`, also with spaces or nested in another interpolation, is
+   masked when `NAME` is secret by the same rule: `DB_PASSWORD` is, `APP_ENV` and
+   `PWD` are not.
+3. **By value.** The resolved strings masked by 1 and 2 that are at least 8
+   characters long are replaced by `***` inside every other string, longest first,
+   such as a password inside a URL. Numbers and keys are never rewritten.
+
+A masked value is resolved only to collect it for 3; if that fails, it is masked
+anyway. A masked value that is not a string becomes the string `***`. A missing
+value prints as `???`. Any other resolution error raises `ConfigValidationError`.
+
+Not masked: a secret in a value whose key names no secret, a secret shorter than 8
+characters used elsewhere, a secret used as a key, a value read by a resolver other
+than `oc.env`, and objects built by `instantiate`. A secret equal to a common word
+masks that word in every other string.
