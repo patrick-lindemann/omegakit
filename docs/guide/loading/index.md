@@ -63,7 +63,8 @@ plain data for code that builds nothing.
 
 **Pipeline.** `load_config` runs these steps in order:
 
-1. Parse the root file. It must hold a mapping.
+1. Parse the root file. It must hold a mapping; a list raises
+   `ConfigValidationError`.
 2. Replace `~import` values, depth-first. Each imported file resolves its own
    imports first.
 3. Merge every `$base` underneath its node, children before parents.
@@ -95,5 +96,12 @@ plain data for code that builds nothing.
   [Defaults](../defaults/index.md#rules) say what each reference sees.
 
 **Errors.** A missing root file raises `FileNotFoundError`. Every other problem in
-a file's content raises `ConfigValidationError`, with the original error as its
-`__cause__`. The [Errors](../../errors/index.md) table lists them.
+a file's content raises `ConfigValidationError`, with the original error from
+PyYAML, OmegaConf or the file system as its `__cause__`:
+
+- A file that is not valid YAML, has duplicate keys or unknown tags, or is not
+  UTF-8. The message names the file, the line and the column.
+- A file that holds a single value, such as `hello` or `5`, instead of a mapping or
+  a list. An empty file, `null` or `~` is an empty mapping.
+- Any error while assembling: see [Imports](../imports/index.md#rules),
+  [Base](../base/index.md#rules) and [Defaults](../defaults/index.md#rules).

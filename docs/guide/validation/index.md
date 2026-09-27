@@ -58,11 +58,13 @@ run this check before building.
   the annotation is a dataclass (a section). The class check is skipped for
   functions, for `$partial: true`, and for annotations that are not plain classes
   or unions of them, such as `Callable` and `Protocol`. Reserved keys and nested
-  nodes are still checked.
+  nodes are still checked. Any other value raises `ConfigValidationError` naming
+  the field, the expected class and what the config gives.
 - Reserved keys are checked, and `$meta` is ignored. What `from_config` returns is
   not checked.
-- `$class` or `$ref` raises, naming the node, when it is not a string or not a
-  dotted path, or names a missing module (or parent package) or attribute. So does
+- `$class` or `$ref` raises `ConfigValidationError`, naming the node, when it is
+  not a string or not a dotted path, or names a missing module (or parent package)
+  or attribute. The `ImportError` is its `__cause__`. So does
   a `$class` target that is neither callable nor has `from_config`; `$ref` accepts
   any object. An `ImportError` raised by the named module itself, such as for a
   missing dependency, propagates.

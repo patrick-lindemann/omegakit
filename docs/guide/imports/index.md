@@ -79,11 +79,12 @@ is a limit, not a sandbox; see [Security](../../security/index.md#import-root).
 - A file that imports itself, directly or through others, is a cycle. The same file
   imported from two branches is not.
 - `import_root=DIR` rejects an import outside `DIR`, after interpolations and
-  symbolic links are resolved. A `DIR` that does not exist raises
+  symbolic links are resolved. The error names both paths. A `DIR` that does not exist raises
   `FileNotFoundError`, and a `DIR` that is a file `NotADirectoryError`. The root
   file is not checked. The default allows any file.
 - These raise `ConfigValidationError`, naming the statement and the importing
-  file: a file that does not exist, cannot be read or is invalid; a cycle; an
+  file, with the original error as its `__cause__` where there is one: a file that
+  does not exist, cannot be read or is invalid; a cycle; an
   interpolation in the path that fails; more than one `#`, so a file name with `#`
   cannot be imported; a `<node>` that does not exist, walks through a scalar or an
   interpolation, or has a bad or out-of-range index.

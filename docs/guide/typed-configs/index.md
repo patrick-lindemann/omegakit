@@ -151,9 +151,10 @@ recursive: that field holds an object.
    `**kwargs`; a positional-only parameter is rejected even then. Every field's
    annotation must be assignable to its parameter's: `int` to `float`, a subclass
    to its base, unions member by member. Generic annotations are skipped, and so
-   is each parameter whose annotation does not resolve.
-3. Check the native fields, parent before children. An unknown key and a missing
-   required field raise. Native values are checked through OmegaConf and
+   is each parameter whose annotation does not resolve. A mismatch raises
+   `ConfigValidationError` naming the field or parameter.
+3. Check the native fields, parent before children. An unknown key, a missing
+   required field and an invalid value raise `ConfigValidationError`. Native values are checked through OmegaConf and
    converted into the schema's own types. Object and `Any` values never enter
    OmegaConf.
 4. Build the object and `Any` fields, children first, as in
@@ -173,4 +174,6 @@ returns a subclass. Calling it with a raw mapping works but is outside the rules
 
 **`make_node(target, **kwargs)`** returns `{"$class": "<module>.<qualname>",
 **kwargs}` for a module-level class or function, for children that code chooses
-in `from_config`. Overrides cannot reach such children.
+in `from_config`. Overrides cannot reach such children. A target defined inside a
+function or a class raises `ValueError`, because it cannot be imported by its
+path.

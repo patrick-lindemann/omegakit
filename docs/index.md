@@ -94,6 +94,5 @@ recipes/tenants/index
 :hidden:
 
 api/index
-errors/index
 changelog/index
 ```

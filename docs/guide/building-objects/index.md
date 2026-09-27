@@ -106,8 +106,9 @@ and gets a note naming the node, such as `while instantiating jobs.digest
   later gets no note.
 
 **References.** A mapping with `$ref` is replaced by the imported object, uncalled.
-It allows no other key except `$meta`. The node passed to `instantiate` must have
-`$class`, not `$ref`.
+It allows no other key except `$meta`; another key raises `ConfigValidationError`.
+The node passed to `instantiate` or `prepare` must have `$class`, not `$ref`;
+without it they raise `ConfigValidationError`.
 
 **Partials.**
 
