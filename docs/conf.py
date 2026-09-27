@@ -33,5 +33,6 @@ redirects = {
     "cookbook": "recipes/environments.html",
     "contracts": "guide/loading.html#rules",
     "contracts/assembly": "../guide/loading.html#rules",
+    "contracts/instantiation": "../guide/building-objects.html#rules",
     "contracts/environment": "../security.html",
 }

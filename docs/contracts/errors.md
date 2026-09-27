@@ -36,7 +36,7 @@ or the file system, is its `__cause__`. Only a missing root file passed to
 | `???` accessed | `MissingMandatoryValue` | the full key |
 | Unresolvable `${…}` accessed | `InterpolationKeyError` (or another OmegaConf error) | the key |
 | `???`, unresolvable `${…}` or a failing resolver, validated or instantiated | `ConfigValidationError`, caused by OmegaConf's error | `Cannot resolve` and the full key |
-| Exception from a constructor or `from_config` | unchanged | original message, plus the note from [Instantiation](instantiation.md#instantiation) |
+| Exception from a constructor or `from_config` | unchanged | original message, plus the note from [Building objects](../guide/building-objects.md#rules) |
 | Schema outside the supported subset ([Typed configs](typed-configs.md#typed-configs)) | `ConfigValidationError` | the field and the fix |
 | Schema that does not match `__init__` ([Typed configs](typed-configs.md#typed-configs)) | `ConfigValidationError` | the field or parameter |
 | Unknown field, missing required field, or invalid native value | `ConfigValidationError` | the node path and the schema |

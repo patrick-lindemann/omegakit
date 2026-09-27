@@ -75,7 +75,61 @@ module was never imported. It is a limit, not a sandbox; see
 
 An exception raised by a constructor or `from_config` keeps its type and message,
 and gets a note naming the node, such as `while instantiating jobs.digest
-(webapp.jobs.Job)`. The rules are in the contracts under
-[Instantiation](../contracts/instantiation.md#instantiation),
-[References](../contracts/instantiation.md#references), [Partials](../contracts/instantiation.md#partials) and
-[Metadata](../contracts/instantiation.md#metadata).
+(webapp.jobs.Job)`.
+
+## Rules
+
+**Building.**
+
+- A mapping with `$class` is built. `$class` is a dotted path `module.attribute`;
+  the attribute is imported and called with the node's other keys as keyword
+  arguments.
+- `instantiate` and `prepare` first merge `overrides` into a copy, resolve it and
+  validate it as `validate` does ([Validation](validation.md#rules)), with the same
+  `allowed_modules`, and only then build. A config error, a `???`, a failing
+  interpolation and an exception from a resolver all raise `ConfigValidationError`
+  before any configured class is called. OmegaConf's error is the `__cause__`, and
+  the message names the full key.
+- A target with a `from_config` attribute is built with `from_config(arguments)`
+  instead. The lookup is by name, so any class with that classmethod works,
+  `Configurable` or not. `arguments` is a `dict` of the built arguments, or the
+  typed config when the class has a schema ([Typed configs](typed-configs.md)).
+- Nested `$class` nodes, in mappings and lists, are built before their parent,
+  which receives the objects.
+- A `dict` passed in is converted with `OmegaConf.create` and treated like a
+  `DictConfig`. A value OmegaConf does not support raises `UnsupportedValueType`.
+- An exception from a constructor or `from_config` propagates unchanged in type,
+  arguments and traceback, with one note, `while instantiating <path> (<class>)`.
+  `<path>` is the dotted path from the node passed in, such as `items.0.model`, or
+  `<root>`, and `<class>` the `$class` value. An error from calling a partial
+  later gets no note.
+
+**References.** A mapping with `$ref` is replaced by the imported object, uncalled.
+It allows no other key except `$meta`. The node passed to `instantiate` must have
+`$class`, not `$ref`.
+
+**Partials.**
+
+- `$partial: true` gives a `functools.partial` of the class, or of its
+  `from_config`, with the built arguments. Nested objects are still built right
+  away. `$partial: false` builds normally. Any other value, including `"true"` and
+  `1`, raises `ConfigValidationError`.
+- `prepare(node)` is `instantiate` with the call of `node` itself deferred. Nested
+  nodes are built during `prepare`, and nested `$partial` nodes stay partials.
+- Keyword arguments given when calling a partial win over the config's. Without
+  `from_config` they reach the constructor. With `from_config` they arrive as its
+  `**kwargs`, after the arguments. The default `Configurable.from_config` calls
+  `cls(**{**fields, **kwargs})`, where `fields` are the typed config's fields, or
+  the arguments when there is no schema.
+
+**Metadata.** `$meta` is never passed to a constructor or to `from_config`.
+
+**Reserved keys.**
+
+- Every key that starts with `$` is reserved. The defined ones are `$class`,
+  `$ref`, `$partial`, `$meta`, `$base` and `$defaults`. `~import` is a value
+  prefix, not a key.
+- `load_config` keeps unknown `$` keys. Validating or building rejects a `$` key
+  where it is not allowed, with `ConfigValidationError`: a `$class` node allows
+  `$meta` and `$partial`, and a `$ref` node or a plain mapping allows only
+  `$meta`. `$class` and `$ref` cannot be combined.

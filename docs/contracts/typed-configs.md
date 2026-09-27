@@ -6,7 +6,7 @@ A class that subclasses `Configurable[TConfig]` with a dataclass `TConfig` has a
 **schema**: its config is validated and built into a `TConfig` instance, the typed
 config, which `from_config` receives. Any other class, including a bare
 `Configurable` or a `TypedDict` or `Mapping` `TConfig`, is built as in
-[Instantiation](instantiation.md#instantiation). `ConfigValidationError` is a
+[Building objects](../guide/building-objects.md#rules). `ConfigValidationError` is a
 `ValueError`.
 
 **Schema lookup.** The `TConfig` argument is found by walking the original bases of
@@ -69,7 +69,7 @@ recursive: that field holds an object.
    converted into the schema's own types. Object and `Any` values never enter
    OmegaConf.
 4. Object and `Any` fields, children first, are built as in
-   [Instantiation](instantiation.md#instantiation); a plain mapping in a field
+   [Building objects](../guide/building-objects.md#rules); a plain mapping in a field
    annotated with a dataclass is a section, built the same way. A built object's
    type is not checked again.
 5. `TConfig(**fields)`, so `__post_init__` runs.

@@ -93,7 +93,6 @@ recipes/tenants
 :caption: Contracts
 :hidden:
 
-contracts/instantiation
 contracts/typed-configs
 contracts/command-line
 contracts/errors
