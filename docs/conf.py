@@ -34,5 +34,6 @@ redirects = {
     "contracts": "guide/loading.html#rules",
     "contracts/assembly": "../guide/loading.html#rules",
     "contracts/instantiation": "../guide/building-objects.html#rules",
+    "contracts/typed-configs": "../guide/typed-configs.html#rules",
     "contracts/environment": "../security.html",
 }

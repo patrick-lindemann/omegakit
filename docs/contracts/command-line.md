@@ -18,7 +18,7 @@ that cannot be imported, an `--import-root` that is not a directory).
 
 - `omegakit check CONFIG... [KEY=VALUE...] [--schema IMPORT_PATH] [--allow-missing]
   [--allow-module NAME]... [--import-root DIR]` validates each file
-  ([Validation](typed-configs.md#validation)); each `--allow-module` adds an entry
+  ([Validation](../guide/validation.md#rules)); each `--allow-module` adds an entry
   to `allowed_modules`. It prints `<file>: <exception type>: <message>` for each
   invalid file and nothing for valid ones. Any exception, and a `SystemExit` raised
   by an imported module, marks that file invalid, and the other files are still
