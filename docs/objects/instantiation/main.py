@@ -1,28 +1,28 @@
 from pathlib import Path
 
-from webapp import App
-from webapp.db import Database
+from curvefit import Experiment
 
 from omegakit import ConfigValidationError, instantiate, load_config, prepare
 
-configs = Path(__file__).parents[2] / "webapp" / "configs"
-config = load_config(configs / "app.yaml")
+experiments = Path(__file__).parents[2] / "curvefit" / "configs" / "experiments"
+config = load_config(experiments / "poly3-adam.yaml")
 
-app = instantiate(config, schema=App)
-print(type(app.database).__name__, type(app.jobs["digest"]).__name__)
-print(app.jobs["cleanup"].handler())
-print(app.jobs["digest"].handler())
-print(app.jobs["digest"].handler(subject="Special offer"))
+experiment = instantiate(config, schema=Experiment)
+print(type(experiment.model).__name__, experiment.metrics["mse"]([1.0], [3.0]))
+optimizer = experiment.optimizer(experiment.model.parameters())
+print(type(optimizer).__name__, optimizer.param_groups[0]["lr"])
+optimizer = experiment.optimizer(experiment.model.parameters(), lr=0.1)
+print(optimizer.param_groups[0]["lr"])
 
-make_database = prepare(config.database, schema=Database)
-print(make_database(pool_size=1).pool_size)
+make_model = prepare(config.model)
+print(make_model(degree=5).degree)
 
 try:
     instantiate(
         config,
-        schema=App,
-        overrides=["database.$class=subprocess.Popen"],
-        allowed_modules=["webapp"],
+        schema=Experiment,
+        overrides=["model.$class=subprocess.Popen"],
+        allowed_modules=["curvefit"],
     )
 except ConfigValidationError as error:
     print(error)

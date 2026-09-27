@@ -2,7 +2,7 @@
 
 `instantiate` builds Python objects from a config node. `$class` calls a class or
 function, `$ref` imports an object without calling it, and `$partial` defers a call.
-`webapp` builds its whole application from the root file:
+`curvefit` builds a whole experiment from one experiment file:
 
 ```{literalinclude} main.py
 :language: python
@@ -10,72 +10,74 @@ function, `$ref` imports an object without calling it, and `$partial` defers a c
 ```
 
 ```text
-SQLite Job
-purged expired sessions
-sent 'What happened this week'
-sent 'Special offer'
-1
-`$class: subprocess.Popen` in `database` names a module that is not in `allowed_modules`.
+Polynomial 4.0
+Adam 0.05
+0.1
+5
+`$class: subprocess.Popen` in `model` names a module that is not in `allowed_modules`.
 ```
 
 ## `$class`
 
-`$class: webapp.App` names the class to build, and the node's other keys become its
-arguments. Nested nodes with `$class`, in mappings and lists, are built first, so
-`App` receives a built server, database and jobs. A class with a `from_config`
-method, such as every `Configurable`, receives the arguments through it instead;
-see [Schemas](../schemas/index.md).
+`$class: curvefit.models.Polynomial` names the class to build, and the node's other
+keys become its arguments. Nested nodes with `$class`, in mappings and lists, are
+built first, so the experiment receives built datasets, a model and a trainer. A
+class with a `from_config` method, such as every `Configurable`, receives the
+arguments through it instead; see [Configurable classes](../schemas/index.md).
 
-`schema=App` says what the result must be, and gives it that type for your editor
-and type checker. The root's `$class` must name `App` or a subclass. A root without
-`$class` is built as if it named `App`. Without `schema`, the root must have
-`$class`.
+`schema=Experiment` says what the result must be, and gives it that type for your
+editor and type checker. The root's `$class` must name `Experiment` or a subclass. A
+root without `$class`, like the experiment files, is built as if it named
+`Experiment`. Without `schema`, the root must have `$class`.
 
 ## `$ref`
 
-A `$ref` node is replaced by the object it names, without calling it. The `cleanup`
-job's handler is the function itself:
+A `$ref` node is replaced by the object it names, without calling it. The metrics
+are the functions themselves:
 
-```{literalinclude} ../../webapp/configs/jobs.yaml
+```{literalinclude} ../../curvefit/configs/base.yaml
 :language: yaml
-:caption: configs/jobs.yaml
-:start-at: "cleanup:"
+:caption: configs/base.yaml (excerpt)
+:start-at: "metrics:"
+:end-before: "tracker:"
 ```
 
 ## `$partial` and `prepare`
 
-`$partial: true` builds a `functools.partial` with the node's arguments, so the
-`digest` handler is `send_digest` with its subject filled in, and a call can still
-change the subject:
+The optimizer needs the model's parameters, which exist only once the model is
+built. `$partial: true` builds a `functools.partial` with the node's arguments, and
+the code passes the parameters when it calls it:
 
-```{literalinclude} ../../webapp/configs/jobs.yaml
+```{literalinclude} ../../curvefit/configs/experiments/poly3-adam.yaml
 :language: yaml
-:start-at: "digest:"
-:end-before: "$meta:"
+:start-at: "optimizer:"
+:end-before: "trainer:"
 ```
 
+Arguments passed to a partial win over the config's, as `lr=0.1` did above.
 `prepare(node)` does the same for the node you pass: it checks the node and builds
 its children, and gives you a partial for the node itself, to call later with more
-arguments. Arguments passed to a partial win over the config's.
+arguments.
 
 ## `$meta`
 
-`$meta` holds notes for people and tools, such as the `digest` job's owner. It is
-never passed to a constructor or to `from_config`, and `load_config` removes it
-unless you pass `keep_meta=True` ([Loading](../../configs/loading/index.md)).
+`$meta` holds notes for people and tools, such as the hypothesis of
+`poly3-adam.yaml`. It is never passed to a constructor or to `from_config`, and
+`load_config` removes it unless you pass `keep_meta=True`
+([Loading](../../configs/loading/index.md)).
 
 ## Checking before building
 
-`instantiate` and `prepare` check the node as [`validate`](../../schemas/validation/index.md) does
-before they build anything, so a mistake raises `ConfigValidationError` before any
-configured class is called. `allowed_modules=["webapp"]` limits `$class` and `$ref`
-to your own package: the override above swapped in `subprocess.Popen`, and the
-module was never imported. It is a limit, not a sandbox; see
+`instantiate` and `prepare` check the node as [`validate`](../../schemas/validation/index.md)
+does before they build anything, so a mistake raises `ConfigValidationError` before
+any configured class is called. `allowed_modules=["curvefit"]` limits `$class` and
+`$ref` to your own package: the override above swapped in `subprocess.Popen`, and
+the module was never imported. It is a limit, not a sandbox; see
 [Trust model](../../security/trust-model/index.md).
 
 An exception raised by a constructor or `from_config` keeps its type and message,
-and gets a note naming the node, such as `while instantiating jobs.digest
-(webapp.jobs.Job)`.
+and gets a note naming the node, such as
+`while instantiating data.train (curvefit.data.Synthetic)`.
 
 ## Rules
 
