@@ -58,7 +58,7 @@ and the keys literally present in that file. It does not see keys contributed by
 `$base`, by another file, or by overrides.
 
 A `$base` or `$defaults` value that is an interpolation (`$base: ${_common}`) sees
-the referenced node fully assembled. Nodes are merged children before parents and
+the referenced node with its own `$base` and `$defaults` already merged. Nodes are merged children before parents and
 in dependency order:
 
 - A node waits while its value refers to a node that still has an unmerged `$base`
@@ -169,9 +169,9 @@ such as `${.id}` resolves at the node's final position.
   - For a class with `from_config`, they reach `from_config` as `**kwargs`. The
     arguments mapping stays the first positional argument.
   - The default `Configurable.from_config` forwards `**kwargs` to the constructor:
-    it calls `cls(**fields, **kwargs)`, where `fields` are the typed config's fields
-    (shallow) or the arguments mapping. A call-time value wins over a field of the
-    same name, as it does for plain classes.
+    it calls `cls(**{**fields, **kwargs})`, where `fields` are the typed config's
+    fields (shallow) or the arguments mapping. A call-time value replaces a field of
+    the same name, as it does for plain classes.
 - `$partial: true` makes a node partial, and `$partial: false` does not. Any other
   value, including the string `"true"` and `1`, raises `ConfigValidationError`.
 
@@ -411,7 +411,8 @@ dataclass ([Validation](#validation)), or a `Configurable` class whose schema de
 - Every mapping accepts any `$` key. Other unknown keys are errors.
 - Nothing is required, because values may come from `$base`, `$defaults`, imports or
   overrides. Missing values are caught by `validate` or `instantiate`.
-- Enums list member names and values, and `Literal` fields list their values.
+- Enums list their member names, and the string and integer values that are not
+  also a name. `Literal` fields list their values.
   Fixed-length tuples give arrays with one schema per position.
 - An object field whose class is a `Configurable` with a dataclass schema
   is checked against that schema (`if`/`then`), but only when its `$class` names the
