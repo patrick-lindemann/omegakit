@@ -95,7 +95,13 @@ jobs:
         with:
           python-version: "3.13"
       - run: uv sync --locked
+      # The PyTorch index publishes no upload dates, so the three-day cutoff would
+      # exclude every file on it. Only CPU Torch itself comes from there; its
+      # dependencies come from PyPI, under the cutoff.
       - run: >-
-          uv pip install --index-url https://download.pytorch.org/whl/cpu
+          uv pip install --no-deps
+          --index-url https://download.pytorch.org/whl/cpu torch
+      - run: >-
+          uv pip install
           --exclude-newer "$(date -u -d '3 days ago' +%Y-%m-%dT%H:%M:%SZ)" torch
       - run: uv run --no-sync pytest -m "not distribution"
