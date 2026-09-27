@@ -2,13 +2,13 @@ from pathlib import Path
 
 from omegakit import CLASS_KEY, META_KEY, load_config, walk
 
-configs = Path(__file__).parents[2] / "webapp" / "configs"
+experiments = Path(__file__).parents[2] / "curvefit" / "configs" / "experiments"
 
-config = load_config(configs / "app.yaml", overrides=["server.port=9000"])
-print(config.server.port)
-print(config.database[CLASS_KEY])
+config = load_config(experiments / "poly3-adam.yaml", overrides=["trainer.epochs=50"])
+print(config.trainer.epochs, config.trainer.schedule)
+print(config.data.test[CLASS_KEY], config.data.test.n)
 
-config = load_config(configs / "app.yaml", keep_meta=True)
+config = load_config(experiments / "poly3-adam.yaml", keep_meta=True)
 for node in walk(config):
     if META_KEY in node:
-        print(node[CLASS_KEY], node[META_KEY].owner)
+        print(node[META_KEY].hypothesis)

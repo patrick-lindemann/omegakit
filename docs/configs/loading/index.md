@@ -1,11 +1,12 @@
 # Loading
 
 `load_config` reads a YAML file and assembles it into an OmegaConf `DictConfig`.
-The `webapp` root file holds two keys, and everything else arrives while loading:
+An experiment file of `curvefit` holds only what makes it different, and everything
+else arrives while loading:
 
-```{literalinclude} ../../webapp/configs/app.yaml
+```{literalinclude} ../../curvefit/configs/experiments/poly3-adam.yaml
 :language: yaml
-:caption: configs/app.yaml
+:caption: configs/experiments/poly3-adam.yaml
 ```
 
 ```{literalinclude} main.py
@@ -15,13 +16,13 @@ The `webapp` root file holds two keys, and everything else arrives while loading
 ```
 
 ```text
-9000
-webapp.db.SQLite
+50 cosine
+curvefit.data.Synthetic 200
 ```
 
-The `$base` line pulled in `envs/dev.yaml`, which pulled in `base.yaml`, and the
-override set the port last. Paths in `~import` are relative to the file that holds
-them, not to the working directory, so the config loads from anywhere.
+The `$base` line pulled in `base.yaml`, which imports the data presets, and the
+override set the number of epochs last. Paths in `~import` are relative to the file
+that holds them, not to the working directory, so the config loads from anywhere.
 
 ## The order of assembly
 
@@ -43,9 +44,10 @@ validated or built ([Interpolation](../interpolation/index.md)).
 
 ## Metadata and plain data
 
-`$meta` holds notes for people and tools ([Instantiation](../../objects/instantiation/index.md)).
-`load_config` removes it unless you ask for it. `walk` visits every mapping of a
-config, parents first, so a script can collect it:
+`$meta` holds notes for people and tools, such as the hypothesis of an experiment
+([Instantiation](../../objects/instantiation/index.md)). `load_config` removes it
+unless you ask for it. `walk` visits every mapping of a config, parents first, so a
+script can collect it:
 
 ```{literalinclude} main.py
 :language: python
@@ -53,7 +55,7 @@ config, parents first, so a script can collect it:
 ```
 
 ```text
-webapp.jobs.Job growth
+A cubic follows the sine closely enough to beat a line on the test set.
 ```
 
 `keep_targets=False` also removes `$class`, `$ref` and `$partial`. That leaves
