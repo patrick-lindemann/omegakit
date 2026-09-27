@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import functools
 from collections.abc import Callable, Iterable
 from typing import Any, cast, get_args, get_origin, overload

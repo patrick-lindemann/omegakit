@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from pathlib import Path
 from typing import Any
 
@@ -17,6 +15,7 @@ from ._assembly import (
 from ._keys import CLASS_KEY, META_KEY, PARTIAL_KEY, REF_KEY
 from ._schema import ConfigValidationError
 from ._utils import describe_error
+
 
 def load_config(
     file_path: Path | str,

@@ -7,10 +7,20 @@ import inspect
 import operator
 import sys
 import types
-import typing
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Literal, TypeAliasType, get_args, get_origin, get_type_hints
+from typing import (
+    Any,
+    Literal,
+    TypeAliasType,
+    TypeVar,
+    Union,
+    cast,
+    get_args,
+    get_origin,
+    get_type_hints,
+    is_typeddict,
+)
 
 from omegaconf import MISSING, OmegaConf
 from omegaconf.errors import OmegaConfBaseException
@@ -273,7 +283,7 @@ def validate_native(
         raise ConfigValidationError(
             f"Invalid config in {location}: {message}"
         ) from error
-    merged = typing.cast(dict[str, Any], merged)
+    merged = cast(dict[str, Any], merged)
     return {
         name: _build_native_value(
             merged[name],
@@ -300,7 +310,7 @@ def union_members(annotation: Any) -> tuple[tuple[Any, ...], bool]:
     """
     while isinstance(annotation, TypeAliasType):
         annotation = annotation.__value__
-    if get_origin(annotation) not in (typing.Union, types.UnionType):
+    if get_origin(annotation) not in (Union, types.UnionType):
         return (annotation,), False
     members = tuple(
         member for member in get_args(annotation) if member is not type(None)
@@ -383,7 +393,7 @@ def _find_config_type(cls: type, substitutions: dict[Any, Any]) -> Any:
 
 
 def _substitute(argument: Any, substitutions: dict[Any, Any], cls: type) -> Any:
-    if not isinstance(argument, typing.TypeVar):
+    if not isinstance(argument, TypeVar):
         return argument
     if argument not in substitutions:
         raise TypeError(
@@ -447,9 +457,9 @@ def _field_kind(
     if isinstance(annotation, type) and dataclasses.is_dataclass(annotation):
         kinds = {kind for kind, _ in classify_fields(annotation, outer).values()}
         return "native" if kinds <= {"native"} else "object"
-    if isinstance(annotation, type) and typing.is_typeddict(annotation):
+    if isinstance(annotation, type) and is_typeddict(annotation):
         return "native"
-    if origin in (typing.Union, types.UnionType):
+    if origin in (Union, types.UnionType):
         members, _ = union_members(annotation)
         member_kinds: set[FieldKind] = {
             _field_kind(member, schema, name, outer) for member in members
@@ -514,7 +524,7 @@ def _is_mapping_type(annotation: Any) -> bool:
     origin = get_origin(annotation) or annotation
     return origin in (dict, collections.abc.Mapping) or (
         isinstance(annotation, type)
-        and (dataclasses.is_dataclass(annotation) or typing.is_typeddict(annotation))
+        and (dataclasses.is_dataclass(annotation) or is_typeddict(annotation))
     )
 
 
@@ -566,7 +576,7 @@ def _structure_type(annotation: Any) -> Any:
         return functools.reduce(
             operator.or_, dict.fromkeys(type(value) for value in arguments)
         )
-    if origin in (typing.Union, types.UnionType):
+    if origin in (Union, types.UnionType):
         members, _ = union_members(annotation)
         if len(members) == 1:
             return _structure_type(members[0]) | None
@@ -584,7 +594,7 @@ def _structure_type(annotation: Any) -> Any:
         return Any
     if origin in (dict, collections.abc.Mapping):
         return dict[arguments[0], _structure_type(arguments[1])]
-    if isinstance(annotation, type) and typing.is_typeddict(annotation):
+    if isinstance(annotation, type) and is_typeddict(annotation):
         return dict
     if isinstance(annotation, type) and dataclasses.is_dataclass(annotation):
         return _native_schema(annotation)
@@ -625,7 +635,7 @@ def _normalize_enums(value: Any, annotation: Any) -> Any:
                 if type(member.value) is type(value) and member.value == value:
                     return member.name
         return value
-    if origin in (typing.Union, types.UnionType):
+    if origin in (Union, types.UnionType):
         members, _ = union_members(annotation)
         return _normalize_enums(value, members[0]) if len(members) == 1 else value
     if origin in (list, tuple, collections.abc.Sequence) and isinstance(value, list):
@@ -677,7 +687,7 @@ def _coerce(
             f"Invalid config in `{format_path(path)}`: {str(error).splitlines()[0]}"
         ) from error
     return _build_native_value(
-        typing.cast(dict[str, Any], merged)["value"],
+        cast(dict[str, Any], merged)["value"],
         value,
         annotation,
         path,
@@ -718,7 +728,7 @@ def _build_native_value(
                 f"{describe_value(value)}."
             )
         return value
-    if origin in (typing.Union, types.UnionType):
+    if origin in (Union, types.UnionType):
         return _build_union_value(value, given, annotation, path, allow_missing, build)
     if origin in (list, collections.abc.Sequence):
         return [
@@ -850,9 +860,9 @@ def _is_assignable(source: Any, target: Any) -> bool:
         target = target.__value__
     if source is Any or target is Any:
         return True
-    if get_origin(source) in (typing.Union, types.UnionType):
+    if get_origin(source) in (Union, types.UnionType):
         return all(_is_assignable(member, target) for member in get_args(source))
-    if get_origin(target) in (typing.Union, types.UnionType):
+    if get_origin(target) in (Union, types.UnionType):
         return any(_is_assignable(source, member) for member in get_args(target))
     if get_origin(source) is not None or get_origin(target) is not None:
         return True
@@ -878,7 +888,7 @@ def _json_type(annotation: Any, definitions: dict[str, Any]) -> dict[str, Any]:
         return {}
     if annotation is type(None):
         return {"type": "null"}
-    if origin in (typing.Union, types.UnionType):
+    if origin in (Union, types.UnionType):
         return {"anyOf": [_json_type(argument, definitions) for argument in arguments]}
     if annotation is bool:
         return {"type": "boolean"}
@@ -915,7 +925,7 @@ def _json_type(annotation: Any, definitions: dict[str, Any]) -> dict[str, Any]:
     if annotation is dict or origin in (dict, collections.abc.Mapping):
         values = _json_value(arguments[1], definitions) if arguments else {}
         return {"type": "object", "additionalProperties": values}
-    if isinstance(annotation, type) and typing.is_typeddict(annotation):
+    if isinstance(annotation, type) and is_typeddict(annotation):
         return {"type": "object"}
     if isinstance(annotation, type) and dataclasses.is_dataclass(annotation):
         return {"$ref": f"#/definitions/{_json_definition(annotation, definitions)}"}
