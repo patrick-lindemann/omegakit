@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../experiment.schema.json
+$base: ~import ../base.yaml
+name: linear-sgd
+model:
+  $class: curvefit.models.Linear
+optimizer:
+  $class: curvefit.optim.SGD
+  $partial: true
+  lr: 0.1
+  momentum: 0.9

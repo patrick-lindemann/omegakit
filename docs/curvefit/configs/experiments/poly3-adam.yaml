@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=../../experiment.schema.json
+$base: ~import ../base.yaml
+$meta:
+  hypothesis: A cubic follows the sine closely enough to beat a line on the test set.
+name: poly3-adam
+model:
+  $class: curvefit.models.Polynomial
+  degree: 3
+optimizer:
+  $class: curvefit.optim.Adam
+  $partial: true
+  lr: 0.05
+trainer:
+  schedule: cosine

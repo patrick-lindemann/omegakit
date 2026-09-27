@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=../experiment.schema.json
+seed: 0
+name: ???
+run_dir: runs/${name}/seed${seed}
+data:
+  $defaults: ~import data/presets.yaml#sine
+  train:
+    n: 200
+    seed: ${seed}
+  validation:
+    n: 50
+    seed: 1
+  test:
+    $base: ${..train}
+    seed: 1234
+trainer:
+  $class: curvefit.trainer.Trainer
+  epochs: 200
+metrics:
+  mse:
+    $ref: curvefit.metrics.mse
+  mae:
+    $ref: curvefit.metrics.mae
+tracker:
+  $class: curvefit.tracking.Tracker
+  run_dir: ${run_dir}

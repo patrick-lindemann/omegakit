@@ -96,5 +96,7 @@ pythonVersion = "3.12" # the floor; development runs on 3.13
 typeCheckingMode = "standard"
 reportImplicitOverride = "error"
 reportUnnecessaryTypeIgnoreComment = "error"
-# The page examples import the webapp example, as their test does.
-executionEnvironments = [{ root = "docs", extraPaths = ["docs/webapp"] }]
+# The page examples import the example packages, as their tests do.
+executionEnvironments = [
+    { root = "docs", extraPaths = ["docs/webapp", "docs/curvefit"] },
+]
