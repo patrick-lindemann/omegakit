@@ -1,0 +1,7 @@
+$base: ~import ../base.yaml
+server:
+  host: 0.0.0.0
+  secret_key: ${oc.env:SECRET_KEY}
+database:
+  $class: plain.Postgres
+  url: postgres://db.internal/webapp

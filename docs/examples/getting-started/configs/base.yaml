@@ -1,0 +1,8 @@
+server:
+  $class: plain.Server
+  host: 127.0.0.1
+  port: 8000
+  secret_key: ???
+database:
+  $class: plain.SQLite
+  url: sqlite:///webapp.db

@@ -1,70 +1,172 @@
 # Getting started
 
-This page builds a small application config step by step. Each step links to the
-guide page that covers it in full.
-
-## Install
+This page builds the config of `webapp`, a small web service with a server and a
+database, in six steps. The first four use plain classes with nothing
+omegakit-specific in them.
 
 ```sh
 pip install omegakit
 ```
 
-omegakit needs Python 3.12 or newer. Its only dependencies are OmegaConf 2.3 and
-typing_extensions.
+## 1. Load a file and read values
 
-## A class to build
+```{literalinclude} examples/getting-started/step1.yaml
+:language: yaml
+:caption: step1.yaml
+```
 
-Configs describe objects. Here is a plain class, with nothing omegakit-specific in
-it:
+```python
+from omegakit import load_config
 
-```{literalinclude} examples/getting-started/app.py
+config = load_config("step1.yaml")
+config.server.port  # 8000
+```
+
+`load_config` returns an OmegaConf `DictConfig`, so everything OmegaConf offers
+works on it.
+
+## 2. Build an object from it
+
+The server is a plain class:
+
+```{literalinclude} examples/getting-started/plain.py
 :language: python
-:caption: app.py
+:caption: plain.py
+:pyobject: Server
 ```
 
-## Two config files
+`$class` on the node names the class to build, and `instantiate` calls it with the
+node's other keys:
 
-Shared settings go into their own file:
-
-```{literalinclude} examples/getting-started/defaults.yaml
+```{literalinclude} examples/getting-started/step2.yaml
 :language: yaml
-:caption: defaults.yaml
+:caption: step2.yaml
 ```
 
-The application config builds on it:
+```python
+from omegakit import instantiate
+from plain import Server
 
-```{literalinclude} examples/getting-started/app.yaml
+server = instantiate(config.server, Server)
+```
+
+`$class` decides what is built. The second argument only gives the result its type
+for your editor.
+
+## 3. One file per environment
+
+Development and production share most settings. They go into `base.yaml`, and each
+environment file keeps only what differs. `~import` pastes another file in, and
+`$base` makes it the layer underneath the node, so the node's own keys win:
+
+```{literalinclude} examples/getting-started/configs/base.yaml
 :language: yaml
-:caption: app.yaml
+:caption: configs/base.yaml
 ```
 
-- `~import defaults.yaml` replaces the value with the content of that file. The path
-  is relative to the importing file. See [Imports](guide/imports.md).
-- `$base` merges the imported mapping underneath `worker`, so `worker`'s own
-  `timeout: 20` wins over the shared `timeout: 10`. See [Base](guide/base.md).
-- `$class: app.Worker` names the class to build, by its import path. See
-  [Instantiation](guide/instantiation.md).
+```{literalinclude} examples/getting-started/configs/envs/prod.yaml
+:language: yaml
+:caption: configs/envs/prod.yaml
+```
 
-## Load and build
+The root file picks the environment from the `APP_ENV` variable, with `dev` as the
+default:
 
-```{literalinclude} examples/getting-started/main.py
+```{literalinclude} examples/getting-started/configs/app.yaml
+:language: yaml
+:caption: configs/app.yaml
+```
+
+Production swaps the whole database node, so `instantiate(config.database,
+Database)` gives a `SQLite` in development and a `Postgres` in production. This is
+why configs name classes: the code asks for a database, and the config decides
+which one.
+
+## 4. Values from outside
+
+`secret_key: ???` in the base is a slot that every environment must fill. Production
+fills it from the environment with OmegaConf's `oc.env` resolver, and anything can
+be overridden when loading:
+
+```python
+config = load_config("configs/app.yaml", overrides=["server.port=9000"])
+```
+
+A slot that is still `???` fails when the config is validated or built, naming the
+key. See [Overrides and environment variables](guide/overrides.md).
+
+## 5. Add a schema
+
+So far a typo such as `worker: 4` is a `TypeError` from the constructor, and
+`port: abc` is accepted without complaint. A dataclass schema catches both. The
+class subclasses `Configurable` with its schema:
+
+```{literalinclude} examples/webapp/webapp/server.py
+:language: python
+:caption: webapp/server.py
+```
+
+`validate(config, schema=App)` now reports both mistakes as a
+`ConfigValidationError` that names the key:
+
+```text
+Unknown field(s) 'worker' in `server` (ServerConfig). Expected one of: host, port, workers, secret_key.
+Invalid config in `server.port` (ServerConfig): Value 'abc' of type 'str' could not be converted to Integer
+```
+
+`instantiate` runs the same check before it builds anything. See
+[Typed configs](guide/typed-configs.md) and [Validation](guide/validation.md).
+
+## 6. Use it in your service
+
+The complete `webapp` has a root class, `App`, whose schema holds the server, the
+database, an optional cache and scheduled jobs. The entrypoint loads the config,
+logs it with its secrets masked, and builds the app:
+
+```{literalinclude} examples/webapp/main.py
 :language: python
 :caption: main.py
 ```
 
-- `load_config` reads the file and assembles it: imports, bases, defaults, then the
-  overrides. The result is an OmegaConf `DictConfig`. See [Loading](guide/loading.md).
-- `overrides=["worker.retries=5"]` changes a value, as a command line would. See
-  [Overrides](guide/overrides.md).
-- `instantiate` calls `app.Worker` with the node's other keys as arguments. The
-  second argument, `Worker`, is only a type hint for your editor and type checker.
+```sh
+APP_ENV=prod SECRET_KEY=change-me-in-production python main.py server.port=9000
+```
 
-## Next steps
+```text
+...
+server:
+  $class: webapp.server.Server
+  host: 0.0.0.0
+  port: 9000
+  workers: 8
+  secret_key: '***'
+...
+serving on 0.0.0.0:9000 with 8 workers
+database: Postgres postgres://db.internal/webapp
+replica: Postgres postgres://db-replica.internal/webapp
+cache: RedisCache, 600 s
+job digest, every 7d: sent 'What happened this week'
+job cleanup, every 1h: purged expired sessions
+```
 
-- Give the class a dataclass schema, so configs are checked before anything is
-  built: [Typed configs](guide/typed-configs.md) and [Validation](guide/validation.md).
-- Get completion and error highlighting in YAML files:
-  [Editor schemas](guide/editor-schemas.md).
-- See complete patterns in the [Cookbook](cookbook.md).
+To check the configs before every commit, run `omegakit check` as a
+[pre-commit](https://pre-commit.com) hook; it validates each file against the
+schema of `App`. Checking imports the modules a file names and runs its resolvers,
+so run it on your own branches, not on changes from people you do not trust, and
+limit the modules with `--allow-module`:
 
-Configs import and call Python objects, so load them only from trusted sources.
+```sh
+omegakit check configs/app.yaml --schema webapp.App --allow-module webapp
+```
+
+Tests load the same config with an override that puts an in-memory database under
+`database`:
+
+```{literalinclude} examples/webapp/tests/conftest.py
+:language: python
+:caption: tests/conftest.py
+```
+
+Your editor can complete and check these files too: see
+[Editor schemas](guide/editor-schemas.md). From here, the guide covers each feature,
+starting with [Loading](guide/loading.md).

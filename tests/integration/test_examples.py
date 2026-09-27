@@ -57,3 +57,13 @@ def test_readme_example_builds(tmp_path):
         text=True,
     ).stdout
     assert output == "Postgres s3cret\n"
+
+
+@pytest.mark.parametrize("environment", ["dev", "prod"])
+def test_webapp_tests_pass(environment):
+    subprocess.run(
+        [sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", "tests"],
+        cwd=WEBAPP.parent,
+        env={**os.environ, "APP_ENV": environment, "SECRET_KEY": "prod-secret-value"},
+        check=True,
+    )
