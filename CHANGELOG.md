@@ -21,6 +21,8 @@ All notable changes to this project are documented here. The format follows
 - The guide is split into three sections in the order you meet them: Configs,
   Objects and Tools. Page URLs changed, for example `guide/loading/` is now
   `configs/loading/`.
+- Overrides, environment variables, interpolation and missing values each have
+  their own page. Base is now Inheritance, and Defaults is now Shared defaults.
 
 ## [0.6.1] - 2026-09-27
 

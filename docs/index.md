@@ -64,10 +64,12 @@ comparison/index
 
 configs/loading/index
 configs/imports/index
-configs/base/index
-configs/defaults/index
+configs/inheritance/index
+configs/shared-defaults/index
 configs/overrides/index
-configs/interpolation-and-missing/index
+configs/interpolation/index
+configs/environment-variables/index
+configs/missing-values/index
 ```
 
 ```{toctree}

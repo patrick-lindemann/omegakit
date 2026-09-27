@@ -1,4 +1,4 @@
-# Base
+# Inheritance
 
 `$base` merges shared settings underneath a node. Use it when several files share
 most of their values and differ in a few, as `webapp`'s environments do:

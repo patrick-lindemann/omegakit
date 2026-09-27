@@ -23,7 +23,7 @@ CUDA on this machine.
 - `${dtype:<name>}` gives the `torch.dtype` named `<name>`, such as `float32` or
   `bfloat16`. A name that is not a dtype fails like any resolver error: reading it
   raises OmegaConf's `InterpolationResolutionError`, and validating or building
-  raises `ConfigValidationError` ([Interpolation and missing values](../../configs/interpolation-and-missing/index.md#rules)).
+  raises `ConfigValidationError` ([Interpolation](../../configs/interpolation/index.md#rules)).
 - `${cuda_available:}` gives `torch.cuda.is_available()`.
 - `register_torch_resolvers()` registers both. `register_torch_dtype_resolver()`
   and `register_cuda_available_resolver()` register one each.

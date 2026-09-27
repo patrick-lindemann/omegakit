@@ -1,4 +1,4 @@
-# Defaults
+# Shared defaults
 
 `$defaults` gives every mapping next to it the same settings, and each mapping's own
 values win. It suits lists of similar things, such as `webapp`'s scheduled jobs:
@@ -38,7 +38,7 @@ with `$base` and still get the defaults.
   the inner one wins, because it is applied first.
 - It is applied after every `$base` in the config, so a `$defaults` that arrives
   through a `$base` or an `~import` works. A `$defaults` copied through a `${…}`
-  base applies at the new place too ([Base](../base/index.md#rules)).
+  base applies at the new place too ([Inheritance](../inheritance/index.md#rules)).
 - A `${…}` value of `$defaults` sees the referenced node with that node's own
   `$base` merged and `$defaults` applied, and waits until that has happened
   ([Loading](../loading/index.md#rules)).

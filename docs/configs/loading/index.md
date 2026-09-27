@@ -26,10 +26,10 @@ them, not to the working directory, so the config loads from anywhere.
 ## The order of assembly
 
 1. Every `~import` is replaced by the file or node it names ([Imports](../imports/index.md)).
-2. Every `$base` is merged underneath its node ([Base](../base/index.md)).
-3. Every `$defaults` is merged under its siblings ([Defaults](../defaults/index.md)).
+2. Every `$base` is merged underneath its node ([Inheritance](../inheritance/index.md)).
+3. Every `$defaults` is merged under its siblings ([Shared defaults](../shared-defaults/index.md)).
 4. The overrides are merged on top
-   ([Overrides and environment variables](../overrides/index.md)).
+   ([Overrides](../overrides/index.md)).
 5. `$meta` is removed, unless you pass `keep_meta=True`.
 
 This order explains what works together. `$base: ~import base.yaml` works, because
@@ -39,7 +39,7 @@ add an `~import`, a `$base` or a `$defaults`, because it arrives after assembly.
 
 Only three things resolve while loading: `~import` paths, and the values of `$base`
 and `$defaults`. Every other `${…}` stays as written until a value is read,
-validated or built ([Interpolation and missing values](../interpolation-and-missing/index.md)).
+validated or built ([Interpolation](../interpolation/index.md)).
 
 ## Metadata and plain data
 
@@ -92,8 +92,8 @@ plain data for code that builds nothing.
   waits while its reference points at a node that still holds the same key, or at
   a key that does not exist yet, and the ancestors of a waiting node wait too. A
   reference that never resolves, and references that form a cycle, raise
-  `ConfigValidationError` naming the nodes. [Base](../base/index.md#rules) and
-  [Defaults](../defaults/index.md#rules) say what each reference sees.
+  `ConfigValidationError` naming the nodes. [Inheritance](../inheritance/index.md#rules) and
+  [Shared defaults](../shared-defaults/index.md#rules) say what each reference sees.
 
 **Errors.** A missing root file raises `FileNotFoundError`. Every other problem in
 a file's content raises `ConfigValidationError`, with the original error from
@@ -104,4 +104,4 @@ PyYAML, OmegaConf or the file system as its `__cause__`:
 - A file that holds a single value, such as `hello` or `5`, instead of a mapping or
   a list. An empty file, `null` or `~` is an empty mapping.
 - Any error while assembling: see [Imports](../imports/index.md#rules),
-  [Base](../base/index.md#rules) and [Defaults](../defaults/index.md#rules).
+  [Inheritance](../inheritance/index.md#rules) and [Shared defaults](../shared-defaults/index.md#rules).

@@ -93,7 +93,9 @@ config = load_config("configs/app.yaml", overrides=["server.port=9000"])
 ```
 
 A slot that is still `???` fails when the config is validated or built, naming the
-key. See [Overrides and environment variables](../configs/overrides/index.md).
+key. See [Environment variables](../configs/environment-variables/index.md),
+[Overrides](../configs/overrides/index.md) and
+[Missing values](../configs/missing-values/index.md).
 
 ## 5. Add a schema
 
