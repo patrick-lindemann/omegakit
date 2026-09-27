@@ -63,8 +63,8 @@ and the constructor differ, as the cache does with its `ttl`:
 ```
 
 Keep `**kwargs` in the signature: arguments given to a partial from `prepare` arrive
-there. `from_config` is looked up by name, so any class with that classmethod
-works the same, `Configurable` or not.
+there. Any class with a `from_config` classmethod works the same
+([Building objects](building-objects.md#rules)).
 
 Children that code chooses, rather than the user, are created with `make_node`.
 `App.from_config` builds an in-memory cache when the config has none, which is why
@@ -110,8 +110,7 @@ raises `TypeError`. The result is cached per class.
 | **object**: any other class, generic classes, unions of classes, `list` or `dict` of these, optional or not, also through a `type` alias | a `$class` or `$ref` node, a list or mapping of them, or `null` if optional | the class check ([Validation](validation.md#rules)), then the node's own schema | the built object |
 | **`Any`** | anything | not checked, but `$class` nodes inside are | the value, with `$class` nodes built |
 
-- Behaviour does not depend on the OmegaConf version. Where OmegaConf lacks a
-  form, omegakit checks it itself.
+- Behaviour does not depend on the OmegaConf version.
 - Enums accept a member name or value (`kind: B`, `kind: beta`). A name wins over
   an equal value of another member, and a value needs the exact type of the
   member's value.

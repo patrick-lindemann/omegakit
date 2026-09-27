@@ -54,8 +54,8 @@ log a config with its secrets masked, see
   rejected by a struct config raises `ConfigValidationError` from `load_config`,
   `instantiate` and `prepare`, naming the override or its key.
 - Overrides are merged after assembly. An `~import`, `$base` or `$defaults` in an
-  override stays literal, and `$meta` and construction keys in one are stripped
-  like any other.
+  override stays literal. `$meta`, and with `keep_targets=False` also `$class`,
+  `$ref` and `$partial`, are stripped from overrides too.
 - Overrides win over every value from the files
   ([Precedence](loading.md#rules)). `instantiate` and `prepare` merge theirs into
   a copy of the node and leave the config passed in unchanged.

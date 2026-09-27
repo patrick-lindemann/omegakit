@@ -59,11 +59,8 @@ the node's own keys win over all of them.
 
 A `${…}` base is resolved while assembling, and is a copy taken when it is merged:
 
-- It sees the referenced node with that node's own `$base` merged. A node waits
-  while its reference points at a node that still holds a `$base`, or at a key
-  that does not exist yet, and the ancestors of a waiting node wait too.
-- A reference that never resolves, and references that form a cycle, raise
-  `ConfigValidationError` naming the nodes.
+- It sees the referenced node with that node's own `$base` merged, and waits
+  until that has happened ([Loading](loading.md#rules)).
 - It cannot refer to keys that an enclosing node's own `$base` brings in.
   `replica: {$base: ${db}}` in a file whose root has `$base: ~import common.yaml`,
   with `db` coming from `common.yaml`, raises.

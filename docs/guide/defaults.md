@@ -39,9 +39,6 @@ with `$base` and still get the defaults.
 - It is applied after every `$base` in the config, so a `$defaults` that arrives
   through a `$base` or an `~import` works. A `$defaults` copied through a `${…}`
   base applies at the new place too ([Base](base.md#rules)).
-- A `${…}` value of `$defaults` is resolved while assembling. It sees the
-  referenced node with that node's own `$base` merged and `$defaults` applied. A
-  node waits while its reference points at a node that still holds a `$defaults`,
-  or at a key that does not exist yet, and the ancestors of a waiting node wait
-  too. A reference that never resolves, and references that form a cycle, raise
-  `ConfigValidationError` naming the nodes.
+- A `${…}` value of `$defaults` sees the referenced node with that node's own
+  `$base` merged and `$defaults` applied, and waits until that has happened
+  ([Loading](loading.md#rules)).

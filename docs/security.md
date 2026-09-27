@@ -10,15 +10,15 @@ a Python file: load it only from sources you trust.
   interpolations in `~import` paths and in `$base` and `$defaults` values. So
   resolvers already run while loading, and `keep_targets=False` does not make
   loading safe.
-- `validate`, `instantiate`, `prepare`, `omegakit check` and
-  `omegakit show --resolve` resolve every interpolation, so every resolver runs.
-  `oc.env` reads any environment variable. Call
-  `OmegaConf.clear_resolver("oc.env")` before loading if you do not need it.
+- `validate`, `instantiate`, `prepare` and `omegakit check` resolve every
+  interpolation, and `omegakit show --resolve` resolves the node it prints and
+  every secret value. So every resolver can run. `oc.env` reads any environment
+  variable. Call `OmegaConf.clear_resolver("oc.env")` before loading if you do
+  not need it.
 - Validating and building import the modules that `$class` and `$ref` name, which
-  runs their import-time code. Validation calls no configured class, but it runs
-  the `__instancecheck__` and `__subclasscheck__` of imported classes and every
-  `default_factory` of a schema, possibly several times. A factory's exception
-  propagates.
+  runs their import-time code. Validation calls no configured class, but some
+  code of the schemas and imported classes still runs
+  ([Validation](guide/validation.md#rules)).
 - Building calls the classes and functions the config names.
 - Overrides carry the same trust as the files. An override can set `$class` or
   `$ref`, or read an environment variable. Never build overrides from requests or
@@ -26,9 +26,6 @@ a Python file: load it only from sources you trust.
 - The command line puts the working directory first on `sys.path`, so a module
   there can shadow a `$class` target.
 - Validation checks the shape of values. It is not input sanitisation.
-
-Some smaller points:
-
 - Any string that starts with `~import` is an import. YAML written from untrusted
   strings must not let a value start with it.
 - Reading a special file, such as a FIFO, blocks.
@@ -63,23 +60,22 @@ an override that is rejected.
   elsewhere, such as `pkgx.db.run` for `from subprocess import run`, and accepts
   re-exports within an allowed package.
 - A failing path raises `ConfigValidationError` naming the path and the node.
-- Allowing `builtins`, `importlib`, `os`, `subprocess`, `shutil` or `pickle` equals
-  no restriction, because of `builtins.__import__` and `builtins.open`.
+- Allowing modules such as `builtins`, `importlib`, `os`, `subprocess`, `shutil`
+  or `pickle` removes the restriction in practice, because each of them can import
+  or run arbitrary code.
 - Not covered: resolvers, the `schema` argument and `--schema`, `json-schema`
   paths, and `instantiate` calls inside your own `from_config`.
 
 ### Import root
 
-`load_config` takes `import_root`, and `omegakit check` and `omegakit show` take
-`--import-root DIR`. An `~import` of a file outside that directory raises
-`ConfigValidationError`, after interpolations and symbolic links are resolved. The
-root file itself is not checked. [Imports](guide/imports.md) shows an example. The
-default allows any file the process can read.
+By default an `~import` may read any file the process can read. `load_config`
+takes `import_root`, and `omegakit check` and `omegakit show` take
+`--import-root DIR`, to keep imports inside one directory. [Imports](guide/imports.md)
+shows an example and lists the rules.
 
 ## Checking configs in CI
 
-`omegakit check` runs code from the files it checks, as described above. Run it on
-trusted content only:
+`omegakit check` runs the code described above, so:
 
 - In CI, check your own branches. Do not run it in a `pull_request_target`
   workflow, which runs with your repository's secrets on a fork's files.
@@ -107,7 +103,8 @@ secret_key: '***'
 ```
 
 `mask_secrets(config, keys=["salt"])` adds your own words to the list below.
-`omegakit show` masks the same way. Keep secrets out of arguments that components
+`omegakit show` masks by key, and with `--resolve` also by environment variable and
+by value ([Command line](guide/command-line.md#rules)). Keep secrets out of arguments that components
 save, such as hyperparameters in checkpoints.
 
 Masking is a safety net, not a guarantee. It cannot see a secret under a key that

@@ -56,7 +56,7 @@ config, parents first, so a script can collect it:
 webapp.jobs.Job growth
 ```
 
-`keep_targets=False` removes `$class`, `$ref` and `$partial` instead, which leaves
+`keep_targets=False` also removes `$class`, `$ref` and `$partial`. That leaves
 plain data for code that builds nothing.
 
 ## Rules
@@ -87,15 +87,13 @@ plain data for code that builds nothing.
 - Every other `${…}` resolves when it is read, validated or built, against the
   assembled config. A relative one, such as `${.id}`, resolves at the node's final
   position.
-- `instantiate` and `prepare` resolve a copy and never change the config passed in.
-- A `${…}` value of `$base` or `$defaults` waits until the node it points at is
-  ready. [Base](base.md#rules) and [Defaults](defaults.md#rules) say what each one
-  sees.
+- A `${…}` value of `$base` or `$defaults` is resolved while assembling. A node
+  waits while its reference points at a node that still holds the same key, or at
+  a key that does not exist yet, and the ancestors of a waiting node wait too. A
+  reference that never resolves, and references that form a cycle, raise
+  `ConfigValidationError` naming the nodes. [Base](base.md#rules) and
+  [Defaults](defaults.md#rules) say what each reference sees.
 
 **Errors.** A missing root file raises `FileNotFoundError`. Every other problem in
-a file's content raises `ConfigValidationError`, with the original error from
-PyYAML, OmegaConf or the file system as its `__cause__`: invalid YAML, duplicate
-keys, unknown tags or a file that is not UTF-8, naming the file, the line and the
-column; a root file that holds a list; a file that holds a single value instead of
-a mapping or a list. An empty file, `null` or `~` is an empty mapping. The
-[Errors](../errors.md) table lists every exception.
+a file's content raises `ConfigValidationError`, with the original error as its
+`__cause__`. The [Errors](../errors.md) table lists them.

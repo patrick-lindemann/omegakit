@@ -3,9 +3,9 @@
 omegakit loads YAML configs that import and extend each other, and builds your
 Python objects from them. Keep one file per environment on a shared base, name the
 classes to build in the config, and add a dataclass schema that checks the config
-before any object is built. It is a library on
-[OmegaConf](https://omegaconf.readthedocs.io/): you call `load_config` from your
-own `main()`, and it leaves your working directory and logging alone.
+before any object is built. It is a library on top of
+[OmegaConf](https://omegaconf.readthedocs.io/). You call `load_config` from your
+own `main()`, and omegakit does not touch your working directory or logging.
 
 ```sh
 pip install omegakit

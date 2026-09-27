@@ -84,8 +84,9 @@ and gets a note naming the node, such as `while instantiating jobs.digest
 - A mapping with `$class` is built. `$class` is a dotted path `module.attribute`;
   the attribute is imported and called with the node's other keys as keyword
   arguments.
-- `instantiate` and `prepare` first merge `overrides` into a copy, resolve it and
-  validate it as `validate` does ([Validation](validation.md#rules)), with the same
+- `instantiate` and `prepare` first merge `overrides`
+  ([Overrides](overrides.md#rules)), resolve the node and validate it as
+  `validate` does ([Validation](validation.md#rules)), with the same
   `allowed_modules`, and only then build. A config error, a `???`, a failing
   interpolation and an exception from a resolver all raise `ConfigValidationError`
   before any configured class is called. OmegaConf's error is the `__cause__`, and
@@ -126,9 +127,8 @@ It allows no other key except `$meta`. The node passed to `instantiate` must hav
 
 **Reserved keys.**
 
-- Every key that starts with `$` is reserved. The defined ones are `$class`,
-  `$ref`, `$partial`, `$meta`, `$base` and `$defaults`. `~import` is a value
-  prefix, not a key.
+- Every key that starts with `$` is reserved. The [API](../api.md#special-keys)
+  lists the defined ones. `~import` is a value prefix, not a key.
 - `load_config` keeps unknown `$` keys. Validating or building rejects a `$` key
   where it is not allowed, with `ConfigValidationError`: a `$class` node allows
   `$meta` and `$partial`, and a `$ref` node or a plain mapping allows only

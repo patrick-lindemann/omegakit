@@ -57,5 +57,3 @@ one each. The [API](../api.md#resolvers) lists every resolver module.
 - Registration is global to OmegaConf. Registering a name that exists raises
   `ValueError` unless `replace=True`. Register resolvers once, before loading the
   configs that use them.
-- Resolvers are registered through the API of the installed OmegaConf version, so
-  no version warns.

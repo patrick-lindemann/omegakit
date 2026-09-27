@@ -43,14 +43,14 @@ run this check before building.
 
 - The config is resolved first. A failing interpolation or a `???` is invalid
   unless `allow_missing`. The error names the full key.
-- Every `$class` node is checked against its class's schema, children first. The
-  class is imported, not called. A class without a schema has only its children
-  checked.
-- `schema` is what the root must match. A dataclass checks the root as a section.
-  Another class: with a root `$class`, that class must be `schema` or a subclass;
-  without one, the root is checked against `schema`'s own schema, as a fragment,
-  and a class without a dataclass schema raises. A non-class raises `TypeError`.
-  Without `schema`, only the `$class` nodes are checked.
+- Every `$class` node is checked against its class's schema. Nested `$class`
+  nodes are checked before their parent. The class is imported, not called. A
+  class without a schema has only its children checked.
+- `schema` says what the root must match. A dataclass checks the root as a
+  section. A class checks the root's `$class`, which must be that class or a
+  subclass. When the root has no `$class`, it is checked against the class's own
+  schema, as a fragment; a class without one raises. Anything that is not a class
+  raises `TypeError`. Without `schema`, only the `$class` nodes are checked.
 - `allow_missing=True` accepts `???`, required fields that are not given, and
   interpolations to missing or unknown keys. Given values are still checked.
 - An object field accepts a `$class` node of the annotated class or a subclass, a

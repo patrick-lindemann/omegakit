@@ -49,10 +49,10 @@ allow_missing=True)` still checks every value it does give, and
 
 ## Rules
 
-- Only three things resolve while loading: `~import` paths, and the values of
-  `$base` and `$defaults` ([Loading](loading.md#rules)). Every other `${…}`
-  resolves when it is read, validated or built, against the assembled config. A
-  relative interpolation resolves at the node's final position.
+- [Loading](loading.md#rules) says which few values resolve while loading. Every
+  other `${…}` resolves when it is read, validated or built, against the
+  assembled config. A relative interpolation resolves at the node's final
+  position.
 - `???` survives loading. A node that uses its file as `$base`, or an override,
   can fill it.
 - Reading a value that is still `???` raises OmegaConf's `MissingMandatoryValue`.

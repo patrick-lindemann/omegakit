@@ -63,8 +63,8 @@ by the same dotted path as `~import file#node`. Secrets are masked as by
 
 **Arguments.** `check` and `show` take config files and `key=value` overrides,
 mixed in any order but before the options. An argument that names an existing file
-is a config file, even if it contains `=`. Otherwise it is an override if it has a
-`=` with no `/` before it, and a config file if not, which then fails to load.
+is a config file, even with `=` in it. Any other argument with `=` before the first
+`/` is an override. Everything else is treated as a config file and fails to load.
 Overrides apply to every file.
 
 **Exit codes.** 0 on success. 1 when a config is invalid or cannot be loaded. 2 for
@@ -95,9 +95,9 @@ path that cannot be imported, or an `--import-root` that is not a directory.
   interpolations on the path are followed and only the selected node is resolved.
   Missing values print as `???`, and any other resolution error exits with 1 with
   one line.
-- Secrets are masked as by `mask_secrets`, using the whole config even with
-  `--node`: by key always, and by environment variable and by value with
-  `--resolve`. `--show-secrets` turns masking off.
+- Secrets are masked as `mask_secrets` does. Keys are always masked. Environment
+  variables and values are masked only with `--resolve`. The secrets are collected
+  from the whole config, also with `--node`. `--show-secrets` turns masking off.
 - `--keep-meta` keeps `$meta` keys.
 
 **`omegakit json-schema IMPORT_PATH [-o FILE] [--check]`** prints or writes the
