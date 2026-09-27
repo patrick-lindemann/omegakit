@@ -111,8 +111,8 @@ security/masking-secrets/index
 
 recipes/parameter-sweeps/index
 recipes/swapping-implementations/index
-recipes/manifests/index
-recipes/per-tenant-configs/index
+recipes/using-with-pytorch/index
+recipes/checking-experiments-in-ci/index
 ```
 
 ```{toctree}

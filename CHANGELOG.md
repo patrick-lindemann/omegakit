@@ -10,6 +10,7 @@ All notable changes to this project are documented here. The format follows
 
 - A Dataclass schemas page: a plain dataclass as the schema of a config, its field
   kinds and how a node is checked.
+- Two recipes: Using with PyTorch, and Checking experiments in CI.
 - A Reproducible runs page: seeding, one directory per run, saving the config and
   the overrides, and what omegakit does not do.
 - A Parameter sweeps recipe: one run per combination of a few values.
@@ -30,6 +31,7 @@ All notable changes to this project are documented here. The format follows
   `schemas/editor-support/`.
 - Schemas is now Configurable classes, at `objects/configurable-classes/`, and
   covers only what a class adds. Field kinds moved to Dataclass schemas.
+
 - Resolvers have their own section, with an overview and a page per resolver
   module. The Resolvers guide page moved to `resolvers/overview/`.
 - Security is split into three pages: Trust model, Restricting imports and Masking
@@ -44,6 +46,11 @@ All notable changes to this project are documented here. The format follows
   Building objects is now Instantiation, Typed configs is now Schemas, and Editor
   schemas is now Editor support. The recipes have shorter titles, and their URLs
   follow them.
+
+### Removed
+
+- The Manifests and Per-tenant configs recipes. Shared defaults covers what
+  Manifests showed.
 
 ### Fixed
 

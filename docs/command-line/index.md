@@ -29,7 +29,8 @@ such as `base.yaml` that others complete, `--allow-module` limits where `$class`
 and `$ref` may point, and `--import-root` limits where `~import` may read.
 
 To check every experiment file before a commit, run it as a
-[pre-commit](https://pre-commit.com) hook:
+[pre-commit](https://pre-commit.com) hook, and in CI
+([Checking experiments in CI](../recipes/checking-experiments-in-ci/index.md)):
 
 ```yaml
 repos:

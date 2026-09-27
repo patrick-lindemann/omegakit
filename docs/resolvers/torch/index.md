@@ -30,7 +30,8 @@ test mae: 0.16
 ```
 
 `${cuda_available:}` resolves to `True` when PyTorch can use CUDA on this machine,
-for a config that chooses its device.
+for a config that chooses its device. [Using with PyTorch](../../recipes/using-with-pytorch/index.md)
+shows the whole variant.
 
 ## Rules
 

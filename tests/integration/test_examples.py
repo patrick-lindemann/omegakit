@@ -154,6 +154,7 @@ SESSION_PAGES = [
     "reproducible-runs",
     "command-line",
     "schemas/editor-support",
+    "recipes/checking-experiments-in-ci",
 ]
 PROGRAMS = {"python": [sys.executable], "omegakit": [sys.executable, "-m", "omegakit"]}
 

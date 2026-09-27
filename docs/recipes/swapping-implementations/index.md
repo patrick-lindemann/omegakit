@@ -1,17 +1,18 @@
 # Swapping implementations
 
-The application needs a database; production uses Postgres, development and tests
-use SQLite. Type the field with the base class, name the implementation with
-`$class` in the config, and swap the whole node per environment or per test.
+An experiment often compares implementations: another optimizer, another dataset.
+Type the field with a base class, name the implementation with `$class`, and swap
+the whole node. `curvefit`'s datasets share a base class:
 
-```{literalinclude} ../../webapp/webapp/db.py
+```{literalinclude} ../../curvefit/curvefit/data.py
 :language: python
-:caption: webapp/db.py
+:caption: curvefit/data.py (excerpt)
+:start-at: "class Dataset"
 ```
 
-`AppConfig` declares `database: Database`, so any subclass is accepted.
-`base.yaml` names `webapp.db.SQLite`, and `envs/prod.yaml` replaces the whole node
-with a Postgres one. A test swaps it once more, with a dict override:
+`Experiment` types each split as a `Dataset`, the model as a `Model` and the
+optimizer as a callable that returns an `Optimizer`, so any subclass is accepted.
+Assigning a node in code replaces it:
 
 ```{literalinclude} main.py
 :language: python
@@ -19,13 +20,20 @@ with a Postgres one. A test swaps it once more, with a dict override:
 ```
 
 ```text
-SQLite sqlite://
-`database` expects Database, but the config gives `$class: webapp.cache.RedisCache`.
+CsvData Adam
+`data.test` expects Dataset, but the config gives `$class: curvefit.models.Polynomial`.
+Adam.__init__() got an unexpected keyword argument 'momentum'
 ```
 
-The code that uses `app.database` never names a class, and a class that is not a
-`Database` is rejected before anything is built. Override `$class` alone only when
-the new class takes the same settings; otherwise swap the whole node, so that no
-setting of the old class is left behind. See
-[Instantiation](../../objects/instantiation/index.md) and
-[Configurable classes](../../objects/configurable-classes/index.md).
+The test split now reads the measurements, and the optimizer is Adam with its own
+settings only. A class that is not a `Dataset` is rejected before anything is
+built.
+
+An override, like a file, merges into the node it names
+([Overrides](../../configs/overrides/index.md#rules)). Changing `$class` alone kept
+SGD's `momentum`, which Adam does not take. Adam has no schema, so the mistake shows
+only when the partial is called. Override `$class` alone only when the new class
+takes the same settings. For a lasting swap, write an experiment file that names
+the whole node, as `poly3-adam.yaml` does: `base.yaml` names no optimizer, so there
+is nothing to merge into. See [Instantiation](../../objects/instantiation/index.md)
+and [Dataclass schemas](../../schemas/dataclass-schemas/index.md).

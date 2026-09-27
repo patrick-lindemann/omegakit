@@ -1,9 +1,0 @@
-acme:
-  server:
-    port: 8001
-globex:
-  server:
-    port: 8002
-    workers: 4
-  database:
-    pool_size: 20

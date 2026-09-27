@@ -1,8 +1,9 @@
 # Parameter sweeps
 
-A benchmark or an experiment runs the same config many times, once for each
-combination of a few values. Build the combinations in Python and give each one to
-`load_config` as overrides. Every run gets its own independent config.
+A sweep runs the same experiment many times, once for each combination of a few
+values. Build the combinations in Python and give each one to `load_config` as
+overrides. Every run gets its own config, its own run directory and its own saved
+copy of the config.
 
 ```{literalinclude} main.py
 :language: python
@@ -10,18 +11,26 @@ combination of a few values. Build the combinations in Python and give each one 
 ```
 
 ```text
-1 5 runs/w1-p5
-1 20 runs/w1-p20
-4 5 runs/w4-p5
-4 20 runs/w4-p20
+poly3-sgd/seed0 0.0158
+poly3-sgd/seed1 0.0156
+poly3-adam/seed0 0.0377
+poly3-adam/seed1 0.0233
+poly5-sgd/seed0 0.0250
+poly5-sgd/seed1 0.0244
+poly5-adam/seed0 0.0305
+poly5-adam/seed1 0.0275
 ```
 
-Each run's `log_dir` is an interpolation. Interpolations resolve after the overrides
-are merged, so the directory name follows the swept values. Every value the grid
-does not touch comes from the files as usual.
+The run directory is an interpolation of the name and the seed, which resolves
+after the overrides are merged, so each run writes to its own directory
+([Reproducible runs](../../reproducible-runs/index.md)). Here the override moves
+all runs into a temporary directory.
 
-omegakit runs nothing in parallel and keeps no record of the runs. For sweeps with
-launchers, parallel jobs or a sweeper that picks the next values, see how omegakit
-[compares with Hydra](../../comparison/index.md#hydra). See
-[Overrides](../../configs/overrides/index.md) and
-[Interpolation](../../configs/interpolation/index.md).
+The optimizer is a class, not a value, so the sweep builds its node with
+`make_node` and assigns it, which replaces the whole node
+([Swapping implementations](../swapping-implementations/index.md)). Each run seeds
+the generator before it builds the model.
+
+omegakit runs nothing in parallel and keeps no record of the runs. For launchers,
+parallel jobs or a sweeper that picks the next values, see how omegakit
+[compares with Hydra](../../comparison/index.md#hydra).
