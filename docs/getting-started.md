@@ -150,10 +150,10 @@ job cleanup, every 1h: purged expired sessions
 ```
 
 To check the configs before every commit, run `omegakit check` as a
-[pre-commit](https://pre-commit.com) hook; it validates each file against the
-schema of `App`. Checking imports the modules a file names and runs its resolvers,
-so run it on your own branches, not on changes from people you do not trust, and
-limit the modules with `--allow-module`:
+[pre-commit](https://pre-commit.com) hook. It validates each file against the
+schema of `App`. Checking runs code from the files, so run it only on changes from
+people you trust, and limit the modules a file can name with `--allow-module`
+([Security](security.md)):
 
 ```sh
 omegakit check configs/app.yaml --schema webapp.App --allow-module webapp

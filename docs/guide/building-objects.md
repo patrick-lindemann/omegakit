@@ -70,8 +70,8 @@ unless you pass `keep_meta=True` ([Loading](loading.md)).
 before they build anything, so a mistake raises `ConfigValidationError` before any
 configured class is called. `allowed_modules=["webapp"]` limits `$class` and `$ref`
 to your own package: the override above swapped in `subprocess.Popen`, and the
-module was never imported. It limits what a config can name; it does not make an
-untrusted config safe.
+module was never imported. It is a limit, not a sandbox; see
+[Security](../security.md).
 
 An exception raised by a constructor or `from_config` keeps its type and message,
 and gets a note naming the node, such as `while instantiating jobs.digest

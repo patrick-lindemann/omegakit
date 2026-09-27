@@ -46,15 +46,8 @@ repos:
         files: ^configs/app\.yaml$
 ```
 
-`check` runs code from the files it checks: it imports the modules that `$class`
-and `$ref` name and runs resolvers, including `oc.env`. Run it on trusted content
-only:
-
-- In CI, check your own branches. Do not run it in a `pull_request_target`
-  workflow, which runs with your repository's secrets on a fork's files.
-- Do not run pull requests from forks on self-hosted runners.
-- Pass `--allow-module` for your own packages and `--import-root` for your config
-  directory, to limit what a file can reach. They are limits, not a sandbox.
+`check` runs code from the files it checks, so run it on trusted content only.
+[Security](../security.md) says what runs and how to set up CI.
 
 ## `show`
 

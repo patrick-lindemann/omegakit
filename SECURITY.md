@@ -8,6 +8,6 @@ Fixes go into the latest release only.
 
 omegakit is not meant for untrusted configs: loading, validating and checking a
 config import and run code. The
-[Trust section of the contracts](https://omegakit.readthedocs.io/en/latest/contracts/environment.html#trust)
-lists what runs, and reports about behaviour it already describes are not
+[Security](https://omegakit.readthedocs.io/en/latest/security.html) page of the
+documentation lists what runs, and reports about behaviour it already describes are not
 vulnerabilities.

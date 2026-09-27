@@ -60,8 +60,8 @@ or see how omegakit
 Configs import and call Python code: loading, validating and checking one imports
 the modules it names and runs its resolvers. Load configs only from trusted sources,
 and log them with `mask_secrets`. The
-[Trust section](https://omegakit.readthedocs.io/en/latest/contracts/environment.html#trust) of
-the contracts lists what runs.
+[Security](https://omegakit.readthedocs.io/en/latest/security.html) page lists what
+runs.
 
 omegakit supports OmegaConf 2.3 and 2.4. It builds on OmegaConf but is not affiliated
 with or endorsed by the OmegaConf project.

@@ -27,15 +27,10 @@ error is a `ValueError` too.
 checks every value the file gives. Without `$class` at its root, `base.yaml` is
 checked against the schema of `App`.
 
-## What validation runs
+Validation calls no configured class, but it imports the modules that `$class` and
+`$ref` name and runs every resolver. Validate only configs you trust, and limit the
+modules a config can name with `allowed_modules` ([Security](../security.md)).
 
-Validation checks values; it is not input sanitisation. It calls no configured
-class, but it imports the modules that `$class` and `$ref` name, runs resolvers such
-as `oc.env`, and runs the schemas' `default_factory` functions. Validate only
-configs you trust. `allowed_modules=["webapp"]` limits which modules a config can
-name, as a limit and not a sandbox, and `mask_secrets` hides secrets when you log a
-config ([Overrides and environment variables](overrides.md)).
-
-To check files from a terminal, a pre-commit hook or CI, on trusted branches only,
-use [`omegakit check`](command-line.md). The full list of checks is in the contracts
+To check files from a terminal, a pre-commit hook or CI, use
+[`omegakit check`](command-line.md). The full list of checks is in the contracts
 under [Validation](../contracts/typed-configs.md#validation).

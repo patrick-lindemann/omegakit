@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-from omegakit import load_config, mask_secrets
+from omegakit import load_config
 
 configs = Path(__file__).parents[2] / "webapp" / "configs"
 
@@ -17,4 +17,3 @@ os.environ["APP_ENV"] = "prod"
 os.environ["SECRET_KEY"] = "s3cr3t-from-the-vault"
 config = load_config(configs / "app.yaml")
 print(config.server.secret_key)
-print(mask_secrets(config)["server"])

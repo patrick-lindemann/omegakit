@@ -12,7 +12,6 @@ files. Environment variables come in through OmegaConf's `oc.env` resolver.
 9000 4
 1
 s3cr3t-from-the-vault
-{'$class': 'webapp.server.Server', 'host': '0.0.0.0', 'port': 8000, 'workers': 8, 'secret_key': '***'}
 ```
 
 ## Overrides
@@ -27,8 +26,7 @@ node they build and leave the config you passed unchanged.
 
 Overrides arrive after the files are assembled, so an `~import`, `$base` or
 `$defaults` inside an override stays literal. They carry the same trust as the
-files: an override can set `$class` or read an environment variable, so never build
-overrides from requests or other untrusted input.
+files, so never build them from untrusted input ([Security](../security.md)).
 
 ## Environment variables
 
@@ -42,17 +40,8 @@ environment with `${oc.env:APP_ENV,dev}`, and production reads its secret key wi
 omegakit does not read `.env` files; load them with a tool such as `python-dotenv`
 before loading the config.
 
-## Logging a config without its secrets
-
-A resolved config holds the real secret, as the third line of the output shows, and
-so do the objects built from it. Log `mask_secrets(config)` instead: it resolves the
-config and replaces with `***` the values under keys such as `secret_key`,
-`password` or `token`, the values read from variables such as `SECRET_KEY`, and those
-secrets wherever they appear inside other strings, such as a database URL.
-`mask_secrets(config, keys=["salt"])` adds your own words. `omegakit show` masks the
-same way.
-
-Masking is a safety net, not a guarantee: a secret under a key that names no secret,
-or one read by another resolver, is not masked. The rules are in the contracts under
-[Masking secrets](../contracts/environment.md#masking-secrets), and
-[Precedence](../contracts/assembly.md#precedence) places overrides among the other sources.
+A resolved config holds the real secret, as the third line of the output shows. To
+log a config with its secrets masked, see
+[Logging without secrets](../security.md#logging-without-secrets).
+[Precedence](../contracts/assembly.md#precedence) places overrides among the other
+sources.

@@ -48,5 +48,16 @@ Importing the module does not import Torch, and registering without it raises
 
 Register resolvers once, before loading the configs that use them. Registration is
 global to OmegaConf, and a name that is already registered raises `ValueError`
-unless you pass `replace=True`. The rules are in the contracts under
-[Resolvers](../contracts/environment.md#resolvers).
+unless you pass `replace=True`.
+
+## Rules
+
+- OmegaConf's own resolvers, such as `oc.env`, are always available. omegakit does
+  not change them.
+- omegakit's resolvers are opt-in. Each is imported from its own module, and
+  `omegakit.resolvers` itself exports nothing. Importing omegakit registers no
+  resolver.
+- Registration is global to OmegaConf. Registering a name that exists raises
+  `ValueError` unless `replace=True`.
+- Resolvers are registered through the API of the installed OmegaConf version, so
+  no version warns.

@@ -33,7 +33,7 @@ that cannot be imported, an `--import-root` that is not a directory).
     interpolations on the path are followed and only the selected node is resolved;
     missing values print as `???`, and other resolution errors exit with 1 and one
     line.
-  - Secrets are masked as by `mask_secrets` ([Masking secrets](environment.md#masking-secrets)),
+  - Secrets are masked as by `mask_secrets` ([Logging without secrets](../security.md#logging-without-secrets)),
     using the whole config even with `--node`: by key always, by environment
     variable and by value with `--resolve`. `--show-secrets` turns masking off.
 - `omegakit json-schema IMPORT_PATH [-o FILE] [--check]` prints or writes the JSON
