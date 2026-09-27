@@ -9,4 +9,5 @@ result.
 environments
 swapping
 manifests
+tenants
 ```
