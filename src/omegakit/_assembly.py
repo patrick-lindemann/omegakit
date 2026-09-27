@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Iterator
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any, cast
 
@@ -10,7 +10,7 @@ from omegaconf.errors import InterpolationKeyError, OmegaConfBaseException
 
 from ._keys import BASE_KEY, DEFAULTS_KEY, IMPORT_KEY
 from ._schema import ConfigValidationError
-from ._utils import describe_error, walk
+from ._utils import describe_error, walk, walk_post_order
 
 _NULL_TAG = "tag:yaml.org,2002:null"
 
@@ -262,19 +262,6 @@ def strip_keys(config: DictConfig | ListConfig, exclude: set[str]) -> None:
                 node.pop(key)
 
 
-def _walk_post_order(config: DictConfig | ListConfig) -> Iterator[DictConfig]:
-    # Like `walk`, but children before parents, so a pass sees assembled children.
-    if isinstance(config, DictConfig):
-        children = [node for _, node in config.items_ex(resolve=False)]
-    else:
-        children = [config._get_node(index) for index in range(len(config))]
-    for node in children:
-        if isinstance(node, (DictConfig, ListConfig)):
-            yield from _walk_post_order(node)
-    if isinstance(config, DictConfig):
-        yield config
-
-
 def _merge_in_dependency_order(
     config: DictConfig | ListConfig,
     key: str,
@@ -304,7 +291,7 @@ def _merge_in_dependency_order(
         blocked: set[int] = set()
         first_error: OmegaConfBaseException | None = None
         merged = False
-        for node in list(_walk_post_order(config)):
+        for node in list(walk_post_order(config)):
             if node._get_node(key) is None:
                 continue
             if id(node) not in blocked:

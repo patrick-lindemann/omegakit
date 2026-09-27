@@ -28,6 +28,26 @@ def walk(config: DictConfig | ListConfig) -> Iterator[DictConfig]:
             yield from walk(node)
 
 
+def walk_post_order(config: DictConfig | ListConfig) -> Iterator[DictConfig]:
+    """Walk along every mapping node in `config` depth-first, children first.
+
+    Args:
+        config: The config to traverse.
+
+    Yields:
+        Each mapping node, children before parents.
+    """
+    if isinstance(config, DictConfig):
+        children = [node for _, node in config.items_ex(resolve=False)]
+    else:
+        children = [config._get_node(index) for index in range(len(config))]
+    for node in children:
+        if isinstance(node, (DictConfig, ListConfig)):
+            yield from walk_post_order(node)
+    if isinstance(config, DictConfig):
+        yield config
+
+
 def make_node(target: Callable[..., Any], /, **kwargs: Any) -> dict[str, Any]:
     """Create an instantiable config node for a class or function.
 
