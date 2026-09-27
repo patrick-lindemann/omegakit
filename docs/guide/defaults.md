@@ -28,4 +28,4 @@ with `$base` and still get the defaults. When `$defaults` are nested, the inner 
 wins, because it has already been applied when the outer one is.
 
 A `$defaults` that is not a mapping raises `ConfigValidationError`. Precedence in
-full is in the contracts under [Precedence](../contracts.md#precedence).
+full is in the contracts under [Precedence](../contracts/assembly.md#precedence).

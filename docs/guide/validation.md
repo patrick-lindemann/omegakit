@@ -38,4 +38,4 @@ config ([Overrides and environment variables](overrides.md)).
 
 To check files from a terminal, a pre-commit hook or CI, on trusted branches only,
 use [`omegakit check`](command-line.md). The full list of checks is in the contracts
-under [Validation](../contracts.md#validation).
+under [Validation](../contracts/typed-configs.md#validation).

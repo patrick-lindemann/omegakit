@@ -44,4 +44,4 @@ appear for wrong types and misspelled keys, including inside a `$class` node;
 interpolations, `~import` and `$` keys raise no errors; completion offers the root's
 keys, `Literal` values and the fields of a `$class` node; hover shows a field's
 type. The generated schema is described in the contracts under
-[Editor schemas](../contracts.md#editor-schemas).
+[Editor schemas](../contracts/command-line.md#editor-schemas).

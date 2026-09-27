@@ -76,6 +76,6 @@ untrusted config safe.
 An exception raised by a constructor or `from_config` keeps its type and message,
 and gets a note naming the node, such as `while instantiating jobs.digest
 (webapp.jobs.Job)`. The rules are in the contracts under
-[Instantiation](../contracts.md#instantiation),
-[References](../contracts.md#references), [Partials](../contracts.md#partials) and
-[Metadata](../contracts.md#metadata).
+[Instantiation](../contracts/instantiation.md#instantiation),
+[References](../contracts/instantiation.md#references), [Partials](../contracts/instantiation.md#partials) and
+[Metadata](../contracts/instantiation.md#metadata).

@@ -41,10 +41,10 @@ app = instantiate(load_config("configs/app.yaml"), App)  # with APP_ENV=prod
 - **A complete pattern:** the recipes, such as
   [one config per environment](recipes/environments.md) or
   [swapping an implementation](recipes/swapping.md).
-- **The exact rules:** the [Contracts](contracts.md) and the [API](api.md).
+- **The exact rules:** the [Contracts](contracts/assembly.md) and the [API](api.md).
 
 Configs import and call Python code, so load them only from trusted sources; the
-contracts' [Trust](contracts.md#trust) section lists what runs.
+contracts' [Trust](contracts/environment.md#trust) section lists what runs.
 
 ```{toctree}
 :hidden:
@@ -82,10 +82,21 @@ recipes/tenants
 ```
 
 ```{toctree}
+:caption: Contracts
+:hidden:
+
+contracts/assembly
+contracts/instantiation
+contracts/typed-configs
+contracts/command-line
+contracts/errors
+contracts/environment
+```
+
+```{toctree}
 :caption: Reference
 :hidden:
 
-contracts
 api
 changelog
 ```

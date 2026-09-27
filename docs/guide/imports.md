@@ -62,4 +62,4 @@ Import `~import ../../webapp/configs/base.yaml#server` in `.../guide/imports/sha
 An import of a file that does not exist raises `ConfigValidationError`, naming the
 statement and the importing file. The full rules, including cycles and node paths
 that do not exist, are in the contracts under
-[Imports](../contracts.md#imports).
+[Imports](../contracts/assembly.md#imports).

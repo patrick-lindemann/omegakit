@@ -46,5 +46,5 @@ Lists are replaced, not joined:
 A `$base` may also be a list of mappings: later entries win over earlier ones, and
 the node's own keys win over all of them. A `$base` that is not a mapping or a list
 of mappings raises `ConfigValidationError`. The contracts cover merge order and
-precedence in [Precedence](../contracts.md#precedence), and what a `${…}` base can
-see in [Resolution timing](../contracts.md#resolution-timing).
+precedence in [Precedence](../contracts/assembly.md#precedence), and what a `${…}` base can
+see in [Resolution timing](../contracts/assembly.md#resolution-timing).

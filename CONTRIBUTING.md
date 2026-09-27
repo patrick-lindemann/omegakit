@@ -34,7 +34,7 @@ the newest OmegaConf pre-release in that range.
 - Modules have plain names, as in OmegaConf. The public API is exactly
   `omegakit.__all__` plus the `omegakit.resolvers` subpackage; everything else is
   internal. Names used only in their own module get a leading underscore.
-- Any change to the configuration language updates `docs/contracts.md` in the same
+- Any change to the configuration language updates `docs/contracts/` in the same
   commit.
 - A bug fix comes with a test that fails without the fix.
 

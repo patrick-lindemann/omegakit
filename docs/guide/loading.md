@@ -64,4 +64,4 @@ plain data for code that builds nothing.
 
 A file that is not valid YAML, or an import that fails, raises
 `ConfigValidationError` naming the file and the line. The full order is in the
-contracts under [Pipeline](../contracts.md#pipeline).
+contracts under [Pipeline](../contracts/assembly.md#pipeline).

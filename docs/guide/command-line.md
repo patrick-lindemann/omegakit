@@ -79,4 +79,4 @@ override if it has a `=` with no `/` before it. Overrides apply to every file.
 
 The exit code is 0 on success, 1 when a config is invalid or cannot be loaded, and 2
 for usage errors. The rules are in the contracts under
-[Command line](../contracts.md#command-line).
+[Command line](../contracts/command-line.md#command-line).

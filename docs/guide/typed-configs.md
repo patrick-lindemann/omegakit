@@ -88,4 +88,4 @@ type, since `Self` would claim the class it was called on:
 A `TypedDict` `TConfig` gives `from_config` static types only: it receives a plain
 `dict`, and the field values are not checked, though `$class` nodes inside are. The supported dataclass features, and the error for
 each unsupported one, are in the contracts under
-[Typed configs](../contracts.md#typed-configs).
+[Typed configs](../contracts/typed-configs.md#typed-configs).

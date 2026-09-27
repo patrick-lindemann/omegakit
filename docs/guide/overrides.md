@@ -54,5 +54,5 @@ same way.
 
 Masking is a safety net, not a guarantee: a secret under a key that names no secret,
 or one read by another resolver, is not masked. The rules are in the contracts under
-[Masking secrets](../contracts.md#masking-secrets), and
-[Precedence](../contracts.md#precedence) places overrides among the other sources.
+[Masking secrets](../contracts/environment.md#masking-secrets), and
+[Precedence](../contracts/assembly.md#precedence) places overrides among the other sources.

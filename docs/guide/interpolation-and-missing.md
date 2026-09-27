@@ -48,5 +48,5 @@ allow_missing=True)` still checks every value it does give, and
 
 Only a few values resolve during loading: `~import` paths, and the values of `$base`
 and `$defaults`. The details are in the contracts under
-[Resolution timing](../contracts.md#resolution-timing) and
-[Missing values](../contracts.md#missing-values).
+[Resolution timing](../contracts/assembly.md#resolution-timing) and
+[Missing values](../contracts/assembly.md#missing-values).

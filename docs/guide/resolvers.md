@@ -49,4 +49,4 @@ Importing the module does not import Torch, and registering without it raises
 Register resolvers once, before loading the configs that use them. Registration is
 global to OmegaConf, and a name that is already registered raises `ValueError`
 unless you pass `replace=True`. The rules are in the contracts under
-[Resolvers](../contracts.md#resolvers).
+[Resolvers](../contracts/environment.md#resolvers).
