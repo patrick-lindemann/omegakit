@@ -161,13 +161,11 @@ def test_scenario_forward_base_to_imported_node_then_instantiate(write_yaml):
         instantiate(cfg.shared)
 
 
-WEBAPP = Path(__file__).parents[2] / "docs" / "webapp"
 CURVEFIT = Path(__file__).parents[2] / "docs" / "curvefit"
 # The config files that name their JSON Schema in their first line.
 EXAMPLE_CONFIGS = sorted(
     path
-    for example in (WEBAPP, CURVEFIT)
-    for path in example.glob("**/*.yaml")
+    for path in CURVEFIT.glob("**/*.yaml")
     if path.read_text().startswith("# yaml-language-server:")
 )
 
@@ -179,7 +177,7 @@ def _modeline_schema(path: Path) -> dict:
 
 
 @pytest.mark.parametrize(
-    "path", EXAMPLE_CONFIGS, ids=lambda path: str(path.relative_to(WEBAPP.parent))
+    "path", EXAMPLE_CONFIGS, ids=lambda path: str(path.relative_to(CURVEFIT))
 )
 def test_scenario_example_yaml_matches_its_schema(path: Path):
     """Editor schema + real files: every example YAML validates, a typo does not."""
@@ -191,10 +189,6 @@ def test_scenario_example_yaml_matches_its_schema(path: Path):
 
 def test_scenario_example_schema_is_current(monkeypatch):
     """Generator + committed file: the example schema matches the generator."""
-    monkeypatch.syspath_prepend(str(WEBAPP))
-    webapp = importlib.import_module("webapp")
-    generated = generate_json_schema(webapp.App)
-    assert json.loads((WEBAPP / "app.schema.json").read_text()) == generated
     monkeypatch.syspath_prepend(str(CURVEFIT))
     curvefit = importlib.import_module("curvefit")
     generated = generate_json_schema(curvefit.Experiment)

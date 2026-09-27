@@ -1,4 +1,0 @@
-# yaml-language-server: $schema=../../app.schema.json
-$base: ~import ../base.yaml
-server:
-  secret_key: dev-only-secret

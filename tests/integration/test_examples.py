@@ -11,36 +11,9 @@ import pytest
 
 from omegakit import instantiate
 
-# Runs the example applications as a reader would, from anywhere.
+# Runs the curvefit example and the README as a reader would.
 
 DOCS = Path(__file__).parents[2] / "docs"
-EXAMPLES = [DOCS / "webapp" / "main.py"]
-
-
-@pytest.mark.parametrize(
-    "example", EXAMPLES, ids=[path.parent.name for path in EXAMPLES]
-)
-def test_example_runs(example: Path):
-    subprocess.run([sys.executable, str(example)], check=True)
-
-
-WEBAPP = DOCS / "webapp" / "main.py"
-
-
-@pytest.mark.parametrize(
-    ("environment", "database"), [("dev", "SQLite"), ("prod", "Postgres")]
-)
-def test_webapp_builds_in_each_environment(environment, database):
-    output = subprocess.run(
-        [sys.executable, str(WEBAPP), "server.port=9000"],
-        env={**os.environ, "APP_ENV": environment, "SECRET_KEY": "prod-secret-value"},
-        check=True,
-        capture_output=True,
-        text=True,
-    ).stdout
-    assert f"database: {database} " in output
-    assert ":9000 " in output
-    assert "prod-secret-value" not in output
 
 
 def test_readme_example_builds(tmp_path):
@@ -62,16 +35,6 @@ def test_readme_example_builds(tmp_path):
         text=True,
     ).stdout
     assert output == "Polynomial 200\n"
-
-
-@pytest.mark.parametrize("environment", ["dev", "prod"])
-def test_webapp_tests_pass(environment):
-    subprocess.run(
-        [sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", "tests"],
-        cwd=WEBAPP.parent,
-        env={**os.environ, "APP_ENV": environment, "SECRET_KEY": "prod-secret-value"},
-        check=True,
-    )
 
 
 CURVEFIT = DOCS / "curvefit"

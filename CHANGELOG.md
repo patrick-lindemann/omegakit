@@ -58,6 +58,8 @@ All notable changes to this project are documented here. The format follows
 
 ### Removed
 
+- The `webapp` example. Every page uses `curvefit`, a small curve-fitting
+  experiment.
 - **Breaking:** `mask_secrets`, and the guessing of secrets by key and variable
   names in `omegakit show`. Save and log the config from `load_config` unresolved:
   it holds `${secret:NAME}`, not the value. `--show-secrets` now only turns off the

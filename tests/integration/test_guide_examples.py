@@ -11,13 +11,12 @@ from omegakit.resolvers.paths import register_paths_resolver
 from omegakit.resolvers.secrets import register_secret_resolver
 
 DOCS = Path(__file__).parents[2] / "docs"
-WEBAPP = DOCS / "webapp"
 CURVEFIT = DOCS / "curvefit"
 # Every docs section except the ones that test_examples.py runs as a whole.
 SECTIONS = [
     path
     for path in DOCS.iterdir()
-    if path.is_dir() and path.name not in {"_build", "webapp", "curvefit"}
+    if path.is_dir() and path.name not in {"_build", "curvefit"}
 ]
 YAML_FILES = sorted(path for section in SECTIONS for path in section.rglob("*.yaml"))
 SCRIPTS = sorted(path for section in SECTIONS for path in section.rglob("main.py"))
@@ -25,7 +24,6 @@ SCRIPTS = sorted(path for section in SECTIONS for path in section.rglob("main.py
 
 @pytest.fixture(autouse=True)
 def examples_importable(monkeypatch):
-    monkeypatch.syspath_prepend(str(WEBAPP))
     monkeypatch.syspath_prepend(str(CURVEFIT))
 
 
@@ -51,6 +49,6 @@ def test_guide_script_runs(script: Path):
     subprocess.run(
         [sys.executable, str(script)],
         cwd=script.parent,
-        env={**os.environ, "PYTHONPATH": os.pathsep.join([str(WEBAPP), str(CURVEFIT)])},
+        env={**os.environ, "PYTHONPATH": str(CURVEFIT)},
         check=True,
     )
