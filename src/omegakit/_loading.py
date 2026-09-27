@@ -18,11 +18,8 @@ from ._keys import CLASS_KEY, META_KEY, PARTIAL_KEY, REF_KEY
 from ._schema import ConfigValidationError
 from ._utils import describe_error
 
-type PathLike = Path | str
-
-
 def load_config(
-    file_path: PathLike,
+    file_path: Path | str,
     *,
     overrides: DictConfig | dict[str, Any] | list[str] | None = None,
     keep_targets: bool = True,
