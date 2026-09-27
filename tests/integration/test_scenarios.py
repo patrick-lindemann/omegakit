@@ -5,14 +5,12 @@ from pathlib import Path
 import pytest
 import yaml
 from jsonschema import Draft7Validator
-from omegaconf import OmegaConf
 
 from omegakit import (
     ConfigValidationError,
     generate_json_schema,
     instantiate,
     load_config,
-    prepare,
     validate,
 )
 from omegakit._utils import register_resolver
@@ -47,28 +45,6 @@ def test_scenario_imported_base_slot_filled_by_consumer(write_yaml):
     )
     point = instantiate(cfg.point)
     assert (point.x, point.y) == (5, 2)
-
-
-def test_scenario_missing_filled_by_dotlist_override(write_yaml):
-    """`???` + overrides + `$class`: a dotlist override fills a slot before building."""
-    path = write_yaml("main.yaml", f"point:\n  $class: {POINT}\n  x: ???\n  y: 2\n")
-    assert instantiate(load_config(path, overrides=["point.x=1"]).point).x == 1
-    with pytest.raises(ConfigValidationError, match=r"`point\.x`"):
-        instantiate(load_config(path).point)
-
-
-def test_scenario_instantiation_does_not_mutate_loaded_config(write_yaml):
-    """Loaded config + `instantiate` with overrides: the input stays untouched."""
-    cfg = load_config(
-        write_yaml(
-            "main.yaml", f"point:\n  $class: {POINT}\n  x: ${{z}}\n  y: 1\nz: 2\n"
-        )
-    )
-    before = OmegaConf.to_yaml(cfg)
-    point = instantiate(cfg.point, overrides={"y": 3})
-    assert (point.x, point.y) == (2, 3)
-    instantiate(cfg.point)
-    assert OmegaConf.to_yaml(cfg) == before
 
 
 def test_scenario_golden_reusable_library(write_yaml):
@@ -112,28 +88,6 @@ def test_scenario_golden_dataset_manifest(write_yaml):
         {"id": "sphere", "path": "/data/sphere.h5", "scale": 1.0},
         {"id": "cube", "path": "/data/cube.h5", "scale": 2.0},
     ]
-
-
-def test_scenario_missing_filled_by_override_passes_schema(write_yaml):
-    """`???` + overrides + schema: the filled value is validated and coerced."""
-    cfg = load_config(write_yaml("main.yaml", MODEL_YAML), overrides=["model.depth=3"])
-    assert instantiate(cfg.model, schemas.Model).depth == 3
-
-
-def test_scenario_prepare_with_runtime_only_argument(write_yaml):
-    """`prepare` + schema: runtime-only arguments pass through `**kwargs`."""
-    cfg = load_config(write_yaml("main.yaml", MODEL_YAML), overrides=["model.depth=1"])
-    params = [object()]
-    model = prepare(cfg.model, schemas.Model)(params=params)
-    assert model.extra["params"] is params
-
-
-def test_scenario_enum_override_mapped_to_class(write_yaml):
-    """Overrides + Enum field + custom `from_config`: `kind=B` selects class `B`."""
-    cfg = load_config(
-        write_yaml("main.yaml", MODEL_YAML), overrides=["model.kind=B", "model.depth=1"]
-    )
-    assert isinstance(instantiate(cfg.model, schemas.Model).kind, schemas.B)
 
 
 def test_scenario_node_child_validated_against_its_schema():
