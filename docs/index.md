@@ -1,39 +1,47 @@
 # omegakit
 
-Composable YAML configuration and Python object construction, built on
-[OmegaConf](https://omegaconf.readthedocs.io/).
-
-- **Compose** configs from files: `~import` another file or one of its nodes, merge
-  shared settings with `$base`, and give every item of a mapping the same defaults
-  with `$defaults`.
-- **Construct** objects from them: `$class` builds a class or calls a function,
-  `$ref` imports an object, and `$partial` defers the call.
-- **Check** them: dataclass schemas validate configs before any object is built, and
-  the same schemas give YAML editors completion and error highlighting.
+YAML configs that import and extend each other, and build your Python objects: one
+file per environment, one base they share, and an optional dataclass schema that
+checks the config before any configured object is built. omegakit is a library on
+[OmegaConf](https://omegaconf.readthedocs.io/). You call `load_config`; it does not
+take over your `main()`, your working directory or your logging.
 
 ```sh
 pip install omegakit
 ```
 
-## Quickstart
+Every example in these pages comes from one small web service, `webapp`. Its root
+config names the class to build and picks an environment file, and the production
+file takes the shared settings and replaces the database:
 
-```{literalinclude} examples/getting-started/defaults.yaml
+```{literalinclude} examples/webapp/configs/app.yaml
 :language: yaml
-:caption: defaults.yaml
+:caption: configs/app.yaml
 ```
 
-```{literalinclude} examples/getting-started/app.yaml
+```{literalinclude} examples/webapp/configs/envs/prod.yaml
 :language: yaml
-:caption: app.yaml
+:caption: configs/envs/prod.yaml
 ```
 
-```{literalinclude} examples/getting-started/main.py
-:language: python
-:caption: main.py
+```python
+from omegakit import instantiate, load_config
+from webapp import App
+
+app = instantiate(load_config("configs/app.yaml"), App)  # with APP_ENV=prod
 ```
 
-Continue with [Getting started](getting-started.md), or look up a feature in the
-guide.
+## Where to go
+
+- **New to omegakit:** [Getting started](getting-started.md).
+- **Looking up a feature:** the guide, from [Loading](guide/loading.md) and
+  [Imports](guide/imports.md) to [Validation](guide/validation.md) and the
+  [Command line](guide/command-line.md).
+- **A complete pattern:** the [Cookbook](cookbook.md).
+- **The exact rules:** the [Contracts](contracts.md) and the [API](api.md).
+
+Configs import and call Python code, so load them only from trusted sources; the
+contracts' [Trust](contracts.md#trust) section lists what runs.
 
 ```{toctree}
 :hidden:
