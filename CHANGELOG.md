@@ -4,6 +4,145 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.6.0] - 2026-09-27
+
+### Added
+
+- `load_config(..., import_root=DIR)` rejects any `~import` that reads a file
+  outside `DIR`, after interpolations and symbolic links are resolved. The default
+  still allows any file.
+- `omegakit check` and `omegakit show` take `--import-root DIR`.
+- `validate`, `instantiate` and `prepare` take `allowed_modules`, which limits the
+  modules that `$class` and `$ref` may name. A module that is not allowed is never
+  imported, and an object is also checked against the module it is defined in. It is
+  not a sandbox: allowing `builtins`, `os`, `subprocess`, `importlib`, `shutil` or
+  `pickle` equals no restriction.
+- `omegakit check --allow-module NAME`, repeatable, passes `allowed_modules` to
+  `validate`.
+- `mask_secrets(config, *, keys=())` resolves a loaded config for logging with
+  secrets replaced by `***`: by key name (`password`, `token`, `api_key`, ...), by
+  secret-named `${oc.env:...}` variables, and by value inside other strings, such as
+  a password in a URL.
+- A Trust section in the contracts: what loading, validating, checking and showing
+  run and read, and how to log a config without its secrets.
+- A page that compares omegakit with Hydra, OmegaConf, jsonargparse and
+  LightningCLI, pydantic-settings and Dynaconf.
+
+### Changed
+
+- **Breaking:** `instantiate` and `prepare` raise `ConfigValidationError` for a
+  `???`, an interpolation that cannot be resolved and an exception from a resolver,
+  with OmegaConf's error as `__cause__` and the full key in the message. Callers
+  catching `MissingMandatoryValue` or `InterpolationKeyError` from them must catch
+  `ConfigValidationError`. `MissingMandatoryValue` was not a `ValueError`, so
+  `except ValueError` now also catches a missing value.
+- **Breaking:** `instantiate`/`prepare` on a node without `$class` raise
+  `ConfigValidationError` instead of `ValueError` (still a `ValueError` subclass),
+  and the message no longer prints the whole config.
+- **Breaking:** `load_config` raises `ConfigValidationError` for every problem in a
+  config file's content: YAML syntax errors, duplicate keys, unknown tags, non-UTF-8
+  files, circular or malformed imports, a missing or unreadable imported file,
+  interpolation errors in `~import` paths and in `$base`/`$defaults`, and invalid
+  `$base`/`$defaults` values. The original error is `__cause__`, and import errors
+  name the statement and the importing file. Only a missing root file still raises
+  `FileNotFoundError`.
+- **Breaking:** An override that does not parse (`a=[1`, `a=${`), has a value of an
+  unsupported type, or is rejected by a struct config raises `ConfigValidationError`
+  from `load_config`, `instantiate` and `prepare`, naming the override or its key.
+- **Breaking:** Overrides of an unsupported type, including a `ListConfig`, raise
+  `TypeError` instead of `ValueError`; a `ListConfig` used to fail inside
+  OmegaConf's merge.
+- **Breaking:** A config file that holds a single value is rejected with
+  `ConfigValidationError`, as the root and as an import. `hello` used to load as
+  `{hello: None}`, `"a: 1"` as `{a: 1}`, and `5` raised an `OSError`. Empty files
+  and `null`/`~` documents stay empty mappings.
+- **Breaking:** `load_config` rejects a file whose root is a list with
+  `ConfigValidationError`, so its return type `DictConfig` holds. Imported files may
+  still be lists.
+- **Breaking:** `omegakit show --node` no longer resolves the selected node: an
+  interpolation prints as written, so `--node db.url` does not print a secret from
+  `${oc.env:...}`. `--resolve` resolves only the selected node. The path uses dots
+  only, like `~import file#node` (`items.0`, `items.-1`); bracket syntax is gone. A
+  path through an interpolation needs `--resolve`, `null` prints `null`, and an
+  absent node is an error.
+- **Breaking:** `omegakit show` masks secrets as `***`: by key name in every mode,
+  and by secret environment variable and by value with `--resolve`, using the whole
+  config even with `--node`. `--show-secrets` turns masking off.
+- `validate` no longer constructs the schema's nested dataclasses, so their
+  `__post_init__` runs once, while building, and not during validation. The
+  `validate` docstring and the contracts list the code that still runs during
+  validation: module imports, resolvers, `__instancecheck__`/`__subclasscheck__` and
+  `default_factory`.
+- Only a missing `$class`/`$ref` module (or parent package) and a missing attribute
+  raise `ConfigValidationError`. An `ImportError` raised by the named module itself,
+  such as a missing dependency, propagates with its own type.
+- The contracts name `ConfigValidationError`, which the code already raised, for
+  reserved `$` keys, a non-boolean `$partial` and a `$ref` with siblings.
+- Whitespace before `#` in an `~import` path is ignored: `~import lib.yaml #a`
+  imports `lib.yaml`, not `lib.yaml `.
+- Errors for an invalid `$base` or `$defaults` name the node path (`outer.inner`,
+  `<root>`) instead of printing the whole node.
+- Validation errors describe a mapping by its keys and a list by its length instead
+  of printing their values. Scalar values are still printed.
+- Releases publish only a commit on `main` that passes CI, from actions pinned to
+  commit SHAs, and upload PEP 740 attestations.
+- The documentation is rebuilt around one example application, `webapp`, with a new
+  Getting started, a guide page per feature and four recipes. The contracts are split
+  into six pages. Old guide and contracts URLs redirect to their new pages.
+
+### Removed
+
+- `is_valid`. Use `validate` and catch the error: `try: validate(config) except
+  ConfigValidationError: ...`.
+
+### Fixed
+
+- Optional `list`, `dict` and dataclass fields (`list[int] | None`, ...) are
+  validated: `xs: abc` no longer becomes `["a", "b", "c"]`, and wrong values raise
+  `ConfigValidationError` instead of a raw `TypeError` or `AttributeError`.
+- A fixed-length tuple field rejects a list with too many items; `[1, 2, 3]` for
+  `tuple[int, int]` was silently truncated to `(1, 2)`.
+- A union without `None`, such as `Sub | int`, rejects `null`.
+- A union with a container member, such as `int | list[int]`, rejects scalars of
+  other types (`"wrong"`, `3.5`, `True`) and `null`.
+- `allow_missing=True` also accepts `???` inside fixed-length tuples and in the
+  dataclass member of a union.
+- A dataclass default from `default_factory` is used as built, at every nesting
+  depth; it was rebuilt from its fields, so its `__post_init__` ran twice on the
+  same values.
+- A `$class` or `$ref` that is not a string (a number, `null`, a list) raises
+  `ConfigValidationError` naming the node, instead of an `AttributeError`.
+- `validate` rejects a `$class` target that is neither callable nor has
+  `from_config`, such as `$class: math.pi`, which only failed while building. `$ref`
+  still accepts any object.
+- A malformed import path (`nodots`, `.Foo`, `..mod.X`) in `$class`, `$ref` or
+  `check --schema` is reported as not an import path, instead of `Empty module name`
+  or a raw `TypeError`.
+- Reserved keys and nested `$class`/`$ref` nodes under `Callable` and `Protocol`
+  object fields are validated; they were only caught, with a raw `ValueError` or
+  `ModuleNotFoundError`, while building.
+- `check_schema` rejects a field that names a positional-only `__init__` parameter,
+  even when `__init__` takes `**kwargs`; building such a class failed with a raw
+  `TypeError`.
+- `check_schema` skips only the constructor parameters whose annotations do not
+  resolve, such as types imported under `TYPE_CHECKING`, and checks the rest; one
+  unresolvable annotation used to switch the assignability check off for every
+  parameter.
+- A schema annotation that does not resolve is blamed on the right field when the
+  schema inherits fields from a dataclass in another module.
+- `generate_json_schema` raises its documented `TypeError` for an object that is not
+  a class, instead of `issubclass() arg 1 must be a class`.
+- A dataclass schema that contains itself, directly or through other dataclasses,
+  raises `ConfigValidationError` naming the cycle, instead of `RecursionError`.
+- `omegakit check` counts a file as invalid when a module it imports calls
+  `sys.exit()`, and checks the remaining files; the command used to stop and exit
+  with that status, so `sys.exit(0)` made the check pass.
+- `omegakit show --node` on a `null` value printed that the node does not exist.
+- `omegakit show --resolve` reports a resolution error, such as an unknown resolver,
+  as one line with exit code 1 instead of a traceback.
+- `omegakit json-schema` reports an import path that cannot be imported as a usage
+  error (exit code 2) instead of a traceback.
+
 ## [0.5.0] - 2026-09-26
 
 ### Added
