@@ -62,7 +62,7 @@ repeat a run from it: masked values load back as `***`
 ## Check before running
 
 Check every experiment file in CI, and look at a run before you launch it, with
-[`omegakit check` and `omegakit show --resolve`](../tools/command-line/index.md).
+[`omegakit check` and `omegakit show --resolve`](../command-line/index.md).
 
 ## Name runs by their config
 

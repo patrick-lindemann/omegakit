@@ -1,33 +1,35 @@
 # Command line
 
 Installing omegakit adds the `omegakit` command, also available as
-`python -m omegakit`. Run it from the directory your configs import from, here
-`webapp`'s:
+`python -m omegakit`. Run it from the directory that your `$class` paths import
+from, here `curvefit`'s:
 
 ```text
-$ omegakit check configs/app.yaml --schema webapp.App --allow-module webapp
-$ omegakit check configs/app.yaml server.workers=many --schema webapp.App
-configs/app.yaml: ConfigValidationError: Invalid config in `server.workers` (ServerConfig): Value 'many' of type 'str' could not be converted to Integer
-$ omegakit show configs/app.yaml --node server
-$class: webapp.server.Server
-host: 127.0.0.1
-port: 8000
-workers: 1
-secret_key: '***'
-$ omegakit show configs/app.yaml server.host=example.com --node cache.url --resolve
-redis://example.com:6379
+$ omegakit check configs/experiments/*.yaml --schema curvefit.Experiment --allow-module curvefit
+$ omegakit check configs/experiments/poly3-adam.yaml trainer.epochs=many --schema curvefit.Experiment
+configs/experiments/poly3-adam.yaml: ConfigValidationError: Invalid config in `trainer.epochs` (TrainerConfig): Value 'many' of type 'str' could not be converted to Integer
+$ omegakit show configs/experiments/poly3-adam.yaml --node data.test
+$class: curvefit.data.Synthetic
+function:
+  $ref: curvefit.data.sine
+noise: 0.1
+seed: 1234
+'n': 200
+$ omegakit show configs/experiments/poly3-adam.yaml seed=3 --node run_dir --resolve
+runs/poly3-adam/seed3
 ```
 
 ## `check`
 
-`check` loads each file with the overrides and runs [`validate`](../../objects/validation/index.md). It
-prints one line per invalid file and nothing for valid ones, and exits with 1 if
-any file is invalid. `--schema` names the class every root must build,
-`--allow-missing` accepts `???` in files such as `base.yaml` that others complete,
-`--allow-module` limits where `$class` and `$ref` may point, and `--import-root`
-limits where `~import` may read.
+`check` loads each file with the overrides and runs
+[`validate`](../objects/validation/index.md). It prints one line per invalid file
+and nothing for valid ones, and exits with 1 if any file is invalid. `--schema`
+names the class every root must match, `--allow-missing` accepts `???` in files
+such as `base.yaml` that others complete, `--allow-module` limits where `$class`
+and `$ref` may point, and `--import-root` limits where `~import` may read.
 
-As a [pre-commit](https://pre-commit.com) hook:
+To check every experiment file before a commit, run it as a
+[pre-commit](https://pre-commit.com) hook:
 
 ```yaml
 repos:
@@ -35,26 +37,29 @@ repos:
     hooks:
       - id: omegakit-check
         name: omegakit check
-        entry: omegakit check --schema webapp.App --allow-module webapp
+        entry: omegakit check --schema curvefit.Experiment --allow-module curvefit
         language: system
-        files: ^configs/app\.yaml$
+        files: ^configs/experiments/.*\.yaml$
 ```
 
 `check` runs code from the files it checks, so run it on trusted content only.
-[Trust model](../../security/trust-model/index.md) says what runs and how to set up CI.
+[Trust model](../security/trust-model/index.md) says what runs and how to set up CI.
 
 ## `show`
 
 `show` prints the assembled config: what imports, `$base`, `$defaults` and
-overrides produced. Values stay as written unless you pass `--resolve`, so an
-`${oc.env:...}` shows the variable's name, not its value. `--node` prints one node,
-by the same dotted path as `~import file#node`. Secrets are masked as by
-`mask_secrets` ([Masking secrets](../../security/masking-secrets/index.md)).
+overrides produced. The test split above got `$class`, `function` and `noise` from
+`$defaults`, and `n` from its `$base`. Values stay as written unless you pass
+`--resolve`, so an `${oc.env:...}` shows the variable's name, not its value.
+`--resolve` shows the values a run will get; look at a run with it before you
+launch it. `--node` prints one node, by the same dotted path as
+`~import file#node`. Secrets are masked as by `mask_secrets`
+([Masking secrets](../security/masking-secrets/index.md)).
 
 ## `json-schema`
 
 `json-schema` writes the JSON Schema of a class for your editor; see
-[Editor support](../editor-support/index.md).
+[Editor support](../tools/editor-support/index.md).
 
 ## Rules
 
@@ -62,8 +67,9 @@ by the same dotted path as `~import file#node`. Secrets are masked as by
 `--schema` and `json-schema` paths resolve from there.
 
 **Arguments.** `check` and `show` take config files and `key=value` overrides,
-mixed in any order but before the options. An argument that names an existing file
-is a config file, even with `=` in it. Any other argument with `=` before the first
+mixed in any order, all before or all after the options. Options between them are
+a usage error. An argument that names an existing file is a config file, even with
+`=` in it. Any other argument with `=` before the first
 `/` is an override. Everything else is treated as a config file and fails to load.
 Overrides apply to every file.
 
@@ -73,12 +79,12 @@ path that cannot be imported, or an `--import-root` that is not a directory.
 
 **`omegakit check CONFIG... [KEY=VALUE...] [--schema IMPORT_PATH] [--allow-missing]
 [--allow-module NAME]... [--import-root DIR]`** validates each file
-([Validation](../../objects/validation/index.md#rules)).
+([Validation](../objects/validation/index.md#rules)).
 
 - `--schema` is passed as `validate`'s `schema`, `--allow-missing` as
   `allow_missing`, and each `--allow-module` adds an entry to `allowed_modules`
-  ([Restricting imports](../../security/restricting-imports/index.md#allowed-modules)). `--import-root` is passed to
-  `load_config` as `import_root` ([Imports](../../configs/imports/index.md#rules)).
+  ([Restricting imports](../security/restricting-imports/index.md#allowed-modules)). `--import-root` is passed to
+  `load_config` as `import_root` ([Imports](../configs/imports/index.md#rules)).
 - It prints `<file>: <exception type>: <message>` for each invalid file and
   nothing for valid ones. Any exception, and a `SystemExit` raised by an imported
   module, marks that file invalid, and the other files are still checked.

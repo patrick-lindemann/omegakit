@@ -32,7 +32,7 @@ Validation calls no configured class, but it imports the modules that `$class` a
 modules a config can name with `allowed_modules` ([Trust model](../../security/trust-model/index.md)).
 
 To check files from a terminal, a pre-commit hook or CI, use
-[`omegakit check`](../../tools/command-line/index.md).
+[`omegakit check`](../../command-line/index.md).
 
 ## Rules
 

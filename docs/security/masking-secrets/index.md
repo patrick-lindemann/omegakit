@@ -19,7 +19,7 @@ secret_key: '***'
 
 `mask_secrets(config, keys=["salt"])` adds your own words to the list below.
 `omegakit show` masks by key, and with `--resolve` also by environment variable and
-by value ([Command line](../../tools/command-line/index.md#rules)). Keep secrets out of arguments that components
+by value ([Command line](../../command-line/index.md#rules)). Keep secrets out of arguments that components
 save, such as hyperparameters in checkpoints.
 
 Masking is a safety net, not a guarantee. It cannot see a secret under a key that
