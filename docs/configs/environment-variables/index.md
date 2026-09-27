@@ -28,7 +28,7 @@ s3cr3t-from-the-vault
 `APP_ENV=prod` made the root file import `envs/prod.yaml`, and the secret key came
 from `SECRET_KEY`. A resolved config holds the real secret, as the second line
 shows. To log a config with its secrets masked, see
-[Masking secrets](../../security/secrets/index.md).
+[Masking secrets](../../security/masking-secrets/index.md).
 
 omegakit does not read `.env` files. Load them with a tool such as `python-dotenv`
 before loading the config.

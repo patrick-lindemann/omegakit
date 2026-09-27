@@ -1,4 +1,4 @@
-# What runs
+# Trust model
 
 omegakit is not meant for untrusted configs. A config names classes to import and
 call, reads environment variables and imports other files. Treat a config file like

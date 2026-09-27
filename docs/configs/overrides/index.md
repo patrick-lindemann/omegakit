@@ -24,7 +24,7 @@ node they build and leave the config you passed unchanged.
 Overrides arrive after the files are assembled, so an `~import`, `$base` or
 `$defaults` inside an override stays literal. They carry the same trust as the
 files, so never build them from untrusted input
-([Trust model](../../security/what-runs/index.md)).
+([Trust model](../../security/trust-model/index.md)).
 
 ## Rules
 

@@ -1,4 +1,4 @@
-# Limits
+# Restricting imports
 
 Two settings limit what a config can reach. They are limits, not a sandbox: a
 config that passes them still runs code.

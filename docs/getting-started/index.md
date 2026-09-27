@@ -155,7 +155,7 @@ To check the configs before every commit, run `omegakit check` as a
 [pre-commit](https://pre-commit.com) hook. It validates each file against the
 schema of `App`. Checking runs code from the files, so run it only on changes from
 people you trust, and limit the modules a file can name with `--allow-module`
-([Security](../security/what-runs/index.md)):
+([Trust model](../security/trust-model/index.md)):
 
 ```sh
 omegakit check configs/app.yaml --schema webapp.App --allow-module webapp

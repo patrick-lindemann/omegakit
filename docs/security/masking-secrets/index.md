@@ -1,4 +1,4 @@
-# Secrets
+# Masking secrets
 
 A resolved config holds the real value of every secret, and so do the objects built
 from it. Log `mask_secrets(config)` instead:

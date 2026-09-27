@@ -47,9 +47,9 @@ app = instantiate(load_config("configs/app.yaml"), App)  # with APP_ENV=prod
   [API](api/index.md).
 
 Configs import and call Python code, so load them only from sources you trust.
-The Security section says [what runs](security/what-runs/index.md), how to
-[limit it](security/limits/index.md) and how to log a config
-[without its secrets](security/secrets/index.md).
+The Security section says [what runs](security/trust-model/index.md), how to
+[limit it](security/restricting-imports/index.md) and how to log a config
+[without its secrets](security/masking-secrets/index.md).
 
 ```{toctree}
 :hidden:
@@ -102,9 +102,9 @@ resolvers/torch/index
 :caption: Security
 :hidden:
 
-security/what-runs/index
-security/limits/index
-security/secrets/index
+security/trust-model/index
+security/restricting-imports/index
+security/masking-secrets/index
 ```
 
 ```{toctree}
