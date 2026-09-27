@@ -45,7 +45,9 @@ the newest OmegaConf pre-release in that range.
   "Reject oversized tuples", with no body. A message that needs "and" describes two
   commits.
 - Stage only the files of that change (`git add <paths>`).
-- `CHANGELOG.md` changes only in the release commit.
+- A change that users can see adds its line to the `## [Unreleased]` section at the
+  top of `CHANGELOG.md` in the same commit. Internal refactors, tests and CI changes
+  get no line.
 
 ## Dependencies
 
@@ -56,8 +58,10 @@ hand, when the `test-omegaconf-next` job shows that a new version works.
 
 ## Releases
 
-1. Bump the version with `uv version <version>`, add the `CHANGELOG.md` entry, and
-   commit `pyproject.toml`, `uv.lock` and `CHANGELOG.md` together.
+1. Bump the version with `uv version <version>`. In `CHANGELOG.md`, rename
+   `## [Unreleased]` to `## [<version>] - <date>`, check its lines against
+   `git log v<previous>..HEAD`, and add the release link at the bottom. Commit
+   `pyproject.toml`, `uv.lock` and `CHANGELOG.md` together as "Release <version>".
 2. When a library compared in `docs/comparison.md` has had a major release, check
    the page against its documentation again and update its "Checked on" line.
 3. On `main`, run `git pull`, then tag with `git tag -s v<version>` and push the
