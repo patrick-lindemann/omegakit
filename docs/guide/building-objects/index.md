@@ -127,7 +127,7 @@ It allows no other key except `$meta`. The node passed to `instantiate` must hav
 
 **Reserved keys.**
 
-- Every key that starts with `$` is reserved. The [API](../../api.md#special-keys)
+- Every key that starts with `$` is reserved. The [API](../../api/index.md#special-keys)
   lists the defined ones. `~import` is a value prefix, not a key.
 - `load_config` keeps unknown `$` keys. Validating or building rejects a `$` key
   where it is not allowed, with `ConfigValidationError`: a `$class` node allows

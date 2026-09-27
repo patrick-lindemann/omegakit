@@ -28,7 +28,7 @@ or the file system, is its `__cause__`. Only a missing root file passed to
 | `$class`/`$ref` module not found | `ConfigValidationError`, caused by `ModuleNotFoundError` | `Cannot import`, the node path and the module |
 | `$class`/`$ref` attribute not found | `ConfigValidationError`, caused by `ImportError` | `Cannot import`, the node path, `Could not import` |
 | `$ref` with sibling keys other than `$meta` | `ConfigValidationError` | `cannot contain any other keys` |
-| `$class`/`$ref` in a module that `allowed_modules` does not allow ([Security](security/index.md#allowed-modules)) | `ConfigValidationError` | the path, the node and `allowed_modules` |
+| `$class`/`$ref` in a module that `allowed_modules` does not allow ([Security](../security/index.md#allowed-modules)) | `ConfigValidationError` | the path, the node and `allowed_modules` |
 | `allowed_modules` given as a string | `TypeError` | `not the string` |
 | Raw dict value that OmegaConf does not support | `UnsupportedValueType` | the key |
 | Unknown `$` key, or `$class` with `$ref`, at validation or instantiation | `ConfigValidationError` | the key and `reserved` |
@@ -36,9 +36,9 @@ or the file system, is its `__cause__`. Only a missing root file passed to
 | `???` accessed | `MissingMandatoryValue` | the full key |
 | Unresolvable `${…}` accessed | `InterpolationKeyError` (or another OmegaConf error) | the key |
 | `???`, unresolvable `${…}` or a failing resolver, validated or instantiated | `ConfigValidationError`, caused by OmegaConf's error | `Cannot resolve` and the full key |
-| Exception from a constructor or `from_config` | unchanged | original message, plus the note from [Building objects](guide/building-objects/index.md#rules) |
-| Schema outside the supported subset ([Typed configs](guide/typed-configs/index.md#rules)) | `ConfigValidationError` | the field and the fix |
-| Schema that does not match `__init__` ([Typed configs](guide/typed-configs/index.md#rules)) | `ConfigValidationError` | the field or parameter |
+| Exception from a constructor or `from_config` | unchanged | original message, plus the note from [Building objects](../guide/building-objects/index.md#rules) |
+| Schema outside the supported subset ([Typed configs](../guide/typed-configs/index.md#rules)) | `ConfigValidationError` | the field and the fix |
+| Schema that does not match `__init__` ([Typed configs](../guide/typed-configs/index.md#rules)) | `ConfigValidationError` | the field or parameter |
 | Unknown field, missing required field, or invalid native value | `ConfigValidationError` | the node path and the schema |
 | Object field whose `$class` is not the annotated class or a subclass, or a `$ref` that is not an instance | `ConfigValidationError` | the field path, the expected class and the given node |
 | `make_node()` for a class or function not defined at module level | `ValueError` | `module level` |

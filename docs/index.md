@@ -35,7 +35,7 @@ app = instantiate(load_config("configs/app.yaml"), App)  # with APP_ENV=prod
 ## Where to go
 
 - **New to omegakit:** [Getting started](getting-started/index.md), and how omegakit
-  [compares with Hydra and other libraries](comparison.md).
+  [compares with Hydra and other libraries](comparison/index.md).
 - **Looking up a feature:** the guide, from [Loading](guide/loading/index.md) and
   [Imports](guide/imports/index.md) to [Validation](guide/validation/index.md) and the
   [Command line](guide/command-line/index.md).
@@ -43,7 +43,7 @@ app = instantiate(load_config("configs/app.yaml"), App)  # with APP_ENV=prod
   [swapping an implementation](recipes/swapping/index.md) or
   [a manifest of similar things](recipes/manifests/index.md).
 - **The exact rules:** the Rules section at the end of each guide page, and the
-  [API](api.md).
+  [API](api/index.md).
 
 Configs import and call Python code, so load them only from sources you trust.
 [Security](security/index.md) lists what runs and how to log a config without its secrets.
@@ -52,7 +52,7 @@ Configs import and call Python code, so load them only from sources you trust.
 :hidden:
 
 getting-started/index
-comparison
+comparison/index
 ```
 
 ```{toctree}
@@ -93,7 +93,7 @@ recipes/tenants/index
 :caption: Reference
 :hidden:
 
-api
-errors
-changelog
+api/index
+errors/index
+changelog/index
 ```

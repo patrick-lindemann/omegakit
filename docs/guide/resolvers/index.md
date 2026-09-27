@@ -43,7 +43,7 @@ register_torch_resolvers()
 ```
 
 `register_torch_dtype_resolver()` and `register_cuda_available_resolver()` register
-one each. The [API](../../api.md#resolvers) lists every resolver module.
+one each. The [API](../../api/index.md#resolvers) lists every resolver module.
 
 ## Rules
 

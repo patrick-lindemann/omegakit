@@ -53,7 +53,7 @@ chose Postgres. `webapp` is the example application of the
 
 Start with [Getting started](https://omegakit.readthedocs.io/en/latest/getting-started/),
 or see how omegakit
-[compares with Hydra and other libraries](https://omegakit.readthedocs.io/en/latest/comparison.html).
+[compares with Hydra and other libraries](https://omegakit.readthedocs.io/en/latest/comparison/).
 
 ## Trust
 

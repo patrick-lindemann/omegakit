@@ -26,6 +26,10 @@ html_theme = "furo"
 html_title = "omegakit"
 # Old page names to their new pages, so that links to earlier releases keep working.
 redirects = {
+    "api": "api/index.html",
+    "changelog": "changelog/index.html",
+    "comparison": "comparison/index.html",
+    "errors": "errors/index.html",
     "guide/base": "base/index.html",
     "guide/building-objects": "building-objects/index.html",
     "guide/command-line": "command-line/index.html",
@@ -46,7 +50,7 @@ redirects = {
     "guide/instantiation": "building-objects/index.html",
     "guide/metadata": "building-objects/index.html#meta",
     "guide/configurable": "typed-configs/index.html#a-custom-from-config",
-    "guide/walk": "../api.html#traversal",
+    "guide/walk": "../api/index.html#traversal",
     "cookbook": "recipes/swapping/index.html",
     "contracts": "guide/loading/index.html#rules",
     "contracts/assembly": "../guide/loading/index.html#rules",

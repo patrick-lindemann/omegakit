@@ -96,4 +96,4 @@ plain data for code that builds nothing.
 
 **Errors.** A missing root file raises `FileNotFoundError`. Every other problem in
 a file's content raises `ConfigValidationError`, with the original error as its
-`__cause__`. The [Errors](../../errors.md) table lists them.
+`__cause__`. The [Errors](../../errors/index.md) table lists them.
