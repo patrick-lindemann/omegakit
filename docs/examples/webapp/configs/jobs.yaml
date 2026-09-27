@@ -14,3 +14,4 @@ jobs:
     handler:
       $ref: webapp.jobs.purge_sessions
     every: 1h
+    retries: 1
