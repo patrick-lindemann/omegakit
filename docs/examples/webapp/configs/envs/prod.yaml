@@ -1,0 +1,12 @@
+$base: ~import ../base.yaml
+server:
+  host: 0.0.0.0
+  workers: 8
+  secret_key: ${oc.env:SECRET_KEY}
+database:
+  $class: webapp.db.Postgres
+  url: postgres://db.internal/webapp
+  pool_size: 20
+replica:
+  $base: ${..database}
+  url: postgres://db-replica.internal/webapp

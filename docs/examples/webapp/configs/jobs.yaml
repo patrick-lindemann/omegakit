@@ -1,0 +1,16 @@
+jobs:
+  $defaults:
+    $class: webapp.jobs.Job
+    retries: 3
+  digest:
+    handler:
+      $class: webapp.jobs.send_digest
+      $partial: true
+      subject: What happened this week
+    every: 7d
+    $meta:
+      owner: growth
+  cleanup:
+    handler:
+      $ref: webapp.jobs.purge_sessions
+    every: 1h
