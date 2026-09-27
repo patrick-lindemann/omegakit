@@ -1,7 +1,7 @@
 # Typed configs
 
 A class that subclasses `Configurable[TConfig]`, with a dataclass `TConfig`, has a
-schema. Its config is checked against the dataclass before anything is built, and
+schema. Its config is checked against the dataclass before any object is built, and
 the class receives the checked values, with the right types for your editor.
 Classes without a schema keep working as plain `$class` targets.
 

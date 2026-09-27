@@ -25,7 +25,7 @@ SQLite sqlite://
 ```
 
 The code that uses `app.database` never names a class, and a class that is not a
-`Database` is rejected before anything is built. Override `$class` alone only when
+`Database` is rejected before any configured object is built. Override `$class` alone only when
 the new class takes the same settings; otherwise swap the node, as above. See
 [Building objects](../guide/building-objects.md) and
 [Typed configs](../guide/typed-configs.md).
