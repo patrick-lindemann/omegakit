@@ -397,12 +397,16 @@ def _check_untyped(
         _import_ref(value, path, allowed_modules)
     else:
         for key, item in value.items():
-            if isinstance(key, str) and key.startswith("$"):
-                raise ConfigValidationError(
-                    f"Key `{key}` in `{format_path(path)}` is not supported here; keys "
-                    "starting with `$` are reserved."
-                )
+            _check_not_reserved(key, path)
             _check_untyped(item, (*path, key), allow_missing, allowed_modules)
+
+
+def _check_not_reserved(key: Any, path: tuple[str | int, ...]) -> None:
+    if isinstance(key, str) and key.startswith("$"):
+        raise ConfigValidationError(
+            f"Key `{key}` in `{format_path(path)}` is not supported here; keys "
+            "starting with `$` are reserved."
+        )
 
 
 def _check_class_node(
@@ -511,11 +515,9 @@ def _check_object(
             and CLASS_KEY not in value
             and REF_KEY not in value
         ):
-            _check_untyped(
-                {key: None for key in value}, path, allow_missing, allowed_modules
-            )
             for key, item in value.items():
                 if key != META_KEY:
+                    _check_not_reserved(key, path)
                     _check_object(
                         item,
                         item_annotation,
