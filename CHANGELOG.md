@@ -8,6 +8,8 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- A Dataclass schemas page: a plain dataclass as the schema of a config, its field
+  kinds and how a node is checked.
 - A Reproducible runs page: seeding, one directory per run, saving the config and
   the overrides, and what omegakit does not do.
 - A Parameter sweeps recipe: one run per combination of a few values.

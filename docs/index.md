@@ -34,7 +34,7 @@ experiment = instantiate(config, schema=Experiment)
   [compares with Hydra and other libraries](comparison/index.md).
 - **Looking up a feature:** one page per feature, in the order you meet them.
   [Configs](configs/loading/index.md) covers how files are loaded and combined,
-  [Schemas](objects/validation/index.md) how a config is checked, and
+  [Schemas](schemas/dataclass-schemas/index.md) how a config is checked, and
   [Building objects](objects/instantiation/index.md) how objects are built from it.
 - **A complete pattern:** the recipes, such as
   [Parameter sweeps](recipes/parameter-sweeps/index.md) or
@@ -74,6 +74,7 @@ configs/missing-values/index
 :caption: Schemas
 :hidden:
 
+schemas/dataclass-schemas/index
 objects/validation/index
 tools/editor-support/index
 ```

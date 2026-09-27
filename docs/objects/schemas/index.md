@@ -31,25 +31,8 @@ every required parameter has a field, and every field is a parameter of a matchi
 type. It runs by itself whenever the class is validated or built; call it in a test
 to catch a mismatch without a config.
 
-## Field kinds
-
-The application's schema shows the three kinds of field:
-
-```{literalinclude} ../../webapp/webapp/__init__.py
-:language: python
-:caption: webapp/__init__.py (excerpt)
-:pyobject: AppConfig
-```
-
-- **Values:** `int`, `float`, `bool`, `str`, `Path`, enums, `Literal`, dataclasses
-  of these, and `list`, `dict`, `tuple` or unions of these, such as `log_dir`.
-  They are converted and checked like `port` above.
-- **Objects:** any other class, such as `server: Server` or `jobs: dict[str, Job]`.
-  The config holds a `$class` node of that class or a subclass, or a `$ref` to an
-  instance, and the typed config holds the built object. `database: Database`
-  accepts both `Postgres` and `SQLite`.
-- **`Any`:** the value is not checked, but `$class` nodes and reserved keys inside
-  it are. `JobConfig.handler` is `Any`, because it holds a function.
+The kinds of field a schema can have, and how each is checked, are on
+[Dataclass schemas](../../schemas/dataclass-schemas/index.md).
 
 ## A custom `from_config`
 
@@ -93,8 +76,8 @@ A `TypedDict` `TConfig` gives `from_config` static types only: it receives a pla
 A class that subclasses `Configurable[TConfig]` with a dataclass `TConfig` has a
 **schema**. Its config is validated and built into a `TConfig` instance, the typed
 config, which `from_config` receives. A dataclass that is not a `Configurable` is
-its own schema: its config is validated the same way, and the class is called with
-the checked fields. Any other class, including a bare `Configurable` or one with a
+its own schema ([Dataclass schemas](../../schemas/dataclass-schemas/index.md#rules)).
+Any other class, including a bare `Configurable` or one with a
 `TypedDict` or `Mapping` `TConfig`, is built as in
 [Instantiation](../instantiation/index.md#rules).
 
@@ -104,45 +87,8 @@ and `class Leaf(Mid[Config])` work. An unparametrized generic class uses its typ
 variable's default, or has no schema. A type variable that cannot be substituted
 raises `TypeError`. The result is cached per class.
 
-**Field kinds.**
-
-| Annotation | Config value | Checked by | Typed config holds |
-|---|---|---|---|
-| **native**: `int`, `float`, `bool`, `str`, `bytes`, `Path`, `Enum`, `Literal` of `str`, `int` or `bool`, `TypedDict`, dataclasses whose fields are all native, `list`, `dict`, `tuple`, `Sequence` and `Mapping` of these, and unions of these, optional or not | plain values | OmegaConf, then omegakit | the converted value |
-| **object**: any other class, generic classes, unions of classes, `list` or `dict` of these, optional or not, also through a `type` alias | a `$class` or `$ref` node, a list or mapping of them, or `null` if optional | the class check ([Validation](../validation/index.md#rules)), then the node's own schema | the built object |
-| **`Any`** | anything | not checked, but `$class` nodes inside are | the value, with `$class` nodes built |
-
-- Behaviour does not depend on the OmegaConf version.
-- Enums accept a member name or value (`kind: B`, `kind: beta`). A name wins over
-  an equal value of another member, and a value needs the exact type of the
-  member's value.
-- A `Literal` value is converted like its type, then compared by type and value:
-  `"2"` is valid for `Literal[1, 2]`, `true` is not.
-- A union has at most one mapping member (dataclass, `dict`, `Mapping`,
-  `TypedDict`) and one list member (`list`, `tuple`, `Sequence`). A mapping or a
-  list is checked, with conversion, as that member. A scalar must match a scalar
-  member's type exactly: `"5"` is not an `int`, `True` is not an `int`, `3` is not
-  a `float`, and a string is not a `Path` or an enum. `null` needs `None` in the
-  union.
-- Tuples come from lists, and `tuple[A, B]` needs exactly two items. `Sequence`
-  and `Mapping` give a `list` and a `dict`. A `TypedDict` field is an unchecked
-  `dict`.
-- `init=False` fields and `InitVar`s are not configurable: a key for them is
-  unknown. An `InitVar` needs a default.
-- Items of an object `list` or `dict` are `$class` or `$ref` nodes, or plain
-  mappings when the item type is a dataclass (a section).
-- An absent field takes its dataclass default. A field without one is required.
-  Schema defaults win over constructor defaults.
-
-**Unsupported**, raising `ConfigValidationError` that names the field and the fix:
-an `InitVar` without a default; `set`, `frozenset` and other abstract containers;
-a container that mixes values and objects; a `tuple`, `Sequence` or `Mapping` of
-objects; a union that mixes values and classes, or has two mapping or two list
-members; `Literal` values other than `str`, `int` and `bool`; an annotation that
-`get_type_hints` cannot resolve, such as a name imported under `TYPE_CHECKING`; a
-dataclass that contains itself, directly or indirectly (the error names the cycle,
-`Tree -> Tree`). A `Configurable` whose schema has a field of its own class is not
-recursive: that field holds an object.
+**Field kinds**, supported annotations and defaults are as in
+[Dataclass schemas](../../schemas/dataclass-schemas/index.md#rules).
 
 **Per node, in order:**
 
@@ -155,10 +101,8 @@ recursive: that field holds an object.
    to its base, unions member by member. Generic annotations are skipped, and so
    is each parameter whose annotation does not resolve. A mismatch raises
    `ConfigValidationError` naming the field or parameter.
-3. Check the native fields, parent before children. An unknown key, a missing
-   required field and an invalid value raise `ConfigValidationError`. Native values are checked through OmegaConf and
-   converted into the schema's own types. Object and `Any` values never enter
-   OmegaConf.
+3. Check the native fields, parent before children, as in
+   [Dataclass schemas](../../schemas/dataclass-schemas/index.md#rules).
 4. Build the object and `Any` fields, children first, as in
    [Instantiation](../instantiation/index.md#rules). A plain mapping in a field
    annotated with a dataclass is a section, built the same way. A built object's
