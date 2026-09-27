@@ -15,6 +15,7 @@ def test_public_api_exports():
         "DEFAULTS_KEY",
         "IMPORT_KEY",
         "META_KEY",
+        "OmegaKitBaseException",
         "PARTIAL_KEY",
         "REF_KEY",
         "check_schema",

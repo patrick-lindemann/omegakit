@@ -1,4 +1,5 @@
 from .configurable import Configurable
+from .errors import ConfigValidationError, OmegaKitBaseException
 from .instantiate import instantiate, prepare
 from .keys import (
     BASE_KEY,
@@ -10,7 +11,7 @@ from .keys import (
     REF_KEY,
 )
 from .loading import load_config
-from .schema import ConfigValidationError, check_schema, generate_json_schema
+from .schema import check_schema, generate_json_schema
 from .utils import make_node, walk
 from .validation import validate
 
@@ -24,6 +25,7 @@ __all__ = [
     "REF_KEY",
     "ConfigValidationError",
     "Configurable",
+    "OmegaKitBaseException",
     "check_schema",
     "generate_json_schema",
     "instantiate",

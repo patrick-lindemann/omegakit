@@ -6,8 +6,8 @@ import yaml
 from omegaconf import DictConfig, ListConfig, Node, OmegaConf
 from omegaconf.errors import InterpolationKeyError, OmegaConfBaseException
 
+from .errors import ConfigValidationError, OmegaKitBaseException
 from .keys import BASE_KEY, DEFAULTS_KEY, IMPORT_KEY
-from .schema import ConfigValidationError
 from .utils import describe_error, walk, walk_post_order
 
 _NULL_TAG = "tag:yaml.org,2002:null"
@@ -26,7 +26,7 @@ def load_file(file_path: Path) -> DictConfig | ListConfig:
         ConfigValidationError: If the file is not valid YAML or not UTF-8, holds a
             single value instead of a mapping or a list, or holds a value that
             OmegaConf rejects.
-    """
+    """  # noqa: DOC503
     try:
         # `OmegaConf.load` turns a single string into a mapping and fails on other
         # single values with an `OSError`, so look at the document first.
@@ -37,6 +37,8 @@ def load_file(file_path: Path) -> DictConfig | ListConfig:
                 "or a list."
             )
         return OmegaConf.load(file_path)
+    except OmegaKitBaseException:
+        raise
     except (yaml.YAMLError, UnicodeDecodeError, OmegaConfBaseException) as error:
         raise ConfigValidationError(
             f"Cannot load `{file_path}`: {describe_error(error)}"

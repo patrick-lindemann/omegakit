@@ -53,6 +53,7 @@ The Security section says [what runs](security/trust-model/index.md), how to
 getting-started/index
 reproducible-runs/index
 command-line/index
+handling-errors/index
 comparison/index
 ```
 

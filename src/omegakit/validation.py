@@ -10,9 +10,9 @@ from omegaconf.errors import (
     OmegaConfBaseException,
 )
 
+from .errors import ConfigValidationError
 from .keys import CLASS_KEY, META_KEY, PARTIAL_KEY, REF_KEY
 from .schema import (
-    ConfigValidationError,
     check_schema,
     classify_fields,
     find_schema,

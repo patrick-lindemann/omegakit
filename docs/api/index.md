@@ -20,7 +20,6 @@
 
 ```{eval-rst}
 .. autofunction:: omegakit.check_schema
-.. autoexception:: omegakit.ConfigValidationError
 ```
 
 ## Validation
@@ -39,6 +38,13 @@
 
 ```{eval-rst}
 .. autofunction:: omegakit.walk
+```
+
+## Errors
+
+```{eval-rst}
+.. autoexception:: omegakit.OmegaKitBaseException
+.. autoexception:: omegakit.ConfigValidationError
 ```
 
 ## Special keys

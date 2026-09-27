@@ -19,6 +19,9 @@ All notable changes to this project are documented here. The format follows
 - A Reproducible runs page: seeding, one directory per run, saving the config and
   the overrides, and what omegakit does not do.
 - A Parameter sweeps recipe: one run per combination of a few values.
+- `OmegaKitBaseException`, the base of omegakit's errors, and a Handling errors
+  page: one handler for config errors, errors when a config is read, and errors
+  from constructors.
 
 ### Changed
 
@@ -27,6 +30,10 @@ All notable changes to this project are documented here. The format follows
   `instantiate(config, schema=App)` for `instantiate(config, App)`. `schema` is now
   checked: a root with `$class` must name `schema` or a subclass, and a root without
   `$class` is built as `schema`, so a plain root dataclass gives a typed result.
+- `ConfigValidationError` is now an `OmegaKitBaseException` and an
+  `omegaconf.ValidationError`, so `except omegaconf.ValidationError`,
+  `except OmegaConfBaseException` and `contextlib.suppress(OmegaConfBaseException)`
+  now also catch it. It is still a `ValueError`.
 - The documentation presents omegakit for reproducible experiments. The landing
   page and the sidebar are reorganised: Command line is in the top group, and
   Schemas is its own section.

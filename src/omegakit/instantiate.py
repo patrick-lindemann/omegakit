@@ -4,10 +4,10 @@ from typing import Any, cast, get_args, get_origin, overload
 
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
+from .errors import ConfigValidationError
 from .keys import CLASS_KEY, META_KEY, PARTIAL_KEY, REF_KEY
 from .loading import merge_overrides
 from .schema import (
-    ConfigValidationError,
     check_schema,
     classify_fields,
     find_schema,

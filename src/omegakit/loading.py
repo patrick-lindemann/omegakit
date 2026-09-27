@@ -12,8 +12,8 @@ from .assembly import (
     resolve_imports,
     strip_keys,
 )
+from .errors import ConfigValidationError, OmegaKitBaseException
 from .keys import CLASS_KEY, META_KEY, PARTIAL_KEY, REF_KEY
-from .schema import ConfigValidationError
 from .utils import describe_error
 
 
@@ -53,7 +53,7 @@ def load_config(
         ConfigValidationError: If a file, an import or a `$base` or `$defaults`
             value is invalid. A missing root file raises `FileNotFoundError`.
         NotADirectoryError: If `import_root` is not a directory.
-    """
+    """  # noqa: DOC503
     if import_root is not None:
         import_root = Path(import_root).resolve(strict=True)
         if not import_root.is_dir():
@@ -75,6 +75,8 @@ def load_config(
         )
         merge_bases(config)
         apply_defaults(config)
+    except OmegaKitBaseException:
+        raise
     except OmegaConfBaseException as error:
         raise ConfigValidationError(
             f"Cannot load `{file_path}`: {str(error).splitlines()[0]}"
@@ -106,9 +108,11 @@ def merge_overrides(
     Raises:
         ConfigValidationError: If an override does not parse, has a value of an
             unsupported type, or is rejected by `config`.
-    """
+    """  # noqa: DOC503
     try:
         config.merge_with(_parse_overrides(overrides))
+    except OmegaKitBaseException:
+        raise
     except OmegaConfBaseException as error:
         location = f" `{error.full_key}`" if error.full_key else ""
         raise ConfigValidationError(

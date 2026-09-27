@@ -27,6 +27,7 @@ from omegaconf.errors import OmegaConfBaseException
 from typing_extensions import NoDefault
 
 from .configurable import Configurable
+from .errors import ConfigValidationError, OmegaKitBaseException
 from .utils import describe_value, format_path
 
 type FieldKind = Literal["native", "object", "any"]
@@ -49,12 +50,6 @@ _UNSUPPORTED_CONTAINERS = (
 _PLACEHOLDER = {"type": "string", "pattern": r"^(\?\?\?$|~import\s|.*\$\{)"}
 
 
-class ConfigValidationError(ValueError):
-    """A config does not match the schema of the class it builds."""
-
-    __module__ = "omegakit"
-
-
 @functools.cache
 def find_schema(cls: type) -> type | None:
     """Find the dataclass schema of a class.
@@ -73,7 +68,7 @@ def find_schema(cls: type) -> type | None:
     Raises:
         ConfigValidationError: If the schema uses a dataclass feature outside the
             supported subset.
-    """
+    """  # noqa: DOC503
     if issubclass(cls, Configurable):
         parameters = getattr(cls, "__parameters__", ())
         config_type = _find_config_type(
@@ -85,6 +80,8 @@ def find_schema(cls: type) -> type | None:
         return None
     try:
         OmegaConf.structured(_native_schema(config_type))
+    except OmegaKitBaseException:
+        raise
     except OmegaConfBaseException as error:
         owner = "" if config_type is cls else f" of `{cls.__qualname__}`"
         raise ConfigValidationError(
@@ -251,7 +248,7 @@ def validate_native(
     Raises:
         ConfigValidationError: If a key is not a field, a required field is missing,
             or a native value does not match its annotation.
-    """
+    """  # noqa: DOC503
     fields = classify_fields(schema)
     location = f"`{format_path(path)}` ({schema.__qualname__})"
     unknown = [key for key in values if key not in fields]
@@ -283,6 +280,8 @@ def validate_native(
             resolve=True,
             throw_on_missing=not allow_missing,
         )
+    except OmegaKitBaseException:
+        raise
     except OmegaConfBaseException as error:
         message = str(error).splitlines()[0]
         if error.full_key:
@@ -692,6 +691,8 @@ def _coerce(
             resolve=True,
             throw_on_missing=not allow_missing,
         )
+    except OmegaKitBaseException:
+        raise
     except OmegaConfBaseException as error:
         raise ConfigValidationError(
             f"Invalid config in `{format_path(path)}`: {str(error).splitlines()[0]}"
