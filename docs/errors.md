@@ -44,7 +44,7 @@ or the file system, is its `__cause__`. Only a missing root file passed to
 | `make_node()` for a class or function not defined at module level | `ValueError` | `module level` |
 | Type variable in a `Configurable` base that cannot be substituted | `TypeError` | `Cannot resolve type variable` |
 | Resolver registered twice without `replace=True` | `ValueError` | `already registered` |
-| Torch resolver without PyTorch installed | `ImportError` | `require PyTorch` |
+| Registering a library's resolvers without that library installed | `ImportError` | the library to install |
 
 A malformed dotlist override such as `["a"]` is not an error: OmegaConf sets `a` to
 `None`.

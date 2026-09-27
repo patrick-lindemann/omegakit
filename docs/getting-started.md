@@ -106,8 +106,8 @@ class subclasses `Configurable` with its schema:
 :caption: webapp/server.py
 ```
 
-`validate(config, schema=App)` now reports both mistakes as a
-`ConfigValidationError` that names the key:
+`validate(config, schema=App)` now raises a `ConfigValidationError` that names the
+key, one mistake at a time:
 
 ```text
 Unknown field(s) 'worker' in `server` (ServerConfig). Expected one of: host, port, workers, secret_key.

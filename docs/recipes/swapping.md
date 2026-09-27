@@ -10,9 +10,8 @@ use SQLite. Type the field with the base class, name the implementation with
 ```
 
 `AppConfig` declares `database: Database`, so any subclass is accepted.
-`base.yaml` names `webapp.db.SQLite`, and `envs/prod.yaml` replaces the node with a
-Postgres one, `$class` and `url` together, so no SQLite setting is left behind. A
-test swaps it once more, with a dict override:
+`base.yaml` names `webapp.db.SQLite`, and `envs/prod.yaml` replaces the whole node
+with a Postgres one. A test swaps it once more, with a dict override:
 
 ```{literalinclude} ../examples/recipes/swapping/main.py
 :language: python
@@ -25,7 +24,8 @@ SQLite sqlite://
 ```
 
 The code that uses `app.database` never names a class, and a class that is not a
-`Database` is rejected before any configured object is built. Override `$class` alone only when
-the new class takes the same settings; otherwise swap the node, as above. See
+`Database` is rejected before anything is built. Override `$class` alone only when
+the new class takes the same settings; otherwise swap the whole node, so that no
+setting of the old class is left behind. See
 [Building objects](../guide/building-objects.md) and
 [Typed configs](../guide/typed-configs.md).
