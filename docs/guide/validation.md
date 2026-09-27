@@ -1,90 +1,41 @@
 # Validation
 
-`validate` checks a loaded config against the schemas of its classes. It calls no
-configured class, but it imports the modules that `$class` and `$ref` name and runs
-resolvers, so validate only configs you trust. `instantiate` runs the same check
-before it builds, so a config error never leaves objects partly built.
+`validate` checks a loaded config against the schemas of the classes it names, and
+raises `ConfigValidationError` at the first problem, naming the key.
+`instantiate` runs the same check before it builds anything.
 
-## Load, validate, instantiate
-
-`load_config` assembles the full config (imports, bases, defaults, overrides)
-without checking schemas. `validate` checks it, and `instantiate` builds the
-objects:
-
-```{literalinclude} ../examples/editor/editor_app.py
-:language: python
-:caption: editor_app.py
-```
-
-```{literalinclude} ../examples/editor/main.py
+```{literalinclude} ../examples/guide/validation/main.py
 :language: python
 :caption: main.py
 ```
 
-`AppConfig` describes the root of the file. A plain value is typed as usual, and a
-child that is instantiated later is typed as the class it builds, such as
-`model: Model`. The node under `training.model` must then name `Model` or a
-subclass in `$class`, and it is checked against `ModelConfig`, the schema of
-`Model`.
-
-`validate` returns nothing and raises `ConfigValidationError` at the first problem,
-with the key path of the node. To test a config without handling the error
-elsewhere, catch it:
-
-```python
-try:
-    validate(config, schema=AppConfig)
-except ConfigValidationError as error:
-    print(f"invalid config: {error}")
+```text
+Invalid config in `server.workers` (ServerConfig): Value 'many' of type 'str' could not be converted to Integer
+`database` expects Database, but the config gives `$class: webapp.cache.RedisCache`.
 ```
 
-## Fragments and library files
+`schema=App` says what the root must build. Every node with `$class` is checked
+against its own class's schema, children first, and every object field against the
+class it expects, so a cache in the database's place is caught before anything is
+built. To test a config without letting the error escape, catch it as above; the
+error is a `ValueError` too.
 
-A file that others import is often incomplete on purpose: it leaves `???` slots and
-refers to keys that its consumers define.
+## Files that are incomplete on purpose
 
-```{literalinclude} ../examples/validation/encoder.yaml
-:language: yaml
-:caption: encoder.yaml
-```
+`base.yaml` leaves `secret_key` for each environment to fill.
+`validate(base, schema=App, allow_missing=True)` accepts the open `???` and still
+checks every value the file gives. Without `$class` at its root, `base.yaml` is
+checked against the schema of `App`.
 
-```{literalinclude} ../examples/validation/app.yaml
-:language: yaml
-:caption: app.yaml
-```
+## What validation runs
 
-```{literalinclude} ../examples/validation/models.py
-:language: python
-:caption: models.py
-```
+Validation checks values; it is not input sanitisation. It calls no configured
+class, but it imports the modules that `$class` and `$ref` name, runs resolvers such
+as `oc.env`, and runs the schemas' `default_factory` functions. Validate only
+configs you trust. `allowed_modules=["webapp"]` limits which modules a config can
+name, as a limit and not a sandbox, and `mask_secrets` hides secrets when you log a
+config ([Overrides and environment variables](overrides.md)).
 
-```{literalinclude} ../examples/validation/main.py
-:language: python
-:caption: main.py
-```
-
-- `allow_missing=True` accepts missing values: `???`, required fields that are not
-  given, and interpolations to missing or unknown keys. Every value that is given is
-  still checked.
-- `schema` names the class the root must match. A dataclass checks the root as a
-  section. Another class, such as `Encoder`, checks a root with `$class` as a node
-  that builds it, and a root without `$class` against the class's schema.
-
-## What is checked
-
-- Every node with `$class`, against the schema of its class, children before
-  parents. Classes are imported to find their schemas, but not called.
-- Unknown keys, invalid plain values and missing required fields.
-- Unresolved values: a `???` or a failing interpolation makes the config invalid,
-  unless `allow_missing`.
-- Object fields: the `$class` of the node must be the annotated class or a
-  subclass. The check is skipped when `$class` names a function, and for
-  `$partial: true` nodes.
-- Classes and `$ref` targets that cannot be imported.
-
-What `from_config` makes of a valid config is not checked. Plain values are
-checked the way `instantiate` coerces them, so `batch_size: "64"` is valid for an
-`int` field. The config itself is not changed.
-
-To check files from a terminal, a pre-commit hook or CI, use
-[`omegakit check`](command-line.md), on trusted branches only.
+To check files from a terminal, a pre-commit hook or CI, on trusted branches only,
+use [`omegakit check`](command-line.md). The full list of checks is in the contracts
+under [Validation](../contracts.md#validation).
