@@ -1,4 +1,4 @@
-# Compared with other libraries
+# Comparison to other libraries
 
 Checked on 2026-09-27 against Hydra 1.3.7, hydra-zen 0.16.0, jsonargparse 4.52.0,
 Lightning 2.6.6, pydantic-settings 2.15.0, Dynaconf 3.3.5 and OmegaConf 2.3.1.
