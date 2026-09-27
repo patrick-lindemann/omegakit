@@ -23,4 +23,4 @@ register_paths_resolver(
 config = load_config(here / "cluster.yaml")
 config.data.test = measurements
 print(config.run_dir)
-print(config.data.test.path)
+print(config.data.test["path"])
