@@ -25,4 +25,7 @@ autodoc_member_order = "bysource"
 html_theme = "furo"
 html_title = "omegakit"
 # Old page names to their new pages, so that links to earlier releases keep working.
-redirects: dict[str, str] = {}
+redirects = {
+    "guide/instantiation": "building-objects.html",
+    "guide/metadata": "building-objects.html#meta",
+}

@@ -61,12 +61,11 @@ guide/base
 guide/defaults
 guide/overrides
 guide/interpolation-and-missing
-guide/instantiation
+guide/building-objects
 guide/configurable
 guide/typed-configs
 guide/validation
 guide/editor-schemas
-guide/metadata
 guide/resolvers
 guide/walk
 guide/command-line

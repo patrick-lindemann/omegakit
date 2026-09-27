@@ -13,7 +13,7 @@ class JobConfig:
 
 
 class Job(Configurable[JobConfig]):
-    def __init__(self, handler: Callable[[], str], every: str, retries: int) -> None:
+    def __init__(self, handler: Callable[..., str], every: str, retries: int) -> None:
         self.handler = handler
         self.every = every
         self.retries = retries
