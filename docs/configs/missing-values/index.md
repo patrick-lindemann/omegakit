@@ -1,12 +1,12 @@
 # Missing values
 
-`???` marks a value that someone else must fill. `webapp`'s shared settings leave
-the secret key open for each environment:
+`???` marks a value that someone else must fill. `curvefit`'s base leaves the name
+of the experiment open, because every experiment file sets its own:
 
-```{literalinclude} ../../webapp/configs/base.yaml
+```{literalinclude} ../../curvefit/configs/base.yaml
 :language: yaml
 :caption: configs/base.yaml (excerpt)
-:end-before: "database:"
+:lines: 2-4
 ```
 
 ```{literalinclude} main.py
@@ -15,18 +15,18 @@ the secret key open for each environment:
 ```
 
 ```text
-Cannot resolve `server.secret_key`: Missing mandatory value: secret_key
+Cannot resolve `name`: Missing mandatory value: name
 ```
 
-A file that uses this one as its `$base`, or an override, can fill the value:
-`dev.yaml` sets `secret_key`, and production reads it from the environment. A `???`
-that is still open when the config is validated or built raises
+A file that uses this one as its `$base`, or an override, can fill the value. A
+`???` that is still open when the config is validated or built raises
 `ConfigValidationError`, naming the key.
 
-A file such as `base.yaml` is incomplete on purpose. `validate(base,
-allow_missing=True)` still checks every value it does give, and
-`omegakit check base.yaml --allow-missing` does the same from the command line
-([Validation](../../objects/validation/index.md)).
+A file such as `base.yaml` is incomplete on purpose: it also has no model and no
+optimizer, which the schema requires. `allow_missing=True` accepts all of that, and
+the run directory that refers to the open name, and still checks every value the
+file does give. `omegakit check configs/base.yaml --allow-missing` does the same
+from the command line ([Validation](../../objects/validation/index.md)).
 
 ## Rules
 
