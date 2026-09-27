@@ -4,6 +4,12 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.6.1] - 2026-09-27
+
+### Fixed
+
+- The 0.6.0 changelog entry described the documentation before its restructuring.
+
 ## [0.6.0] - 2026-09-27
 
 ### Added
@@ -277,6 +283,7 @@ First release. The configuration language is specified in the
   such as `omegakit.resolvers.paths`.
 - Python 3.12 is supported.
 
+[0.6.1]: https://github.com/patrick-lindemann/omegakit/releases/tag/v0.6.1
 [0.6.0]: https://github.com/patrick-lindemann/omegakit/releases/tag/v0.6.0
 [0.5.0]: https://github.com/patrick-lindemann/omegakit/releases/tag/v0.5.0
 [0.4.0]: https://github.com/patrick-lindemann/omegakit/releases/tag/v0.4.0
