@@ -1,48 +1,67 @@
 # Loading
 
-`load_config(path)` reads a YAML file and assembles it into an OmegaConf
-`DictConfig`. Assembly runs in a fixed order:
+`load_config` reads a YAML file and assembles it into an OmegaConf `DictConfig`.
+The `webapp` root file is two lines, and everything else arrives while loading:
 
-1. Resolve every `~import` ([Imports](imports.md)).
-2. Merge every `$base` ([Base](base.md)).
-3. Apply every `$defaults` ([Defaults](defaults.md)).
-4. Merge the `overrides` ([Overrides](overrides.md)).
-5. Strip `$meta`, and optionally the construction keys.
-
-Other interpolations stay lazy: they resolve when a value is read or instantiated
-([Interpolation and `???`](interpolation-and-missing.md)).
-
-## Example
-
-```{literalinclude} ../examples/loading/app.yaml
+```{literalinclude} ../examples/webapp/configs/app.yaml
 :language: yaml
-:caption: app.yaml
+:caption: configs/app.yaml
 ```
 
-```{literalinclude} ../examples/loading/main.py
+```{literalinclude} ../examples/guide/loading/main.py
 :language: python
 :caption: main.py
+:end-before: keep_meta
 ```
 
-## Options
+```text
+9000
+webapp.db.SQLite
+```
 
-- `overrides`: values merged last, as a list of `key=value` strings, a `dict` or a
-  `DictConfig`.
-- `keep_meta=True` keeps the `$meta` keys ([Metadata](metadata.md)).
-- `keep_targets=False` removes `$class`, `$ref` and `$partial`, which leaves plain
-  data for code that does not instantiate anything.
+The `$base` line pulled in `envs/dev.yaml`, which pulled in `base.yaml`, and the
+override set the port last. Paths in `~import` are relative to the file that holds
+them, not to the working directory, so the config loads from anywhere.
 
-The path may be a `str` or a `Path`. Paths in `~import` are relative to the file
-that contains them, not to the working directory.
+## The order of assembly
 
-## Errors
+1. Every `~import` is replaced by the file or node it names ([Imports](imports.md)).
+2. Every `$base` is merged underneath its node ([Base](base.md)).
+3. Every `$defaults` is merged under its siblings ([Defaults](defaults.md)).
+4. The overrides are merged on top
+   ([Overrides and environment variables](overrides.md)).
+5. `$meta` is removed, unless you pass `keep_meta=True`.
 
-| Problem | Exception |
-|---|---|
-| The file does not exist | `FileNotFoundError` |
-| Invalid YAML, or a missing, invalid or malformed import, `$base` or `$defaults` | `ConfigValidationError`, naming the file or node |
-| Overrides of another type | `TypeError` (`Unsupported overrides type`) |
+The order explains what works together:
 
-Unknown `$` keys are kept by `load_config`; `instantiate` rejects them. The complete
-order and its consequences are in the contracts under
-[Pipeline](../contracts.md#pipeline).
+- `$base: ~import base.yaml` works, because the import has already replaced the
+  string when bases are merged.
+- A `$defaults` that arrives through a `$base` or an `~import` works, because
+  defaults are applied after all bases.
+- An override cannot add an `~import`, a `$base` or a `$defaults`: it arrives after
+  assembly, so those stay literal.
+
+Every other `${…}` stays unresolved until a value is read or built
+([Interpolation and missing values](interpolation-and-missing.md)).
+
+## Metadata and plain data
+
+`$meta` holds notes for people and tools, such as who owns a job. It is removed
+while loading unless you ask for it, and never reaches a constructor. `walk` visits
+every mapping of a config, parents first, so a script can collect it:
+
+```{literalinclude} ../examples/guide/loading/main.py
+:language: python
+:start-at: keep_meta
+```
+
+```text
+webapp.jobs.Job growth
+```
+
+`keep_targets=False` removes `$class`, `$ref` and `$partial` instead, which leaves
+plain data for code that builds nothing.
+
+A file that is not valid YAML, or an import that fails, raises
+`ConfigValidationError` naming the file and the line. The full order is in the
+contracts under [Pipeline](../contracts.md#pipeline).

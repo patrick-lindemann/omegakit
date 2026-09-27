@@ -15,16 +15,9 @@ This page is the normative description of the omegakit configuration language.
 6. Strip `$meta` (unless `keep_meta=True`) and the construction keys `$class`,
    `$ref` and `$partial` (if `keep_targets=False`).
 
-Consequences:
-
-- `$base: ~import file.yaml` works, because the import has already replaced the
-  string when bases are merged.
-- A `$defaults` delivered by a `$base` or an `~import` works, because defaults are
-  applied after all bases are merged.
-- Overrides cannot introduce `~import`, `$base` or `$defaults`. They arrive after
-  assembly, so these keys and values stay literal.
-- `$meta` and construction keys introduced by overrides are stripped like any
-  other.
+Overrides cannot introduce `~import`, `$base` or `$defaults`: they arrive after
+assembly, so these keys and values stay literal. `$meta` and construction keys
+introduced by overrides are stripped like any other.
 
 ## Precedence
 
