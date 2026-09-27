@@ -67,3 +67,47 @@ def test_webapp_tests_pass(environment):
         env={**os.environ, "APP_ENV": environment, "SECRET_KEY": "prod-secret-value"},
         check=True,
     )
+
+
+COMMANDS = [
+    (
+        "check configs/app.yaml --schema webapp.App --allow-module webapp",
+        0,
+        "",
+    ),
+    (
+        "check configs/app.yaml server.workers=many --schema webapp.App",
+        1,
+        "configs/app.yaml: ConfigValidationError: Invalid config in `server.workers` "
+        "(ServerConfig): Value 'many' of type 'str' could not be converted to "
+        "Integer\n",
+    ),
+    (
+        "check configs/base.yaml --schema webapp.App --allow-missing",
+        0,
+        "",
+    ),
+    (
+        "show configs/app.yaml --node server",
+        0,
+        "$class: webapp.server.Server\nhost: 127.0.0.1\nport: 8000\nworkers: 1\n"
+        "secret_key: '***'\n",
+    ),
+    (
+        "show configs/app.yaml server.host=example.com --node cache.url --resolve",
+        0,
+        "redis://example.com:6379\n",
+    ),
+]
+
+
+@pytest.mark.parametrize(("command", "code", "output"), COMMANDS)
+def test_command_line_guide_output(command, code, output):
+    result = subprocess.run(
+        [sys.executable, "-m", "omegakit", *command.split()],
+        cwd=WEBAPP.parent,
+        env={k: v for k, v in os.environ.items() if k != "APP_ENV"},
+        capture_output=True,
+        text=True,
+    )
+    assert (result.returncode, result.stdout) == (code, output)
