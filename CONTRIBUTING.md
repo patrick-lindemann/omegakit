@@ -17,6 +17,14 @@ uv build
 environment; `-m "not distribution"` skips it. Tests that need a real Torch
 installation skip when it is absent; CI runs them in a job with CPU Torch.
 
+To preview the documentation, build it and serve the result, then open
+http://localhost:8000:
+
+```sh
+uv run sphinx-build docs docs/_build
+uv run python -m http.server 8000 --directory docs/_build
+```
+
 Assembly relies on private OmegaConf node APIs. The supported OmegaConf range is
 `>=2.3,<2.5`, and CI tests the lowest supported versions, the locked versions and
 the newest OmegaConf pre-release in that range.
