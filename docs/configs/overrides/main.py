@@ -2,12 +2,13 @@ from pathlib import Path
 
 from omegakit import load_config
 
-configs = Path(__file__).parents[2] / "webapp" / "configs"
+experiments = Path(__file__).parents[2] / "curvefit" / "configs" / "experiments"
+
+overrides = ["model.degree=5", "trainer.epochs=50"]
+config = load_config(experiments / "poly3-adam.yaml", overrides=overrides)
+print(config.model.degree, config.trainer.epochs)
 
 config = load_config(
-    configs / "app.yaml", overrides=["server.port=9000", "server.workers=4"]
+    experiments / "poly3-adam.yaml", overrides={"optimizer": {"lr": 0.01}}
 )
-print(config.server.port, config.server.workers)
-
-config = load_config(configs / "app.yaml", overrides={"database": {"pool_size": 1}})
-print(config.database.pool_size)
+print(config.optimizer.lr, config.optimizer["$class"])
