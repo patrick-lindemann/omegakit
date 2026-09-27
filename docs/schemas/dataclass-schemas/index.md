@@ -45,7 +45,7 @@ A field without a default is required. `tracker` has the default `None`, so an
 experiment may leave it out.
 
 A class can also carry a schema that differs from its constructor, through
-[`Configurable`](../../objects/schemas/index.md).
+[`Configurable`](../../objects/configurable-classes/index.md).
 
 ## Rules
 
@@ -54,7 +54,7 @@ A class can also carry a schema that differs from its constructor, through
 
 - A dataclass is its own schema.
 - A class that subclasses `Configurable[TConfig]` with a dataclass `TConfig` has
-  `TConfig` ([Configurable classes](../../objects/schemas/index.md#rules)).
+  `TConfig` ([Configurable classes](../../objects/configurable-classes/index.md#rules)).
 - Any other class or function has none, including a bare `Configurable` and one
   with a `TypedDict` or `Mapping` `TConfig`. Its arguments are not checked, but the
   `$class` nodes inside them are.

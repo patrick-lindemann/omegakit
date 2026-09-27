@@ -28,4 +28,4 @@ The code that uses `app.database` never names a class, and a class that is not a
 the new class takes the same settings; otherwise swap the whole node, so that no
 setting of the old class is left behind. See
 [Instantiation](../../objects/instantiation/index.md) and
-[Schemas](../../objects/schemas/index.md).
+[Configurable classes](../../objects/configurable-classes/index.md).

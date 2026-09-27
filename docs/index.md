@@ -84,7 +84,7 @@ schemas/editor-support/index
 :hidden:
 
 objects/instantiation/index
-objects/schemas/index
+objects/configurable-classes/index
 ```
 
 ```{toctree}

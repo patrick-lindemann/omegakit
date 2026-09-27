@@ -23,7 +23,7 @@ Adam 0.05
 keys become its arguments. Nested nodes with `$class`, in mappings and lists, are
 built first, so the experiment receives built datasets, a model and a trainer. A
 class with a `from_config` method, such as every `Configurable`, receives the
-arguments through it instead; see [Configurable classes](../schemas/index.md).
+arguments through it instead; see [Configurable classes](../configurable-classes/index.md).
 
 `schema=Experiment` says what the result must be, and gives it that type for your
 editor and type checker. The root's `$class` must name `Experiment` or a subclass. A
@@ -97,9 +97,10 @@ and gets a note naming the node, such as
   instead. The lookup is by name, so any class with that classmethod works,
   `Configurable` or not. `arguments` is a `dict` of the built arguments, or the
   typed config when the class is a `Configurable` with a schema
-  ([Schemas](../schemas/index.md)).
+  ([Configurable classes](../configurable-classes/index.md)).
 - A dataclass target is its own schema: its arguments are checked and converted
-  against its fields before it is called ([Schemas](../schemas/index.md#rules)).
+  against its fields before it is called
+  ([Dataclass schemas](../../schemas/dataclass-schemas/index.md#rules)).
 - Nested `$class` nodes, in mappings and lists, are built before their parent,
   which receives the objects.
 - A `dict` passed in is converted with `OmegaConf.create` and treated like a

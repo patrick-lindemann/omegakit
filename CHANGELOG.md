@@ -28,6 +28,8 @@ All notable changes to this project are documented here. The format follows
 - The Validation page moved from `objects/validation/` to `schemas/validation/`.
 - The Editor support page moved from `tools/editor-support/` to
   `schemas/editor-support/`.
+- Schemas is now Configurable classes, at `objects/configurable-classes/`, and
+  covers only what a class adds. Field kinds moved to Dataclass schemas.
 - Resolvers have their own section, with an overview and a page per resolver
   module. The Resolvers guide page moved to `resolvers/overview/`.
 - Security is split into three pages: Trust model, Restricting imports and Masking
