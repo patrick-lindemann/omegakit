@@ -6,7 +6,7 @@ from typing import Any
 import yaml
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
-from ._keys import CLASS_KEY
+from .keys import CLASS_KEY
 
 
 def walk(config: DictConfig | ListConfig) -> Iterator[DictConfig]:

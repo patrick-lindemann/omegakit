@@ -12,8 +12,8 @@ from omegaconf.errors import (
     OmegaConfBaseException,
 )
 
-from ._keys import CLASS_KEY, META_KEY, PARTIAL_KEY, REF_KEY
-from ._schema import (
+from .keys import CLASS_KEY, META_KEY, PARTIAL_KEY, REF_KEY
+from .schema import (
     ConfigValidationError,
     check_schema,
     classify_fields,
@@ -22,7 +22,7 @@ from ._schema import (
     union_members,
     validate_native,
 )
-from ._utils import describe_value, format_path, import_object
+from .utils import describe_value, format_path, import_object
 
 SECRET_WORDS = (
     ("password",),

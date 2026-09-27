@@ -3,7 +3,7 @@ from typing import Any
 
 from omegaconf import OmegaConf
 
-from omegakit._utils import register_resolver
+from omegakit.utils import register_resolver
 
 
 def _import_torch() -> Any:

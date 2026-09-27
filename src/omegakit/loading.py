@@ -5,16 +5,16 @@ import yaml
 from omegaconf import DictConfig, OmegaConf
 from omegaconf.errors import OmegaConfBaseException
 
-from ._assembly import (
+from .assembly import (
     apply_defaults,
     load_file,
     merge_bases,
     resolve_imports,
     strip_keys,
 )
-from ._keys import CLASS_KEY, META_KEY, PARTIAL_KEY, REF_KEY
-from ._schema import ConfigValidationError
-from ._utils import describe_error
+from .keys import CLASS_KEY, META_KEY, PARTIAL_KEY, REF_KEY
+from .schema import ConfigValidationError
+from .utils import describe_error
 
 
 def load_config(

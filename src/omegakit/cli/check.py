@@ -1,10 +1,10 @@
 import argparse
 from pathlib import Path
 
-from omegakit._cli.arguments import split_arguments
-from omegakit._loading import load_config
-from omegakit._utils import import_object
-from omegakit._validation import validate
+from omegakit.cli.arguments import split_arguments
+from omegakit.loading import load_config
+from omegakit.utils import import_object
+from omegakit.validation import validate
 
 
 def register(commands: argparse._SubParsersAction) -> None:

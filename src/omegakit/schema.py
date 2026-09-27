@@ -26,8 +26,8 @@ from omegaconf import MISSING, OmegaConf
 from omegaconf.errors import OmegaConfBaseException
 from typing_extensions import NoDefault
 
-from ._configurable import Configurable
-from ._utils import describe_value, format_path
+from .configurable import Configurable
+from .utils import describe_value, format_path
 
 type FieldKind = Literal["native", "object", "any"]
 

@@ -13,7 +13,7 @@ from omegakit import (
     load_config,
     validate,
 )
-from omegakit._utils import register_resolver
+from omegakit.utils import register_resolver
 from tests import schemas
 from tests.helpers import POINT, RECORDER, Point
 

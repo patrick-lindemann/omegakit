@@ -4,9 +4,9 @@ from typing import Any, cast, get_args, get_origin, overload
 
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
-from ._keys import CLASS_KEY, META_KEY, PARTIAL_KEY, REF_KEY
-from ._loading import merge_overrides
-from ._schema import (
+from .keys import CLASS_KEY, META_KEY, PARTIAL_KEY, REF_KEY
+from .loading import merge_overrides
+from .schema import (
     ConfigValidationError,
     check_schema,
     classify_fields,
@@ -15,8 +15,8 @@ from ._schema import (
     union_members,
     validate_native,
 )
-from ._utils import format_path, import_object
-from ._validation import check_resolved, resolve_config
+from .utils import format_path, import_object
+from .validation import check_resolved, resolve_config
 
 
 @overload

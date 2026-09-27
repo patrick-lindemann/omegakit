@@ -23,11 +23,9 @@ the newest OmegaConf pre-release in that range.
 
 ## Code
 
-- Every module in `src/omegakit/` except `resolvers` is private: its name starts
-  with an underscore. The public API is exactly `omegakit.__all__` plus the
-  `omegakit.resolvers` subpackage. Inside a private module, names used by another
-  module stay plain, and names used only in their own module get a leading
-  underscore.
+- Modules have plain names, as in OmegaConf. The public API is exactly
+  `omegakit.__all__` plus the `omegakit.resolvers` subpackage; everything else is
+  internal. Names used only in their own module get a leading underscore.
 - Any change to the configuration language updates `docs/contracts.md` in the same
   commit.
 - A bug fix comes with a test that fails without the fix.

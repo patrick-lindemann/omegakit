@@ -4,10 +4,10 @@ from typing import NoReturn
 
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
-from omegakit._assembly import select_node
-from omegakit._cli.arguments import split_arguments
-from omegakit._loading import load_config
-from omegakit._validation import SECRET_WORDS, mask_node
+from omegakit.assembly import select_node
+from omegakit.cli.arguments import split_arguments
+from omegakit.loading import load_config
+from omegakit.validation import SECRET_WORDS, mask_node
 
 
 def register(commands: argparse._SubParsersAction) -> None:

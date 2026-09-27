@@ -16,7 +16,7 @@ from omegakit import (
     prepare,
     validate,
 )
-from omegakit._utils import register_resolver
+from omegakit.utils import register_resolver
 from tests import schemas
 
 # Contracts: §10 Typed configs (field kinds, supported subset, validation).

@@ -8,7 +8,7 @@ from omegaconf.errors import (
 )
 
 from omegakit import ConfigValidationError, instantiate, load_config, prepare
-from omegakit._utils import register_resolver
+from omegakit.utils import register_resolver
 from tests.helpers import CONTAINER, POINT
 
 # Contracts: §4 `???` lifecycle.

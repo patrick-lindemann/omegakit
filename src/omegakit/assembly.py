@@ -6,9 +6,9 @@ import yaml
 from omegaconf import DictConfig, ListConfig, Node, OmegaConf
 from omegaconf.errors import InterpolationKeyError, OmegaConfBaseException
 
-from ._keys import BASE_KEY, DEFAULTS_KEY, IMPORT_KEY
-from ._schema import ConfigValidationError
-from ._utils import describe_error, walk, walk_post_order
+from .keys import BASE_KEY, DEFAULTS_KEY, IMPORT_KEY
+from .schema import ConfigValidationError
+from .utils import describe_error, walk, walk_post_order
 
 _NULL_TAG = "tag:yaml.org,2002:null"
 
