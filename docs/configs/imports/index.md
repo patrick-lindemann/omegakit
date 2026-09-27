@@ -65,7 +65,7 @@ Import `~import ../../curvefit/configs/experiments/poly3-adam.yaml` in `.../conf
 ```
 
 `omegakit check` and `omegakit show` take the same limit as `--import-root DIR`. It
-is a limit, not a sandbox; see [Restricting imports](../../security/restricting-imports/index.md#import-root).
+is a limit, not a sandbox; see [Restricting imports](../../security/restricting-imports/index.md#rules).
 
 ## Rules
 

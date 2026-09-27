@@ -73,7 +73,7 @@ run this check, with their own `schema`, before building.
 - Plain values are checked as `instantiate` converts them: `"64"` is a valid
   `int`. The config is not changed.
 - `allowed_modules` limits which modules `$class` and `$ref` may name
-  ([Restricting imports](../../security/restricting-imports/index.md#allowed-modules)).
+  ([Restricting imports](../../security/restricting-imports/index.md#rules)).
 
 **What runs.** No `$class` target, `from_config` or schema dataclass is called;
 their `__post_init__` runs once, when building. But the modules named by `$class`
