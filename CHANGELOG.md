@@ -4,7 +4,7 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.7.0] - 2026-09-27
 
 ### Added
 
@@ -12,13 +12,13 @@ All notable changes to this project are documented here. The format follows
   `omegakit show --resolve` prints each value it gave as `***`, also inside longer
   strings. Register it with `omegakit.resolvers.secrets.register_secret_resolver()`;
   the `omegakit` command registers it itself.
-- A Secrets page, which replaces Masking secrets, at `security/secrets/`.
-- A Dataclass schemas page: a plain dataclass as the schema of a config, its field
-  kinds and how a node is checked.
-- Two recipes: Using with PyTorch, and Checking experiments in CI.
 - A Reproducible runs page: seeding, one directory per run, saving the config and
   the overrides, and what omegakit does not do.
-- A Parameter sweeps recipe: one run per combination of a few values.
+- A Dataclass schemas page: a plain dataclass as the schema of a config, its field
+  kinds and how a node is checked.
+- A Secrets page, which replaces the secret masking part of the Security page.
+- Three recipes: Parameter sweeps, Using with PyTorch, and Checking experiments in
+  CI.
 - `OmegaKitBaseException`, the base of omegakit's errors, and a Handling errors
   page: one handler for config errors, errors when a config is read, and errors
   from constructors.
@@ -44,45 +44,37 @@ All notable changes to this project are documented here. The format follows
   `omegaconf.ValidationError`, so `except omegaconf.ValidationError`,
   `except OmegaConfBaseException` and `contextlib.suppress(OmegaConfBaseException)`
   now also catch it. It is still a `ValueError`.
-- The documentation presents omegakit for reproducible experiments. The landing
-  page and the sidebar are reorganised: Command line is in the top group, and
-  Schemas is its own section.
-- The Command line page moved from `tools/command-line/` to `command-line/`.
-- The Validation page moved from `objects/validation/` to `schemas/validation/`.
-- The Editor support page moved from `tools/editor-support/` to
-  `schemas/editor-support/`.
-- Schemas is now Configurable classes, at `objects/configurable-classes/`, and
-  covers only what a class adds. Field kinds moved to Dataclass schemas.
+- The documentation presents omegakit for reproducible experiments. Every example
+  uses `curvefit`, a small curve-fitting experiment in plain Python, instead of the
+  `webapp` example.
+- The documentation is reorganised, and page URLs changed:
+  - Command line is in the top group, at `command-line/`.
+  - Configs: `guide/loading/` is now `configs/loading/`, and so on. Base is now
+    Inheritance, Defaults is Shared defaults, and Interpolation and missing values
+    is split into Interpolation, Environment variables and Missing values.
+  - Schemas is a section: Dataclass schemas, Validation at `schemas/validation/`,
+    and Editor schemas, now Editor support, at `schemas/editor-support/`.
+  - Building objects: Building objects is now Instantiation, and Typed configs is
+    now Configurable classes, which covers only what a class adds.
+  - Resolvers have their own section, with an overview and a page per module.
+  - Security is three pages: Trust model at `security/trust-model/`, Restricting
+    imports and Secrets.
+  - Swapping is now Swapping implementations, at
+    `recipes/swapping-implementations/`.
+- The Rules section of each feature page names the errors of its feature.
 - The comparison page compares omegakit with experiment config tools: Hydra and
   hydra-zen, jsonargparse and LightningCLI, Fiddle, gin-config, ml_collections,
   Sacred and OmegaConf. It no longer compares pydantic-settings and Dynaconf.
 - The README shows an experiment with a shared base and a root dataclass.
 
-- Resolvers have their own section, with an overview and a page per resolver
-  module. The Resolvers guide page moved to `resolvers/overview/`.
-- Security is split into three pages: Trust model, Restricting imports and Masking
-  secrets. The Security page moved to `security/trust-model/`.
-- The Errors page is removed. The Rules section of each feature page names the
-  errors of its feature.
-- The guide is split into three sections in the order you meet them: Configs,
-  Building objects and Tools. Page URLs changed, for example `guide/loading/` is now
-  `configs/loading/`.
-- Overrides, environment variables, interpolation and missing values each have
-  their own page. Base is now Inheritance, Defaults is now Shared defaults,
-  Building objects is now Instantiation, Typed configs is now Schemas, and Editor
-  schemas is now Editor support. The recipes have shorter titles, and their URLs
-  follow them.
-
 ### Removed
 
-- The `webapp` example. Every page uses `curvefit`, a small curve-fitting
-  experiment.
 - **Breaking:** `mask_secrets`, and the guessing of secrets by key and variable
   names in `omegakit show`. Save and log the config from `load_config` unresolved:
   it holds `${secret:NAME}`, not the value. `--show-secrets` now only turns off the
   masking of `${secret:...}` values.
-- The Manifests and Per-tenant configs recipes. Shared defaults covers what
-  Manifests showed.
+- The `webapp` example, the Errors page, and the Manifests and Per-tenant configs
+  recipes. Shared defaults covers what Manifests showed.
 
 ### Fixed
 
@@ -369,6 +361,7 @@ First release. The configuration language is specified in the
   such as `omegakit.resolvers.paths`.
 - Python 3.12 is supported.
 
+[0.7.0]: https://github.com/patrick-lindemann/omegakit/releases/tag/v0.7.0
 [0.6.1]: https://github.com/patrick-lindemann/omegakit/releases/tag/v0.6.1
 [0.6.0]: https://github.com/patrick-lindemann/omegakit/releases/tag/v0.6.0
 [0.5.0]: https://github.com/patrick-lindemann/omegakit/releases/tag/v0.5.0

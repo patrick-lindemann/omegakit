@@ -1,6 +1,6 @@
 [project]
 name = "omegakit"
-version = "0.6.1"
+version = "0.7.0"
 description = "Composable YAML configuration and Python object construction."
 readme = "README.md"
 license = "MIT"
