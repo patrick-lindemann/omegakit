@@ -1,2 +1,0 @@
-train_data: ${paths:data}/train
-checkpoints: ${paths:runs}/checkpoints

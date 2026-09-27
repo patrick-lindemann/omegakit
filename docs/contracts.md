@@ -470,6 +470,9 @@ directory).
 
 ## Resolvers
 
+- OmegaConf's own resolvers, such as `oc.env`, are always available:
+  `${oc.env:NAME}` reads an environment variable and `${oc.env:NAME,default}` falls
+  back to a default. omegakit does not register or change them.
 - Resolvers are opt-in. Registration is global to OmegaConf, and an existing name
   raises unless `replace=True` is passed. `omegakit.resolvers` exports nothing:
   each resolver is imported from its own module, which carries its own
