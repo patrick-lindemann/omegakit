@@ -1,9 +1,9 @@
 from pathlib import Path
 
-from omegakit import load_config
+from omegakit import CLASS_KEY, load_config
 
-configs = Path(__file__).parents[2] / "webapp" / "configs"
+experiments = Path(__file__).parents[2] / "curvefit" / "configs" / "experiments"
 
-jobs = load_config(configs / "jobs.yaml").jobs
-for name, job in jobs.items():
-    print(name, job["$class"], job.retries, job.every)
+data = load_config(experiments / "linear-sgd.yaml").data
+for name, split in data.items():
+    print(name, split[CLASS_KEY], split.noise, split.n, split.seed)

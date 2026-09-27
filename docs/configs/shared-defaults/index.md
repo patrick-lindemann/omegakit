@@ -1,11 +1,13 @@
 # Shared defaults
 
 `$defaults` gives every mapping next to it the same settings, and each mapping's own
-values win. It suits lists of similar things, such as `webapp`'s scheduled jobs:
+values win. It suits groups of similar things, such as `curvefit`'s data splits:
 
-```{literalinclude} ../../webapp/configs/jobs.yaml
+```{literalinclude} ../../curvefit/configs/base.yaml
 :language: yaml
-:caption: configs/jobs.yaml
+:caption: configs/base.yaml (excerpt)
+:start-at: "data:"
+:end-before: "trainer:"
 ```
 
 ```{literalinclude} main.py
@@ -14,17 +16,19 @@ values win. It suits lists of similar things, such as `webapp`'s scheduled jobs:
 ```
 
 ```text
-digest webapp.jobs.Job 3 7d
-cleanup webapp.jobs.Job 1 1h
+train curvefit.data.Synthetic 0.1 200 0
+validation curvefit.data.Synthetic 0.1 50 1
+test curvefit.data.Synthetic 0.1 200 1234
 ```
 
-Both jobs got `$class` and `retries` from `$defaults`, so both are built as a `Job`,
-and `cleanup` keeps its own `retries: 1`. Only mappings receive the defaults:
-scalars, lists and `$` keys next to `$defaults` stay as they are, and nested
-mappings are reached only through a job's own keys.
+All three splits got `$class`, `function` and `noise` from `$defaults`, here
+imported from the sine preset ([Imports](../imports/index.md)), and each keeps its
+own `n` and `seed`. Only mappings receive the defaults: scalars, lists and `$` keys
+next to `$defaults` stay as they are, and nested mappings are reached only through
+a split's own keys.
 
-Defaults are applied after every `$base` is merged, so a job can extend another job
-with `$base` and still get the defaults.
+Defaults are applied after every `$base` is merged, so the test split can extend
+the training split with `$base` and still get the defaults.
 
 ## Rules
 
