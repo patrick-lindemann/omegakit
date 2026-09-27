@@ -3,13 +3,18 @@
 omegakit keeps OmegaConf's `${…}` interpolations. They resolve against the
 assembled config, when a value is read, validated or built.
 
-`webapp`'s shared settings build the cache URL from the server's host:
+`curvefit`'s base derives the run directory from the name and the seed, the tracker
+writes to that directory, and the training split takes the seed of the run:
 
-```{literalinclude} ../../webapp/configs/base.yaml
+```{literalinclude} ../../curvefit/configs/base.yaml
 :language: yaml
 :caption: configs/base.yaml (excerpt)
-:start-at: "cache:"
-:end-before: "jobs:"
+:lines: 2-9
+```
+
+```{literalinclude} ../../curvefit/configs/base.yaml
+:language: yaml
+:start-at: "tracker:"
 ```
 
 ```{literalinclude} main.py
@@ -18,14 +23,15 @@ assembled config, when a value is read, validated or built.
 ```
 
 ```text
-redis://127.0.0.1:6379
-redis://10.0.0.5:6379
+runs/poly3-adam/seed0 0
+runs/poly3-adam/seed7 7
 ```
 
-`${server.host}` was not resolved while loading, so the override of `server.host`
-reached the cache URL. A relative interpolation such as `${.host}` resolves from the
-node's final position, which lets an imported file refer to its neighbours wherever
-it is placed.
+`${seed}` was not resolved while loading, so the override of `seed` reached the run
+directory, and through it the tracker, and the training split. `${name}` found the
+name that the experiment file sets over the `???` of the base. A relative
+interpolation such as `${..seed}` resolves from the node's final position, which
+lets an imported file refer to its neighbours wherever it is placed.
 
 ## Rules
 
