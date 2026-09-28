@@ -138,7 +138,8 @@ def check_schema(cls: type) -> None:
             has no field, a field has no parameter and `__init__` takes no
             `**kwargs`, or a field's annotation is not assignable to its
             parameter's annotation.
-    """
+        TypeError: If `cls` is not a class.
+    """  # noqa: DOC503
     schema = find_schema(cls)
     if (
         schema is None

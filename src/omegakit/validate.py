@@ -59,6 +59,8 @@ def validate(
         SchemaDefinitionError: If `schema`, or a class that a `$class` names,
             cannot serve as a schema.
         TypeError: If `schema` is not a class, or `allowed_modules` is a string.
+        ImportError: If a module that `$class` or `$ref` names fails to import a
+            module of its own, such as a missing dependency.
     """  # noqa: DOC502
     if not isinstance(config, DictConfig):
         config = OmegaConf.create(config)
@@ -117,7 +119,11 @@ def check_resolved(
     Raises:
         TypeError: If `schema` is not a class, or `allowed_modules` is a string.
         ConfigValidationError: If the config does not match a schema.
-    """
+        SchemaDefinitionError: If `schema`, or a class that a `$class` names,
+            cannot serve as a schema.
+        ImportError: If a module that `$class` or `$ref` names fails to import a
+            module of its own, such as a missing dependency.
+    """  # noqa: DOC503
     if isinstance(allowed_modules, str):
         raise TypeError(
             f"`allowed_modules` must be a list of module names, not the string "

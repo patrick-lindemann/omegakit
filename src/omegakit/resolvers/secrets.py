@@ -6,5 +6,8 @@ def register_secret_resolver(*, replace: bool = False) -> None:
 
     Args:
         replace: Replace a resolver named `secret`. Defaults to `False`.
-    """
+
+    Raises:
+        ValueError: If a resolver named `secret` exists and `replace` is `False`.
+    """  # noqa: DOC502
     register_resolver("secret", read_secret, replace=replace)

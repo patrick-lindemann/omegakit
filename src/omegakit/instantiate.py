@@ -68,7 +68,10 @@ def instantiate(
         ConfigLoadError: If an override is invalid.
         SchemaDefinitionError: If `schema`, or a class that a `$class` names,
             cannot serve as a schema.
-        TypeError: If `schema` is not a class.
+        TypeError: If `schema` is not a class, `overrides` is not a `DictConfig`, a
+            `dict` or a `list` of strings, or `allowed_modules` is a string.
+        ImportError: If a module that `$class` or `$ref` names fails to import a
+            module of its own, such as a missing dependency.
     """  # noqa: DOC502
     return _instantiate(config, schema, overrides, allowed_modules)
 
@@ -120,7 +123,10 @@ def prepare(
         ConfigLoadError: If an override is invalid.
         SchemaDefinitionError: If `schema`, or a class that a `$class` names,
             cannot serve as a schema.
-        TypeError: If `schema` is not a class.
+        TypeError: If `schema` is not a class, `overrides` is not a `DictConfig`, a
+            `dict` or a `list` of strings, or `allowed_modules` is a string.
+        ImportError: If a module that `$class` or `$ref` names fails to import a
+            module of its own, such as a missing dependency.
     """  # noqa: DOC502
     return _instantiate(config, schema, overrides, allowed_modules, partial=True)
 

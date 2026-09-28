@@ -14,6 +14,7 @@ def register_torch_dtype_resolver(*, replace: bool = False) -> None:
 
     Raises:
         ImportError: If Torch is not installed.
+        ValueError: If a resolver named `dtype` exists and `replace` is `False`.
     """  # noqa: DOC502
     _import_torch()
     register_resolver("dtype", _resolve_dtype, replace=replace)
@@ -27,6 +28,8 @@ def register_cuda_available_resolver(*, replace: bool = False) -> None:
 
     Raises:
         ImportError: If Torch is not installed.
+        ValueError: If a resolver named `cuda_available` exists and `replace` is
+            `False`.
     """  # noqa: DOC502
     _import_torch()
     register_resolver("cuda_available", _cuda_available, replace=replace)

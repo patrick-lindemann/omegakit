@@ -40,9 +40,11 @@ def load_config(
 
     Raises:
         ConfigLoadError: If a file, an import, a `$base` or `$defaults` value, or
-            an override is invalid. A missing root file raises
-            `FileNotFoundError`.
+            an override is invalid.
+        FileNotFoundError: If `file_path` or `import_root` does not exist.
         NotADirectoryError: If `import_root` is not a directory.
+        TypeError: If `overrides` is not a `DictConfig`, a `dict` or a `list` of
+            strings.
     """  # noqa: DOC503
     if import_root is not None:
         import_root = Path(import_root).resolve(strict=True)

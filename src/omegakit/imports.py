@@ -24,6 +24,7 @@ def load_file(file_path: Path) -> DictConfig | ListConfig:
         ConfigLoadError: If the file is not valid YAML or not UTF-8, holds a
             single value instead of a mapping or a list, or holds a value that
             OmegaConf rejects.
+        OSError: If the file cannot be read.
     """  # noqa: DOC503
     try:
         # `OmegaConf.load` turns a single string into a mapping and fails on other
@@ -60,7 +61,11 @@ def resolve_imports(
         cache: Imported files already loaded during this `load_config` call.
         import_root: The resolved directory that every imported file must be in, or
             `None` for no restriction.
-    """
+
+    Raises:
+        ConfigLoadError: If an import is invalid, cannot be read, leaves
+            `import_root`, or forms a cycle.
+    """  # noqa: DOC502
     if isinstance(config, ListConfig):
         for index in range(len(config)):
             node = config._get_node(index)
