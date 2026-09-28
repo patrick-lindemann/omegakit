@@ -15,7 +15,7 @@ from typing import (
 )
 
 from omegaconf import MISSING, OmegaConf
-from omegaconf.errors import OmegaConfBaseException
+from omegaconf.errors import MissingMandatoryValue, OmegaConfBaseException
 
 from .errors import (
     ConfigValidationError,
@@ -105,6 +105,11 @@ def coerce_fields(
     except OmegaKitBaseException:
         raise
     except OmegaConfBaseException as error:
+        if isinstance(error, MissingMandatoryValue) and error.full_key:
+            raise ConfigValidationError(
+                f"Missing required field `{format_full_key(error.full_key)}` in "
+                f"{location}."
+            ) from error
         message = str(error).splitlines()[0]
         if error.full_key:
             location = (
@@ -199,6 +204,13 @@ def _coerce(
     except OmegaKitBaseException:
         raise
     except OmegaConfBaseException as error:
+        # The structure holds the value in its field `value`.
+        field = error.full_key.removeprefix("value").lstrip(".")
+        if isinstance(error, MissingMandatoryValue) and field:
+            raise ConfigValidationError(
+                f"Missing required field `{format_full_key(field)}` in "
+                f"`{format_path(path)}`."
+            ) from error
         raise ConfigValidationError(
             f"Invalid config in `{format_path(path)}`: {str(error).splitlines()[0]}"
         ) from error

@@ -12,6 +12,11 @@ All notable changes to this project are documented here. The format follows
   `items.0.model`, everywhere. Errors about `$base` and `$defaults` named a list
   item as `items0.model`, and errors from resolving, from overrides and from
   values inside a field as `items[0].model`.
+- **Breaking:** A missing required field gives one message for every kind of field,
+  such as ``Missing required field `depth` in `<root>` (ModelConfig).``, with the
+  path of a field inside a nested dataclass (`inner.value`). A plain value used to
+  give OmegaConf's ``Invalid config in `depth` (ModelConfig): Missing mandatory
+  value: depth``.
 
 ### Fixed
 

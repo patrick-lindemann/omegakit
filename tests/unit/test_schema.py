@@ -183,8 +183,34 @@ def test_schema_unknown_field_raises():
 
 
 def test_schema_missing_required_data_field_raises():
-    with pytest.raises(ConfigValidationError, match="depth"):
+    with pytest.raises(ConfigValidationError) as info:
         instantiate({"$class": "tests.schemas.Model"})
+    assert str(info.value) == "Missing required field `depth` in `<root>` (ModelConfig)."
+
+
+@dataclass
+class RequiredValue:
+    value: int
+
+
+@dataclass
+class NestedRequired:
+    inner: RequiredValue | None = None
+    either: RequiredValue | list[int] | None = None
+
+
+def test_schema_missing_field_of_a_nested_dataclass_names_its_path():
+    with pytest.raises(ConfigValidationError) as info:
+        validate({"inner": {}}, schema=NestedRequired)
+    assert str(info.value) == (
+        "Missing required field `inner.value` in `<root>` (NestedRequired)."
+    )
+
+
+def test_schema_missing_field_of_a_union_member_names_its_path():
+    with pytest.raises(ConfigValidationError) as info:
+        validate({"either": {}}, schema=NestedRequired)
+    assert str(info.value) == "Missing required field `value` in `either`."
 
 
 def test_schema_missing_required_object_field_raises():
