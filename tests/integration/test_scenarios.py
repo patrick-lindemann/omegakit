@@ -193,12 +193,12 @@ def test_scenario_example_yaml_matches_its_schema(path: Path):
     assert list(validator.iter_errors({**config, "misspeled": 1}))
 
 
+@pytest.mark.docs
 @pytest.mark.parametrize(
     ("directory", "module"), JSON_SCHEMAS, ids=[module for _, module in JSON_SCHEMAS]
 )
 def test_scenario_example_schema_is_current(monkeypatch, directory, module):
     """Generator + committed file: each docs schema matches the generator."""
-    pytest.importorskip("torch")
     monkeypatch.syspath_prepend(str(directory))
     experiment = importlib.import_module(module).Experiment
     generated = generate_json_schema(experiment)

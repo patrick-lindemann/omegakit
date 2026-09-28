@@ -12,6 +12,8 @@ from omegakit.resolvers.paths import register_paths_resolver
 from omegakit.resolvers.secrets import register_secret_resolver
 from omegakit.resolvers.torch import register_torch_resolvers
 
+pytestmark = pytest.mark.docs
+
 DOCS = Path(__file__).parents[2] / "docs"
 EXAMPLE = DOCS / "example"
 # Every docs section except the ones that test_examples.py runs as a whole.
@@ -36,13 +38,6 @@ def examples_importable(monkeypatch):
     monkeypatch.syspath_prepend(str(EXAMPLE))
 
 
-def _needs_torch(text: str) -> bool:
-    # The PyTorch example and the Torch resolvers need the docs-examples group.
-    return any(
-        name in text for name in ("project", "torch", "${dtype:", "${cuda_available:")
-    )
-
-
 @pytest.mark.parametrize(
     "path", YAML_FILES, ids=[str(p.relative_to(DOCS)) for p in YAML_FILES]
 )
@@ -52,9 +47,7 @@ def test_guide_yaml_loads_validates_and_builds(path: Path, monkeypatch):
     monkeypatch.setenv("TRACKER_TOKEN", "tok-for-the-guide-tests")
     register_secret_resolver()
     register_paths_resolver({"runs": "runs", "data": "data"})
-    if _needs_torch(path.read_text()):
-        pytest.importorskip("torch")
-        register_torch_resolvers()
+    register_torch_resolvers()
     # A page's classes live next to its files, such as `models.py`.
     monkeypatch.syspath_prepend(str(path.parent))
     config = load_config(path)
@@ -67,10 +60,6 @@ def test_guide_yaml_loads_validates_and_builds(path: Path, monkeypatch):
     "script", SCRIPTS, ids=[str(p.parent.relative_to(DOCS)) for p in SCRIPTS]
 )
 def test_guide_script_output_is_on_its_page(script: Path):
-    # The script, and the modules next to it that it imports, such as `models.py`.
-    code = "".join(path.read_text() for path in script.parent.glob("*.py"))
-    if _needs_torch(code):
-        pytest.importorskip("torch")
     output = subprocess.run(
         [sys.executable, str(script)],
         cwd=script.parent,

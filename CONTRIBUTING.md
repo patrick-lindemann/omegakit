@@ -3,7 +3,7 @@
 ## Development
 
 ```sh
-uv sync --group docs-examples
+uv sync --all-groups
 uv run pytest
 uv run ruff check
 uv run ruff format --check
@@ -14,9 +14,11 @@ uv build
 ```
 
 `uv run pytest` includes a test that builds the wheel and installs it into a fresh
-environment; `-m "not distribution"` skips it. The docs example and the Torch
-resolvers need PyTorch, which the `docs-examples` group installs, from the CPU index.
-Without it, their tests skip; CI installs it in every test job.
+environment; `-m "not distribution"` skips it. The tests marked `docs` run the docs
+examples and need the `docs` group, which includes PyTorch. The tests marked
+`resolvers` test the optional resolvers and need the `resolvers` group. Each
+optional resolver adds its library to that group. The tests of the library itself,
+`-m "not docs and not resolvers"`, need neither. PyTorch comes from the CPU index.
 
 To preview the documentation, build it and serve the result, then open
 http://localhost:8000:

@@ -45,10 +45,12 @@ docs = [
     "sphinx>=8.2,<9",
     "sphinx-autodoc-typehints>=3,<4",
     "sphinx-reredirects>=1,<2",
+    # The docs example is a PyTorch project, and PyTorch warns without NumPy.
+    "numpy>=2",
+    "torch>=2.9",
 ]
-# The docs example is a PyTorch project, and PyTorch warns without NumPy. Not
-# installed by default: `uv sync --group docs-examples` adds them.
-docs-examples = ["numpy>=2", "torch>=2.9"]
+# The libraries of the optional resolvers, such as `omegakit.resolvers.torch`.
+resolvers = ["torch>=2.9"]
 
 [tool.uv]
 default-groups = ["dev", "docs"]
@@ -70,6 +72,8 @@ testpaths = ["tests"]
 addopts = "--import-mode=importlib"
 markers = [
     "distribution: builds the wheel and tests it installed in a fresh environment",
+    "docs: runs the docs examples, which need the docs group",
+    "resolvers: tests an optional resolver, which needs the resolvers group",
 ]
 
 [tool.coverage.run]
