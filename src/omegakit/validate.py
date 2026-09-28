@@ -71,9 +71,7 @@ def validate(
     )
 
 
-def resolve_config(
-    config: DictConfig | ListConfig, *, allow_missing: bool = False
-) -> Any:
+def resolve_config(config: DictConfig | ListConfig, allow_missing: bool = False) -> Any:
     """Resolve a config into plain containers.
 
     Args:
@@ -103,7 +101,6 @@ def resolve_config(
 
 def check_resolved(
     config: Any,
-    *,
     schema: type | None = None,
     allow_missing: bool = False,
     allowed_modules: Iterable[str] | None = None,
@@ -138,8 +135,7 @@ def check_resolved(
         and CLASS_KEY not in config
         and not dataclasses.is_dataclass(schema)
     ):
-        section = find_schema(schema)
-        if section is None:
+        if find_schema(schema) is None:
             raise ConfigValidationError(
                 f"The root has no `{CLASS_KEY}`, and `{schema.__qualname__}` has no "
                 "dataclass schema to check it against."

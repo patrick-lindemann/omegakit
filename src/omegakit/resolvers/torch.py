@@ -28,12 +28,8 @@ def register_cuda_available_resolver(*, replace: bool = False) -> None:
     Raises:
         ImportError: If Torch is not installed.
     """  # noqa: DOC502
-    torch = _import_torch()
-    register_resolver(
-        "cuda_available",
-        lambda _=None: torch.cuda.is_available(),
-        replace=replace,
-    )
+    _import_torch()
+    register_resolver("cuda_available", _cuda_available, replace=replace)
 
 
 def register_torch_resolvers(*, replace: bool = False) -> None:
@@ -67,9 +63,13 @@ def _import_torch() -> Any:
     return torch
 
 
-def _resolve_dtype(dtype_str: str) -> Any:
+def _resolve_dtype(name: str) -> Any:
     torch = _import_torch()
-    dtype = getattr(torch, dtype_str, None)
+    dtype = getattr(torch, name, None)
     if not isinstance(dtype, torch.dtype):
-        raise ValueError(f"Invalid torch dtype `{dtype_str}`.")
+        raise ValueError(f"Invalid torch dtype `{name}`.")
     return dtype
+
+
+def _cuda_available(_: Any = None) -> bool:
+    return _import_torch().cuda.is_available()

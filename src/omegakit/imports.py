@@ -89,7 +89,7 @@ def resolve_imports(
 
 
 def select_node(
-    config: DictConfig | ListConfig, node_path: str, *, resolve: bool = False
+    config: DictConfig | ListConfig, node_path: str, resolve: bool = False
 ) -> Node | None:
     """Select a node by a dotted path, such as `items.0.name`, without resolving it.
 
@@ -135,7 +135,7 @@ def select_node(
 def _load_import(
     container: DictConfig | ListConfig,
     key: Any,
-    statement: str,
+    raw_statement: str,
     config_path: Path,
     visited_paths: set[Path],
     cache: dict[Path, DictConfig | ListConfig],
@@ -145,7 +145,8 @@ def _load_import(
         statement = container[key]
     except OmegaConfBaseException as error:
         raise ConfigLoadError(
-            f"Cannot resolve `{statement}` in `{config_path}`: {describe_error(error)}"
+            f"Cannot resolve `{raw_statement}` in `{config_path}`: "
+            f"{describe_error(error)}"
         ) from error
     args = statement[len(IMPORT_KEY) :].strip().split("#")
     if len(args) > 2:

@@ -127,11 +127,8 @@ def _merge_defaults(node: DictConfig, defaults: Any) -> None:
             f"`{DEFAULTS_KEY}` in `{format_node_path(node)}` is not a mapping."
         )
     node.pop(DEFAULTS_KEY)
-    for key in list(node.keys()):
-        if str(key).startswith(RESERVED_PREFIX):
-            continue
-        item = node._get_node(key)
-        if isinstance(item, DictConfig):
+    for key, item in list(node.items_ex(resolve=False)):
+        if not str(key).startswith(RESERVED_PREFIX) and isinstance(item, DictConfig):
             node[key] = OmegaConf.merge(defaults, item)
 
 

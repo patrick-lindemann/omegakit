@@ -7,7 +7,7 @@ from omegaconf import OmegaConf
 
 
 def register_resolver(
-    name: str, resolver: Callable[..., Any], *, replace: bool = False
+    name: str, resolver: Callable[..., Any], replace: bool = False
 ) -> None:
     """Register a cached OmegaConf resolver on every supported OmegaConf version.
 
