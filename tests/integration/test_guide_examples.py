@@ -12,11 +12,12 @@ from omegakit.resolvers.secrets import register_secret_resolver
 
 DOCS = Path(__file__).parents[2] / "docs"
 CURVEFIT = DOCS / "curvefit"
+EXAMPLE = DOCS / "example"
 # Every docs section except the ones that test_examples.py runs as a whole.
 SECTIONS = [
     path
     for path in DOCS.iterdir()
-    if path.is_dir() and path.name not in {"_build", "curvefit"}
+    if path.is_dir() and path.name not in {"_build", "curvefit", "example"}
 ]
 YAML_FILES = sorted(path for section in SECTIONS for path in section.rglob("*.yaml"))
 SCRIPTS = sorted(path for section in SECTIONS for path in section.rglob("main.py"))
@@ -25,6 +26,13 @@ SCRIPTS = sorted(path for section in SECTIONS for path in section.rglob("main.py
 @pytest.fixture(autouse=True)
 def examples_importable(monkeypatch):
     monkeypatch.syspath_prepend(str(CURVEFIT))
+    monkeypatch.syspath_prepend(str(EXAMPLE))
+
+
+def _skip_without_torch(text: str) -> None:
+    # The PyTorch example needs the examples dependency group.
+    if "project" in text or "torch" in text:
+        pytest.importorskip("torch")
 
 
 @pytest.mark.parametrize(
@@ -36,6 +44,7 @@ def test_guide_yaml_loads_validates_and_builds(path: Path, monkeypatch):
     monkeypatch.setenv("TRACKER_TOKEN", "tok-for-the-guide-tests")
     register_secret_resolver()
     register_paths_resolver({"runs": "runs", "data": "data"})
+    _skip_without_torch(path.read_text())
     config = load_config(path)
     validate(config, allow_missing=True)
     if "$class" in config and not OmegaConf.missing_keys(config):
@@ -46,9 +55,13 @@ def test_guide_yaml_loads_validates_and_builds(path: Path, monkeypatch):
     "script", SCRIPTS, ids=[str(p.parent.relative_to(DOCS)) for p in SCRIPTS]
 )
 def test_guide_script_runs(script: Path):
+    _skip_without_torch(script.read_text())
     subprocess.run(
         [sys.executable, str(script)],
         cwd=script.parent,
-        env={**os.environ, "PYTHONPATH": str(CURVEFIT)},
+        env={
+            **os.environ,
+            "PYTHONPATH": os.pathsep.join([str(CURVEFIT), str(EXAMPLE)]),
+        },
         check=True,
     )

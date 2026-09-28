@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=../../experiment.schema.json
+$base: ~import ../base.yaml
+name: linear
+model:
+  $class: torch.nn.Linear
+  in_features: 1
+  out_features: 1
+optimizer:
+  $class: torch.optim.SGD
+  $partial: true
+  lr: 0.1
+  momentum: 0.9

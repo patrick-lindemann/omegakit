@@ -1,0 +1,142 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "name": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "string",
+          "pattern": "^(\\?\\?\\?$|~import\\s|.*\\$\\{)"
+        }
+      ]
+    },
+    "seed": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "string",
+          "pattern": "^(\\?\\?\\?$|~import\\s|.*\\$\\{)"
+        }
+      ]
+    },
+    "run_dir": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "string",
+          "pattern": "^(\\?\\?\\?$|~import\\s|.*\\$\\{)"
+        }
+      ]
+    },
+    "data": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/project.Splits"
+        },
+        {
+          "type": "string",
+          "pattern": "^(\\?\\?\\?$|~import\\s|.*\\$\\{)"
+        }
+      ]
+    },
+    "model": {
+      "anyOf": [
+        {
+          "type": "object"
+        },
+        {
+          "type": "string",
+          "pattern": "^(\\?\\?\\?$|~import\\s|.*\\$\\{)"
+        }
+      ]
+    },
+    "optimizer": {
+      "anyOf": [
+        {
+          "type": "object"
+        },
+        {
+          "type": "string",
+          "pattern": "^(\\?\\?\\?$|~import\\s|.*\\$\\{)"
+        }
+      ]
+    },
+    "loss": {
+      "anyOf": [
+        {
+          "type": "object"
+        },
+        {
+          "type": "string",
+          "pattern": "^(\\?\\?\\?$|~import\\s|.*\\$\\{)"
+        }
+      ]
+    },
+    "epochs": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "string",
+          "pattern": "^(\\?\\?\\?$|~import\\s|.*\\$\\{)"
+        }
+      ]
+    },
+    "batch_size": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "string",
+          "pattern": "^(\\?\\?\\?$|~import\\s|.*\\$\\{)"
+        }
+      ]
+    }
+  },
+  "patternProperties": {
+    "^\\$": {}
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "project.Splits": {
+      "type": "object",
+      "properties": {
+        "train": {
+          "anyOf": [
+            {
+              "type": "object"
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\?\\?\\?$|~import\\s|.*\\$\\{)"
+            }
+          ]
+        },
+        "test": {
+          "anyOf": [
+            {
+              "type": "object"
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\?\\?\\?$|~import\\s|.*\\$\\{)"
+            }
+          ]
+        }
+      },
+      "patternProperties": {
+        "^\\$": {}
+      },
+      "additionalProperties": false
+    }
+  }
+}

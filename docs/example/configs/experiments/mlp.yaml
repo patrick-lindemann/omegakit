@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../experiment.schema.json
+$base: ~import ../base.yaml
+name: mlp
+model:
+  $class: project.MLP
+  hidden: 32
+optimizer:
+  $class: torch.optim.Adam
+  $partial: true
+  lr: 0.01

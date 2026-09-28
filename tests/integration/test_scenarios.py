@@ -162,10 +162,12 @@ def test_scenario_forward_base_to_imported_node_then_instantiate(write_yaml):
 
 
 CURVEFIT = Path(__file__).parents[2] / "docs" / "curvefit"
+EXAMPLE = Path(__file__).parents[2] / "docs" / "example"
 # The config files that name their JSON Schema in their first line.
 EXAMPLE_CONFIGS = sorted(
     path
-    for path in CURVEFIT.glob("**/*.yaml")
+    for root in (CURVEFIT, EXAMPLE)
+    for path in root.glob("**/*.yaml")
     if path.read_text().startswith("# yaml-language-server:")
 )
 
@@ -177,7 +179,7 @@ def _modeline_schema(path: Path) -> dict:
 
 
 @pytest.mark.parametrize(
-    "path", EXAMPLE_CONFIGS, ids=lambda path: str(path.relative_to(CURVEFIT))
+    "path", EXAMPLE_CONFIGS, ids=lambda path: str(path.relative_to(CURVEFIT.parent))
 )
 def test_scenario_example_yaml_matches_its_schema(path: Path):
     """Editor schema + real files: every example YAML validates, a typo does not."""
@@ -193,3 +195,12 @@ def test_scenario_example_schema_is_current(monkeypatch):
     curvefit = importlib.import_module("curvefit")
     generated = generate_json_schema(curvefit.Experiment)
     assert json.loads((CURVEFIT / "experiment.schema.json").read_text()) == generated
+
+
+def test_scenario_pytorch_example_schema_is_current(monkeypatch):
+    """Generator + committed file: the PyTorch example schema is current."""
+    pytest.importorskip("torch")
+    monkeypatch.syspath_prepend(str(EXAMPLE))
+    project = importlib.import_module("project")
+    generated = generate_json_schema(project.Experiment)
+    assert json.loads((EXAMPLE / "experiment.schema.json").read_text()) == generated

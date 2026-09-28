@@ -112,6 +112,58 @@ def test_curvefit_torch_variant_runs(dtype, tmp_path):
     assert output.startswith(f"poly3-adam-torch: Adam, torch.{dtype}\n")
 
 
+EXAMPLE = DOCS / "example"
+EXAMPLE_EXPERIMENTS = sorted((EXAMPLE / "configs" / "experiments").glob("*.yaml"))
+
+
+def _train(*arguments: object, cwd: Path) -> str:
+    pytest.importorskip("torch")
+    return subprocess.run(
+        [sys.executable, str(EXAMPLE / "main.py"), *map(str, arguments)],
+        cwd=cwd,
+        env={**os.environ, "PYTHONPATH": str(EXAMPLE)},
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+
+
+@pytest.mark.parametrize("experiment", EXAMPLE_EXPERIMENTS, ids=lambda path: path.stem)
+def test_example_experiment_runs(experiment, tmp_path):
+    output = _train(experiment, cwd=tmp_path)
+    assert output.startswith(f"{experiment.stem}: test loss ")
+    run_dir = tmp_path / "runs" / experiment.stem / "seed0"
+    assert sorted(path.name for path in run_dir.iterdir()) == [
+        "config.yaml",
+        "model.pt",
+        "overrides.txt",
+    ]
+
+
+def test_example_run_repeats_from_its_saved_config(tmp_path):
+    first = _train(
+        EXAMPLE / "configs/experiments/mlp.yaml", "model.hidden=8", cwd=tmp_path
+    )
+    saved = tmp_path / "runs" / "mlp" / "seed0"
+    assert (saved / "overrides.txt").read_text() == "model.hidden=8\n"
+    assert _train(saved / "config.yaml", "run_dir=repeat", cwd=tmp_path) == first
+    weights = (saved / "model.pt").read_bytes()
+    assert (tmp_path / "repeat" / "model.pt").read_bytes() == weights
+
+
+def test_example_seed_changes_the_run(tmp_path):
+    experiment = EXAMPLE / "configs/experiments/mlp.yaml"
+    assert _train(experiment, cwd=tmp_path) != _train(
+        experiment, "seed=1", cwd=tmp_path
+    )
+
+
+def test_example_never_overwrites_a_run(tmp_path):
+    _train(EXAMPLE_EXPERIMENTS[0], cwd=tmp_path)
+    with pytest.raises(subprocess.CalledProcessError):
+        _train(EXAMPLE_EXPERIMENTS[0], cwd=tmp_path)
+
+
 # Pages whose shell sessions run in a copy of the curvefit directory, and pages
 # whose sessions only read files and run in their own directory.
 SESSION_PAGES = [
