@@ -3,7 +3,7 @@
 ## Development
 
 ```sh
-uv sync
+uv sync --group examples
 uv run pytest
 uv run ruff check
 uv run ruff format --check
@@ -14,9 +14,9 @@ uv build
 ```
 
 `uv run pytest` includes a test that builds the wheel and installs it into a fresh
-environment; `-m "not distribution"` skips it. Tests of resolvers for an optional
-library, such as Torch, skip when that library is absent; CI runs them in the
-`test-resolvers` job, which installs the libraries.
+environment; `-m "not distribution"` skips it. The docs example and the Torch
+resolvers need PyTorch, which the `examples` group installs, from the CPU index.
+Without it, their tests skip; CI runs them in the `test-resolvers` job.
 
 To preview the documentation, build it and serve the result, then open
 http://localhost:8000:
