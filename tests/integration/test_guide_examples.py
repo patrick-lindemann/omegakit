@@ -12,13 +12,12 @@ from omegakit.resolvers.secrets import register_secret_resolver
 from omegakit.resolvers.torch import register_torch_resolvers
 
 DOCS = Path(__file__).parents[2] / "docs"
-CURVEFIT = DOCS / "curvefit"
 EXAMPLE = DOCS / "example"
 # Every docs section except the ones that test_examples.py runs as a whole.
 SECTIONS = [
     path
     for path in DOCS.iterdir()
-    if path.is_dir() and path.name not in {"_build", "curvefit", "example"}
+    if path.is_dir() and path.name not in {"_build", "example"}
 ]
 YAML_FILES = sorted(path for section in SECTIONS for path in section.rglob("*.yaml"))
 SCRIPTS = sorted(path for section in SECTIONS for path in section.rglob("main.py"))
@@ -26,7 +25,6 @@ SCRIPTS = sorted(path for section in SECTIONS for path in section.rglob("main.py
 
 @pytest.fixture(autouse=True)
 def examples_importable(monkeypatch):
-    monkeypatch.syspath_prepend(str(CURVEFIT))
     monkeypatch.syspath_prepend(str(EXAMPLE))
 
 
@@ -66,7 +64,7 @@ def test_guide_script_runs(script: Path):
         cwd=script.parent,
         env={
             **os.environ,
-            "PYTHONPATH": os.pathsep.join([str(CURVEFIT), str(EXAMPLE)]),
+            "PYTHONPATH": str(EXAMPLE),
         },
         check=True,
     )

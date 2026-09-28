@@ -108,9 +108,5 @@ pythonVersion = "3.12" # the floor; development runs on 3.13
 typeCheckingMode = "standard"
 reportImplicitOverride = "error"
 reportUnnecessaryTypeIgnoreComment = "error"
-# The page examples import the example projects, as their tests do.
-executionEnvironments = [
-    { root = "docs", extraPaths = ["docs/curvefit", "docs/example"] },
-]
-# The PyTorch variant needs Torch, which the lint job does not install.
-exclude = ["docs/curvefit/torch"]
+# The page examples import the example project, as their tests do.
+executionEnvironments = [{ root = "docs", extraPaths = ["docs/example"] }]

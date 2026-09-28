@@ -11,6 +11,9 @@ All notable changes to this project are documented here. The format follows
 - The Configs section of the documentation is now the Guide, and its pages moved
   from `configs/<page>/` to `guide/<page>/`, such as `guide/loading/`.
 - Each Guide page has its own small example, which shows that page's feature only.
+- The documentation and the README use a small PyTorch project as their example,
+  instead of `curvefit`: an MLP fitted to noisy samples of a sine wave, with
+  `torch.optim` and `torch.nn` named straight from the configs.
 
 ### Removed
 

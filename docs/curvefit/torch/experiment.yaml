@@ -1,8 +1,0 @@
-# yaml-language-server: $schema=../experiment.schema.json
-$base: ~import ../configs/experiments/poly3-adam.yaml
-name: poly3-adam-torch
-model:
-  $class: torch_models.Polynomial
-  dtype: ${dtype:float32}
-optimizer:
-  $class: torch.optim.Adam

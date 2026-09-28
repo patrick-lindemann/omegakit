@@ -9,9 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from omegakit import instantiate
-
-# Runs the curvefit example and the README as a reader would.
+# Runs the example project and the README as a reader would.
 
 DOCS = Path(__file__).parents[2] / "docs"
 
@@ -35,81 +33,6 @@ def test_readme_example_builds(tmp_path):
         text=True,
     ).stdout
     assert output == "Linear SGD\n"
-
-
-CURVEFIT = DOCS / "curvefit"
-EXPERIMENTS = sorted((CURVEFIT / "configs" / "experiments").glob("*.yaml"))
-
-
-def _fit(*arguments: object, cwd: Path) -> str:
-    return subprocess.run(
-        [sys.executable, str(CURVEFIT / "main.py"), *map(str, arguments)],
-        cwd=cwd,
-        check=True,
-        capture_output=True,
-        text=True,
-    ).stdout
-
-
-@pytest.mark.parametrize("experiment", EXPERIMENTS, ids=lambda path: path.stem)
-def test_curvefit_experiment_runs(experiment, tmp_path):
-    output = _fit(experiment, cwd=tmp_path)
-    assert output.startswith(f"{experiment.stem}: train loss ")
-    run_dir = tmp_path / "runs" / experiment.stem / "seed0"
-    assert sorted(path.name for path in run_dir.iterdir()) == [
-        "config.yaml",
-        "metrics.jsonl",
-        "overrides.txt",
-    ]
-
-
-def test_curvefit_run_repeats_from_its_saved_config(tmp_path):
-    first = _fit(EXPERIMENTS[-1], "model.degree=4", cwd=tmp_path)
-    saved = tmp_path / "runs" / "poly3-adam" / "seed0"
-    assert (saved / "overrides.txt").read_text() == "model.degree=4\n"
-    assert _fit(saved / "config.yaml", "run_dir=repeat", cwd=tmp_path) == first
-    metrics = (saved / "metrics.jsonl").read_text()
-    assert (tmp_path / "repeat" / "metrics.jsonl").read_text() == metrics
-
-
-def test_curvefit_seed_changes_the_run(tmp_path):
-    assert _fit(EXPERIMENTS[-1], cwd=tmp_path) != _fit(
-        EXPERIMENTS[-1], "seed=1", cwd=tmp_path
-    )
-
-
-def test_curvefit_never_overwrites_a_run(tmp_path):
-    _fit(EXPERIMENTS[0], cwd=tmp_path)
-    with pytest.raises(subprocess.CalledProcessError):
-        _fit(EXPERIMENTS[0], cwd=tmp_path)
-
-
-def test_curvefit_measurements_load(monkeypatch):
-    monkeypatch.syspath_prepend(str(CURVEFIT))
-    path = CURVEFIT / "data" / "measurements.csv"
-    xs, ys = instantiate(
-        {"$class": "curvefit.data.CsvData", "path": str(path)}
-    ).samples()
-    assert len(xs) == len(ys) == 40
-
-
-@pytest.mark.parametrize("dtype", ["float32", "bfloat16"])
-def test_curvefit_torch_variant_runs(dtype, tmp_path):
-    # Only the `test-resolvers` CI job installs Torch.
-    pytest.importorskip("torch")
-    output = subprocess.run(
-        [
-            sys.executable,
-            str(CURVEFIT / "torch" / "main.py"),
-            f"model.dtype=${{dtype:{dtype}}}",
-        ],
-        cwd=tmp_path,
-        env={**os.environ, "PYTHONPATH": str(CURVEFIT)},
-        check=True,
-        capture_output=True,
-        text=True,
-    ).stdout
-    assert output.startswith(f"poly3-adam-torch: Adam, torch.{dtype}\n")
 
 
 EXAMPLE = DOCS / "example"
@@ -164,28 +87,27 @@ def test_example_never_overwrites_a_run(tmp_path):
         _train(EXAMPLE_EXPERIMENTS[0], cwd=tmp_path)
 
 
-# Pages whose shell sessions run in a copy of an example project, and pages whose
+# Pages whose shell sessions run in a copy of the example project, and pages whose
 # sessions only read files and run in their own directory.
-SESSION_PAGES = {
-    "getting-started": EXAMPLE,
-    "reproducible-runs": EXAMPLE,
-    "command-line": EXAMPLE,
-    "schemas/editor-support": EXAMPLE,
-    "recipes/checking-experiments-in-ci": EXAMPLE,
-}
+SESSION_PAGES = [
+    "getting-started",
+    "reproducible-runs",
+    "command-line",
+    "schemas/editor-support",
+    "recipes/checking-experiments-in-ci",
+]
 READ_ONLY_SESSION_PAGES = ["security/secrets"]
 PROGRAMS = {"python": [sys.executable], "omegakit": [sys.executable, "-m", "omegakit"]}
 
 
-@pytest.mark.parametrize("page", [*SESSION_PAGES, *READ_ONLY_SESSION_PAGES])
+@pytest.mark.parametrize("page", SESSION_PAGES + READ_ONLY_SESSION_PAGES)
 def test_page_sessions_show_real_output(page, tmp_path, monkeypatch):
     monkeypatch.setenv("TRACKER_TOKEN", "tok-5f3a9c1e7b2d4f60")
     directory = DOCS / page
     if page in SESSION_PAGES:
-        if SESSION_PAGES[page] == EXAMPLE:
-            pytest.importorskip("torch")
+        pytest.importorskip("torch")
         shutil.copytree(
-            SESSION_PAGES[page],
+            EXAMPLE,
             tmp_path,
             dirs_exist_ok=True,
             ignore=shutil.ignore_patterns("runs", "__pycache__"),
