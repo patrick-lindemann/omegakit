@@ -1,5 +1,5 @@
 import functools
-from collections.abc import Callable, Iterable
+from collections.abc import Iterable
 from typing import Any, cast, get_args, get_origin, overload
 
 from omegaconf import DictConfig, OmegaConf
@@ -122,9 +122,7 @@ def prepare(
             cannot serve as a schema.
         TypeError: If `schema` is not a class.
     """  # noqa: DOC502
-    return _instantiate(
-        config, schema, overrides, allowed_modules, wrap=functools.partial
-    )
+    return _instantiate(config, schema, overrides, allowed_modules, partial=True)
 
 
 def _instantiate(
@@ -132,7 +130,7 @@ def _instantiate(
     schema: type | None,
     overrides: DictConfig | dict[str, Any] | list[str] | None,
     allowed_modules: Iterable[str] | None,
-    wrap: Callable | None = None,
+    partial: bool = False,
 ) -> Any:
     if CLASS_KEY not in config and (schema is None or REF_KEY in config):
         raise ConfigValidationError(
@@ -147,13 +145,13 @@ def _instantiate(
     plain_config = cast(dict[str, Any], resolve_config(config))
     check_resolved(plain_config, schema=schema, allowed_modules=allowed_modules)
     if CLASS_KEY in plain_config:
-        return _build(plain_config, wrap)
-    return _build(plain_config, wrap, target=schema)
+        return _build(plain_config, partial)
+    return _build(plain_config, partial, target=schema)
 
 
 def _build(
     plain_config: dict[str, Any],
-    wrap: Callable | None = None,
+    partial: bool = False,
     path: tuple[str | int, ...] = (),
     target: Any = None,
 ) -> Any:
@@ -168,7 +166,7 @@ def _build(
             continue
         if key == PARTIAL_KEY:
             if value:
-                wrap = functools.partial
+                partial = True
             continue
         values[key] = value
     if schema is None:
@@ -182,11 +180,11 @@ def _build(
     try:
         if hasattr(cls, "from_config"):
             return (
-                wrap(cls.from_config, config)
-                if wrap is not None
+                functools.partial(cls.from_config, config)
+                if partial
                 else cls.from_config(config)
             )
-        return wrap(cls, **config) if wrap is not None else cls(**config)
+        return functools.partial(cls, **config) if partial else cls(**config)
     except Exception as error:
         name = plain_config.get(CLASS_KEY, f"{cls.__module__}.{cls.__qualname__}")
         error.add_note(f"while instantiating {format_path(path)} ({name})")
