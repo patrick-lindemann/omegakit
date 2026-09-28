@@ -17,11 +17,6 @@ $ omegakit check configs/experiments/mlp.yaml epochs=many --schema project.Exper
 configs/experiments/mlp.yaml: ConfigValidationError: Invalid config in `epochs` (Experiment): Value 'many' of type 'str' could not be converted to Integer
 ```
 
-```{literalinclude} ../_generated/check.txt
-:language: text
-:caption: omegakit check --help
-```
-
 ## `show`
 
 `show` prints a config as `load_config` assembles it, so you see what imports,
@@ -38,11 +33,6 @@ $ omegakit show configs/experiments/mlp.yaml seed=3 --node run_dir --resolve
 runs/mlp/seed3
 ```
 
-```{literalinclude} ../_generated/show.txt
-:language: text
-:caption: omegakit show --help
-```
-
 ## `json-schema`
 
 `json-schema` writes the JSON Schema of a class, for your editor
@@ -51,11 +41,6 @@ nothing, and fails when the file no longer matches the class:
 
 ```text
 $ omegakit json-schema project.Experiment -o experiment.schema.json --check
-```
-
-```{literalinclude} ../_generated/json-schema.txt
-:language: text
-:caption: omegakit json-schema --help
 ```
 
 ## Rules
