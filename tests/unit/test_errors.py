@@ -51,6 +51,11 @@ class PathKeysInTuple:
     pair: tuple[dict[Path, int], int]
 
 
+@dataclasses.dataclass
+class Counts:
+    counts: list[int]
+
+
 BAD_NODE = {"$class": "tests.helpers.Point", "$partial": "yes"}
 
 
@@ -191,3 +196,20 @@ def test_base_resolution_failure_has_one_prefix(write_yaml):
     assert str(info.value) == (
         "Cannot resolve `m.$base`: Interpolation key 'nope' not found"
     )
+
+
+def test_loading_error_names_a_list_item_by_its_dotted_path(write_yaml):
+    with pytest.raises(ConfigLoadError, match=r"^`\$base` in `items\.0\.m` "):
+        load_config(write_yaml("c.yaml", "items:\n  - m:\n      $base: 3\n"))
+
+
+def test_resolution_error_names_a_list_item_by_its_dotted_path():
+    with pytest.raises(ConfigValidationError, match=r"^Cannot resolve `items\.0\.x`:"):
+        validate({"items": [{"x": "${nope}"}]})
+
+
+def test_schema_error_names_a_list_item_by_its_dotted_path():
+    with pytest.raises(
+        ConfigValidationError, match=r"^Invalid config in `counts\.1` \(Counts\):"
+    ):
+        validate({"counts": [1, "many"]}, schema=Counts)

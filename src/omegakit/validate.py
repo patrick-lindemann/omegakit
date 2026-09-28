@@ -10,7 +10,12 @@ from omegaconf.errors import (
     OmegaConfBaseException,
 )
 
-from .errors import ConfigValidationError, describe_value, format_path
+from .errors import (
+    ConfigValidationError,
+    describe_value,
+    format_full_key,
+    format_path,
+)
 from .fields import coerce_fields
 from .keys import CLASS_KEY, META_KEY, PARTIAL_KEY, REF_KEY
 from .schema import (
@@ -87,7 +92,9 @@ def resolve_config(
             return OmegaConf.to_container(config, resolve=True, throw_on_missing=True)
         return _resolve_allowing_missing(config)
     except OmegaConfBaseException as error:
-        location = f" `{error.full_key}`" if error.full_key else " the config"
+        location = (
+            f" `{format_full_key(error.full_key)}`" if error.full_key else " the config"
+        )
         raise ConfigValidationError(
             f"Cannot resolve{location}: {str(error).splitlines()[0]}"
         ) from error

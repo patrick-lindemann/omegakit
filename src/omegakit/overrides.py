@@ -4,7 +4,12 @@ from omegaconf import DictConfig, OmegaConf
 from omegaconf.errors import OmegaConfBaseException
 from yaml import YAMLError
 
-from .errors import ConfigLoadError, OmegaKitBaseException, describe_error
+from .errors import (
+    ConfigLoadError,
+    OmegaKitBaseException,
+    describe_error,
+    format_full_key,
+)
 
 
 def _parse_overrides(
@@ -65,7 +70,7 @@ def merge_overrides(
         if isinstance(error, OmegaKitBaseException):
             raise
         else:
-            location = f" `{error.full_key}`" if error.full_key else ""
+            location = f" `{format_full_key(error.full_key)}`" if error.full_key else ""
             raise ConfigLoadError(
                 f"Cannot apply the override{location}: {describe_error(error)}"
             ) from error

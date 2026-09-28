@@ -112,6 +112,10 @@ anything is built ([Configurable classes](../../objects/configurable-classes/ind
   schema is a `SchemaDefinitionError` wherever it is reached.
 - An error of omegakit carries its message, with OmegaConf's error or another cause
   as `__cause__` where there is one.
+- A message names a node by its path from the root, with keys and list indices
+  joined by dots, such as `items.0.model`, and the root as `<root>`. The part of a
+  message that quotes OmegaConf's error keeps OmegaConf's form, such as
+  `items[0].model`.
 - Errors that are not omegakit's keep their type: `FileNotFoundError` for a missing
   file, `TypeError` for API misuse, OmegaConf's errors when a loaded config is read,
   and exceptions from constructors. The Rules of each feature page say which errors

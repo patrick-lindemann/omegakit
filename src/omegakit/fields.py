@@ -22,6 +22,7 @@ from .errors import (
     OmegaKitBaseException,
     SchemaDefinitionError,
     describe_value,
+    format_full_key,
     format_path,
 )
 from .schema import (
@@ -107,7 +108,8 @@ def coerce_fields(
         message = str(error).splitlines()[0]
         if error.full_key:
             location = (
-                f"`{format_path((*path, error.full_key))}` ({schema.__qualname__})"
+                f"`{format_path((*path, format_full_key(error.full_key)))}` "
+                f"({schema.__qualname__})"
             )
         raise ConfigValidationError(
             f"Invalid config in {location}: {message}"

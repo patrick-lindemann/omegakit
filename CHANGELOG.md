@@ -6,6 +6,13 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking:** Error messages name a node by its dotted path, such as
+  `items.0.model`, everywhere. Errors about `$base` and `$defaults` named a list
+  item as `items0.model`, and errors from resolving, from overrides and from
+  values inside a field as `items[0].model`.
+
 ### Fixed
 
 - The error for `$base` or `$defaults` references that form a cycle names only the

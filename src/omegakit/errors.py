@@ -1,6 +1,7 @@
+import re
 from typing import Any
 
-from omegaconf import DictConfig
+from omegaconf import Node
 from omegaconf.errors import OmegaConfBaseException, ValidationError
 from yaml import MarkedYAMLError
 
@@ -41,7 +42,7 @@ def format_path(path: tuple[str | int, ...]) -> str:
     return ".".join(map(str, path)) or "<root>"
 
 
-def format_node_path(node: DictConfig) -> str:
+def format_node_path(node: Node) -> str:
     """Format the path of a config node from its root, such as `items.0.model`.
 
     Args:
@@ -50,7 +51,23 @@ def format_node_path(node: DictConfig) -> str:
     Returns:
         The dotted path, or `<root>` for the root itself.
     """
-    return node._get_full_key(None) or "<root>"
+    keys = []
+    while (parent := node._get_parent()) is not None:
+        keys.append(node._key())
+        node = parent
+    return format_path(tuple(reversed(keys)))
+
+
+def format_full_key(full_key: str) -> str:
+    """Format the `full_key` of an OmegaConf error, such as `items[0].model`.
+
+    Args:
+        full_key: The key path, with list indices in brackets.
+
+    Returns:
+        The dotted path, such as `items.0.model`, or `<root>` for an empty one.
+    """
+    return re.sub(r"\[(-?\d+)\]", r".\1", full_key).lstrip(".") or "<root>"
 
 
 def describe_value(value: Any) -> str:
