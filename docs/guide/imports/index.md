@@ -16,7 +16,7 @@ node of it. One file can hold the model sizes that experiments pick from:
 ```{literalinclude} main.py
 :language: python
 :caption: main.py
-:end-before: import_root
+:end-before: import os
 ```
 
 ```{code-block} text
@@ -40,7 +40,7 @@ its parent directory, which is outside `experiments`:
 
 ```{literalinclude} main.py
 :language: python
-:start-at: import_root
+:start-at: import os
 ```
 
 ```{code-block} text

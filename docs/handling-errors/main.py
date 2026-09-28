@@ -1,16 +1,10 @@
-import sys
 from dataclasses import dataclass
 from pathlib import Path
 
 from omegaconf.errors import OmegaConfBaseException
 from torch import nn
 
-from omegakit import (
-    ConfigValidationError,
-    SchemaDefinitionError,
-    instantiate,
-    load_config,
-)
+from omegakit import instantiate, load_config
 
 
 @dataclass
@@ -34,6 +28,10 @@ run("experiment.yaml", ["epochs=50"])
 run("experment.yaml", [])
 run("experiment.yaml", ["epochs=[50"])
 run("experiment.yaml", ["epochs=many"])
+
+import sys
+
+from omegakit import ConfigValidationError, SchemaDefinitionError
 
 for epochs in ["10", "many", "20"]:
     config = load_config("experiment.yaml", overrides=[f"epochs={epochs}"])

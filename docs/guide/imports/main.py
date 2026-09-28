@@ -1,9 +1,11 @@
-import os
-
-from omegakit import ConfigLoadError, load_config
+from omegakit import load_config
 
 config = load_config("experiment.yaml")
 print("config.model:", config.model)
+
+import os
+
+from omegakit import ConfigLoadError
 
 config = load_config("experiment.yaml", import_root=".")
 print("config.model.hidden:", config.model.hidden)

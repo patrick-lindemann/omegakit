@@ -94,7 +94,8 @@ convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["D"]
-"docs/**" = ["D", "PT"]
+# Doc scripts import what an excerpt needs next to it, so each excerpt shows its own.
+"docs/**" = ["D", "PT", "E402"]
 
 [tool.pydoclint]
 style = "google"

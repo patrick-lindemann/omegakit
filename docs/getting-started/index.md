@@ -51,7 +51,7 @@ The dataset is built the same way. `$partial: true` builds the optimizer as a
 
 ```{literalinclude} main.py
 :language: python
-:start-at: torch.manual_seed(0)
+:start-at: import torch
 :end-at: print("loss:"
 ```
 
@@ -106,7 +106,7 @@ built:
 
 ```{literalinclude} main.py
 :language: python
-:start-at: config = load_config(CONFIGS
+:start-at: from project import
 ```
 
 ```{code-block} text

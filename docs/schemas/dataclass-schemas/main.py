@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from enum import Enum
 from pathlib import Path
 
 from torch import nn
@@ -27,6 +26,9 @@ print("experiment.run_dir:", repr(experiment.run_dir))
 print("experiment.data:", experiment.data)
 print("experiment.model:", experiment.model)
 print("experiment.epochs:", experiment.epochs)
+
+
+from enum import Enum
 
 
 class Loss(Enum):

@@ -12,7 +12,7 @@ result from it:
 ```{literalinclude} main.py
 :language: python
 :caption: main.py
-:end-before: class Loss
+:end-before: from enum import
 ```
 
 ```{code-block} text
@@ -80,7 +80,7 @@ through [`Configurable`](../../objects/configurable-classes/index.md).
 ```{literalinclude} main.py
 :language: python
 :caption: main.py (enums)
-:start-at: class Loss
+:start-at: from enum import
 ```
 
 ```{code-block} text

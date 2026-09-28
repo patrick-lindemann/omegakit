@@ -1,13 +1,12 @@
-import torch
-import torch.nn.functional as F
-from project import CONFIGS, Experiment
-from torch.utils.data import DataLoader
-
-from omegakit import ConfigValidationError, instantiate, load_config
+from omegakit import instantiate, load_config
 
 config = load_config("experiment.yaml")
 model = instantiate(config.model)
 print("model:", model)
+
+import torch
+import torch.nn.functional as F
+from torch.utils.data import DataLoader
 
 torch.manual_seed(0)
 model = instantiate(config.model)
@@ -21,6 +20,10 @@ for _ in range(100):
         optimizer.step()
 x, y = data[:]
 print("loss:", round(F.mse_loss(model(x), y).item(), 3))
+
+from project import CONFIGS, Experiment
+
+from omegakit import ConfigValidationError
 
 config = load_config(CONFIGS / "experiments/mlp.yaml", overrides=["model.hiden=64"])
 try:

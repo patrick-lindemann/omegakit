@@ -49,7 +49,7 @@ run, so the sweep stops:
 
 ```{literalinclude} main.py
 :language: python
-:start-at: for epochs in
+:start-at: import sys
 :end-at: print(f"built
 ```
 
