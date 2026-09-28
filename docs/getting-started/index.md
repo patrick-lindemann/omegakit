@@ -117,13 +117,22 @@ error: Unknown field(s) 'hiden' in `model` (MLPConfig). Expected one of: hidden,
 
 ## 5. Run an experiment
 
-The project's entrypoint, `main.py`, does the same for one experiment file and the
-overrides it is given, trains the model and saves the run:
+The project's entrypoint does the same for one experiment file and the overrides it
+is given. It seeds PyTorch before building, because the model draws random initial
+weights, trains the model, and saves the config and the weights to the run
+directory:
+
+```{literalinclude} ../example/main.py
+:language: python
+:caption: main.py
+```
 
 ```text
 $ python main.py configs/experiments/mlp.yaml
 mlp: test loss 0.011
 ```
 
-[Reproducible runs](../reproducible-runs/index.md) walks through it. From here, the
-Guide covers each feature, starting with [Loading](../guide/loading/index.md).
+The saved `config.yaml` loads like any config file, so
+`python main.py runs/mlp/seed0/config.yaml run_dir=runs/repeat` repeats the run.
+From here, the Guide covers each feature, starting with
+[Loading](../guide/loading/index.md).

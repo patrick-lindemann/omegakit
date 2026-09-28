@@ -10,8 +10,7 @@ examples in these pages train a small PyTorch model.
 ## Where to go
 
 - **New to omegakit:** [Getting started](getting-started/index.md) installs it and
-  trains a model from a config. [Reproducible runs](reproducible-runs/index.md)
-  saves and repeats runs, and [Comparison](comparison/index.md) sets omegakit
+  trains a model from a config, and [Comparison](comparison/index.md) sets omegakit
   against Hydra and other libraries.
 - **Looking up a feature:** one page per feature, in the order you meet them.
   The [Guide](guide/loading/index.md) covers how files are loaded and combined,
@@ -20,8 +19,8 @@ examples in these pages train a small PyTorch model.
 - **A complete pattern:** the recipes, such as
   [Parameter sweeps](recipes/parameter-sweeps/index.md) or
   [Swapping implementations](recipes/swapping-implementations/index.md).
-- **The exact rules:** the Rules section at the end of each feature page, and the
-  [API](api/index.md).
+- **Reference:** the Rules section at the end of each feature page, the
+  [API](api/index.md) and the [command line](command-line/index.md).
 
 Configs import and call Python code, so load them only from sources you trust.
 The Security section says [what runs](security/trust-model/index.md), how to
@@ -32,9 +31,6 @@ The Security section says [what runs](security/trust-model/index.md), how to
 :hidden:
 
 getting-started/index
-reproducible-runs/index
-command-line/index
-handling-errors/index
 comparison/index
 ```
 
@@ -51,6 +47,7 @@ guide/interpolation/index
 guide/environment-variables/index
 guide/missing-values/index
 guide/metadata/index
+guide/errors/index
 ```
 
 ```{toctree}
@@ -101,6 +98,7 @@ recipes/checking-experiments-in-ci/index
 :caption: Reference
 :hidden:
 
+command-line/index
 api/index
 changelog/index
 ```

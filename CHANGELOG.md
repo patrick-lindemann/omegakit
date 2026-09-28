@@ -22,13 +22,16 @@ All notable changes to this project are documented here. The format follows
 - The Command line page explains each command with an example and shows its
   `--help`, generated when the documentation is built. The pre-commit hook moved to
   Checking experiments in CI.
+- Handling errors is part of the Guide, at `guide/errors/`, and the Command line page
+  is under Reference.
 - The documentation and the README use a small PyTorch project as their example,
   instead of `curvefit`: an MLP fitted to noisy samples of a sine wave, with
   `torch.optim` and `torch.nn` named straight from the configs.
 
 ### Removed
 
-- The Using with PyTorch recipe.
+- The Using with PyTorch recipe, and the Reproducible runs page. Its rules on saving
+  a config are on Loading.
 
 ### Fixed
 

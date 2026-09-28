@@ -93,7 +93,6 @@ def test_example_never_overwrites_a_run(tmp_path):
 # copies first.
 SESSION_PAGES = {
     "getting-started": EXAMPLE,
-    "reproducible-runs": EXAMPLE,
     "command-line": EXAMPLE,
     "recipes/checking-experiments-in-ci": EXAMPLE,
     "schemas/editor-support": DOCS / "schemas" / "editor-support",

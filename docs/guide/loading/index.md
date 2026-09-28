@@ -69,6 +69,12 @@ of the pipeline under Rules, and that order explains what works together:
   `ConfigLoadError` naming the nodes. [Inheritance](../inheritance/index.md#rules) and
   [Defaults](../defaults/index.md#rules) say what each reference sees.
 
+**Saving.** Assembly is deterministic: the same files, overrides, environment
+variables and resolvers give the same config. `OmegaConf.save` of a config from
+`load_config` writes it assembled and unresolved, and `load_config` of that file
+gives an equal config, with one exception: a value that starts with `~import`,
+which an override can set, is an import when the saved file is loaded.
+
 **Errors.** A missing root file raises `FileNotFoundError`. Every other problem in
 a file's content raises `ConfigLoadError`, with the original error from
 PyYAML, OmegaConf or the file system as its `__cause__`:

@@ -62,8 +62,7 @@ every example.
 
 - One file per experiment, sharing a base:
   [Getting started](https://omegakit.readthedocs.io/en/latest/getting-started/)
-- Save a run's config and repeat the run:
-  [Reproducible runs](https://omegakit.readthedocs.io/en/latest/reproducible-runs/)
+
 - Run one experiment for many values:
   [Parameter sweeps](https://omegakit.readthedocs.io/en/latest/recipes/parameter-sweeps/)
 - Check configs before anything runs, and get completion in your editor:

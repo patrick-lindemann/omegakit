@@ -25,8 +25,7 @@ config.tracking.url: https://tracker.example.com/api/runs?token=tok-5f3a9c1e7b2d
 ```
 
 The config from `load_config` is not resolved, so it shows where the token comes
-from, not the token. Save and log that config, as
-[Reproducible runs](../../reproducible-runs/index.md) does. Your code still reads
+from, not the token. Save and log that config. Your code still reads
 the real URL, for example to pass it to a tracking client. `omegakit show
 --resolve` masks the token:
 

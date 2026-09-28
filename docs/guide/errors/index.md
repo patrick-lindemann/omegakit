@@ -40,30 +40,6 @@ ConfigValidationError: Invalid config in `epochs` (Experiment): Value 'many' of 
 - A missing experiment file is not a config error. It raises `FileNotFoundError`,
   which `run` catches separately.
 
-## Errors in a sweep
-
-A sweep runs one experiment per combination of values
-([Parameter sweeps](../recipes/parameter-sweeps/index.md)). A combination with an
-invalid value can be skipped, but a class that cannot serve as a schema breaks every
-run, so the sweep stops:
-
-```{literalinclude} main.py
-:language: python
-:start-at: import sys
-:end-at: print(f"built
-```
-
-```{code-block} text
-:caption: Output
-
-built epochs=10
-skipped epochs=many: Invalid config in `epochs` (Experiment): Value 'many' of type 'str' could not be converted to Integer
-built epochs=20
-```
-
-`SchemaDefinitionError` is not a `ConfigValidationError`, so
-`except ConfigValidationError` never skips a broken class.
-
 ## Errors when you read the config
 
 `load_config` leaves interpolations and `???` unresolved, so reading a value can
@@ -109,7 +85,7 @@ error.__notes__: ['while instantiating model (torch.nn.Linear)']
 ```
 
 A class with a schema rejects a key like this with `ConfigValidationError` before
-anything is built ([Configurable classes](../objects/configurable-classes/index.md)).
+anything is built ([Configurable classes](../../objects/configurable-classes/index.md)).
 
 ## Rules
 

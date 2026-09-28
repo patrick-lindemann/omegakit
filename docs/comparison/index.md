@@ -11,10 +11,11 @@ Checked on 2026-09-27 against [Hydra](https://pypi.org/project/hydra-core/) 1.3.
 [OmegaConf](https://pypi.org/project/omegaconf/) 2.3.1, the latest releases on
 PyPI that day.
 
-What omegakit leaves to you is listed on
-[Reproducible runs](../reproducible-runs/index.md#what-omegakit-does-not-do). It
-also parses no command line: your entrypoint passes the arguments to `load_config`
-as overrides, which change values but cannot add a file.
+omegakit loads, checks and builds configs, and leaves the rest to your entrypoint.
+It parses no command line: your entrypoint passes the arguments to `load_config` as
+overrides, which change values but cannot add a file. It creates no run
+directories, records no git commit or package versions, sets no determinism flags
+and launches no jobs.
 
 ## Hydra
 
