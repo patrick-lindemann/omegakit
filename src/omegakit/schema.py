@@ -7,7 +7,7 @@ import inspect
 import operator
 import sys
 import types
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import (
     Any,
@@ -84,7 +84,7 @@ def find_schema(cls: type) -> type | None:
 @functools.cache
 def classify_fields(
     schema: type, outer: tuple[type, ...] = ()
-) -> dict[str, tuple[FieldKind, Any]]:
+) -> Mapping[str, tuple[FieldKind, Any]]:
     """Classify the configurable fields of a schema dataclass.
 
     Args:
@@ -93,7 +93,8 @@ def classify_fields(
             Defaults to `()`.
 
     Returns:
-        The kind and resolved annotation of every configurable field, by field name.
+        The kind and resolved annotation of every configurable field, by field name,
+        read-only because the result is cached.
 
     Raises:
         SchemaDefinitionError: If the schema uses a dataclass feature outside the
@@ -113,14 +114,16 @@ def classify_fields(
                 f"Field `{name}` of schema `{schema.__qualname__}` is an `InitVar` "
                 "without a default, which a config cannot set. Give it a default."
             )
-    return {
-        field.name: (
-            _field_kind(hints[field.name], schema, field.name, (*outer, schema)),
-            hints[field.name],
-        )
-        for field in dataclasses.fields(schema)
-        if field.init
-    }
+    return types.MappingProxyType(
+        {
+            field.name: (
+                _field_kind(hints[field.name], schema, field.name, (*outer, schema)),
+                hints[field.name],
+            )
+            for field in dataclasses.fields(schema)
+            if field.init
+        }
+    )
 
 
 @functools.cache
