@@ -12,14 +12,14 @@ classes raise passes through unchanged.
 :language: python
 :caption: main.py
 :start-at: def run(
-:end-at: run("experiments/poly3-adam.yaml", ["trainer.epochs=many"])
+:end-at: run("experiments/mlp.yaml", ["epochs=many"])
 ```
 
 ```text
-poly3-adam: runs/poly3-adam/seed3
-No such file: poly3-adma.yaml
-ConfigLoadError: Cannot parse the override `trainer.epochs=[50`: while parsing a flow sequence: expected ',' or ']', but got '<stream end>' (line 1, column 4)
-ConfigValidationError: Invalid config in `trainer.epochs` (TrainerConfig): Value 'many' of type 'str' could not be converted to Integer
+mlp: runs/mlp/seed3
+No such file: mpl.yaml
+ConfigLoadError: Cannot parse the override `epochs=[50`: while parsing a flow sequence: expected ',' or ']', but got '<stream end>' (line 1, column 4)
+ConfigValidationError: Invalid config in `epochs` (Experiment): Value 'many' of type 'str' could not be converted to Integer
 ```
 
 - A missing experiment file raises `FileNotFoundError`, as `open` does.
@@ -44,13 +44,13 @@ run, so the sweep stops:
 
 ```{literalinclude} main.py
 :language: python
-:start-at: for degree in
+:start-at: for hidden in
 ```
 
 ```text
-Built degree=3
-Skipped degree=three: Invalid config in `model.degree` (Polynomial): Value 'three' of type 'str' could not be converted to Integer
-Built degree=5
+Built hidden=8
+Skipped hidden=wide: Invalid config in `model.hidden` (MLPConfig): Value 'wide' of type 'str' could not be converted to Integer
+Built hidden=32
 ```
 
 `SchemaDefinitionError` is not a `ConfigValidationError`, so
@@ -77,11 +77,11 @@ MissingMandatoryValue: Missing mandatory value: name
 A config that passed `validate` resolves without errors, unless a resolver gives a
 different result the next time.
 
-## Errors from your constructors
+## Errors from constructors
 
 An exception from a class that a config builds propagates as it is, with a note that
-names the node. The tracker has no schema, so a key it does not take reaches its
-`__init__`, which raises `TypeError`:
+names the node. The linear baseline builds `torch.nn.Linear`, which has no schema,
+so a key it does not take reaches its `__init__`, which raises `TypeError`:
 
 ```{literalinclude} main.py
 :language: python
@@ -91,11 +91,11 @@ names the node. The tracker has no schema, so a key it does not take reaches its
 ```
 
 ```text
-Tracker.__init__() got an unexpected keyword argument 'token'
-['while instantiating tracker (curvefit.tracking.Tracker)']
+Linear.__init__() got an unexpected keyword argument 'hidden'
+['while instantiating model (torch.nn.Linear)']
 ```
 
-Give the class a schema to have a key like this rejected with
+A class with a schema, such as `project.MLP`, rejects a key like this with
 `ConfigValidationError` before anything is built
 ([Configurable classes](../objects/configurable-classes/index.md)).
 

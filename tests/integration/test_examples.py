@@ -169,7 +169,7 @@ def test_example_never_overwrites_a_run(tmp_path):
 SESSION_PAGES = {
     "getting-started": EXAMPLE,
     "reproducible-runs": EXAMPLE,
-    "command-line": CURVEFIT,
+    "command-line": EXAMPLE,
     "schemas/editor-support": EXAMPLE,
     "recipes/checking-experiments-in-ci": EXAMPLE,
 }

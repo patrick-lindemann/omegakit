@@ -1,8 +1,8 @@
 import sys
 from pathlib import Path
 
-from curvefit import Experiment
 from omegaconf.errors import OmegaConfBaseException
+from project import Experiment
 
 from omegakit import (
     ConfigValidationError,
@@ -12,7 +12,7 @@ from omegakit import (
     validate,
 )
 
-configs = "../curvefit/configs"
+configs = "../example/configs"
 
 
 def run(experiment_file: str, overrides: list[str]) -> None:
@@ -27,10 +27,10 @@ def run(experiment_file: str, overrides: list[str]) -> None:
         print(f"{type(error).__name__}: {error}")
 
 
-run("experiments/poly3-adam.yaml", ["seed=3"])
-run("experiments/poly3-adma.yaml", [])
-run("experiments/poly3-adam.yaml", ["trainer.epochs=[50"])
-run("experiments/poly3-adam.yaml", ["trainer.epochs=many"])
+run("experiments/mlp.yaml", ["seed=3"])
+run("experiments/mpl.yaml", [])
+run("experiments/mlp.yaml", ["epochs=[50"])
+run("experiments/mlp.yaml", ["epochs=many"])
 
 config = load_config(f"{configs}/base.yaml")
 try:
@@ -39,20 +39,20 @@ except OmegaConfBaseException as error:
     print(type(error).__name__, error, sep=": ")
 
 try:
-    run("experiments/poly3-adam.yaml", ["tracker.token=abc"])
+    run("experiments/linear.yaml", ["model.hidden=64"])
 except TypeError as error:
     print(error)
     print(error.__notes__)
 
-for degree in ["3", "three", "5"]:
+for hidden in ["8", "wide", "32"]:
     config = load_config(
-        f"{configs}/experiments/poly3-adam.yaml", overrides=[f"model.degree={degree}"]
+        f"{configs}/experiments/mlp.yaml", overrides=[f"model.hidden={hidden}"]
     )
     try:
         instantiate(config, schema=Experiment)
     except SchemaDefinitionError as error:
         sys.exit(f"Cannot sweep: {error}")
     except ConfigValidationError as error:
-        print(f"Skipped degree={degree}: {error}")
+        print(f"Skipped hidden={hidden}: {error}")
         continue
-    print(f"Built degree={degree}")
+    print(f"Built hidden={hidden}")

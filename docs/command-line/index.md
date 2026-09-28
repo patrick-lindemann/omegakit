@@ -2,21 +2,19 @@
 
 Installing omegakit adds the `omegakit` command, also available as
 `python -m omegakit`. Run it from the directory that your `$class` paths import
-from, here `curvefit`'s:
+from, here the example project's:
 
 ```text
-$ omegakit check configs/experiments/*.yaml --schema curvefit.Experiment --allow-module curvefit
-$ omegakit check configs/experiments/poly3-adam.yaml trainer.epochs=many --schema curvefit.Experiment
-configs/experiments/poly3-adam.yaml: ConfigValidationError: Invalid config in `trainer.epochs` (TrainerConfig): Value 'many' of type 'str' could not be converted to Integer
-$ omegakit show configs/experiments/poly3-adam.yaml --node data.test
-$class: curvefit.data.Synthetic
-function:
-  $ref: curvefit.data.sine
+$ omegakit check configs/experiments/*.yaml --schema project.Experiment --allow-module project --allow-module torch.nn --allow-module torch.optim
+$ omegakit check configs/experiments/mlp.yaml epochs=many --schema project.Experiment
+configs/experiments/mlp.yaml: ConfigValidationError: Invalid config in `epochs` (Experiment): Value 'many' of type 'str' could not be converted to Integer
+$ omegakit show configs/experiments/mlp.yaml --node data.test
+$class: project.SineWave
+'n': 256
 noise: 0.1
 seed: 1234
-'n': 200
-$ omegakit show configs/experiments/poly3-adam.yaml seed=3 --node run_dir --resolve
-runs/poly3-adam/seed3
+$ omegakit show configs/experiments/mlp.yaml seed=3 --node run_dir --resolve
+runs/mlp/seed3
 ```
 
 ## `check`
@@ -38,7 +36,7 @@ repos:
     hooks:
       - id: omegakit-check
         name: omegakit check
-        entry: omegakit check --schema curvefit.Experiment --allow-module curvefit
+        entry: omegakit check --schema project.Experiment --allow-module project --allow-module torch.nn --allow-module torch.optim
         language: system
         files: ^configs/experiments/.*\.yaml$
 ```
@@ -49,8 +47,8 @@ repos:
 ## `show`
 
 `show` prints the assembled config: what imports, `$base`, `$defaults` and
-overrides produced. The test split above got `$class`, `function` and `noise` from
-`$defaults`, and `n` from its `$base`. Values stay as written unless you pass
+overrides produced. The test split above is not in `mlp.yaml`; it came from
+`base.yaml` through the experiment's `$base`. Values stay as written unless you pass
 `--resolve`, so an `${oc.env:...}` shows the variable's name, not its value.
 `--resolve` shows the values a run will get; look at a run with it before you
 launch it. `--node` prints one node, by the same dotted path as
