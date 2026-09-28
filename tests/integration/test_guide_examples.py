@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from omegaconf import OmegaConf
 
-from omegakit import instantiate, load_config, validate
+from omegakit import ConfigLoadError, instantiate, load_config, validate
 from omegakit.resolvers.paths import register_paths_resolver
 from omegakit.resolvers.secrets import register_secret_resolver
 from omegakit.resolvers.torch import register_torch_resolvers
@@ -20,7 +20,14 @@ SECTIONS = [
     for path in DOCS.iterdir()
     if path.is_dir() and path.name not in {"_build", "example"}
 ]
-YAML_FILES = sorted(path for section in SECTIONS for path in section.rglob("*.yaml"))
+# Files that show an error on their page, and so must not load.
+INVALID_YAML_FILES = {DOCS / "guide" / "errors" / "broken.yaml"}
+YAML_FILES = sorted(
+    path
+    for section in SECTIONS
+    for path in section.rglob("*.yaml")
+    if path not in INVALID_YAML_FILES
+)
 SCRIPTS = sorted(path for section in SECTIONS for path in section.rglob("main.py"))
 
 
@@ -83,3 +90,11 @@ def test_guide_script_output_is_on_its_page(script: Path):
     shown = re.findall(r":caption: Output\n\n(.*?)```", page, re.S)
     if shown or output:
         assert "".join(shown) == output
+
+
+@pytest.mark.parametrize(
+    "path", sorted(INVALID_YAML_FILES), ids=lambda path: str(path.relative_to(DOCS))
+)
+def test_guide_invalid_yaml_does_not_load(path: Path):
+    with pytest.raises(ConfigLoadError):
+        load_config(path)

@@ -26,7 +26,7 @@ def run(experiment_file: str, overrides: list[str]) -> None:
 
 run("experiment.yaml", ["epochs=50"])
 run("experment.yaml", [])
-run("experiment.yaml", ["epochs=[50"])
+run("broken.yaml", [])
 run("experiment.yaml", ["epochs=many"])
 
 config = load_config("untitled.yaml")

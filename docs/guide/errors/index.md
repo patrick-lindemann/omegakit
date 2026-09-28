@@ -7,11 +7,17 @@ raise passes through unchanged.
 ## One handler for the config
 
 `run` loads an experiment and builds it. The script runs it on a valid file, a
-missing file, an override that does not parse and a value of the wrong type:
+missing file, a file whose `$base` lacks its `~import`, and a value of the wrong
+type:
 
 ```{literalinclude} experiment.yaml
 :language: yaml
 :caption: experiment.yaml
+```
+
+```{literalinclude} broken.yaml
+:language: yaml
+:caption: broken.yaml
 ```
 
 ```{literalinclude} main.py
@@ -25,7 +31,7 @@ missing file, an override that does not parse and a value of the wrong type:
 
 experiment.epochs: 50
 missing file: experment.yaml
-ConfigLoadError: Cannot parse the override `epochs=[50`: while parsing a flow sequence: expected ',' or ']', but got '<stream end>' (line 1, column 4)
+ConfigLoadError: `$base` in `<root>` is not a dictionary or a list of dictionaries.
 ConfigValidationError: Invalid config in `epochs` (Experiment): Value 'many' of type 'str' could not be converted to Integer
 ```
 
