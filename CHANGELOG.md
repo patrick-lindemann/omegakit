@@ -415,7 +415,7 @@ All notable changes to this project are documented here. The format follows
 ## [0.1.0] - 2026-09-23
 
 First release. The configuration language is specified in the
-[configuration contracts](https://omegakit.readthedocs.io/en/latest/contracts.html).
+[configuration contracts](https://github.com/patrick-lindemann/omegakit/blob/v0.1.0/docs/contracts.md).
 
 ### Changed compared with the pre-release version
 

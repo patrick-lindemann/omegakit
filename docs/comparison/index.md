@@ -56,10 +56,10 @@ and launches no jobs.
   line and config files (YAML, JSON, TOML, Jsonnet) from type hints and
   docstrings, and builds classes from `class_path` and `init_args`. The signatures
   come first; in omegakit the config files come first.
-- [LightningCLI](https://lightning.ai/docs/pytorch/stable/cli/lightning_cli_intermediate.html)
+- [LightningCLI](https://lightning.ai/docs/pytorch/stable/cli/lightning_cli_intermediate)
   is built on jsonargparse for PyTorch Lightning. It configures the model, the data
   module and the trainer, and
-  [saves the config of each run](https://lightning.ai/docs/pytorch/stable/cli/lightning_cli_advanced.html)
+  [saves the config of each run](https://lightning.ai/docs/pytorch/stable/cli/lightning_cli_advanced)
   as `config.yaml` in its log directory. Use it when you train with Lightning.
 
 ## Fiddle, gin-config and ml_collections
