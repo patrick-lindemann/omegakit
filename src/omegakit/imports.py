@@ -145,8 +145,7 @@ def _load_import(
         statement = container[key]
     except OmegaConfBaseException as error:
         raise ConfigLoadError(
-            f"Cannot resolve `{statement}` in `{config_path}`: "
-            f"{str(error).splitlines()[0]}"
+            f"Cannot resolve `{statement}` in `{config_path}`: {describe_error(error)}"
         ) from error
     args = statement[len(IMPORT_KEY) :].strip().split("#")
     if len(args) > 2:

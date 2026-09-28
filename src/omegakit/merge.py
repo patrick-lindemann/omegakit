@@ -4,7 +4,12 @@ from typing import Any, cast
 from omegaconf import DictConfig, ListConfig, OmegaConf
 from omegaconf.errors import InterpolationKeyError, OmegaConfBaseException
 
-from .errors import ConfigLoadError, format_full_key, format_node_path
+from .errors import (
+    ConfigLoadError,
+    describe_error,
+    format_full_key,
+    format_node_path,
+)
 from .keys import BASE_KEY, DEFAULTS_KEY
 from .walk import walk, walk_post_order
 
@@ -83,7 +88,7 @@ def _merge_in_dependency_order(
             if first_error is not None:
                 raise ConfigLoadError(
                     f"Cannot resolve `{format_full_key(first_error.full_key or key)}`: "
-                    f"{str(first_error).splitlines()[0]}"
+                    f"{describe_error(first_error)}"
                 ) from first_error
             nodes = ", ".join(
                 f"`{format_node_path(node)}`"

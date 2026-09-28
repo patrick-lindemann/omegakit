@@ -4,7 +4,7 @@ from typing import Any
 from omegaconf import DictConfig, ListConfig
 from omegaconf.errors import OmegaConfBaseException
 
-from .errors import ConfigLoadError, OmegaKitBaseException
+from .errors import ConfigLoadError, OmegaKitBaseException, describe_error
 from .imports import load_file, resolve_imports
 from .keys import CLASS_KEY, META_KEY, PARTIAL_KEY, REF_KEY
 from .merge import apply_defaults, merge_bases
@@ -70,7 +70,7 @@ def load_config(
             raise
         else:
             raise ConfigLoadError(
-                f"Cannot load `{file_path}`: {str(error).splitlines()[0]}"
+                f"Cannot load `{file_path}`: {describe_error(error)}"
             ) from error
     if overrides is not None:
         merge_overrides(config, overrides)

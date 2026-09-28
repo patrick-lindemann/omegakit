@@ -76,7 +76,7 @@ def find_schema(cls: type) -> type | None:
         owner = "" if config_type is cls else f" of `{cls.__qualname__}`"
         raise SchemaDefinitionError(
             f"Schema `{config_type.__qualname__}`{owner} cannot be validated by "
-            f"OmegaConf: {str(error).splitlines()[0]}"
+            f"OmegaConf: {describe_error(error)}"
         ) from error
     return config_type
 

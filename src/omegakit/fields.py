@@ -21,6 +21,7 @@ from .errors import (
     ConfigValidationError,
     OmegaKitBaseException,
     SchemaDefinitionError,
+    describe_error,
     describe_value,
     format_full_key,
     format_path,
@@ -92,7 +93,7 @@ def coerce_fields(
     except OmegaConfBaseException as error:
         raise SchemaDefinitionError(
             f"Schema `{schema.__qualname__}` cannot be validated by OmegaConf: "
-            f"{str(error).splitlines()[0]}"
+            f"{describe_error(error)}"
         ) from error
     try:
         merged = OmegaConf.to_container(
@@ -108,7 +109,7 @@ def coerce_fields(
                 f"Missing required field `{format_full_key(error.full_key)}` in "
                 f"{location}."
             ) from error
-        message = str(error).splitlines()[0]
+        message = describe_error(error)
         if error.full_key:
             location = (
                 f"`{format_path((*path, format_full_key(error.full_key)))}` "
@@ -191,7 +192,7 @@ def _coerce(
     except OmegaConfBaseException as error:
         raise SchemaDefinitionError(
             f"`{format_path(path)}` has `{annotation}`, which OmegaConf cannot "
-            f"validate: {str(error).splitlines()[0]}"
+            f"validate: {describe_error(error)}"
         ) from error
     try:
         merged = OmegaConf.to_container(
@@ -210,7 +211,7 @@ def _coerce(
                 f"`{format_path(path)}`."
             ) from error
         raise ConfigValidationError(
-            f"Invalid config in `{format_path(path)}`: {str(error).splitlines()[0]}"
+            f"Invalid config in `{format_path(path)}`: {describe_error(error)}"
         ) from error
     return _build_value(
         cast(dict[str, Any], merged)["value"],

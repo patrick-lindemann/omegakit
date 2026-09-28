@@ -12,6 +12,7 @@ from omegaconf.errors import (
 
 from .errors import (
     ConfigValidationError,
+    describe_error,
     describe_value,
     format_full_key,
     format_path,
@@ -96,7 +97,7 @@ def resolve_config(
             f" `{format_full_key(error.full_key)}`" if error.full_key else " the config"
         )
         raise ConfigValidationError(
-            f"Cannot resolve{location}: {str(error).splitlines()[0]}"
+            f"Cannot resolve{location}: {describe_error(error)}"
         ) from error
 
 
