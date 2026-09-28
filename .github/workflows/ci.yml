@@ -1,11 +1,20 @@
 name: CI
 
+# A push to any branch, such as develop, runs the quick jobs: lint, docs and the
+# tests on one Python version. A pull request into main and a release candidate
+# run everything.
 on:
   push:
-    # Tags run CI through the release workflow instead.
+    # Tags run CI through the release candidate workflow instead.
     branches: ["**"]
   pull_request:
+    branches: [main]
   workflow_call:
+    inputs:
+      full:
+        description: Run every job, not only the quick ones.
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -40,7 +49,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.12", "3.13", "3.14"]
+        python-version: >-
+          ${{ fromJSON(
+            (github.event_name == 'pull_request' || inputs.full)
+            && '["3.12", "3.13", "3.14"]' || '["3.13"]'
+          ) }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -53,6 +66,7 @@ jobs:
       - run: uv run --no-sync pytest --cov
 
   test-lowest:
+    if: github.event_name == 'pull_request' || inputs.full
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -70,6 +84,7 @@ jobs:
   test-omegaconf-next:
     # The newest OmegaConf pre-release in the supported range, so that a change in
     # OmegaConf shows up here before it is released to users.
+    if: github.event_name == 'pull_request' || inputs.full
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
