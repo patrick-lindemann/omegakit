@@ -24,6 +24,7 @@ All notable changes to this project are documented here. The format follows
   Checking experiments in CI.
 - Handling errors is part of the Guide, at `guide/errors/`, and the Command line page
   is under Reference.
+- The comparison page no longer has a section on OmegaConf itself.
 - The documentation and the README use a small PyTorch project as their example,
   instead of `curvefit`: an MLP fitted to noisy samples of a sine wave, with
   `torch.optim` and `torch.nn` named straight from the configs.

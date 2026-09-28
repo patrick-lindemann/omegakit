@@ -1,16 +1,5 @@
 # Comparison to other libraries
 
-Checked on 2026-09-27 against [Hydra](https://pypi.org/project/hydra-core/) 1.3.7,
-[hydra-zen](https://pypi.org/project/hydra-zen/) 0.16.0,
-[jsonargparse](https://pypi.org/project/jsonargparse/) 4.52.0,
-[Lightning](https://pypi.org/project/lightning/) 2.6.6,
-[Fiddle](https://pypi.org/project/fiddle/) 0.3.0,
-[gin-config](https://pypi.org/project/gin-config/) 0.5.0,
-[ml_collections](https://pypi.org/project/ml-collections/) 1.1.0,
-[Sacred](https://pypi.org/project/sacred/) 0.8.7 and
-[OmegaConf](https://pypi.org/project/omegaconf/) 2.3.1, the latest releases on
-PyPI that day.
-
 omegakit loads, checks and builds configs, and leaves the rest to your entrypoint.
 It parses no command line: your entrypoint passes the arguments to `load_config` as
 overrides, which change values but cannot add a file. It creates no run
@@ -107,10 +96,12 @@ validating it imports the modules it names but calls none of their classes
 - omegakit records none of this and seeds nothing. Use Sacred if you want each run
   recorded and seeded for you.
 
-## OmegaConf
-
-- [OmegaConf](https://omegaconf.readthedocs.io/en/2.3_branch/) provides merging,
-  interpolation, custom resolvers and structured configs. `load_config` returns its
-  `DictConfig`.
-- It does not build objects or import files by path. Use it alone if you build
-  everything yourself.
+Checked on 2026-09-27 against [Hydra](https://pypi.org/project/hydra-core/) 1.3.7,
+[hydra-zen](https://pypi.org/project/hydra-zen/) 0.16.0,
+[jsonargparse](https://pypi.org/project/jsonargparse/) 4.52.0,
+[Lightning](https://pypi.org/project/lightning/) 2.6.6,
+[Fiddle](https://pypi.org/project/fiddle/) 0.3.0,
+[gin-config](https://pypi.org/project/gin-config/) 0.5.0,
+[ml_collections](https://pypi.org/project/ml-collections/) 1.1.0 and
+[Sacred](https://pypi.org/project/sacred/) 0.8.7, the latest releases on PyPI that
+day.
