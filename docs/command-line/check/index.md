@@ -75,5 +75,4 @@ configs/experiments/mlp.yaml: ConfigValidationError: `$class: subprocess.Popen` 
   nothing for valid ones. Any exception, and a `SystemExit` raised by an imported
   module, marks that file invalid, and the other files are still checked.
   `KeyboardInterrupt` stops the command.
-- It exits with 1 if any file is invalid
-  ([Overview](../index.md#rules)).
+- It exits with 1 if any file is invalid.
