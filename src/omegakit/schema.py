@@ -152,20 +152,7 @@ def check_schema(cls: type) -> None:
         return
     fields = classify_fields(schema)
     parameters = inspect.signature(cls).parameters
-    try:
-        hints = get_type_hints(cls.__init__)
-    except Exception:
-        # Annotations imported under `TYPE_CHECKING` do not resolve; check the rest.
-        hints = {}
-        for name, annotation in getattr(cls.__init__, "__annotations__", {}).items():
-            try:
-                hints[name] = (
-                    eval(annotation, vars(sys.modules[cls.__init__.__module__]))
-                    if isinstance(annotation, str)
-                    else annotation
-                )
-            except Exception:
-                continue
+    hints = _init_hints(cls)
     keyword_names = {
         name
         for name, parameter in parameters.items()
@@ -428,6 +415,24 @@ def _type_hints(schema: type) -> dict[str, Any]:
             f"Cannot resolve the annotations of schema `{schema.__qualname__}`: "
             f"{describe_error(error)}."
         ) from error
+
+
+def _init_hints(cls: type) -> dict[str, Any]:
+    try:
+        return get_type_hints(cls.__init__)
+    except Exception:
+        # Annotations imported under `TYPE_CHECKING` do not resolve; check the rest.
+        hints = {}
+        for name, annotation in getattr(cls.__init__, "__annotations__", {}).items():
+            try:
+                hints[name] = (
+                    eval(annotation, vars(sys.modules[cls.__init__.__module__]))
+                    if isinstance(annotation, str)
+                    else annotation
+                )
+            except Exception:
+                continue
+        return hints
 
 
 def _field_kind(
