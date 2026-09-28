@@ -1,17 +1,43 @@
 name: Release
 
+# A push to main releases the version in pyproject.toml, once: it publishes the
+# package to PyPI, then creates the tag and the GitHub release. The commit passed
+# every CI job in its pull request, and a release candidate of the version was
+# tried first. A failed job can be re-run on its own.
 on:
   push:
-    tags: ["v*"]
+    branches: [main]
 
 jobs:
-  ci:
-    uses: ./.github/workflows/ci.yml
+  check:
+    runs-on: ubuntu-latest
     permissions:
       contents: read
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      release: ${{ steps.version.outputs.release }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - id: version
+        run: |
+          version=$(python3 -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if git rev-parse -q --verify "refs/tags/v$version" > /dev/null; then
+            echo "v$version is already released."
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          elif [ -z "$(git tag --list "v$version-rc*")" ]; then
+            echo "::error::v$version has no release candidate, such as v$version-rc1."
+            exit 1
+          else
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          fi
 
   build:
-    needs: ci
+    needs: check
+    if: needs.check.outputs.release == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -19,9 +45,6 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          fetch-depth: 0
-      - name: Check that the tagged commit is on main
-        run: git merge-base --is-ancestor "$GITHUB_SHA" origin/main
       - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
         with:
           version: "0.11.33"
@@ -47,3 +70,29 @@ jobs:
           path: dist/
       # Publishes with PEP 740 attestations.
       - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
+
+  github-release:
+    needs: [check, publish]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ needs.check.outputs.version }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # The notes are the version's section of CHANGELOG.md.
+      - run: |
+          python3 - <<'PY'
+          import os, re
+          text = open("CHANGELOG.md").read()
+          heading = re.search(rf"^## \[{re.escape(os.environ['VERSION'])}\].*$", text, re.M)
+          end = text.find("\n## [", heading.end())
+          notes = text[heading.end() : end if end != -1 else len(text)]
+          open("notes.md", "w").write(notes.strip() + "\n")
+          PY
+      - run: >-
+          gh release create "v$VERSION" --target "$GITHUB_SHA" --title "v$VERSION"
+          --notes-file notes.md
