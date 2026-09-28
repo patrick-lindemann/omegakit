@@ -11,7 +11,6 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.intersphinx",
     "sphinx_autodoc_typehints",
-    "sphinx_reredirects",
 ]
 
 # Markdown-style backticks in docstrings render as inline code.
@@ -24,4 +23,3 @@ napoleon_numpy_docstring = False
 autodoc_member_order = "bysource"
 html_theme = "furo"
 html_title = "omegakit"
-redirects = {}

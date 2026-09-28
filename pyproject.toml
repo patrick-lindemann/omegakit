@@ -44,7 +44,6 @@ docs = [
     "myst-parser>=4,<5",
     "sphinx>=8.2,<9",
     "sphinx-autodoc-typehints>=3,<4",
-    "sphinx-reredirects>=1,<2",
     # The docs example is a PyTorch project, and PyTorch warns without NumPy.
     "numpy>=2",
     "torch>=2.9",
