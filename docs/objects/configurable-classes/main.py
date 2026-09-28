@@ -1,10 +1,12 @@
-from curvefit.trainer import Trainer
+from project import MLP
 
-from omegakit import instantiate, make_node
+from omegakit import check_schema, instantiate, make_node
 
-config = {"$class": "curvefit.trainer.Trainer", "epochs": "50", "schedule": "cosine"}
-trainer = instantiate(config)
-print(type(trainer).__name__, trainer.epochs)
+config = {"$class": "project.MLP", "hidden": "64", "activation": "relu"}
+model = instantiate(config)
+print(type(model).__name__, model.net)
 
-trainer = instantiate(make_node(Trainer, epochs=10))
-print(type(trainer).__name__, trainer.epochs)
+model = instantiate(make_node(MLP, hidden=8, layers=1))
+print(len(model.net))
+
+check_schema(MLP)

@@ -1,15 +1,16 @@
 # Configurable classes
 
 A class can carry its own schema: subclass `Configurable[TConfig]` with a dataclass
-`TConfig`. Use it when the config differs from the constructor, for example when a
-factory picks the class to build. `curvefit`'s trainer takes the name of a learning
-rate schedule, and returns the trainer for it:
+`TConfig`. Use it for a class that cannot be a dataclass itself, such as a PyTorch
+module, or whose config differs from its constructor. The example project's MLP
+checks its arguments this way:
 
-```{literalinclude} ../../curvefit/curvefit/trainer.py
+```{literalinclude} ../../example/project.py
 :language: python
-:caption: curvefit/trainer.py (excerpt)
-:start-at: "@dataclass"
-:end-before: "    @abstractmethod"
+:caption: project.py (excerpt)
+:start-at: "class MLPConfig:"
+:end-before: "    @override"
+:prepend: "@dataclass"
 ```
 
 ```{literalinclude} main.py
@@ -18,24 +19,28 @@ rate schedule, and returns the trainer for it:
 ```
 
 ```text
-CosineTrainer 50
-ConstantTrainer 10
+MLP Sequential(
+  (0): Linear(in_features=1, out_features=64, bias=True)
+  (1): ReLU()
+  (2): Linear(in_features=64, out_features=64, bias=True)
+  (3): ReLU()
+  (4): Linear(in_features=64, out_features=1, bias=True)
+)
+3
 ```
 
-The config is checked against `TrainerConfig` before anything is built, so
-`epochs: "50"` became the integer 50, and a schedule other than `constant` or
-`cosine` is rejected ([Validation](../../schemas/validation/index.md)).
-`from_config` then receives a `TrainerConfig`, with the right types for your editor,
-and parses nothing. The fields and how they are checked are as for any
-[dataclass schema](../../schemas/dataclass-schemas/index.md).
+The config is checked against `MLPConfig` before anything is built, so
+`hidden: "64"` became the integer 64, and an activation other than `relu` or `tanh`
+is rejected ([Validation](../../schemas/validation/index.md)). The fields and how
+they are checked are as for any [dataclass schema](../../schemas/dataclass-schemas/index.md).
 
 ## `from_config`
 
 `from_config` receives the typed config, with object fields already built, and
-calls the constructor. The default passes every field. Override it when the config
-and the constructor differ. A `from_config` that returns a subclass, as the
-trainer's does, annotates the base class as its return type, since `Self` would
-claim the class it was called on.
+calls the constructor. The default, which `MLP` uses, passes every field. Override
+it when the config and the constructor differ, for example when a field names the
+subclass to build. A `from_config` that returns a subclass annotates the base class
+as its return type, since `Self` would claim the class it was called on.
 
 Keep `**kwargs` in the signature: arguments given to a partial from `prepare`
 arrive there. Any class with a `from_config` classmethod works the same
@@ -47,17 +52,18 @@ A `TypedDict` `TConfig` gives `from_config` static types only: it receives a pla
 ## Children that code chooses
 
 `make_node` creates the node for a class, so code that picks a class itself, such
-as a test or a `from_config`, gets the same checks and factory as a config does.
-Above, `make_node(Trainer, epochs=10)` gave `{"$class": "curvefit.trainer.Trainer",
-"epochs": 10}`, and the default schedule chose a `ConstantTrainer`.
+as a test or a `from_config`, gets the same checks as a config does. Above,
+`make_node(MLP, hidden=8, layers=1)` gave `{"$class": "project.MLP", "hidden": 8,
+"layers": 1}`, a network of two linear layers around one activation.
 
 ## Checking the schema against the constructor
 
 `check_schema(cls)` checks that a schema fits the constructor: every required
 parameter has a field, and every field is a parameter of a matching type. It runs
 by itself whenever the class is validated or built; call it in a test to catch a
-mismatch without a config. It applies to the default `from_config` only, so the
-trainer, whose factory calls the constructors itself, is not checked.
+mismatch without a config, as `main.py` does for `MLP`. It applies to the default
+`from_config` only, so a class whose `from_config` calls the constructor itself is
+not checked.
 
 ## Rules
 

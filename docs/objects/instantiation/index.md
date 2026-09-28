@@ -2,7 +2,7 @@
 
 `instantiate` builds Python objects from a config node. `$class` calls a class or
 function, `$ref` imports an object without calling it, and `$partial` defers a call.
-`curvefit` builds a whole experiment from one experiment file:
+The example project builds a whole experiment from one experiment file:
 
 ```{literalinclude} main.py
 :language: python
@@ -10,20 +10,28 @@ function, `$ref` imports an object without calling it, and `$partial` defers a c
 ```
 
 ```text
-Polynomial 4.0
-Adam 0.05
+MLP mse_loss
+Adam 0.01
 0.1
-5
+97
 `$class: subprocess.Popen` in `model` names a module that is not in `allowed_modules`.
 ```
 
 ## `$class`
 
-`$class: curvefit.models.Polynomial` names the class to build, and the node's other
-keys become its arguments. Nested nodes with `$class`, in mappings and lists, are
-built first, so the experiment receives built datasets, a model and a trainer. A
-class with a `from_config` method, such as every `Configurable`, receives the
-arguments through it instead; see [Configurable classes](../configurable-classes/index.md).
+`$class: project.MLP` names the class to build, and the node's other keys become its
+arguments:
+
+```{literalinclude} ../../example/configs/experiments/mlp.yaml
+:language: yaml
+:start-at: "model:"
+:end-before: "optimizer:"
+```
+
+Nested nodes with `$class`, in mappings and lists, are built first, so the
+experiment receives built datasets and a built model. A class with a `from_config`
+method, such as every `Configurable`, receives the arguments through it instead; see
+[Configurable classes](../configurable-classes/index.md).
 
 `schema=Experiment` says what the result must be, and gives it that type for your
 editor and type checker. The root's `$class` must name `Experiment` or a subclass. A
@@ -32,14 +40,14 @@ root without `$class`, like the experiment files, is built as if it named
 
 ## `$ref`
 
-A `$ref` node is replaced by the object it names, without calling it. The metrics
-are the functions themselves:
+A `$ref` node is replaced by the object it names, without calling it. The loss is
+the function itself:
 
-```{literalinclude} ../../curvefit/configs/base.yaml
+```{literalinclude} ../../example/configs/base.yaml
 :language: yaml
 :caption: configs/base.yaml (excerpt)
-:start-at: "metrics:"
-:end-before: "tracker:"
+:start-at: "loss:"
+:end-before: "epochs:"
 ```
 
 ## `$partial` and `prepare`
@@ -48,36 +56,35 @@ The optimizer needs the model's parameters, which exist only once the model is
 built. `$partial: true` builds a `functools.partial` with the node's arguments, and
 the code passes the parameters when it calls it:
 
-```{literalinclude} ../../curvefit/configs/experiments/poly3-adam.yaml
+```{literalinclude} ../../example/configs/experiments/mlp.yaml
 :language: yaml
 :start-at: "optimizer:"
-:end-before: "trainer:"
 ```
 
 Arguments passed to a partial win over the config's, as `lr=0.1` did above.
 `prepare(node)` does the same for the node you pass: it checks the node and builds
 its children, and gives you a partial for the node itself, to call later with more
-arguments.
+arguments. Above, `prepare(config.model)` gave a partial that built an MLP with 8
+hidden units instead of 32.
 
 ## `$meta`
 
-`$meta` holds notes for people and tools, such as the hypothesis of
-`poly3-adam.yaml`. It is never passed to a constructor or to `from_config`, and
-`load_config` removes it unless you pass `keep_meta=True`
-([Loading](../../guide/loading/index.md)).
+`$meta` holds notes for people and tools, such as the hypothesis of an experiment.
+It is never passed to a constructor or to `from_config`, and `load_config` removes
+it unless you pass `keep_meta=True` ([Loading](../../guide/loading/index.md#metadata)).
 
 ## Checking before building
 
 `instantiate` and `prepare` check the node as [`validate`](../../schemas/validation/index.md)
 does before they build anything, so a mistake raises `ConfigValidationError` before
-any configured class is called. `allowed_modules=["curvefit"]` limits `$class` and
-`$ref` to your own package: the override above swapped in `subprocess.Popen`, and
-the module was never imported. It is a limit, not a sandbox; see
-[Trust model](../../security/trust-model/index.md).
+any configured class is called. `allowed_modules` limits `$class` and `$ref` to your
+own package and the parts of PyTorch the configs use: the override above swapped in
+`subprocess.Popen`, and the module was never imported. It is a limit, not a
+sandbox; see [Trust model](../../security/trust-model/index.md).
 
 An exception raised by a constructor or `from_config` keeps its type and message,
 and gets a note naming the node, such as
-`while instantiating data.train (curvefit.data.Synthetic)`.
+`while instantiating data.train (project.SineWave)`.
 
 ## Rules
 
