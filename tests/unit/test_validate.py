@@ -114,7 +114,7 @@ def test_validate_rejects_missing_required_fields():
 def test_validate_checks_class_nodes_without_a_root_schema():
     with pytest.raises(ConfigValidationError, match=r"`model\.depth` \(ModelConfig\)"):
         validate({"model": _model(depth="deep")})
-    with pytest.raises(ConfigValidationError, match=r"Unknown field.*'dpth'"):
+    with pytest.raises(ConfigValidationError, match=r"Unknown field.*`dpth`"):
         validate({"items": [{"$class": MODEL, "dpth": 1}]})
 
 
@@ -407,7 +407,7 @@ def test_validate_allow_missing_keeps_defaults_for_missing_values():
 
 def test_validate_class_schema_checks_a_fragment_without_root_class():
     validate({"depth": 1}, schema=schemas.Model)
-    with pytest.raises(ConfigValidationError, match=r"Unknown field.*'dpth'"):
+    with pytest.raises(ConfigValidationError, match=r"Unknown field.*`dpth`"):
         validate({"dpth": 1}, schema=schemas.Model)
 
 

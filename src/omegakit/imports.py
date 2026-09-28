@@ -166,8 +166,8 @@ def _load_import(
     node_path = args[1].strip() if len(args) > 1 else ""
     if file_path in visited_paths:
         raise ConfigLoadError(
-            f"Circular import detected: `{statement}` in `{config_path}` imports "
-            f"`{file_path}`, which was already imported."
+            f"Cannot import `{statement}` in `{config_path}`: `{file_path}` is already "
+            "being imported, so the imports form a cycle."
         )
     if file_path in cache:
         imported_config = cache[file_path]

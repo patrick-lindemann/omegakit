@@ -17,6 +17,12 @@ All notable changes to this project are documented here. The format follows
   path of a field inside a nested dataclass (`inner.value`). A plain value used to
   give OmegaConf's ``Invalid config in `depth` (ModelConfig): Missing mandatory
   value: depth``.
+- Error messages share one style: keys and names in backticks, "mapping" rather
+  than "dictionary", and "Cannot …". This changes the messages for unknown fields,
+  a `$ref` node with other keys, a `$base` or `$defaults` that is not a mapping, a
+  missing attribute (``Module `m` has no attribute `x`.``), an import cycle, a
+  `$partial` that is not a boolean, an `overrides` argument of the wrong type, and
+  a missing PyTorch.
 
 ### Fixed
 

@@ -65,6 +65,6 @@ def _parse_overrides(
         return parsed
     else:
         raise TypeError(
-            f"Unsupported overrides type: {type(overrides)}. Expected a `DictConfig`, "
-            "a `dict` or a `list` of `key=value` strings."
+            "`overrides` must be a `DictConfig`, a `dict` or a `list` of `key=value` "
+            f"strings, not `{type(overrides).__name__}`."
         )

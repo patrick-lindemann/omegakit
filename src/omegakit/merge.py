@@ -101,14 +101,14 @@ def _merge_base(node: DictConfig, base: Any) -> None:
         if not all(isinstance(item, DictConfig) for item in bases):
             raise ConfigLoadError(
                 f"List-valued `{BASE_KEY}` in `{format_node_path(node)}` must contain "
-                "only dictionaries."
+                "only mappings."
             )
     elif isinstance(base, DictConfig):
         bases = [base]
     else:
         raise ConfigLoadError(
-            f"`{BASE_KEY}` in `{format_node_path(node)}` is not a dictionary or a list "
-            "of dictionaries."
+            f"`{BASE_KEY}` in `{format_node_path(node)}` is not a mapping or a list of "
+            "mappings."
         )
     node.pop(BASE_KEY)
     merged_config = cast(DictConfig, OmegaConf.merge(*bases, node))
@@ -119,7 +119,7 @@ def _merge_base(node: DictConfig, base: Any) -> None:
 def _merge_defaults(node: DictConfig, defaults: Any) -> None:
     if not isinstance(defaults, DictConfig):
         raise ConfigLoadError(
-            f"`{DEFAULTS_KEY}` in `{format_node_path(node)}` is not a dictionary."
+            f"`{DEFAULTS_KEY}` in `{format_node_path(node)}` is not a mapping."
         )
     node.pop(DEFAULTS_KEY)
     for key in list(node.keys()):

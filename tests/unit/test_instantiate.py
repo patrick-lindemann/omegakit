@@ -58,7 +58,9 @@ def test_instantiate_missing_class_raises():
 
 
 def test_instantiate_unknown_class_raises_before_building():
-    with pytest.raises(ConfigValidationError, match="Could not import") as info:
+    with pytest.raises(
+        ConfigValidationError, match="has no attribute `DoesNotExist`"
+    ) as info:
         instantiate({"$class": "tests.helpers.DoesNotExist"})
     assert isinstance(info.value.__cause__, ImportError)
 

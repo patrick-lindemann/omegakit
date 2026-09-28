@@ -23,9 +23,9 @@ def test_overrides_accept_dict_config(write_yaml):
 
 @pytest.mark.parametrize("overrides", [5, ("a=2",), "a=2", OmegaConf.create(["a=2"])])
 def test_overrides_invalid_type_raises(write_yaml, overrides):
-    with pytest.raises(TypeError, match="Unsupported overrides type"):
+    with pytest.raises(TypeError, match="`overrides` must be a `DictConfig`"):
         load_config(write_yaml("c.yaml", "a: 1\n"), overrides=overrides)
-    with pytest.raises(TypeError, match="Unsupported overrides type"):
+    with pytest.raises(TypeError, match="`overrides` must be a `DictConfig`"):
         instantiate({"$class": "tests.helpers.Recorder"}, overrides=overrides)
 
 

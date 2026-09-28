@@ -16,7 +16,7 @@ def test_load_resolves_import(write_yaml):
 def test_load_circular_import_raises(tmp_path: Path, write_yaml):
     write_yaml("a.yaml", "foo: ~import b.yaml\n")
     write_yaml("b.yaml", "bar: ~import a.yaml\n")
-    with pytest.raises(ConfigLoadError, match="Circular import"):
+    with pytest.raises(ConfigLoadError, match="the imports form a cycle"):
         load_config(tmp_path / "a.yaml")
 
 
@@ -190,7 +190,7 @@ def test_import_of_invalid_yaml_names_the_importing_file(write_yaml):
 
 
 def test_import_self_raises(write_yaml):
-    with pytest.raises(ConfigLoadError, match="Circular import"):
+    with pytest.raises(ConfigLoadError, match="the imports form a cycle"):
         load_config(write_yaml("main.yaml", "n: ~import main.yaml\n"))
 
 

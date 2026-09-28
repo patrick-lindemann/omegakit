@@ -34,5 +34,7 @@ def test_ref_at_top_level_is_not_instantiable():
 
 
 def test_ref_unknown_attribute_raises():
-    with pytest.raises(ConfigValidationError, match=r"in `x`: Could not import"):
+    with pytest.raises(
+        ConfigValidationError, match=r"in `x`: Module `.*` has no attribute"
+    ):
         instantiate({"$class": POINT, "x": {"$ref": "builtins.nope"}, "y": 2})

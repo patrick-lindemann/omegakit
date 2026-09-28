@@ -31,7 +31,7 @@ type:
 
 experiment.epochs: 50
 missing file: experment.yaml
-ConfigLoadError: `$base` in `<root>` is not a dictionary or a list of dictionaries.
+ConfigLoadError: `$base` in `<root>` is not a mapping or a list of mappings.
 ConfigValidationError: Invalid config in `epochs` (Experiment): Value 'many' of type 'str' could not be converted to Integer
 ```
 

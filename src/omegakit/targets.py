@@ -30,9 +30,7 @@ def import_object(import_path: str) -> Any:
         return getattr(module, attr_name)
     except AttributeError as error:
         raise ImportError(
-            f"Could not import `{attr_name}` from module `{module_path}`. Make sure "
-            "the import name is correct, and that dependencies are installed, if "
-            "necessary.",
+            f"Module `{module_path}` has no attribute `{attr_name}`.",
             name=import_path,
         ) from error
 

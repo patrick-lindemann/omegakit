@@ -119,13 +119,13 @@ def test_types_union_with_a_list():
 def test_types_init_false_fields_are_not_configurable():
     obj = instantiate({"$class": "tests.schemas.InitFalse", "value": 2})
     assert obj.fields == {"value": 2}
-    with pytest.raises(ConfigValidationError, match=r"Unknown field.*'derived'"):
+    with pytest.raises(ConfigValidationError, match=r"Unknown field.*`derived`"):
         instantiate({"$class": "tests.schemas.InitFalse", "derived": 1})
 
 
 def test_types_init_var_with_default_and_keyword_only_fields():
     assert instantiate({"$class": f"{__name__}.WithInitVar"}).fields == {"value": 0}
-    with pytest.raises(ConfigValidationError, match=r"Unknown field.*'seed'"):
+    with pytest.raises(ConfigValidationError, match=r"Unknown field.*`seed`"):
         instantiate({"$class": f"{__name__}.WithInitVar", "seed": 1})
     assert instantiate({"$class": f"{__name__}.KwOnly", "value": 3}).fields == {
         "value": 3

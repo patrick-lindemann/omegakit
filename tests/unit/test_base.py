@@ -48,7 +48,7 @@ def test_load_base_populated_by_import(write_yaml):
 
 
 def test_load_base_non_dict_raises(write_yaml):
-    with pytest.raises(ConfigLoadError, match="is not a dictionary or a list"):
+    with pytest.raises(ConfigLoadError, match="is not a mapping or a list"):
         load_config(write_yaml("c.yaml", "$base: 5\na: 1\n"))
 
 
@@ -90,7 +90,7 @@ def test_load_base_errors_name_the_node_path(write_yaml):
 
 
 def test_load_list_base_non_dict_element_raises(write_yaml):
-    with pytest.raises(ConfigLoadError, match="must contain only dictionaries"):
+    with pytest.raises(ConfigLoadError, match="must contain only mappings"):
         load_config(write_yaml("c.yaml", "$base:\n  - { a: 1 }\n  - 5\n"))
 
 

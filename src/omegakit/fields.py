@@ -67,8 +67,8 @@ def coerce_fields(
     unknown = [key for key in values if key not in fields]
     if unknown:
         raise ConfigValidationError(
-            f"Unknown field(s) {', '.join(map(repr, unknown))} in {location}. "
-            f"Expected one of: {', '.join(fields)}."
+            f"Unknown field(s) {', '.join(f'`{key}`' for key in unknown)} in "
+            f"{location}. Expected one of {', '.join(f'`{name}`' for name in fields)}."
         )
     for field in dataclasses.fields(schema):
         if (

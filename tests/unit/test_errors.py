@@ -185,9 +185,7 @@ def test_nested_import_failure_has_one_prefix_per_import(write_yaml):
 def test_base_failure_has_no_load_prefix(write_yaml):
     with pytest.raises(ConfigLoadError) as info:
         load_config(write_yaml("c.yaml", "m:\n  $base: 3\n"))
-    assert str(info.value) == (
-        "`$base` in `m` is not a dictionary or a list of dictionaries."
-    )
+    assert str(info.value) == ("`$base` in `m` is not a mapping or a list of mappings.")
 
 
 def test_base_resolution_failure_has_one_prefix(write_yaml):

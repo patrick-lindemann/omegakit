@@ -62,8 +62,7 @@ def _import_torch() -> Any:
         if error.name != "torch":
             raise
         raise ImportError(
-            "Torch resolvers require PyTorch. Install torch for your platform "
-            "before calling register_torch_resolvers()."
+            "Torch resolvers require PyTorch. Install torch for your platform."
         ) from error
     return torch
 

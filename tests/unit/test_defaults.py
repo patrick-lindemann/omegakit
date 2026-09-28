@@ -53,7 +53,7 @@ def test_load_defaults_error_names_the_node_path(write_yaml):
 
 
 def test_load_defaults_non_dict_raises(write_yaml):
-    with pytest.raises(ConfigLoadError, match="is not a dictionary"):
+    with pytest.raises(ConfigLoadError, match="is not a mapping"):
         load_config(write_yaml("c.yaml", "node:\n  $defaults: 5\n  a: {}\n"))
 
 

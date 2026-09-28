@@ -241,7 +241,7 @@ def _check_target(
             if not isinstance(value, bool):
                 raise ConfigValidationError(
                     f"`{PARTIAL_KEY}` in `{format_path(path)}` must be `true` or "
-                    f"`false`, got {describe_value(value)}."
+                    f"`false`, but the config gives {describe_value(value)}."
                 )
             continue
         if isinstance(key, str) and key.startswith("$"):
@@ -382,7 +382,7 @@ def _import_ref(
     if len(node) > 1:
         raise ConfigValidationError(
             f"A node using `{REF_KEY}` cannot contain any other keys, but "
-            f"`{format_path(path)}` has {', '.join(map(repr, node))}."
+            f"`{format_path(path)}` has {', '.join(f'`{key}`' for key in node)}."
         )
     return _import(node, REF_KEY, path, allowed_modules)
 

@@ -112,7 +112,7 @@ built:
 ```{code-block} text
 :caption: Output
 
-error: Unknown field(s) 'hiden' in `model` (MLPConfig). Expected one of: hidden, layers, activation.
+error: Unknown field(s) `hiden` in `model` (MLPConfig). Expected one of `hidden`, `layers`, `activation`.
 ```
 
 ## 5. Run an experiment
