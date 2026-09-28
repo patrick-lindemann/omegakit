@@ -9,11 +9,21 @@ experiment, with `epochs: int`. Each command's `--help` lists its options.
 ## `check`
 
 `check` loads config files and [validates](../schemas/validation/index.md) them,
-without building anything. It prints one line per invalid file:
+without building anything. Valid files print nothing:
 
-```text
-$ omegakit check configs/experiments/*.yaml --schema project.Experiment
-$ omegakit check configs/experiments/mlp.yaml epochs=many --schema project.Experiment
+```sh
+omegakit check configs/experiments/*.yaml --schema project.Experiment
+```
+
+An invalid file prints one line:
+
+```sh
+omegakit check configs/experiments/mlp.yaml epochs=many --schema project.Experiment
+```
+
+```{code-block} text
+:caption: Output
+
 configs/experiments/mlp.yaml: ConfigValidationError: Invalid config in `epochs` (Experiment): Value 'many' of type 'str' could not be converted to Integer
 ```
 
@@ -23,13 +33,26 @@ configs/experiments/mlp.yaml: ConfigValidationError: Invalid config in `epochs` 
 `$base`, `$defaults` and overrides produced. With `--resolve` it prints the values a
 run will get:
 
-```text
-$ omegakit show configs/experiments/mlp.yaml --node data.test
+```sh
+omegakit show configs/experiments/mlp.yaml --node data.test
+```
+
+```{code-block} text
+:caption: Output
+
 $class: project.SineWave
 'n': 256
 noise: 0.1
 seed: 1234
-$ omegakit show configs/experiments/mlp.yaml seed=3 --node run_dir --resolve
+```
+
+```sh
+omegakit show configs/experiments/mlp.yaml seed=3 --node run_dir --resolve
+```
+
+```{code-block} text
+:caption: Output
+
 runs/mlp/seed3
 ```
 
@@ -39,8 +62,8 @@ runs/mlp/seed3
 ([Editor support](../schemas/editor-support/index.md)). With `--check` it writes
 nothing, and fails when the file no longer matches the class:
 
-```text
-$ omegakit json-schema project.Experiment -o experiment.schema.json --check
+```sh
+omegakit json-schema project.Experiment -o experiment.schema.json --check
 ```
 
 ## Rules

@@ -99,6 +99,8 @@ SESSION_PAGES = {
     "security/secrets": DOCS / "security" / "secrets",
 }
 PROGRAMS = {"python": [sys.executable], "omegakit": [sys.executable, "-m", "omegakit"]}
+COMMAND_BLOCK = r"```sh\n(.*?)\n```\n\n"
+OUTPUT_BLOCK = r"```\{code-block\} text\n:caption: Output\n\n(.*?)```"
 
 
 @pytest.mark.parametrize("page", SESSION_PAGES)
@@ -113,29 +115,28 @@ def test_page_sessions_show_real_output(page, tmp_path, monkeypatch):
     )
     directory = tmp_path
     text = (DOCS / page / "index.md").read_text()
-    sessions = re.findall(r"```text\n(\$ .*?)```", text, re.S)
-    assert sessions
-    for session in sessions:
-        for command, output in re.findall(
-            r"^\$ (.*)\n((?:(?!\$ ).*\n)*)", session, re.M
-        ):
-            program, *arguments = shlex.split(command)
-            arguments = [
-                name
-                for argument in arguments
-                for name in (
-                    sorted(glob.glob(argument, root_dir=directory))
-                    if "*" in argument
-                    else [argument]
-                )
-            ]
-            result = subprocess.run(
-                [*PROGRAMS[program], *arguments],
-                cwd=directory,
-                capture_output=True,
-                text=True,
+    # A command block, and the Output block right after it if the command prints.
+    commands = re.findall(f"{COMMAND_BLOCK}(?:{OUTPUT_BLOCK})?", text, re.S)
+    commands = [(c, output) for c, output in commands if c.split()[0] in PROGRAMS]
+    assert commands
+    for command, output in commands:
+        program, *arguments = shlex.split(command)
+        arguments = [
+            name
+            for argument in arguments
+            for name in (
+                sorted(glob.glob(argument, root_dir=directory))
+                if "*" in argument
+                else [argument]
             )
-            assert (command, result.stdout) == (command, output)
+        ]
+        result = subprocess.run(
+            [*PROGRAMS[program], *arguments],
+            cwd=directory,
+            capture_output=True,
+            text=True,
+        )
+        assert (command, result.stdout) == (command, output)
 
 
 def test_ci_recipe_test_file_passes():

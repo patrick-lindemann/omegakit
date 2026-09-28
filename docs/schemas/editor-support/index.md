@@ -12,8 +12,8 @@ The schema of an experiment is a dataclass in `schemas.py`:
 `omegakit json-schema` writes its JSON Schema, run from the directory that
 `schemas.py` is in:
 
-```text
-$ omegakit json-schema schemas.Experiment -o experiment.schema.json
+```sh
+omegakit json-schema schemas.Experiment -o experiment.schema.json
 ```
 
 The first line of the config file names the schema, which is how the YAML extension
@@ -30,8 +30,8 @@ file that holds a single node, generate the schema of that node's class instead.
 Run the same command with `--check` in CI, to fail when the committed file no
 longer matches the classes:
 
-```text
-$ omegakit json-schema schemas.Experiment -o experiment.schema.json --check
+```sh
+omegakit json-schema schemas.Experiment -o experiment.schema.json --check
 ```
 
 In VS Code with the Red Hat YAML extension, errors appear for wrong types and

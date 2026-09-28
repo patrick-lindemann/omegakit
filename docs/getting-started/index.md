@@ -127,8 +127,13 @@ directory:
 :caption: main.py
 ```
 
-```text
-$ python main.py configs/experiments/mlp.yaml
+```sh
+python main.py configs/experiments/mlp.yaml
+```
+
+```{code-block} text
+:caption: Output
+
 mlp: test loss 0.011
 ```
 

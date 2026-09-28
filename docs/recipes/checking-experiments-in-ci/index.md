@@ -5,8 +5,8 @@ and not an hour into a run. Two steps cover it. `omegakit check` validates each
 file and builds nothing, and a test builds each experiment. From the example
 project's directory:
 
-```text
-$ omegakit check configs/experiments/*.yaml --schema project.Experiment --allow-module project --allow-module torch.nn --allow-module torch.optim --import-root configs
+```sh
+omegakit check configs/experiments/*.yaml --schema project.Experiment --allow-module project --allow-module torch.nn --allow-module torch.optim --import-root configs
 ```
 
 `check` printed nothing, so every file is valid

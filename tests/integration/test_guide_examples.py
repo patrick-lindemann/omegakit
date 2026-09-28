@@ -71,6 +71,13 @@ def test_guide_script_output_is_on_its_page(script: Path):
         text=True,
     ).stdout
     page = (script.parent / "index.md").read_text()
+    # The Output blocks of the script, not those that follow a shell command.
+    page = re.sub(
+        r"```sh\n[^`]*```\n\n```\{code-block\} text\n:caption: Output\n.*?```",
+        "",
+        page,
+        flags=re.S,
+    )
     shown = re.findall(r":caption: Output\n\n(.*?)```", page, re.S)
     if shown or output:
         assert "".join(shown) == output

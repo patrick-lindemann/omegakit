@@ -29,8 +29,13 @@ from, not the token. Save and log that config. Your code still reads
 the real URL, for example to pass it to a tracking client. `omegakit show
 --resolve` masks the token:
 
-```text
-$ omegakit show tracked.yaml --node tracking --resolve
+```sh
+omegakit show tracked.yaml --node tracking --resolve
+```
+
+```{code-block} text
+:caption: Output
+
 project: sine
 url: https://tracker.example.com/api/runs?token=***
 ```
