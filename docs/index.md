@@ -10,20 +10,19 @@ It was developed for machine learning, but nothing in it is specific to that.
 pip install omegakit
 ```
 
-Every example in these pages comes from `curvefit`, a small experiment in plain
-Python that fits a curve to noisy samples of a known function. One experiment file
-names its base, the model and the optimizer:
+The examples in these pages train a small PyTorch model. One experiment file names
+its base, the model and the optimizer:
 
-```{literalinclude} curvefit/configs/experiments/poly3-adam.yaml
+```{literalinclude} example/configs/experiments/mlp.yaml
 :language: yaml
-:caption: configs/experiments/poly3-adam.yaml
+:caption: configs/experiments/mlp.yaml
 ```
 
 ```python
-from curvefit import Experiment
 from omegakit import instantiate, load_config
+from project import Experiment
 
-config = load_config("configs/experiments/poly3-adam.yaml")
+config = load_config("configs/experiments/mlp.yaml")
 experiment = instantiate(config, schema=Experiment)
 ```
 

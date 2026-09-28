@@ -1,15 +1,12 @@
 data:
-  $class: curvefit.data.Synthetic
-  function:
-    $ref: curvefit.data.sine
+  $class: project.SineWave
+  n: 256
   noise: 0.1
-  n: 200
   seed: 0
 model:
-  $class: curvefit.models.Polynomial
-  degree: 3
+  $class: project.MLP
+  hidden: 32
 optimizer:
-  $class: curvefit.optim.SGD
+  $class: torch.optim.Adam
   $partial: true
-  lr: 0.1
-  momentum: 0.9
+  lr: 0.01

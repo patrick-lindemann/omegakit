@@ -2,10 +2,10 @@
 
 A run is reproducible when the same experiment file, overrides and seed give the
 same result. omegakit makes the config one file you can save and load again. The
-rest is up to your entrypoint. This page shows how `curvefit`'s `main.py` does it,
-and what omegakit leaves to you.
+rest is up to your entrypoint. This page shows how the example project's `main.py`
+does it, and what omegakit leaves to you.
 
-```{literalinclude} ../curvefit/main.py
+```{literalinclude} ../example/main.py
 :language: python
 :caption: main.py (excerpt)
 :start-at: experiment_file, *overrides
@@ -14,23 +14,24 @@ and what omegakit leaves to you.
 
 ## Seed before building
 
-Constructors often draw random numbers: `curvefit`'s models draw their initial
-coefficients. So `main.py` seeds the generator before it calls `instantiate`.
-Reading `config.seed` resolves that one value; nothing is built yet. Seed every
-generator your code uses, such as Python's `random`, NumPy's and PyTorch's.
+Constructors often draw random numbers: a PyTorch module draws its initial
+weights. So `main.py` seeds PyTorch before it calls `instantiate`. Reading
+`config.seed` resolves that one value; nothing is built yet. Seed every generator
+your code uses, such as Python's `random`, NumPy's and PyTorch's. The `DataLoader`
+shuffles with PyTorch's generator, so the same seed also gives the same batches.
 
 ## One directory per run
 
 `base.yaml` derives the run directory from the config:
 
-```{literalinclude} ../curvefit/configs/base.yaml
+```{literalinclude} ../example/configs/base.yaml
 :language: yaml
 :caption: configs/base.yaml (excerpt)
 :lines: 2-4
 ```
 
 Interpolations resolve after the overrides are merged, so `seed=3` gives
-`runs/poly3-adam/seed3`, and each run of a [sweep](../recipes/parameter-sweeps/index.md)
+`runs/mlp/seed3`, and each run of a [sweep](../recipes/parameter-sweeps/index.md)
 gets its own directory. `run_dir.mkdir(parents=True)` fails when the directory
 exists, so a run never overwrites another.
 
@@ -42,17 +43,14 @@ overrides are applied. It is not resolved: `${seed}` stays as written, and so do
 every other interpolation. Load it again to repeat the run:
 
 ```text
-$ python main.py configs/experiments/poly3-adam.yaml model.degree=5
-poly3-adam: train loss 0.0300
-test mse: 0.0305
-test mae: 0.1427
-$ python main.py runs/poly3-adam/seed0/config.yaml run_dir=runs/repeat
-poly3-adam: train loss 0.0300
-test mse: 0.0305
-test mae: 0.1427
+$ python main.py configs/experiments/mlp.yaml model.hidden=64
+mlp: test loss 0.012
+$ python main.py runs/mlp/seed0/config.yaml run_dir=runs/repeat
+mlp: test loss 0.012
 ```
 
-The saved config names its own run directory, so the repeat passes a new one.
+The saved config names its own run directory, so the repeat passes a new one. The
+two runs also save the same weights to `model.pt`.
 
 A secret read with `${secret:NAME}` stays in the saved file as written, so the run
 directory holds no token ([Secrets](../security/secrets/index.md)).
@@ -73,7 +71,7 @@ code:
 ```
 
 ```text
-99d45fba49c0
+62234fd68935
 ```
 
 ## What omegakit does not do
