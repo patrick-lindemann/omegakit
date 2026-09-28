@@ -24,8 +24,4 @@ napoleon_numpy_docstring = False
 autodoc_member_order = "bysource"
 html_theme = "furo"
 html_title = "omegakit"
-# The pages of the Reference section moved into its folder.
-redirects = {
-    "api/index": "../reference/api/index.html",
-    "changelog/index": "../reference/changelog/index.html",
-}
+redirects = {}

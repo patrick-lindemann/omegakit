@@ -29,9 +29,8 @@ All notable changes to this project are documented here. The format follows
   not a mapping, a missing attribute (``Module `m` has no attribute `x`.``), an
   import cycle, a `$partial` that is not a boolean, an `overrides` argument of the
   wrong type, and a missing PyTorch.
-- The API and Changelog pages moved into the folder of their section, Reference,
-  at `reference/api/` and `reference/changelog/`. Their old addresses redirect
-  there.
+- The API and Changelog pages moved into the folder of their section, Reference:
+  `api/` is now `reference/api/`, and `changelog/` is now `reference/changelog/`.
 - `omegakit export-schema` reports a class it cannot export as a usage error and
   exits with 2, instead of printing a traceback.
 - `omegakit check --schema` with something that is not a class exits with 2 once,
