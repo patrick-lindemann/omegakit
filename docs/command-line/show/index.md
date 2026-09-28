@@ -90,6 +90,8 @@ that `load_config` removes ([Metadata](../../guide/metadata/index.md)).
 
 - `show` takes one config file. It prints the assembled config, or the node at
   `--node`, as YAML. A scalar prints as its value.
+- It tells the file from the `key=value` overrides as `check` does
+  ([check](../check/index.md#rules)).
 - `--node` takes a dotted path, walked as `~import file#node` is: `items.0.name`,
   `items.-1`. A node that does not exist, or a path through an interpolation
   without `--resolve`, exits with 1.

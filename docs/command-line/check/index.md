@@ -71,6 +71,11 @@ configs/experiments/mlp.yaml: ConfigValidationError: `$class: subprocess.Popen` 
   `--allow-missing`, `--allow-module` and `--import-root` are passed to them as
   `schema`, `allow_missing`, `allowed_modules` and `import_root`
   ([Validation](../../schemas/validation/index.md#rules)).
+- Each argument is a config file or a `key=value` override. An argument that
+  names an existing file is a file, even if it contains `=`. Any other argument is
+  an override if it has a `=` with no `/` before it, and otherwise a file, which
+  then fails to load. Files and overrides can come in any order, so tools that
+  append file names, such as pre-commit, work. The overrides apply to every file.
 - It prints `<file>: <exception type>: <message>` for each invalid file and
   nothing for valid ones. Any exception, and a `SystemExit` raised by an imported
   module, marks that file invalid, and the other files are still checked.
