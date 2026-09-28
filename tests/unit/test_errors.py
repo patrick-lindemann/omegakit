@@ -46,6 +46,11 @@ class UsesPathKeys(Configurable[PathKeys]):
         self.counts = counts
 
 
+@dataclasses.dataclass
+class PathKeysInTuple:
+    pair: tuple[dict[Path, int], int]
+
+
 BAD_NODE = {"$class": "tests.helpers.Point", "$partial": "yes"}
 
 
@@ -136,9 +141,21 @@ def test_unusable_schema_raises_a_definition_error_wherever_it_is_reached(
         call()
 
 
-def test_schema_that_omegaconf_rejects_raises_a_definition_error():
-    with pytest.raises(SchemaDefinitionError, match="cannot be validated by OmegaConf"):
-        check_schema(UsesPathKeys)
+@pytest.mark.parametrize(
+    "call",
+    [
+        lambda: check_schema(UsesPathKeys),
+        lambda: validate({"counts": {}}, schema=PathKeys),
+        lambda: instantiate({}, schema=PathKeys),
+        lambda: validate({"pair": [{}, 1]}, schema=PathKeysInTuple),
+    ],
+    ids=["check_schema", "dataclass schema", "instantiate", "tuple item"],
+)
+def test_schema_that_omegaconf_rejects_raises_a_definition_error(
+    call: Callable[[], Any],
+):
+    with pytest.raises(SchemaDefinitionError, match="Unsupported key type"):
+        call()
 
 
 def test_omegakit_handler_lets_omegaconf_errors_through():

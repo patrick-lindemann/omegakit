@@ -250,6 +250,7 @@ def validate_native(
     Raises:
         ConfigValidationError: If a key is not a field, a required field is missing,
             or a native value does not match its annotation.
+        SchemaDefinitionError: If OmegaConf cannot validate the schema's fields.
     """  # noqa: DOC503
     fields = classify_fields(schema)
     location = f"`{format_path(path)}` ({schema.__qualname__})"
@@ -277,8 +278,17 @@ def validate_native(
         if fields[key][0] == "native"
     }
     try:
+        structure = OmegaConf.structured(_native_schema(schema))
+    except OmegaKitBaseException:
+        raise
+    except OmegaConfBaseException as error:
+        raise SchemaDefinitionError(
+            f"Schema `{schema.__qualname__}` cannot be validated by OmegaConf: "
+            f"{str(error).splitlines()[0]}"
+        ) from error
+    try:
         merged = OmegaConf.to_container(
-            OmegaConf.merge(OmegaConf.structured(_native_schema(schema)), native),
+            OmegaConf.merge(structure, native),
             resolve=True,
             throw_on_missing=not allow_missing,
         )
@@ -686,11 +696,17 @@ def _coerce(
 ) -> Any:
     # Validates one value against an annotation through OmegaConf, as a field would.
     try:
+        structure = OmegaConf.structured(_value_structure(annotation))
+    except OmegaKitBaseException:
+        raise
+    except OmegaConfBaseException as error:
+        raise SchemaDefinitionError(
+            f"`{format_path(path)}` has `{annotation}`, which OmegaConf cannot "
+            f"validate: {str(error).splitlines()[0]}"
+        ) from error
+    try:
         merged = OmegaConf.to_container(
-            OmegaConf.merge(
-                OmegaConf.structured(_value_structure(annotation)),
-                {"value": _normalize_enums(value, annotation)},
-            ),
+            OmegaConf.merge(structure, {"value": _normalize_enums(value, annotation)}),
             resolve=True,
             throw_on_missing=not allow_missing,
         )
