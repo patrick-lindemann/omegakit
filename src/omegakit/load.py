@@ -65,13 +65,12 @@ def load_config(
         )
         merge_bases(config)
         apply_defaults(config)
+    except OmegaKitBaseException:
+        raise
     except OmegaConfBaseException as error:
-        if isinstance(error, OmegaKitBaseException):
-            raise
-        else:
-            raise ConfigLoadError(
-                f"Cannot load `{file_path}`: {describe_error(error)}"
-            ) from error
+        raise ConfigLoadError(
+            f"Cannot load `{file_path}`: {describe_error(error)}"
+        ) from error
     if overrides is not None:
         merge_overrides(config, overrides)
     if keep_meta and keep_targets:

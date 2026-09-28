@@ -31,14 +31,13 @@ def merge_overrides(
     try:
         parsed_overrides = _parse_overrides(overrides)
         config.merge_with(parsed_overrides)
+    except OmegaKitBaseException:
+        raise
     except OmegaConfBaseException as error:
-        if isinstance(error, OmegaKitBaseException):
-            raise
-        else:
-            location = f" `{format_full_key(error.full_key)}`" if error.full_key else ""
-            raise ConfigLoadError(
-                f"Cannot apply the override{location}: {describe_error(error)}"
-            ) from error
+        location = f" `{format_full_key(error.full_key)}`" if error.full_key else ""
+        raise ConfigLoadError(
+            f"Cannot apply the override{location}: {describe_error(error)}"
+        ) from error
 
 
 def _parse_overrides(
