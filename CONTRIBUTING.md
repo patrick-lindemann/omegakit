@@ -16,7 +16,7 @@ uv build
 `uv run pytest` includes a test that builds the wheel and installs it into a fresh
 environment; `-m "not distribution"` skips it. The docs example and the Torch
 resolvers need PyTorch, which the `docs-examples` group installs, from the CPU index.
-Without it, their tests skip; CI runs them in the `test-resolvers` job.
+Without it, their tests skip; CI installs it in every test job.
 
 To preview the documentation, build it and serve the result, then open
 http://localhost:8000:

@@ -52,6 +52,9 @@ docs-examples = ["numpy>=2", "torch>=2.9"]
 
 [tool.uv]
 default-groups = ["dev", "docs"]
+# CI runs on Linux x86_64. Without this, the lowest resolution picks a PyTorch build
+# that has only macOS wheels.
+required-environments = ["sys_platform == 'linux' and platform_machine == 'x86_64'"]
 
 # The CPU build, which is small and runs on every platform.
 [tool.uv.sources]

@@ -48,8 +48,9 @@ jobs:
       - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
         with:
           python-version: ${{ matrix.python-version }}
-      - run: uv sync --locked
-      - run: uv run pytest --cov
+      # The docs examples are PyTorch scripts, so every test job installs PyTorch.
+      - run: uv sync --locked --group docs-examples
+      - run: uv run --no-sync pytest --cov
 
   test-lowest:
     runs-on: ubuntu-latest
@@ -63,8 +64,8 @@ jobs:
       # Unlocked resolutions skip the last few days of uploads, so that a compromised
       # or broken release has time to be yanked.
       - run: echo "UV_EXCLUDE_NEWER=$(date -u -d '3 days ago' +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
-      - run: uv sync --resolution lowest-direct
-      - run: uv run --resolution lowest-direct pytest --cov -m "not distribution"
+      - run: uv sync --resolution lowest-direct --group docs-examples
+      - run: uv run --no-sync pytest --cov -m "not distribution"
 
   test-omegaconf-next:
     # The newest OmegaConf pre-release in the supported range, so that a change in
@@ -77,24 +78,10 @@ jobs:
       - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
         with:
           python-version: "3.13"
-      - run: uv sync --locked
+      - run: uv sync --locked --group docs-examples
       - run: >-
           uv pip install --prerelease if-necessary-or-explicit
           --exclude-newer "$(date -u -d '3 days ago' +%Y-%m-%dT%H:%M:%SZ)"
           "omegaconf>=2.4.0.dev0,<2.5"
       - run: uv run --no-sync python -c "import omegaconf; print(omegaconf.__version__)"
       - run: uv run --no-sync pytest -W error::UserWarning -m "not distribution"
-
-  test-resolvers:
-    # The resolvers for optional libraries and the docs example, which the other
-    # jobs skip because PyTorch is not a dependency. The docs-examples group installs it.
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
-        with:
-          python-version: "3.13"
-      - run: uv sync --locked --group docs-examples
-      - run: uv run --no-sync pytest -m "not distribution"
