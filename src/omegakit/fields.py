@@ -205,7 +205,7 @@ def _coerce(
         raise
     except OmegaConfBaseException as error:
         # The structure holds the value in its field `value`.
-        field = error.full_key.removeprefix("value").lstrip(".")
+        field = (error.full_key or "").removeprefix("value").lstrip(".")
         if isinstance(error, MissingMandatoryValue) and field:
             raise ConfigValidationError(
                 f"Missing required field `{format_full_key(field)}` in "

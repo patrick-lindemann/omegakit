@@ -185,7 +185,9 @@ def test_schema_unknown_field_raises():
 def test_schema_missing_required_data_field_raises():
     with pytest.raises(ConfigValidationError) as info:
         instantiate({"$class": "tests.schemas.Model"})
-    assert str(info.value) == "Missing required field `depth` in `<root>` (ModelConfig)."
+    assert (
+        str(info.value) == "Missing required field `depth` in `<root>` (ModelConfig)."
+    )
 
 
 @dataclass
