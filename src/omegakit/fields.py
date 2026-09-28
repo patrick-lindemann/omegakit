@@ -282,6 +282,8 @@ def _build_value(
             )
             for index, item in enumerate(value)
         )
+    if annotation is tuple:
+        return tuple(value)
     if origin is tuple:
         if not isinstance(value, (list, tuple)) or len(value) != len(arguments):
             raise ConfigValidationError(

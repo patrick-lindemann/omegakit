@@ -32,6 +32,8 @@ All notable changes to this project are documented here. The format follows
 
 ### Fixed
 
+- A schema field annotated with a bare `tuple` holds a `tuple`, as the Dataclass
+  schemas page says, instead of a `list`.
 - A list of overrides with an item that is not a string raises `TypeError`, as
   overrides of the wrong type do, instead of OmegaConf's `ValueError`.
 - A schema annotation that fails to evaluate, such as `"int | 1"`, raises

@@ -67,10 +67,11 @@ def test_types_abstract_containers_give_lists_and_dicts():
 
 
 def test_types_bare_abstract_containers_hold_any_plain_values():
-    config = {"items": [1, "a", [2]], "table": {"x": {"y": 1}}}
+    config = {"items": [1, "a", [2]], "table": {"x": {"y": 1}}, "row": [1, "b"]}
     validate(config, schema=schemas.BareContainers)
     built = instantiate(config, schema=schemas.BareContainers)
     assert (built.items, built.table) == ([1, "a", [2]], {"x": {"y": 1}})
+    assert built.row == (1, "b")
 
 
 def test_types_typed_dict_fields_are_unchecked_dicts():
