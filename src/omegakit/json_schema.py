@@ -1,6 +1,7 @@
 import collections.abc
 import dataclasses
 import enum
+import re
 import types
 from pathlib import Path
 from typing import (
@@ -13,10 +14,14 @@ from typing import (
     is_typeddict,
 )
 
+from .keys import CLASS_KEY, IMPORT_KEY, RESERVED_PREFIX
 from .schema import classify_fields, find_schema
 
 # A value may always be written as an interpolation, a missing value or an import.
-_PLACEHOLDER = {"type": "string", "pattern": r"^(\?\?\?$|~import\s|.*\$\{)"}
+_PLACEHOLDER = {
+    "type": "string",
+    "pattern": rf"^(\?\?\?$|{IMPORT_KEY}\s|.*\$\{{)",
+}
 
 
 def generate_json_schema(schema: type) -> dict[str, Any]:
@@ -120,8 +125,10 @@ def _json_object(cls: Any, definitions: dict[str, Any]) -> dict[str, Any]:
     return {
         "type": "object",
         "if": {
-            "properties": {"$class": {"const": f"{cls.__module__}.{cls.__qualname__}"}},
-            "required": ["$class"],
+            "properties": {
+                CLASS_KEY: {"const": f"{cls.__module__}.{cls.__qualname__}"}
+            },
+            "required": [CLASS_KEY],
         },
         "then": {"$ref": f"#/definitions/{_json_definition(schema, definitions)}"},
     }
@@ -142,6 +149,6 @@ def _json_mapping(dataclass: type, definitions: dict[str, Any]) -> dict[str, Any
             name: _json_value(annotation, definitions)
             for name, (_, annotation) in classify_fields(dataclass).items()
         },
-        "patternProperties": {r"^\$": {}},
+        "patternProperties": {f"^{re.escape(RESERVED_PREFIX)}": {}},
         "additionalProperties": False,
     }

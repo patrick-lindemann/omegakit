@@ -10,7 +10,7 @@ from .errors import (
     format_full_key,
     format_node_path,
 )
-from .keys import BASE_KEY, DEFAULTS_KEY
+from .keys import BASE_KEY, DEFAULTS_KEY, RESERVED_PREFIX
 from .walk import walk, walk_post_order
 
 
@@ -128,7 +128,7 @@ def _merge_defaults(node: DictConfig, defaults: Any) -> None:
         )
     node.pop(DEFAULTS_KEY)
     for key in list(node.keys()):
-        if str(key).startswith("$"):
+        if str(key).startswith(RESERVED_PREFIX):
             continue
         item = node._get_node(key)
         if isinstance(item, DictConfig):

@@ -18,7 +18,7 @@ from .errors import (
     format_path,
 )
 from .fields import coerce_fields
-from .keys import CLASS_KEY, META_KEY, PARTIAL_KEY, REF_KEY
+from .keys import CLASS_KEY, META_KEY, PARTIAL_KEY, REF_KEY, RESERVED_PREFIX
 from .schema import (
     check_schema,
     classify_fields,
@@ -203,7 +203,7 @@ def _check_untyped(
 
 
 def _check_not_reserved(key: Any, path: tuple[str | int, ...]) -> None:
-    if isinstance(key, str) and key.startswith("$"):
+    if isinstance(key, str) and key.startswith(RESERVED_PREFIX):
         raise ConfigValidationError(
             f"Key `{key}` in `{format_path(path)}` is not supported here; keys "
             "starting with `$` are reserved."
@@ -245,7 +245,7 @@ def _check_target(
                     f"`false`, but the config gives {describe_value(value)}."
                 )
             continue
-        if isinstance(key, str) and key.startswith("$"):
+        if isinstance(key, str) and key.startswith(RESERVED_PREFIX):
             raise ConfigValidationError(
                 f"Key `{key}` in `{format_path(path)}` is not supported next to "
                 f"`{CLASS_KEY}`; keys starting with `$` are reserved."
