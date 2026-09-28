@@ -9,11 +9,11 @@ The schema of an experiment is a dataclass in `schemas.py`:
 :caption: schemas.py
 ```
 
-`omegakit json-schema` writes its JSON Schema, run from the directory that
+`omegakit export-schema` writes its JSON Schema, run from the directory that
 `schemas.py` is in:
 
 ```sh
-omegakit json-schema schemas.Experiment -o experiment.schema.json
+omegakit export-schema schemas.Experiment -o experiment.schema.json
 ```
 
 The first line of the config file names the schema, which is how the YAML extension
@@ -31,7 +31,7 @@ Run the same command with `--check` in CI, to fail when the committed file no
 longer matches the classes:
 
 ```sh
-omegakit json-schema schemas.Experiment -o experiment.schema.json --check
+omegakit export-schema schemas.Experiment -o experiment.schema.json --check
 ```
 
 In VS Code with the Red Hat YAML extension, errors appear for wrong types and
@@ -41,7 +41,7 @@ under Rules; `validate` checks the rest.
 
 ## Rules
 
-`generate_json_schema(schema)` and `omegakit json-schema` produce a draft-07 JSON
+`generate_json_schema(schema)` and `omegakit export-schema` produce a draft-07 JSON
 Schema for YAML files, from a root schema dataclass or from a `Configurable` class
 whose schema describes a fragment file. Anything else raises `TypeError`.
 

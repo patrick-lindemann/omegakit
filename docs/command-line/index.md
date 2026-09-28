@@ -56,20 +56,20 @@ omegakit show configs/experiments/mlp.yaml seed=3 --node run_dir --resolve
 runs/mlp/seed3
 ```
 
-## `json-schema`
+## `export-schema`
 
-`json-schema` writes the JSON Schema of a class, for your editor
+`export-schema` writes the JSON Schema of a class, for your editor
 ([Editor support](../schemas/editor-support/index.md)). With `--check` it writes
 nothing, and fails when the file no longer matches the class:
 
 ```sh
-omegakit json-schema project.Experiment -o experiment.schema.json --check
+omegakit export-schema project.Experiment -o experiment.schema.json --check
 ```
 
 ## Rules
 
 `omegakit` puts the working directory first on the import path, so `$class`,
-`--schema` and `json-schema` paths resolve from there.
+`--schema` and `export-schema` paths resolve from there.
 
 **Arguments.** `check` and `show` take config files and `key=value` overrides,
 mixed in any order, all before or all after the options. Options between them are
@@ -79,7 +79,7 @@ a usage error. An argument that names an existing file is a config file, even wi
 Overrides apply to every file.
 
 **Exit codes.** 0 on success. 1 when a config is invalid or cannot be loaded. 2 for
-a usage error: no config file, an unknown option, a `--schema` or `json-schema`
+a usage error: no config file, an unknown option, a `--schema` or `export-schema`
 path that cannot be imported, or an `--import-root` that is not a directory.
 
 **`check`** validates each file ([Validation](../schemas/validation/index.md#rules)),
@@ -105,6 +105,6 @@ prints as its value.
   ([Secrets](../security/secrets/index.md#rules)).
 - The command registers `${secret:...}` for `check` and `show`.
 
-**`json-schema`** writes the JSON Schema of the class at its import path
+**`export-schema`** writes the JSON Schema of the class at its import path
 ([Editor support](../schemas/editor-support/index.md#rules)). `--check` needs `-o`,
 and compares the file and the generated schema as JSON.

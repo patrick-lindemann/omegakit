@@ -10,16 +10,16 @@ from omegakit.cli import main
 from tests import schemas
 
 
-def test_cli_json_schema_prints_the_schema(capsys):
-    main(["json-schema", "tests.schemas.AppConfig"])
+def test_cli_export_schema_prints_the_schema(capsys):
+    main(["export-schema", "tests.schemas.AppConfig"])
     assert json.loads(capsys.readouterr().out) == generate_json_schema(
         schemas.AppConfig
     )
 
 
-def test_cli_json_schema_writes_the_output_file(tmp_path):
+def test_cli_export_schema_writes_the_output_file(tmp_path):
     output = tmp_path / "app.schema.json"
-    main(["json-schema", "tests.schemas.AppConfig", "-o", str(output)])
+    main(["export-schema", "tests.schemas.AppConfig", "-o", str(output)])
     assert json.loads(output.read_text()) == generate_json_schema(schemas.AppConfig)
 
 
@@ -32,7 +32,7 @@ def test_cli_runs_as_a_module_without_warnings(tmp_path):
             "error",
             "-m",
             "omegakit",
-            "json-schema",
+            "export-schema",
             "tests.schemas.TypedEncoder",
             "-o",
             str(output),
@@ -278,17 +278,17 @@ def test_cli_show_errors(write_yaml, capsys):
 @pytest.mark.parametrize(
     "import_path", ["tests.schemas.Nope", "tests.no_such_module.X", "nodots"]
 )
-def test_cli_json_schema_reports_import_failures(capsys, import_path):
-    assert _exit_code(["json-schema", import_path]) == 2
+def test_cli_export_schema_reports_import_failures(capsys, import_path):
+    assert _exit_code(["export-schema", import_path]) == 2
     assert "cannot import" in capsys.readouterr().err
 
 
-def test_cli_json_schema_check(tmp_path):
+def test_cli_export_schema_check(tmp_path):
     output = tmp_path / "schema.json"
-    arguments = ["json-schema", "tests.schemas.TypedEncoder", "-o", str(output)]
+    arguments = ["export-schema", "tests.schemas.TypedEncoder", "-o", str(output)]
     assert _exit_code([*arguments, "--check"]) == 1
     main(arguments)
     main([*arguments, "--check"])
     output.write_text("{}")
     assert _exit_code([*arguments, "--check"]) == 1
-    assert _exit_code(["json-schema", "tests.schemas.TypedEncoder", "--check"]) == 2
+    assert _exit_code(["export-schema", "tests.schemas.TypedEncoder", "--check"]) == 2

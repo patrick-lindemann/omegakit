@@ -6,7 +6,7 @@ from omegaconf import OmegaConf
 
 from omegakit.resolvers.secrets import register_secret_resolver
 
-from . import check, json_schema, show
+from . import check, export_schema, show
 
 
 def main(arguments: list[str] | None = None) -> None:
@@ -20,7 +20,7 @@ def main(arguments: list[str] | None = None) -> None:
     commands = parser.add_subparsers(dest="command", required=True)
     check.register(commands)
     show.register(commands)
-    json_schema.register(commands)
+    export_schema.register(commands)
     parsed = parser.parse_args(arguments)
     if not OmegaConf.has_resolver("secret"):
         register_secret_resolver()

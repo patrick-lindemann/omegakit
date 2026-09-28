@@ -12,6 +12,8 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- **Breaking:** The `omegakit json-schema` command is now `omegakit export-schema`,
+  with the same arguments.
 - The Configs section of the documentation is now the Guide, and its pages moved
   from `configs/<page>/` to `guide/<page>/`, such as `guide/loading/`.
 - Each Guide page has its own small example, which shows that page's feature only.

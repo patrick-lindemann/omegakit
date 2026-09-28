@@ -50,7 +50,7 @@ They limit which modules `$class` and `$ref` may name.
 - Allowing modules such as `builtins`, `importlib`, `os`, `subprocess`, `shutil`,
   `pickle` or all of `torch` removes the restriction in practice, because each of
   them can import or run arbitrary code.
-- Not covered: resolvers, the `schema` argument and `--schema`, `json-schema`
+- Not covered: resolvers, the `schema` argument and `--schema`, `export-schema`
   paths, and `instantiate` calls inside your own `from_config`.
 
 **Import root.** By default an `~import` may read any file the process can read.

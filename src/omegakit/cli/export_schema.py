@@ -7,13 +7,13 @@ from omegakit.utils import import_object
 
 
 def register(commands: argparse._SubParsersAction) -> None:
-    """Add the `json-schema` command.
+    """Add the `export-schema` command.
 
     Args:
         commands: The subcommands of the `omegakit` parser.
     """
     parser = commands.add_parser(
-        "json-schema", help="generate a JSON Schema for YAML config files"
+        "export-schema", help="generate a JSON Schema for YAML config files"
     )
     parser.add_argument(
         "schema", help="import path of a root schema dataclass or a Configurable class"
@@ -33,7 +33,7 @@ def run(arguments: argparse.Namespace) -> None:
     """Write the JSON Schema of the class named in `arguments`.
 
     Args:
-        arguments: The parsed `json-schema` arguments.
+        arguments: The parsed `export-schema` arguments.
 
     Raises:
         SystemExit: With status 1 if `--check` finds the output file out of date.
