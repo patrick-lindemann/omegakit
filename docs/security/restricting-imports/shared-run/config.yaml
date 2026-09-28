@@ -1,4 +1,4 @@
-name: poly3-adam
+name: mlp
 model:
   $class: subprocess.run
   args:
@@ -6,42 +6,23 @@ model:
   - -c
   - echo this could run any command
 optimizer:
-  $class: curvefit.optim.Adam
+  $class: torch.optim.Adam
   $partial: true
-  lr: 0.05
-trainer:
-  $class: curvefit.trainer.Trainer
-  epochs: 200
-  schedule: cosine
+  lr: 0.01
 seed: 0
 run_dir: runs/${name}/seed${seed}
 data:
   train:
-    $class: curvefit.data.Synthetic
-    function:
-      $ref: curvefit.data.sine
+    $class: project.SineWave
+    'n': 256
     noise: 0.1
-    'n': 200
     seed: ${seed}
-  validation:
-    $class: curvefit.data.Synthetic
-    function:
-      $ref: curvefit.data.sine
-    noise: 0.1
-    'n': 50
-    seed: 1
   test:
-    $class: curvefit.data.Synthetic
-    function:
-      $ref: curvefit.data.sine
+    $class: project.SineWave
+    'n': 256
     noise: 0.1
     seed: 1234
-    'n': 200
-metrics:
-  mse:
-    $ref: curvefit.metrics.mse
-  mae:
-    $ref: curvefit.metrics.mae
-tracker:
-  $class: curvefit.tracking.Tracker
-  run_dir: ${run_dir}
+loss:
+  $ref: torch.nn.functional.mse_loss
+epochs: 100
+batch_size: 32

@@ -1,2 +1,2 @@
-$base: ~import ../../curvefit/configs/experiments/poly3-adam.yaml
-run_dir: ${paths:runs}/${name}/seed${seed}
+run_dir: ${paths:runs}/mlp/seed0
+data_dir: ${paths:data}/sine

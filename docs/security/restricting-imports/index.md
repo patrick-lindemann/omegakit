@@ -20,8 +20,10 @@ reach. Here a shared run's model was swapped for `subprocess.run`:
 `$class: subprocess.run` in `model` names a module that is not in `allowed_modules`.
 ```
 
-`allowed_modules=["curvefit"]` rejected the node before `subprocess` was imported,
-and `import_root` keeps any `~import` inside the run's directory. They are limits,
+`allowed_modules` names the project and the parts of PyTorch its configs use, and
+rejected the node before `subprocess` was imported. It names `torch.nn` and
+`torch.optim`, not all of `torch`, which holds `torch.load`: loading a pickled file
+can run code. `import_root` keeps any `~import` inside the run's directory. They are limits,
 not a sandbox: a config that passes them still runs code
 ([Trust model](../trust-model/index.md)).
 
@@ -33,9 +35,9 @@ They limit which modules `$class` and `$ref` may name.
 
 - `None`, the default, allows every module, and `[]` none. Any iterable of module
   names works and is read once. A `str` raises `TypeError`.
-- An entry allows that module and its submodules: `["curvefit", "torch.optim"]`
-  allows `curvefit.models.Polynomial` and `torch.optim.Adam`, but not
-  `curvefit_evil.X` or `torch.load`. An entry that names a class allows nothing.
+- An entry allows that module and its submodules: `["project", "torch.optim"]`
+  allows `project.MLP` and `torch.optim.Adam`, but not `project_evil.X` or
+  `torch.load`. An entry that names a class allows nothing.
   `$ref: math.pi` needs `"math"`.
 - Every node the validation walk reaches is checked, including nodes under `Any`,
   `Callable`, `list` and `dict` fields. Before importing, the module part of the
@@ -45,9 +47,9 @@ They limit which modules `$class` and `$ref` may name.
   elsewhere, such as `pkgx.db.run` for `from subprocess import run`, and accepts
   re-exports within an allowed package.
 - A failing path raises `ConfigValidationError` naming the path and the node.
-- Allowing modules such as `builtins`, `importlib`, `os`, `subprocess`, `shutil`
-  or `pickle` removes the restriction in practice, because each of them can import
-  or run arbitrary code.
+- Allowing modules such as `builtins`, `importlib`, `os`, `subprocess`, `shutil`,
+  `pickle` or all of `torch` removes the restriction in practice, because each of
+  them can import or run arbitrary code.
 - Not covered: resolvers, the `schema` argument and `--schema`, `json-schema`
   paths, and `instantiate` calls inside your own `from_config`.
 

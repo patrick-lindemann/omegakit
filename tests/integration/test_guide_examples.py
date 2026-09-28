@@ -9,6 +9,7 @@ from omegaconf import OmegaConf
 from omegakit import instantiate, load_config, validate
 from omegakit.resolvers.paths import register_paths_resolver
 from omegakit.resolvers.secrets import register_secret_resolver
+from omegakit.resolvers.torch import register_torch_resolvers
 
 DOCS = Path(__file__).parents[2] / "docs"
 CURVEFIT = DOCS / "curvefit"
@@ -29,10 +30,11 @@ def examples_importable(monkeypatch):
     monkeypatch.syspath_prepend(str(EXAMPLE))
 
 
-def _skip_without_torch(text: str) -> None:
-    # The PyTorch example needs the examples dependency group.
-    if "project" in text or "torch" in text:
-        pytest.importorskip("torch")
+def _needs_torch(text: str) -> bool:
+    # The PyTorch example and the Torch resolvers need the examples dependency group.
+    return any(
+        name in text for name in ("project", "torch", "${dtype:", "${cuda_available:")
+    )
 
 
 @pytest.mark.parametrize(
@@ -44,7 +46,9 @@ def test_guide_yaml_loads_validates_and_builds(path: Path, monkeypatch):
     monkeypatch.setenv("TRACKER_TOKEN", "tok-for-the-guide-tests")
     register_secret_resolver()
     register_paths_resolver({"runs": "runs", "data": "data"})
-    _skip_without_torch(path.read_text())
+    if _needs_torch(path.read_text()):
+        pytest.importorskip("torch")
+        register_torch_resolvers()
     config = load_config(path)
     validate(config, allow_missing=True)
     if "$class" in config and not OmegaConf.missing_keys(config):
@@ -55,7 +59,8 @@ def test_guide_yaml_loads_validates_and_builds(path: Path, monkeypatch):
     "script", SCRIPTS, ids=[str(p.parent.relative_to(DOCS)) for p in SCRIPTS]
 )
 def test_guide_script_runs(script: Path):
-    _skip_without_torch(script.read_text())
+    if _needs_torch(script.read_text()):
+        pytest.importorskip("torch")
     subprocess.run(
         [sys.executable, str(script)],
         cwd=script.parent,

@@ -15,22 +15,22 @@ and save and log configs unresolved:
 ```
 
 ```text
-$class: curvefit.tracking.Tracker
-run_dir: ${run_dir}
-url: https://tracker.example.com/api/runs?token=${secret:TRACKER_TOKEN}
+tracking:
+  project: sine
+  url: https://tracker.example.com/api/runs?token=${secret:TRACKER_TOKEN}
 True
 ```
 
 The config from `load_config` is not resolved, so it shows where the token comes
 from, not the token. Save and log that config, as
-[Reproducible runs](../../reproducible-runs/index.md) does. The tracker still
-receives the real URL. `omegakit show --resolve` prints each value that
-`${secret:...}` gave as `***`, also inside a longer string:
+[Reproducible runs](../../reproducible-runs/index.md) does. Your code still reads
+the real URL, for example to pass it to a tracking client. `omegakit show
+--resolve` prints each value that `${secret:...}` gave as `***`, also inside a
+longer string:
 
 ```text
-$ omegakit show tracked.yaml --node tracker --resolve
-$class: curvefit.tracking.Tracker
-run_dir: runs/poly3-adam/seed0
+$ omegakit show tracked.yaml --node tracking --resolve
+project: sine
 url: https://tracker.example.com/api/runs?token=***
 ```
 

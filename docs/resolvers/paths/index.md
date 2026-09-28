@@ -15,16 +15,13 @@ in different places. `register_paths_resolver` registers `${paths:<key>}`:
 ```
 
 ```text
-runs/poly3-adam/seed0 40
-/scratch/curvefit/runs/poly3-adam/seed0
-/datasets/curvefit/measurements.csv
+runs/mlp/seed0 data/sine
+/scratch/runs/mlp/seed0 /datasets/sine
 ```
 
-`cluster.yaml` puts its runs under `${paths:runs}`, and the test split reads the
-measured data from under `${paths:data}`, inside a longer string. The test split is
-replaced in code, because an override would merge the new node into the old one
-([Overrides](../../guide/overrides/index.md#rules)). Register the paths once,
-when the program starts, from whatever tells your machines apart.
+`${paths:runs}` and `${paths:data}` work inside longer strings, like any
+interpolation. Register the paths once, when the program starts, from whatever tells
+your machines apart, such as the hostname or an environment variable.
 
 ## Rules
 

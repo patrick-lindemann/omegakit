@@ -1,0 +1,2 @@
+dtype: ${dtype:bfloat16}
+use_cuda: ${cuda_available:}
