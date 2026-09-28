@@ -9,54 +9,54 @@ from it. The same file and seed give the same run. Install it with
 ```yaml
 # base.yaml
 seed: 0
-data:
-  $class: curvefit.data.Synthetic
-  function:
-    $ref: curvefit.data.sine
-  noise: 0.1
-  n: 200
-  seed: ${seed}
+epochs: 100
+loss:
+  $ref: torch.nn.functional.mse_loss
 optimizer:
-  $class: curvefit.optim.SGD
+  $class: torch.optim.SGD
   $partial: true
   lr: 0.1
 ```
 
 ```yaml
-# poly3.yaml
+# linear.yaml
 $base: ~import base.yaml
 model:
-  $class: curvefit.models.Polynomial
-  degree: 3
+  $class: torch.nn.Linear
+  in_features: 16
+  out_features: 1
 ```
 
 ```python
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from curvefit.data import Dataset
-from curvefit.models import Model
-from curvefit.optim import Optimizer
+import torch
 from omegakit import instantiate, load_config
 
 
 @dataclass
 class Experiment:
     seed: int
-    data: Dataset
-    model: Model
-    optimizer: Callable[..., Optimizer]
+    epochs: int
+    loss: Callable[..., torch.Tensor]
+    model: torch.nn.Module
+    optimizer: Callable[..., torch.optim.Optimizer]
 
 
-experiment = instantiate(load_config("poly3.yaml"), schema=Experiment)
+config = load_config("linear.yaml")
+torch.manual_seed(config.seed)
+experiment = instantiate(config, schema=Experiment)
+optimizer = experiment.optimizer(experiment.model.parameters())
 ```
 
-`poly3.yaml` took the seed, the data and the optimizer from `base.yaml`, and added
-a model. `$class` names a class to build, `$ref` passes a function as it is, and
-`$partial` builds the optimizer later, once the model's parameters exist. The
-dataclass, and the dataclasses that `$class` names, check the config before
-anything is built: `degree: three` raises an error that names the key. `curvefit` is
-the example experiment of the [documentation](https://omegakit.readthedocs.io).
+`linear.yaml` took the seed, the epochs, the loss and the optimizer from
+`base.yaml`, and added a model. `$class` names a class to build, `$ref` passes a
+function as it is, and `$partial` builds the optimizer later, once the model's
+parameters exist. The dataclass checks the config before anything is built:
+`epochs: many` raises an error that names the key. The
+[documentation](https://omegakit.readthedocs.io) trains a small PyTorch model in
+every example.
 
 ## What you can do
 

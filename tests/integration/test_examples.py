@@ -17,6 +17,7 @@ DOCS = Path(__file__).parents[2] / "docs"
 
 
 def test_readme_example_builds(tmp_path):
+    pytest.importorskip("torch")
     readme = (Path(__file__).parents[2] / "README.md").read_text()
     for name, text in re.findall(r"```yaml\n# (\S+)\n(.*?)```", readme, re.S):
         (tmp_path / name).write_text(text)
@@ -24,17 +25,16 @@ def test_readme_example_builds(tmp_path):
     assert code is not None
     (tmp_path / "main.py").write_text(
         code.group(1)
-        + "print(type(experiment.model).__name__, len(experiment.data.samples()[0]))\n"
+        + "print(type(experiment.model).__name__, type(optimizer).__name__)\n"
     )
     output = subprocess.run(
         [sys.executable, "main.py"],
         cwd=tmp_path,
-        env={**os.environ, "PYTHONPATH": str(DOCS / "curvefit")},
         check=True,
         capture_output=True,
         text=True,
     ).stdout
-    assert output == "Polynomial 200\n"
+    assert output == "Linear SGD\n"
 
 
 CURVEFIT = DOCS / "curvefit"
