@@ -286,14 +286,12 @@ def derive_structure(schema: type) -> type:
         A dataclass with the data fields of `schema`, whose annotations OmegaConf
         supports.
     """
+    fields = classify_fields(schema)
     structure = []
     for field in dataclasses.fields(schema):
-        if field.name not in classify_fields(schema):
+        if field.name not in fields or fields[field.name][0] != "data":
             continue
-        kind, annotation = classify_fields(schema)[field.name]
-        if kind != "data":
-            continue
-        field_type = derive_structure_type(annotation)
+        field_type = derive_structure_type(fields[field.name][1])
         if field.default_factory is not dataclasses.MISSING:
             default = dataclasses.field(
                 default_factory=functools.partial(

@@ -70,17 +70,15 @@ def coerce_fields(
             f"Unknown field(s) {', '.join(f'`{key}`' for key in unknown)} in "
             f"{location}. Expected one of {', '.join(f'`{name}`' for name in fields)}."
         )
-    for field in dataclasses.fields(schema):
+    for name, (kind, _) in fields.items():
         if (
             not allow_missing
-            and field.name in fields
-            and field.name not in values
-            and fields[field.name][0] != "data"
-            and field.default is dataclasses.MISSING
-            and field.default_factory is dataclasses.MISSING
+            and kind != "data"
+            and name not in values
+            and name not in _defaulted(schema)
         ):
             raise ConfigValidationError(
-                f"Missing required field `{field.name}` in {location}."
+                f"Missing required field `{name}` in {location}."
             )
     data = {
         key: _normalize_enums(value, fields[key][1])

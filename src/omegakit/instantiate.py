@@ -2,7 +2,7 @@ import functools
 from collections.abc import Callable, Iterable
 from typing import Any, cast, get_args, get_origin, overload
 
-from omegaconf import DictConfig, ListConfig, OmegaConf
+from omegaconf import DictConfig, OmegaConf
 
 from .errors import ConfigValidationError, format_path
 from .fields import coerce_fields
@@ -238,14 +238,14 @@ def _build_object(value: Any, annotation: Any, path: tuple[str | int, ...]) -> A
     )
 
 
-def _materialize(node: Any, path: tuple[str | int, ...]) -> Any:
-    if isinstance(node, (dict, DictConfig)):
-        node = {k: v for k, v in node.items() if k != META_KEY}
+def _materialize(value: Any, path: tuple[str | int, ...]) -> Any:
+    if isinstance(value, dict):
+        node = {key: item for key, item in value.items() if key != META_KEY}
         if CLASS_KEY in node:
             return _build(node, path=path)
         if REF_KEY in node:
             return import_object(node[REF_KEY])
-        return {k: _materialize(v, (*path, k)) for k, v in node.items()}
-    if isinstance(node, (list, ListConfig)):
-        return [_materialize(v, (*path, index)) for index, v in enumerate(node)]
-    return node
+        return {key: _materialize(item, (*path, key)) for key, item in node.items()}
+    if isinstance(value, list):
+        return [_materialize(item, (*path, index)) for index, item in enumerate(value)]
+    return value
