@@ -66,8 +66,8 @@ experiment file names that base and adds what differs:
 ```
 
 `~import` reads another file, and `$base` merges it underneath the node, so the
-experiment's own keys win. [Imports](../configs/imports/index.md) and
-[Inheritance](../configs/inheritance/index.md) show how `base.yaml` is built.
+experiment's own keys win. [Imports](../guide/imports/index.md) and
+[Inheritance](../guide/inheritance/index.md) show how `base.yaml` is built.
 
 ## 4. Add a schema
 
@@ -114,4 +114,4 @@ test mae: 0.1589
 
 [Reproducible runs](../reproducible-runs/index.md) explains what it saves and why.
 From here, the guide covers each feature, starting with
-[Loading](../configs/loading/index.md).
+[Loading](../guide/loading/index.md).

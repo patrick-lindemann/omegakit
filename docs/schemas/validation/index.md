@@ -27,7 +27,7 @@ is a `ValueError` too.
 
 `base.yaml` leaves the name open and names no model or optimizer.
 `validate(base, schema=Experiment, allow_missing=True)` accepts what is missing and
-still checks every value the file gives ([Missing values](../../configs/missing-values/index.md)).
+still checks every value the file gives ([Missing values](../../guide/missing-values/index.md)).
 
 Validation calls no configured class, but it imports the modules that `$class` and
 `$ref` name and runs every resolver. Validate only configs you trust, and limit the

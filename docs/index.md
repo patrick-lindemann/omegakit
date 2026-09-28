@@ -33,7 +33,7 @@ experiment = instantiate(config, schema=Experiment)
   [Reproducible runs](reproducible-runs/index.md), and how omegakit
   [compares with Hydra and other libraries](comparison/index.md).
 - **Looking up a feature:** one page per feature, in the order you meet them.
-  [Configs](configs/loading/index.md) covers how files are loaded and combined,
+  The [Guide](guide/loading/index.md) covers how files are loaded and combined,
   [Schemas](schemas/dataclass-schemas/index.md) how a config is checked, and
   [Building objects](objects/instantiation/index.md) how objects are built from it.
 - **A complete pattern:** the recipes, such as
@@ -58,17 +58,17 @@ comparison/index
 ```
 
 ```{toctree}
-:caption: Configs
+:caption: Guide
 :hidden:
 
-configs/loading/index
-configs/imports/index
-configs/inheritance/index
-configs/shared-defaults/index
-configs/overrides/index
-configs/interpolation/index
-configs/environment-variables/index
-configs/missing-values/index
+guide/loading/index
+guide/imports/index
+guide/inheritance/index
+guide/shared-defaults/index
+guide/overrides/index
+guide/interpolation/index
+guide/environment-variables/index
+guide/missing-values/index
 ```
 
 ```{toctree}

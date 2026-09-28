@@ -50,7 +50,7 @@ out of arguments that your code saves, such as hyperparameters in checkpoints.
   registers it itself.
 - `${secret:NAME}` gives the value of the environment variable `NAME`, read when
   the value is resolved, as `${oc.env:NAME}` is
-  ([Environment variables](../../configs/environment-variables/index.md#rules)). It
+  ([Environment variables](../../guide/environment-variables/index.md#rules)). It
   has no default. A variable that is not set fails like any resolver error, also
   with `allow_missing=True`.
 - A config from `load_config` holds `${secret:NAME}` as written.

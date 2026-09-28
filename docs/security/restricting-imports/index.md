@@ -54,4 +54,4 @@ They limit which modules `$class` and `$ref` may name.
 **Import root.** By default an `~import` may read any file the process can read.
 `load_config` takes `import_root`, and `omegakit check` and `omegakit show` take
 `--import-root DIR`, to keep imports inside one directory.
-[Imports](../../configs/imports/index.md) shows an example and lists the rules.
+[Imports](../../guide/imports/index.md) shows an example and lists the rules.

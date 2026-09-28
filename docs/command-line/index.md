@@ -85,7 +85,7 @@ path that cannot be imported, or an `--import-root` that is not a directory.
 - `--schema` is passed as `validate`'s `schema`, `--allow-missing` as
   `allow_missing`, and each `--allow-module` adds an entry to `allowed_modules`
   ([Restricting imports](../security/restricting-imports/index.md#rules)). `--import-root` is passed to
-  `load_config` as `import_root` ([Imports](../configs/imports/index.md#rules)).
+  `load_config` as `import_root` ([Imports](../guide/imports/index.md#rules)).
 - It prints `<file>: <exception type>: <message>` for each invalid file and
   nothing for valid ones. Any exception, and a `SystemExit` raised by an imported
   module, marks that file invalid, and the other files are still checked.

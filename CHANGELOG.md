@@ -6,6 +6,11 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- The Configs section of the documentation is now the Guide, and its pages moved
+  from `configs/<page>/` to `guide/<page>/`, such as `guide/loading/`.
+
 ### Fixed
 
 - A dataclass schema that OmegaConf cannot validate, such as one with a

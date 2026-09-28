@@ -61,7 +61,7 @@ directory, and `cubic.yaml` reads from outside its own:
 
 ```text
 ['train', 'validation', 'test']
-Import `~import ../../curvefit/configs/experiments/poly3-adam.yaml` in `.../configs/imports/cubic.yaml` reads `.../curvefit/configs/experiments/poly3-adam.yaml`, which is outside the import root `.../configs/imports`.
+Import `~import ../../curvefit/configs/experiments/poly3-adam.yaml` in `.../guide/imports/cubic.yaml` reads `.../curvefit/configs/experiments/poly3-adam.yaml`, which is outside the import root `.../guide/imports`.
 ```
 
 `omegakit check` and `omegakit show` take the same limit as `--import-root DIR`. It

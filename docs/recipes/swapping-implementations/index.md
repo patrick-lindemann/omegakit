@@ -30,7 +30,7 @@ settings only. A class that is not a `Dataset` is rejected before anything is
 built.
 
 An override, like a file, merges into the node it names
-([Overrides](../../configs/overrides/index.md#rules)). Changing `$class` alone kept
+([Overrides](../../guide/overrides/index.md#rules)). Changing `$class` alone kept
 SGD's `momentum`, which Adam does not take. Adam has no schema, so the mistake shows
 only when the partial is called. Override `$class` alone only when the new class
 takes the same settings. For a lasting swap, write an experiment file that names

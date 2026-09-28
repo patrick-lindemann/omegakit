@@ -23,7 +23,7 @@ runs/poly3-adam/seed0 40
 `cluster.yaml` puts its runs under `${paths:runs}`, and the test split reads the
 measured data from under `${paths:data}`, inside a longer string. The test split is
 replaced in code, because an override would merge the new node into the old one
-([Overrides](../../configs/overrides/index.md#rules)). Register the paths once,
+([Overrides](../../guide/overrides/index.md#rules)). Register the paths once,
 when the program starts, from whatever tells your machines apart.
 
 ## Rules

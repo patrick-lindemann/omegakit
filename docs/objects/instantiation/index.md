@@ -64,7 +64,7 @@ arguments.
 `$meta` holds notes for people and tools, such as the hypothesis of
 `poly3-adam.yaml`. It is never passed to a constructor or to `from_config`, and
 `load_config` removes it unless you pass `keep_meta=True`
-([Loading](../../configs/loading/index.md)).
+([Loading](../../guide/loading/index.md)).
 
 ## Checking before building
 
@@ -87,7 +87,7 @@ and gets a note naming the node, such as
   the attribute is imported and called with the node's other keys as keyword
   arguments.
 - `instantiate` and `prepare` first merge `overrides`
-  ([Overrides](../../configs/overrides/index.md#rules)), resolve the node and validate it as
+  ([Overrides](../../guide/overrides/index.md#rules)), resolve the node and validate it as
   `validate` does ([Validation](../../schemas/validation/index.md#rules)), with the same
   `schema` and `allowed_modules`, and only then build. An invalid override raises
   `ConfigLoadError`. A config error, a `???`, a failing

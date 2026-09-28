@@ -2,7 +2,7 @@
 
 A resolver is a function inside an interpolation, such as `${oc.env:TRACKER_TOKEN}`.
 OmegaConf's own resolvers, such as `oc.env`, are always available;
-[Environment variables](../../configs/environment-variables/index.md) shows `oc.env`
+[Environment variables](../../guide/environment-variables/index.md) shows `oc.env`
 in use.
 
 omegakit adds optional resolvers. Each module under `omegakit.resolvers` holds the
