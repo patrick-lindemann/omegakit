@@ -35,4 +35,4 @@ platform needs.
 - omegakit's resolvers cache their results per config. A config that has resolved
   `${paths:runs}` keeps that value after the resolver is replaced. A config loaded
   afterwards sees the new one.
-- The [API](../../api/index.md#resolvers) lists every resolver module and function.
+- The [API](../../reference/api/index.md#resolvers) lists every resolver module and function.

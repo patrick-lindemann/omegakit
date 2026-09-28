@@ -14,6 +14,9 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- The API and Changelog pages moved into the folder of their section, Reference,
+  at `reference/api/` and `reference/changelog/`. Their old addresses redirect
+  there.
 - `omegakit export-schema` reports a class it cannot export as a usage error and
   exits with 2, instead of printing a traceback.
 - `omegakit check --schema` with something that is not a class exits with 2 once,

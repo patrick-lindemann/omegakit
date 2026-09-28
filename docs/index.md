@@ -22,7 +22,7 @@ examples in these pages train a small PyTorch model.
 - **From a terminal:** the [command line](command-line/index.md) checks and prints
   configs without a script.
 - **Reference:** the Rules section at the end of each feature page, and the
-  [API](api/index.md).
+  [API](reference/api/index.md).
 
 Configs import and call Python code, so load them only from sources you trust.
 The Security section says [what runs](security/trust-model/index.md), how to
@@ -110,6 +110,6 @@ recipes/checking-experiments-in-ci/index
 :caption: Reference
 :hidden:
 
-api/index
-changelog/index
+reference/api/index
+reference/changelog/index
 ```
