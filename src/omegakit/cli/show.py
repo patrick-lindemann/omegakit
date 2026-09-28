@@ -7,11 +7,11 @@ from typing import Any, NoReturn
 from omegaconf import DictConfig, ListConfig, Node, OmegaConf
 from omegaconf.errors import OmegaConfBaseException
 
-from omegakit.assembly import select_node
 from omegakit.cli.arguments import split_arguments
-from omegakit.loading import load_config
-from omegakit.utils import SECRET_VALUES
-from omegakit.validation import resolve_item
+from omegakit.imports import select_node
+from omegakit.load import load_config
+from omegakit.registry import SECRET_VALUES
+from omegakit.validate import resolve_item
 
 _SECRET = re.compile(r"\$\{\s*secret\s*:")
 

@@ -17,7 +17,7 @@ from omegakit import (
     prepare,
     validate,
 )
-from omegakit.utils import register_resolver
+from omegakit.registry import register_resolver
 from tests import schemas
 from tests.schemas import Encoder, EncoderConfig, SectionWithObject, Sub
 
@@ -72,7 +72,7 @@ FIELDS = "tests.schemas.Fields"
 ENCODER = "tests.schemas.Encoder"
 
 
-def test_schema_native_values_are_coerced():
+def test_schema_data_values_are_coerced():
     obj = instantiate({"$class": FIELDS, "count": "3", "path": "a/b"})
     assert obj.fields["count"] == 3
     assert obj.fields["path"] == Path("a/b")
@@ -182,7 +182,7 @@ def test_schema_unknown_field_raises():
         instantiate({"$class": FIELDS, "colour": "red"})
 
 
-def test_schema_missing_required_native_field_raises():
+def test_schema_missing_required_data_field_raises():
     with pytest.raises(ConfigValidationError, match="depth"):
         instantiate({"$class": "tests.schemas.Model"})
 
@@ -192,7 +192,7 @@ def test_schema_missing_required_object_field_raises():
         instantiate({"$class": "tests.schemas.RequiredObject"})
 
 
-def test_schema_wrong_native_type_raises_with_path_and_schema_name():
+def test_schema_wrong_data_type_raises_with_path_and_schema_name():
     with pytest.raises(ConfigValidationError, match=r"`point\.count`.*FieldsConfig"):
         instantiate(
             {
@@ -203,7 +203,7 @@ def test_schema_wrong_native_type_raises_with_path_and_schema_name():
         )
 
 
-def test_schema_class_node_in_native_field_raises():
+def test_schema_class_node_in_data_field_raises():
     with pytest.raises(ConfigValidationError, match=r"\$class"):
         instantiate({"$class": FIELDS, "sub": {"$class": ENCODER}})
 

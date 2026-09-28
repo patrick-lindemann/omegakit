@@ -4,19 +4,19 @@ from typing import Any, cast, get_args, get_origin, overload
 
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
-from .errors import ConfigValidationError
+from .errors import ConfigValidationError, format_path
+from .fields import coerce_fields
 from .keys import CLASS_KEY, META_KEY, PARTIAL_KEY, REF_KEY
-from .loading import merge_overrides
+from .overrides import merge_overrides
 from .schema import (
     check_schema,
     classify_fields,
     find_schema,
     find_section,
-    union_members,
-    validate_native,
+    split_union,
 )
-from .utils import format_path, import_object
-from .validation import check_resolved, resolve_config
+from .targets import import_object
+from .validate import check_resolved, resolve_config
 
 
 @overload
@@ -46,11 +46,6 @@ def instantiate(
     allowed_modules: Iterable[str] | None = None,
 ) -> Any:
     """Build the object that a config node describes.
-
-    The node is resolved and validated as `validate` does, and a problem raises
-    `ConfigValidationError` before any configured class is called. Then the node is
-    built children first: `$class` is called, or its `from_config` when it has one,
-    `$ref` is imported, and `$partial: true` gives a `functools.partial`.
 
     Args:
         config: The node to build. It must have `$class`, unless `schema` is given.
@@ -105,10 +100,6 @@ def prepare(
     allowed_modules: Iterable[str] | None = None,
 ) -> functools.partial[Any]:
     """Build a config node's children, and defer the call of the node itself.
-
-    Like `instantiate`, the node is validated first and its children are built; the
-    node's own `$class`, or its `from_config`, is wrapped in a `functools.partial`
-    that takes more keyword arguments when called.
 
     Args:
         config: The node to prepare. It must have `$class`, unless `schema` is
@@ -205,9 +196,9 @@ def _build(
 def _build_fields(
     schema: type, values: dict[str, Any], path: tuple[str | int, ...]
 ) -> dict[str, Any]:
-    fields = validate_native(schema, values, path, build=True)
+    fields = coerce_fields(schema, values, path, build=True)
     for name, (kind, annotation) in classify_fields(schema).items():
-        if kind == "native" or name not in values:
+        if kind == "data" or name not in values:
             continue
         if kind == "object":
             fields[name] = _build_object(values[name], annotation, (*path, name))
@@ -219,7 +210,7 @@ def _build_fields(
 def _build_object(value: Any, annotation: Any, path: tuple[str | int, ...]) -> Any:
     # Follows the annotation into `list` and `dict` fields, where a plain mapping in a
     # dataclass item is a section, as in `validate`.
-    members, _ = union_members(annotation)
+    members, _ = split_union(annotation)
     if len(members) == 1 and get_origin(members[0]) in (list, dict):
         item_annotation = get_args(members[0])[-1]
         if isinstance(value, list):

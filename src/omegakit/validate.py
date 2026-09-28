@@ -10,17 +10,17 @@ from omegaconf.errors import (
     OmegaConfBaseException,
 )
 
-from .errors import ConfigValidationError
+from .errors import ConfigValidationError, describe_value, format_path
+from .fields import coerce_fields
 from .keys import CLASS_KEY, META_KEY, PARTIAL_KEY, REF_KEY
 from .schema import (
     check_schema,
     classify_fields,
     find_schema,
     find_section,
-    union_members,
-    validate_native,
+    split_union,
 )
-from .utils import describe_value, format_path, import_object
+from .targets import import_object
 
 
 def validate(
@@ -31,17 +31,6 @@ def validate(
     allowed_modules: Iterable[str] | None = None,
 ) -> None:
     """Check a loaded config against the schemas of the classes it names.
-
-    The config is resolved, and every node with `$class` is checked bottom-up against
-    the schema of its class. An object field accepts a node whose `$class` is the
-    field's class or a subclass, or a `$ref` to an instance of it.
-
-    Validation checks values. It calls no `$class` target and constructs none of the
-    schema's dataclasses. Code still runs: the modules named by `$class` and `$ref`
-    are imported, resolvers run, so do `__instancecheck__` and `__subclasscheck__`
-    of imported classes, and every `default_factory` of a schema runs, possibly
-    several times and even for fields that the config sets. An exception from a
-    factory propagates.
 
     Args:
         config: The assembled config, such as the result of `load_config`.
@@ -152,12 +141,6 @@ def check_resolved(
     _check_object(config, schema, (), allow_missing, allowed_modules)
 
 
-def _resolve_allowing_missing(container: DictConfig | ListConfig) -> Any:
-    if isinstance(container, ListConfig):
-        return [resolve_item(container, index) for index in range(len(container))]
-    return {key: resolve_item(container, key) for key in container}
-
-
 def resolve_item(container: Any, key: Any) -> Any:
     """Resolve one item of a container, giving `???` for a missing value.
 
@@ -180,6 +163,12 @@ def resolve_item(container: Any, key: Any) -> Any:
     if isinstance(value, (DictConfig, ListConfig)):
         return _resolve_allowing_missing(value)
     return value
+
+
+def _resolve_allowing_missing(container: DictConfig | ListConfig) -> Any:
+    if isinstance(container, ListConfig):
+        return [resolve_item(container, index) for index in range(len(container))]
+    return {key: resolve_item(container, key) for key in container}
 
 
 def _check_untyped(
@@ -271,7 +260,7 @@ def _check_section(
     allowed_modules: tuple[str, ...] | None,
 ) -> None:
     for name, (kind, annotation) in classify_fields(schema).items():
-        if name not in values or kind == "native":
+        if name not in values or kind == "data":
             continue
         if kind == "any":
             _check_untyped(values[name], (*path, name), allow_missing, allowed_modules)
@@ -279,7 +268,7 @@ def _check_section(
             _check_object(
                 values[name], annotation, (*path, name), allow_missing, allowed_modules
             )
-    validate_native(schema, values, path, allow_missing)
+    coerce_fields(schema, values, path, allow_missing)
 
 
 def _check_object(
@@ -291,7 +280,7 @@ def _check_object(
 ) -> None:
     if allow_missing and value == MISSING:
         return
-    members, optional = union_members(annotation)
+    members, optional = split_union(annotation)
     classes = tuple(
         member.__value__ if isinstance(member, TypeAliasType) else member
         for member in members

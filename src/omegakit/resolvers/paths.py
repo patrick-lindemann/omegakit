@@ -1,16 +1,13 @@
 from collections.abc import Mapping
 from pathlib import Path
 
-from omegakit.utils import register_resolver
+from omegakit.registry import register_resolver
 
 
 def register_paths_resolver(
     paths: Mapping[str, str | Path], *, replace: bool = False
 ) -> None:
     """Register `${paths:key}`, which gives the path registered under `key`.
-
-    The paths are copied and converted to strings, without being resolved. An
-    unknown key gives `None`. Registration is global to OmegaConf.
 
     Args:
         paths: The paths by key.

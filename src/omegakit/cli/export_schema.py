@@ -2,8 +2,8 @@ import argparse
 import json
 from pathlib import Path
 
-from omegakit.schema import generate_json_schema
-from omegakit.utils import import_object
+from omegakit.json_schema import generate_json_schema
+from omegakit.targets import import_object
 
 
 def register(commands: argparse._SubParsersAction) -> None:

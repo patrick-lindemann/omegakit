@@ -15,7 +15,6 @@ from typing import (
     TypeAliasType,
     TypeVar,
     Union,
-    cast,
     get_args,
     get_origin,
     get_type_hints,
@@ -27,12 +26,14 @@ from omegaconf.errors import OmegaConfBaseException
 from typing_extensions import NoDefault
 
 from .configurable import Configurable
-from .errors import ConfigValidationError, OmegaKitBaseException, SchemaDefinitionError
-from .utils import describe_value, format_path
+from .errors import (
+    OmegaKitBaseException,
+    SchemaDefinitionError,
+)
 
-type FieldKind = Literal["native", "object", "any"]
+type FieldKind = Literal["data", "object", "any"]
 
-_NATIVE_TYPES = (int, float, bool, str, bytes, Path)
+_SCALAR_TYPES = (int, float, bool, str, bytes, Path)
 _UNSUPPORTED_CONTAINERS = (
     set,
     frozenset,
@@ -46,17 +47,11 @@ _UNSUPPORTED_CONTAINERS = (
     collections.abc.Mapping,
     collections.abc.MutableMapping,
 )
-# A value may always be written as an interpolation, a missing value or an import.
-_PLACEHOLDER = {"type": "string", "pattern": r"^(\?\?\?$|~import\s|.*\$\{)"}
 
 
 @functools.cache
 def find_schema(cls: type) -> type | None:
     """Find the dataclass schema of a class.
-
-    The schema of a `Configurable` is its `TConfig` argument, found by walking the
-    original bases and substituting type variables. An unparametrized generic class
-    uses the default of its type variable. Any other dataclass is its own schema.
 
     Args:
         cls: The class to inspect.
@@ -80,7 +75,7 @@ def find_schema(cls: type) -> type | None:
     if not (isinstance(config_type, type) and dataclasses.is_dataclass(config_type)):
         return None
     try:
-        OmegaConf.structured(_native_schema(config_type))
+        OmegaConf.structured(derive_structure(config_type))
     except OmegaKitBaseException:
         raise
     except OmegaConfBaseException as error:
@@ -97,9 +92,6 @@ def classify_fields(
     schema: type, outer: tuple[type, ...] = ()
 ) -> dict[str, tuple[FieldKind, Any]]:
     """Classify the configurable fields of a schema dataclass.
-
-    Fields with `init=False` and `InitVar` pseudo-fields are not configurable and
-    are left out.
 
     Args:
         schema: The schema dataclass.
@@ -140,11 +132,6 @@ def classify_fields(
 @functools.cache
 def check_schema(cls: type) -> None:
     """Check that the schema of `cls` matches its `__init__`.
-
-    The check applies only to the default `from_config`, which passes every schema
-    field to the constructor. Classes without a schema, dataclasses that are their
-    own schema, and classes whose MRO overrides `from_config`, pass unchecked. A
-    successful check is cached.
 
     Args:
         cls: The class to check.
@@ -225,100 +212,7 @@ def check_schema(cls: type) -> None:
             )
 
 
-def validate_native(
-    schema: type,
-    values: dict[str, Any],
-    path: tuple[str | int, ...],
-    allow_missing: bool = False,
-    build: bool = False,
-) -> dict[str, Any]:
-    """Validate and coerce the native fields of a node through OmegaConf.
-
-    Args:
-        schema: The schema dataclass.
-        values: The node's resolved values, without `$` keys.
-        path: The node's path from the config root.
-        allow_missing: Keep missing values as `???` instead of raising, including
-            required fields that are not given. Defaults to `False`.
-        build: Construct the nested dataclasses of native fields. Without it, their
-            fields are checked and kept as mappings. Defaults to `False`.
-
-    Returns:
-        The coerced native fields. Absent fields with a default are left out, so
-        that the dataclass fills them in itself.
-
-    Raises:
-        ConfigValidationError: If a key is not a field, a required field is missing,
-            or a native value does not match its annotation.
-        SchemaDefinitionError: If OmegaConf cannot validate the schema's fields.
-    """  # noqa: DOC503
-    fields = classify_fields(schema)
-    location = f"`{format_path(path)}` ({schema.__qualname__})"
-    unknown = [key for key in values if key not in fields]
-    if unknown:
-        raise ConfigValidationError(
-            f"Unknown field(s) {', '.join(map(repr, unknown))} in {location}. "
-            f"Expected one of: {', '.join(fields)}."
-        )
-    for field in dataclasses.fields(schema):
-        if (
-            not allow_missing
-            and field.name in fields
-            and field.name not in values
-            and fields[field.name][0] != "native"
-            and field.default is dataclasses.MISSING
-            and field.default_factory is dataclasses.MISSING
-        ):
-            raise ConfigValidationError(
-                f"Missing required field `{field.name}` in {location}."
-            )
-    native = {
-        key: _normalize_enums(value, fields[key][1])
-        for key, value in values.items()
-        if fields[key][0] == "native"
-    }
-    try:
-        structure = OmegaConf.structured(_native_schema(schema))
-    except OmegaKitBaseException:
-        raise
-    except OmegaConfBaseException as error:
-        raise SchemaDefinitionError(
-            f"Schema `{schema.__qualname__}` cannot be validated by OmegaConf: "
-            f"{str(error).splitlines()[0]}"
-        ) from error
-    try:
-        merged = OmegaConf.to_container(
-            OmegaConf.merge(structure, native),
-            resolve=True,
-            throw_on_missing=not allow_missing,
-        )
-    except OmegaKitBaseException:
-        raise
-    except OmegaConfBaseException as error:
-        message = str(error).splitlines()[0]
-        if error.full_key:
-            location = (
-                f"`{format_path((*path, error.full_key))}` ({schema.__qualname__})"
-            )
-        raise ConfigValidationError(
-            f"Invalid config in {location}: {message}"
-        ) from error
-    merged = cast(dict[str, Any], merged)
-    return {
-        name: _build_native_value(
-            merged[name],
-            native.get(name),
-            annotation,
-            (*path, name),
-            allow_missing,
-            build,
-        )
-        for name, (kind, annotation) in fields.items()
-        if kind == "native" and (name in native or name not in _defaulted(schema))
-    }
-
-
-def union_members(annotation: Any) -> tuple[tuple[Any, ...], bool]:
+def split_union(annotation: Any) -> tuple[tuple[Any, ...], bool]:
     """Split an annotation into its members, following type aliases.
 
     Args:
@@ -341,56 +235,131 @@ def union_members(annotation: Any) -> tuple[tuple[Any, ...], bool]:
 def find_section(annotation: Any) -> type | None:
     """Find the dataclass in an object field's annotation, if there is one.
 
-    A plain mapping in such a field is a section of the schema, not a node to build.
-
     Args:
         annotation: The field's annotation, possibly a union or a `type` alias.
 
     Returns:
         The first dataclass among the annotation's members, or `None`.
     """
-    members, _ = union_members(annotation)
+    members, _ = split_union(annotation)
     for member in members:
         if isinstance(member, type) and dataclasses.is_dataclass(member):
             return member
     return None
 
 
-def generate_json_schema(schema: type) -> dict[str, Any]:
-    """Generate a JSON Schema for YAML config files.
-
-    Every value may also be an interpolation (`${...}`), `???` or an `~import`, every
-    mapping accepts `$`-keys such as `$base` and `$class`, and nothing is required,
-    because values may come from `$base`, `$defaults` or overrides. An enum accepts
-    its member names, and also the string and integer values that are not a name.
-    An object field whose class is a `Configurable` with a dataclass schema is
-    checked against that schema when its `$class` names the class.
+def is_mapping_type(annotation: Any) -> bool:
+    """Tell whether an annotation describes a mapping.
 
     Args:
-        schema: A root schema dataclass, or a `Configurable` class whose schema
-            describes a fragment file.
+        annotation: The annotation.
 
     Returns:
-        The JSON Schema (draft-07) as a dictionary.
+        `True` for a `dict`, a `Mapping`, a dataclass or a `TypedDict`.
+    """
+    origin = get_origin(annotation) or annotation
+    return origin in (dict, collections.abc.Mapping) or (
+        isinstance(annotation, type)
+        and (dataclasses.is_dataclass(annotation) or is_typeddict(annotation))
+    )
 
-    Raises:
-        TypeError: If `schema` is neither a dataclass nor a `Configurable` with a
-            dataclass schema.
-        SchemaDefinitionError: If a schema that it reaches is not supported.
-    """  # noqa: DOC503
-    root = (find_schema(schema) or schema) if isinstance(schema, type) else None
-    if not (isinstance(root, type) and dataclasses.is_dataclass(root)):
-        name = getattr(schema, "__qualname__", repr(schema))
-        raise TypeError(
-            f"`{name}` is neither a dataclass nor a `Configurable` with a dataclass "
-            "schema."
+
+def is_sequence_type(annotation: Any) -> bool:
+    """Tell whether an annotation describes a sequence.
+
+    Args:
+        annotation: The annotation.
+
+    Returns:
+        `True` for a `list`, a `tuple` or a `Sequence`.
+    """
+    origin = get_origin(annotation) or annotation
+    return origin in (list, tuple, collections.abc.Sequence)
+
+
+# OmegaConf 2.3 supports neither `Literal`, nor unions with non-scalar members, nor
+# fixed-length tuples, so it validates against a derived structure that holds plain
+# types there. The rest is checked after OmegaConf, and building constructs the
+# schema's own classes, so every supported OmegaConf version behaves the same.
+@functools.cache
+def derive_structure(schema: type) -> type:
+    """Derive the dataclass that OmegaConf validates the data fields of a schema with.
+
+    Args:
+        schema: The schema dataclass.
+
+    Returns:
+        A dataclass with the data fields of `schema`, whose annotations OmegaConf
+        supports.
+    """
+    structure = []
+    for field in dataclasses.fields(schema):
+        if field.name not in classify_fields(schema):
+            continue
+        kind, annotation = classify_fields(schema)[field.name]
+        if kind != "data":
+            continue
+        field_type = derive_structure_type(annotation)
+        if field.default_factory is not dataclasses.MISSING:
+            default = dataclasses.field(
+                default_factory=functools.partial(
+                    _structure_default, field.default_factory, field_type is Any
+                )
+            )
+        elif field.default is not dataclasses.MISSING:
+            default = dataclasses.field(
+                default_factory=functools.partial(
+                    _structure_default,
+                    functools.partial(copy.deepcopy, field.default),
+                    field_type is Any,
+                )
+            )
+        else:
+            default = dataclasses.field(default=MISSING)
+        structure.append((field.name, field_type, default))
+    return dataclasses.make_dataclass(schema.__name__, structure, kw_only=True)
+
+
+def derive_structure_type(annotation: Any) -> Any:
+    """Translate an annotation into one that OmegaConf supports.
+
+    Args:
+        annotation: The annotation of a data field.
+
+    Returns:
+        The annotation with `Literal`, unions with non-scalar members and fixed-length
+        tuples replaced by plain types, and dataclasses by their derived structure.
+    """
+    while isinstance(annotation, TypeAliasType):
+        annotation = annotation.__value__
+    origin = get_origin(annotation)
+    arguments = get_args(annotation)
+    if origin is Literal:
+        return functools.reduce(
+            operator.or_, dict.fromkeys(type(value) for value in arguments)
         )
-    definitions: dict[str, Any] = {}
-    return {
-        "$schema": "http://json-schema.org/draft-07/schema#",
-        **_json_mapping(root, definitions),
-        "definitions": definitions,
-    }
+    if origin in (Union, types.UnionType):
+        members, _ = split_union(annotation)
+        if len(members) == 1:
+            return derive_structure_type(members[0]) | None
+        if any(
+            is_mapping_type(member) or is_sequence_type(member) for member in arguments
+        ):
+            return Any
+        return functools.reduce(operator.or_, map(derive_structure_type, arguments))
+    if origin in (list, collections.abc.Sequence) or (
+        origin is tuple and len(arguments) == 2 and arguments[1] is Ellipsis
+    ):
+        return list[derive_structure_type(arguments[0])]
+    if origin is tuple:
+        return Any
+    if origin in (dict, collections.abc.Mapping):
+        return dict[arguments[0], derive_structure_type(arguments[1])]
+    if isinstance(annotation, type) and is_typeddict(annotation):
+        return dict
+    if isinstance(annotation, type) and dataclasses.is_dataclass(annotation):
+        return derive_structure(annotation)
+    return annotation
 
 
 def _type_var_default(parameter: Any) -> Any:
@@ -465,24 +434,24 @@ def _field_kind(
     arguments = get_args(annotation)
     if origin is Literal:
         if all(type(value) in (str, int, bool) for value in arguments):
-            return "native"
+            return "data"
         raise SchemaDefinitionError(
             f"Field `{name}` of schema `{schema.__qualname__}` has `{annotation}`, but "
             "`Literal` values must be strings, integers or booleans."
         )
     if annotation is Any:
         return "any"
-    if annotation in _NATIVE_TYPES or (
+    if annotation in _SCALAR_TYPES or (
         isinstance(annotation, type) and issubclass(annotation, enum.Enum)
     ):
-        return "native"
+        return "data"
     if isinstance(annotation, type) and dataclasses.is_dataclass(annotation):
         kinds = {kind for kind, _ in classify_fields(annotation, outer).values()}
-        return "native" if kinds <= {"native"} else "object"
+        return "data" if kinds <= {"data"} else "object"
     if isinstance(annotation, type) and is_typeddict(annotation):
-        return "native"
+        return "data"
     if origin in (Union, types.UnionType):
-        members, _ = union_members(annotation)
+        members, _ = split_union(annotation)
         member_kinds: set[FieldKind] = {
             _field_kind(member, schema, name, outer) for member in members
         }
@@ -493,9 +462,9 @@ def _field_kind(
                 "of classes, or `Any`."
             )
         kind = member_kinds.pop()
-        if kind == "native" and (
-            sum(_is_mapping_type(member) for member in members) > 1
-            or sum(_is_sequence_type(member) for member in members) > 1
+        if kind == "data" and (
+            sum(is_mapping_type(member) for member in members) > 1
+            or sum(is_sequence_type(member) for member in members) > 1
         ):
             raise SchemaDefinitionError(
                 f"Field `{name}` of schema `{schema.__qualname__}` has `{annotation}`, "
@@ -516,8 +485,8 @@ def _field_kind(
         kinds: set[FieldKind] = {
             _field_kind(item, schema, name, outer) for item in items
         }
-        if kinds <= {"native"}:
-            return "native"
+        if kinds <= {"data"}:
+            return "data"
         if kinds == {"object"} and origin in (list, dict):
             return "object"
         if kinds == {"any"}:
@@ -542,87 +511,6 @@ def _field_kind(
     )
 
 
-def _is_mapping_type(annotation: Any) -> bool:
-    origin = get_origin(annotation) or annotation
-    return origin in (dict, collections.abc.Mapping) or (
-        isinstance(annotation, type)
-        and (dataclasses.is_dataclass(annotation) or is_typeddict(annotation))
-    )
-
-
-def _is_sequence_type(annotation: Any) -> bool:
-    origin = get_origin(annotation) or annotation
-    return origin in (list, tuple, collections.abc.Sequence)
-
-
-# OmegaConf 2.3 supports neither `Literal`, nor unions with non-scalar members, nor
-# fixed-length tuples, so it validates against a derived structure that holds plain
-# types there. `_build_native_value` checks the rest and, when building, constructs
-# the schema's own classes, so every supported OmegaConf version behaves the same.
-@functools.cache
-def _native_schema(schema: type) -> type:
-    structure = []
-    for field in dataclasses.fields(schema):
-        if field.name not in classify_fields(schema):
-            continue
-        kind, annotation = classify_fields(schema)[field.name]
-        if kind != "native":
-            continue
-        structure_type = _structure_type(annotation)
-        if field.default_factory is not dataclasses.MISSING:
-            default = dataclasses.field(
-                default_factory=functools.partial(
-                    _structure_default, field.default_factory, structure_type is Any
-                )
-            )
-        elif field.default is not dataclasses.MISSING:
-            default = dataclasses.field(
-                default_factory=functools.partial(
-                    _structure_default,
-                    functools.partial(copy.deepcopy, field.default),
-                    structure_type is Any,
-                )
-            )
-        else:
-            default = dataclasses.field(default=MISSING)
-        structure.append((field.name, structure_type, default))
-    return dataclasses.make_dataclass(schema.__name__, structure, kw_only=True)
-
-
-def _structure_type(annotation: Any) -> Any:
-    while isinstance(annotation, TypeAliasType):
-        annotation = annotation.__value__
-    origin = get_origin(annotation)
-    arguments = get_args(annotation)
-    if origin is Literal:
-        return functools.reduce(
-            operator.or_, dict.fromkeys(type(value) for value in arguments)
-        )
-    if origin in (Union, types.UnionType):
-        members, _ = union_members(annotation)
-        if len(members) == 1:
-            return _structure_type(members[0]) | None
-        if any(
-            _is_mapping_type(member) or _is_sequence_type(member)
-            for member in arguments
-        ):
-            return Any
-        return functools.reduce(operator.or_, map(_structure_type, arguments))
-    if origin in (list, collections.abc.Sequence) or (
-        origin is tuple and len(arguments) == 2 and arguments[1] is Ellipsis
-    ):
-        return list[_structure_type(arguments[0])]
-    if origin is tuple:
-        return Any
-    if origin in (dict, collections.abc.Mapping):
-        return dict[arguments[0], _structure_type(arguments[1])]
-    if isinstance(annotation, type) and is_typeddict(annotation):
-        return dict
-    if isinstance(annotation, type) and dataclasses.is_dataclass(annotation):
-        return _native_schema(annotation)
-    return annotation
-
-
 def _structure_default(factory: Callable[[], Any], plain: bool) -> Any:
     return _to_structure(factory(), plain)
 
@@ -635,252 +523,12 @@ def _to_structure(value: Any, plain: bool) -> Any:
             name: _to_structure(getattr(value, name), plain)
             for name in classify_fields(type(value))
         }
-        return items if plain else _native_schema(type(value))(**items)
+        return items if plain else derive_structure(type(value))(**items)
     if isinstance(value, (list, tuple)):
         return [_to_structure(item, plain) for item in value]
     if isinstance(value, dict):
         return {key: _to_structure(item, plain) for key, item in value.items()}
     return value
-
-
-def _normalize_enums(value: Any, annotation: Any) -> Any:
-    # OmegaConf 2.3 takes enum members by name, and by value only for `int` values;
-    # 2.4 also by `str` value. Names win; values are turned into names before the
-    # merge, so every version accepts the same.
-    while isinstance(annotation, TypeAliasType):
-        annotation = annotation.__value__
-    origin = get_origin(annotation)
-    arguments = get_args(annotation)
-    if isinstance(annotation, type) and issubclass(annotation, enum.Enum):
-        if type(value) in (str, int) and value not in annotation.__members__:
-            for member in annotation:
-                if type(member.value) is type(value) and member.value == value:
-                    return member.name
-        return value
-    if origin in (Union, types.UnionType):
-        members, _ = union_members(annotation)
-        return _normalize_enums(value, members[0]) if len(members) == 1 else value
-    if origin in (list, tuple, collections.abc.Sequence) and isinstance(value, list):
-        if origin is tuple and not (len(arguments) == 2 and arguments[1] is Ellipsis):
-            if len(value) != len(arguments):
-                return value
-            return [
-                _normalize_enums(item, item_annotation)
-                for item, item_annotation in zip(value, arguments, strict=True)
-            ]
-        return [_normalize_enums(item, arguments[0]) for item in value]
-    if origin in (dict, collections.abc.Mapping) and isinstance(value, dict):
-        return {
-            _normalize_enums(key, arguments[0]): _normalize_enums(item, arguments[1])
-            for key, item in value.items()
-        }
-    if (
-        isinstance(annotation, type)
-        and dataclasses.is_dataclass(annotation)
-        and isinstance(value, dict)
-    ):
-        fields = classify_fields(annotation)
-        return {
-            key: _normalize_enums(item, fields[key][1]) if key in fields else item
-            for key, item in value.items()
-        }
-    return value
-
-
-def _coerce(
-    value: Any,
-    annotation: Any,
-    path: tuple[str | int, ...],
-    allow_missing: bool,
-    build: bool,
-) -> Any:
-    # Validates one value against an annotation through OmegaConf, as a field would.
-    try:
-        structure = OmegaConf.structured(_value_structure(annotation))
-    except OmegaKitBaseException:
-        raise
-    except OmegaConfBaseException as error:
-        raise SchemaDefinitionError(
-            f"`{format_path(path)}` has `{annotation}`, which OmegaConf cannot "
-            f"validate: {str(error).splitlines()[0]}"
-        ) from error
-    try:
-        merged = OmegaConf.to_container(
-            OmegaConf.merge(structure, {"value": _normalize_enums(value, annotation)}),
-            resolve=True,
-            throw_on_missing=not allow_missing,
-        )
-    except OmegaKitBaseException:
-        raise
-    except OmegaConfBaseException as error:
-        raise ConfigValidationError(
-            f"Invalid config in `{format_path(path)}`: {str(error).splitlines()[0]}"
-        ) from error
-    return _build_native_value(
-        cast(dict[str, Any], merged)["value"],
-        value,
-        annotation,
-        path,
-        allow_missing,
-        build,
-    )
-
-
-@functools.cache
-def _value_structure(annotation: Any) -> type:
-    return dataclasses.make_dataclass(
-        "Value", [("value", _structure_type(annotation), dataclasses.field())]
-    )
-
-
-def _build_native_value(
-    value: Any,
-    given: Any,
-    annotation: Any,
-    path: tuple[str | int, ...],
-    allow_missing: bool,
-    build: bool,
-) -> Any:
-    # `given` is the value as the config gave it, before OmegaConf filled in the
-    # defaults. A dataclass default is not rebuilt from its own fields, because its
-    # `__post_init__` has already run on them.
-    if value == MISSING:
-        return value
-    while isinstance(annotation, TypeAliasType):
-        annotation = annotation.__value__
-    origin = get_origin(annotation)
-    arguments = get_args(annotation)
-    if origin is Literal:
-        if not _is_match(value, annotation):
-            raise ConfigValidationError(
-                f"`{format_path(path)}` must be one of "
-                f"{', '.join(map(repr, arguments))}, but the config gives "
-                f"{describe_value(value)}."
-            )
-        return value
-    if origin in (Union, types.UnionType):
-        return _build_union_value(value, given, annotation, path, allow_missing, build)
-    if origin in (list, collections.abc.Sequence):
-        return [
-            _build_native_value(
-                item,
-                given[index] if isinstance(given, list) else None,
-                arguments[0],
-                (*path, index),
-                allow_missing,
-                build,
-            )
-            for index, item in enumerate(value)
-        ]
-    if origin is tuple and len(arguments) == 2 and arguments[1] is Ellipsis:
-        return tuple(
-            _build_native_value(
-                item,
-                given[index] if isinstance(given, list) else None,
-                arguments[0],
-                (*path, index),
-                allow_missing,
-                build,
-            )
-            for index, item in enumerate(value)
-        )
-    if origin is tuple:
-        if not isinstance(value, (list, tuple)) or len(value) != len(arguments):
-            raise ConfigValidationError(
-                f"`{format_path(path)}` expects a list of {len(arguments)} items for "
-                f"`{annotation}`, but the config gives {describe_value(value)}."
-            )
-        return tuple(
-            _coerce(item, item_annotation, (*path, index), allow_missing, build)
-            for index, (item, item_annotation) in enumerate(
-                zip(value, arguments, strict=True)
-            )
-        )
-    if origin in (dict, collections.abc.Mapping):
-        return {
-            key: _build_native_value(
-                item,
-                given.get(key) if isinstance(given, dict) else None,
-                arguments[1],
-                (*path, key),
-                allow_missing,
-                build,
-            )
-            for key, item in value.items()
-        }
-    if isinstance(annotation, type) and dataclasses.is_dataclass(annotation):
-        fields = classify_fields(annotation)
-        given = given if isinstance(given, dict) else value
-        items = {
-            name: _build_native_value(
-                item,
-                given.get(name),
-                fields[name][1],
-                (*path, name),
-                allow_missing,
-                build,
-            )
-            for name, item in value.items()
-            if name in given or name not in _defaulted(annotation)
-        }
-        return annotation(**items) if build else items
-    return value
-
-
-def _build_union_value(
-    value: Any,
-    given: Any,
-    annotation: Any,
-    path: tuple[str | int, ...],
-    allow_missing: bool,
-    build: bool,
-) -> Any:
-    members, optional = union_members(annotation)
-    if value is None and optional:
-        return None
-    if len(members) == 1:
-        return _build_native_value(value, given, members[0], path, allow_missing, build)
-    if isinstance(value, dict):
-        for member in members:
-            if _is_mapping_type(member):
-                return _coerce(value, member, path, allow_missing, build)
-    elif isinstance(value, (list, tuple)):
-        for member in members:
-            if _is_sequence_type(member):
-                return _coerce(value, member, path, allow_missing, build)
-    elif any(_is_match(value, member) for member in members):
-        return value
-    raise ConfigValidationError(
-        f"`{format_path(path)}` expects `{annotation}`, but the config gives "
-        f"{describe_value(value)}."
-    )
-
-
-@functools.cache
-def _defaulted(schema: type) -> frozenset[str]:
-    return frozenset(
-        field.name
-        for field in dataclasses.fields(schema)
-        if field.default is not dataclasses.MISSING
-        or field.default_factory is not dataclasses.MISSING
-    )
-
-
-def _is_match(value: Any, member: Any) -> bool:
-    # Scalars in a union need the member's exact type, as in OmegaConf: `True` is not
-    # an `int`, `3` is not a `float`, and a string is not a `Path` or an enum member.
-    while isinstance(member, TypeAliasType):
-        member = member.__value__
-    if get_origin(member) is Literal:
-        return any(
-            type(value) is type(allowed) and value == allowed
-            for allowed in get_args(member)
-        )
-    if isinstance(member, type) and issubclass(member, (enum.Enum, Path)):
-        return isinstance(value, member)
-    if isinstance(member, type):
-        return type(value) is member
-    return get_origin(member) is None
 
 
 def _is_assignable(source: Any, target: Any) -> bool:
@@ -903,98 +551,3 @@ def _is_assignable(source: Any, target: Any) -> bool:
     if target is complex and source in (int, float):
         return True
     return issubclass(source, target)
-
-
-def _json_value(annotation: Any, definitions: dict[str, Any]) -> dict[str, Any]:
-    return {"anyOf": [_json_type(annotation, definitions), _PLACEHOLDER]}
-
-
-def _json_type(annotation: Any, definitions: dict[str, Any]) -> dict[str, Any]:
-    while isinstance(annotation, TypeAliasType):
-        annotation = annotation.__value__
-    origin = get_origin(annotation)
-    arguments = get_args(annotation)
-    if annotation is Any:
-        return {}
-    if annotation is type(None):
-        return {"type": "null"}
-    if origin in (Union, types.UnionType):
-        return {"anyOf": [_json_type(argument, definitions) for argument in arguments]}
-    if annotation is bool:
-        return {"type": "boolean"}
-    if annotation is int:
-        return {"type": "integer"}
-    if annotation is float:
-        return {"type": "number"}
-    if annotation in (str, bytes, Path):
-        return {"type": "string"}
-    if isinstance(annotation, type) and issubclass(annotation, enum.Enum):
-        names = [member.name for member in annotation]
-        values = [
-            member.value
-            for member in annotation
-            if type(member.value) in (str, int) and member.value not in names
-        ]
-        return {"enum": list(dict.fromkeys([*names, *values]))}
-    if origin is Literal:
-        return {"enum": list(arguments)}
-    if origin is tuple and not (len(arguments) == 2 and arguments[1] is Ellipsis):
-        return {
-            "type": "array",
-            "items": [_json_value(argument, definitions) for argument in arguments],
-            "minItems": len(arguments),
-            "maxItems": len(arguments),
-        }
-    if annotation in (list, tuple) or origin in (
-        list,
-        tuple,
-        collections.abc.Sequence,
-    ):
-        items = _json_value(arguments[0], definitions) if arguments else {}
-        return {"type": "array", "items": items}
-    if annotation is dict or origin in (dict, collections.abc.Mapping):
-        values = _json_value(arguments[1], definitions) if arguments else {}
-        return {"type": "object", "additionalProperties": values}
-    if isinstance(annotation, type) and is_typeddict(annotation):
-        return {"type": "object"}
-    if isinstance(annotation, type) and dataclasses.is_dataclass(annotation):
-        return {"$ref": f"#/definitions/{_json_definition(annotation, definitions)}"}
-    if isinstance(annotation, type):
-        return _json_object(annotation, definitions)
-    if isinstance(origin, type):
-        return _json_object(origin, definitions)
-    return {}
-
-
-def _json_object(cls: Any, definitions: dict[str, Any]) -> dict[str, Any]:
-    schema = find_schema(cls) if isinstance(cls, type) else None
-    if schema is None:
-        return {"type": "object"}
-    return {
-        "type": "object",
-        "if": {
-            "properties": {"$class": {"const": f"{cls.__module__}.{cls.__qualname__}"}},
-            "required": ["$class"],
-        },
-        "then": {"$ref": f"#/definitions/{_json_definition(schema, definitions)}"},
-    }
-
-
-def _json_definition(dataclass: type, definitions: dict[str, Any]) -> str:
-    name = f"{dataclass.__module__}.{dataclass.__qualname__}"
-    if name not in definitions:
-        definitions[name] = {}
-        definitions[name] = _json_mapping(dataclass, definitions)
-    return name
-
-
-def _json_mapping(dataclass: type, definitions: dict[str, Any]) -> dict[str, Any]:
-    return {
-        "type": "object",
-        "properties": {
-            name: _json_value(annotation, definitions)
-            for name, (_, annotation) in classify_fields(dataclass).items()
-        },
-        "patternProperties": {r"^\$": {}},
-        "additionalProperties": False,
-    }

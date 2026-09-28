@@ -50,7 +50,7 @@ class Greeter(Protocol):
 
 @dataclass
 class Sub:
-    """A native nested dataclass whose `__post_init__` must run."""
+    """A nested dataclass in a data field, whose `__post_init__` must run."""
 
     value: int = 0
     doubled: int = 0

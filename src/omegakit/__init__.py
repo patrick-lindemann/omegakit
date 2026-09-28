@@ -6,6 +6,7 @@ from .errors import (
     SchemaDefinitionError,
 )
 from .instantiate import instantiate, prepare
+from .json_schema import generate_json_schema
 from .keys import (
     BASE_KEY,
     CLASS_KEY,
@@ -15,10 +16,11 @@ from .keys import (
     PARTIAL_KEY,
     REF_KEY,
 )
-from .loading import load_config
-from .schema import check_schema, generate_json_schema
-from .utils import make_node, walk
-from .validation import validate
+from .load import load_config
+from .schema import check_schema
+from .targets import make_node
+from .validate import validate
+from .walk import walk
 
 __all__ = [
     "BASE_KEY",

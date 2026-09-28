@@ -3,28 +3,7 @@ from typing import Any
 
 from omegaconf import OmegaConf
 
-from omegakit.utils import register_resolver
-
-
-def _import_torch() -> Any:
-    try:
-        torch = importlib.import_module("torch")
-    except ModuleNotFoundError as error:
-        if error.name != "torch":
-            raise
-        raise ImportError(
-            "Torch resolvers require PyTorch. Install torch for your platform "
-            "before calling register_torch_resolvers()."
-        ) from error
-    return torch
-
-
-def _resolve_dtype(dtype_str: str) -> Any:
-    torch = _import_torch()
-    dtype = getattr(torch, dtype_str, None)
-    if not isinstance(dtype, torch.dtype):
-        raise ValueError(f"Invalid torch dtype `{dtype_str}`.")
-    return dtype
+from omegakit.registry import register_resolver
 
 
 def register_torch_dtype_resolver(*, replace: bool = False) -> None:
@@ -60,8 +39,6 @@ def register_cuda_available_resolver(*, replace: bool = False) -> None:
 def register_torch_resolvers(*, replace: bool = False) -> None:
     """Register `${dtype:...}` and `${cuda_available:}`.
 
-    Neither is registered if either name is taken and `replace` is `False`.
-
     Args:
         replace: Replace resolvers of the same names. Defaults to `False`.
 
@@ -76,3 +53,24 @@ def register_torch_resolvers(*, replace: bool = False) -> None:
                 raise ValueError(f"Resolver `{name}` is already registered.")
     register_torch_dtype_resolver(replace=replace)
     register_cuda_available_resolver(replace=replace)
+
+
+def _import_torch() -> Any:
+    try:
+        torch = importlib.import_module("torch")
+    except ModuleNotFoundError as error:
+        if error.name != "torch":
+            raise
+        raise ImportError(
+            "Torch resolvers require PyTorch. Install torch for your platform "
+            "before calling register_torch_resolvers()."
+        ) from error
+    return torch
+
+
+def _resolve_dtype(dtype_str: str) -> Any:
+    torch = _import_torch()
+    dtype = getattr(torch, dtype_str, None)
+    if not isinstance(dtype, torch.dtype):
+        raise ValueError(f"Invalid torch dtype `{dtype_str}`.")
+    return dtype

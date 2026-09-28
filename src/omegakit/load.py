@@ -1,20 +1,15 @@
 from pathlib import Path
 from typing import Any
 
-import yaml
-from omegaconf import DictConfig, OmegaConf
+from omegaconf import DictConfig, ListConfig
 from omegaconf.errors import OmegaConfBaseException
 
-from .assembly import (
-    apply_defaults,
-    load_file,
-    merge_bases,
-    resolve_imports,
-    strip_keys,
-)
 from .errors import ConfigLoadError, OmegaKitBaseException
+from .imports import load_file, resolve_imports
 from .keys import CLASS_KEY, META_KEY, PARTIAL_KEY, REF_KEY
-from .utils import describe_error
+from .merge import apply_defaults, merge_bases
+from .overrides import merge_overrides
+from .walk import walk
 
 
 def load_config(
@@ -26,12 +21,6 @@ def load_config(
     import_root: Path | str | None = None,
 ) -> DictConfig:
     """Load a YAML config file and assemble it.
-
-    The file is read, then every `~import` is replaced, recursively, then every
-    `$base` is merged underneath its node and every `$defaults` under its siblings,
-    and finally the overrides are merged on top. Interpolations stay unresolved,
-    except in `~import` paths and in `$base` and `$defaults` values, which need them
-    while assembling.
 
     Args:
         file_path: The config file.
@@ -76,12 +65,13 @@ def load_config(
         )
         merge_bases(config)
         apply_defaults(config)
-    except OmegaKitBaseException:
-        raise
     except OmegaConfBaseException as error:
-        raise ConfigLoadError(
-            f"Cannot load `{file_path}`: {str(error).splitlines()[0]}"
-        ) from error
+        if isinstance(error, OmegaKitBaseException):
+            raise
+        else:
+            raise ConfigLoadError(
+                f"Cannot load `{file_path}`: {str(error).splitlines()[0]}"
+            ) from error
     if overrides is not None:
         merge_overrides(config, overrides)
     if keep_meta and keep_targets:
@@ -93,52 +83,18 @@ def load_config(
         exclude_keys.add(REF_KEY)
         exclude_keys.add(CLASS_KEY)
         exclude_keys.add(PARTIAL_KEY)
-    strip_keys(config, exclude_keys)
+    _strip_keys(config, exclude_keys)
     return config
 
 
-def merge_overrides(
-    config: DictConfig, overrides: DictConfig | dict[str, Any] | list[str]
-) -> None:
-    """Merge overrides into a config in place.
+def _strip_keys(config: DictConfig | ListConfig, exclude: set[str]) -> None:
+    """Remove the given keys from every mapping in `config`, in place.
 
     Args:
-        config: The config to change.
-        overrides: A `DictConfig`, a dictionary, or a list of `key=value` strings.
-
-    Raises:
-        ConfigLoadError: If an override does not parse, has a value of an
-            unsupported type, or is rejected by `config`.
-    """  # noqa: DOC503
-    try:
-        config.merge_with(_parse_overrides(overrides))
-    except OmegaKitBaseException:
-        raise
-    except OmegaConfBaseException as error:
-        location = f" `{error.full_key}`" if error.full_key else ""
-        raise ConfigLoadError(
-            f"Cannot apply the override{location}: {describe_error(error)}"
-        ) from error
-
-
-def _parse_overrides(
-    overrides: DictConfig | dict[str, Any] | list[str],
-) -> DictConfig:
-    if isinstance(overrides, DictConfig):
-        return overrides
-    elif isinstance(overrides, dict):
-        return OmegaConf.create(overrides)
-    elif isinstance(overrides, list):
-        parsed = OmegaConf.create()
-        for override in overrides:
-            try:
-                parsed.merge_with_dotlist([override])
-            except (yaml.YAMLError, OmegaConfBaseException) as error:
-                raise ConfigLoadError(
-                    f"Cannot parse the override `{override}`: {describe_error(error)}"
-                ) from error
-        return parsed
-    raise TypeError(
-        f"Unsupported overrides type: {type(overrides)}. Expected a `DictConfig`, a "
-        "`dict` or a `list` of `key=value` strings."
-    )
+        config: The config to process.
+        exclude: The keys to remove.
+    """
+    for node in walk(config):
+        for key in list(node.keys()):
+            if key in exclude:
+                node.pop(key)
