@@ -39,9 +39,6 @@ dev = [
     "pydoclint>=0.9.1,<0.10",
     "jsonschema>=4.23,<5",
 ]
-# The docs example is a PyTorch project, and PyTorch warns without NumPy. Not
-# installed by default: `uv sync --group examples` adds them.
-examples = ["numpy>=2", "torch>=2.9"]
 docs = [
     "furo>=2025.9",
     "myst-parser>=4,<5",
@@ -49,6 +46,9 @@ docs = [
     "sphinx-autodoc-typehints>=3,<4",
     "sphinx-reredirects>=1,<2",
 ]
+# The docs example is a PyTorch project, and PyTorch warns without NumPy. Not
+# installed by default: `uv sync --group docs-examples` adds them.
+docs-examples = ["numpy>=2", "torch>=2.9"]
 
 [tool.uv]
 default-groups = ["dev", "docs"]

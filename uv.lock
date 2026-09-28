@@ -690,7 +690,7 @@ docs = [
     { name = "sphinx-autodoc-typehints" },
     { name = "sphinx-reredirects" },
 ]
-examples = [
+docs-examples = [
     { name = "numpy" },
     { name = "torch", version = "2.14.0", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "sys_platform == 'darwin'" },
     { name = "torch", version = "2.14.0+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "sys_platform != 'darwin'" },
@@ -718,7 +718,7 @@ docs = [
     { name = "sphinx-autodoc-typehints", specifier = ">=3,<4" },
     { name = "sphinx-reredirects", specifier = ">=1,<2" },
 ]
-examples = [
+docs-examples = [
     { name = "numpy", specifier = ">=2" },
     { name = "torch", specifier = ">=2.9", index = "https://download.pytorch.org/whl/cpu" },
 ]

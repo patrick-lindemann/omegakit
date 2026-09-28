@@ -29,7 +29,7 @@ def examples_importable(monkeypatch):
 
 
 def _needs_torch(text: str) -> bool:
-    # The PyTorch example and the Torch resolvers need the examples dependency group.
+    # The PyTorch example and the Torch resolvers need the docs-examples group.
     return any(
         name in text for name in ("project", "torch", "${dtype:", "${cuda_available:")
     )
