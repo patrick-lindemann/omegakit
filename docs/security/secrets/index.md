@@ -1,7 +1,8 @@
 # Secrets
 
 A secret, such as the token of a tracking server, must stay out of git, out of
-saved configs and out of logs. Read it from the environment with `${secret:NAME}`,
+saved configs and out of logs. Wrap the interpolation that gives it in
+`${secret:...}`, such as `${secret:${oc.env:NAME}}` for an environment variable,
 and save and log configs unresolved:
 
 ```{literalinclude} tracked.yaml
@@ -20,7 +21,7 @@ and save and log configs unresolved:
 OmegaConf.to_yaml(config):
 tracking:
   project: sine
-  url: https://tracker.example.com/api/runs?token=${secret:TRACKER_TOKEN}
+  url: https://tracker.example.com/api/runs?token=${secret:${oc.env:TRACKER_TOKEN}}
 config.tracking.url: https://tracker.example.com/api/runs?token=tok-5f3a9c1e7b2d4f60
 ```
 
@@ -49,22 +50,23 @@ out of arguments that your code saves, such as hyperparameters in checkpoints.
 ## Rules
 
 - `register_secret_resolver(*, replace=False)` from `omegakit.resolvers.secrets`
-  registers `${secret:NAME}`. Registration is global to OmegaConf, and a name that
+  registers `${secret:...}`. Registration is global to OmegaConf, and a name that
   exists raises `ValueError` unless `replace=True`
   ([Overview](../../resolvers/overview/index.md#rules)). The `omegakit` command
   registers it itself.
-- `${secret:NAME}` gives the value of the environment variable `NAME`, read when
-  the value is resolved, as `${oc.env:NAME}` is
-  ([Environment variables](../../guide/environment-variables/index.md#rules)). It
-  has no default. A variable that is not set fails like any resolver error, also
-  with `allow_missing=True`.
-- A config from `load_config` holds `${secret:NAME}` as written.
+- `${secret:VALUE}` gives `VALUE` unchanged. It wraps the interpolation that gives
+  the secret, such as `${secret:${oc.env:NAME}}`
+  ([Environment variables](../../guide/environment-variables/index.md#rules)) or a
+  resolver of your own, which fails as it would on its own, also with
+  `allow_missing=True`. A plain value is given as written: `${secret:NAME}` gives
+  the text `NAME`.
+- A config from `load_config` holds `${secret:...}` as written.
   `OmegaConf.save` and `OmegaConf.to_yaml` write it that way, unless they resolve.
 - `omegakit show --resolve` loads the config with the real values, then resolves
-  `${secret:NAME}` to `***` once it has checked that `NAME` is set. Every printed
-  value built from a secret holds `***` in its place, also one built by another
-  resolver, such as `${oc.decode:${secret:NAME}}`. The secret's value is never
-  read into the output. `--show-secrets` prints the real values. Without
-  `--resolve`, nothing is resolved.
+  every `${secret:...}` to `***`. The wrapped interpolation is still resolved, so
+  it fails as it would in a run. Every printed value built from a secret holds
+  `***` in its place, also one built by another resolver, such as
+  `${oc.decode:${secret:${oc.env:PORT}}}`. `--show-secrets` prints the real
+  values. Without `--resolve`, nothing is resolved.
 - Nothing else is masked. Error messages can contain values
   ([Trust model](../trust-model/index.md)).

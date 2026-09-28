@@ -230,7 +230,7 @@ def test_cli_show_reports_resolution_errors(write_yaml, capsys, arguments):
 
 SECRETS = """\
 db:
-  password: ${secret:OMEGAKIT_TEST_PASSWORD}
+  password: ${secret:${oc.env:OMEGAKIT_TEST_PASSWORD}}
   url: postgres://u:${.password}@h/db
   user: ${oc.env:OMEGAKIT_TEST_USER}
 tokens:
@@ -243,7 +243,7 @@ tokens:
     [
         (
             [],
-            "db:\n  password: ${secret:OMEGAKIT_TEST_PASSWORD}\n"
+            "db:\n  password: ${secret:${oc.env:OMEGAKIT_TEST_PASSWORD}}\n"
             "  url: postgres://u:${.password}@h/db\n"
             "  user: ${oc.env:OMEGAKIT_TEST_USER}\ntokens:\n  api: literal-token\n",
         ),
@@ -254,7 +254,10 @@ tokens:
         ),
         (["--node", "db.url", "--resolve"], "postgres://u:***@h/db\n"),
         (["--node", "db.password", "--resolve"], "***\n"),
-        (["--node", "db.password"], "${secret:OMEGAKIT_TEST_PASSWORD}\n"),
+        (
+            ["--node", "db.password"],
+            "${secret:${oc.env:OMEGAKIT_TEST_PASSWORD}}\n",
+        ),
         (
             ["--node", "db.url", "--resolve", "--show-secrets"],
             "postgres://u:correct-horse@h/db\n",
@@ -272,7 +275,9 @@ def test_cli_show_masks_secret_values(
 
 def test_cli_show_masks_values_built_from_secrets(write_yaml, capsys, monkeypatch):
     monkeypatch.setenv("OMEGAKIT_TEST_PORT", "5432")
-    path = write_yaml("app.yaml", "port: ${oc.decode:${secret:OMEGAKIT_TEST_PORT}}\n")
+    path = write_yaml(
+        "app.yaml", "port: ${oc.decode:${secret:${oc.env:OMEGAKIT_TEST_PORT}}}\n"
+    )
     main(["show", str(path), "--resolve"])
     assert capsys.readouterr().out == "port: '***'\n"
     main(["show", str(path), "--resolve", "--show-secrets"])
@@ -281,9 +286,9 @@ def test_cli_show_masks_values_built_from_secrets(write_yaml, capsys, monkeypatc
 
 def test_cli_show_resolve_needs_the_secret_to_be_set(write_yaml, capsys, monkeypatch):
     monkeypatch.delenv("OMEGAKIT_TEST_UNSET", raising=False)
-    path = write_yaml("app.yaml", "token: ${secret:OMEGAKIT_TEST_UNSET}\n")
+    path = write_yaml("app.yaml", "token: ${secret:${oc.env:OMEGAKIT_TEST_UNSET}}\n")
     assert _exit_code(["show", str(path), "--resolve"]) == 1
-    assert "`OMEGAKIT_TEST_UNSET` is not set" in capsys.readouterr().out
+    assert "OMEGAKIT_TEST_UNSET" in capsys.readouterr().out
 
 
 def test_cli_check_reads_secrets(write_yaml, capsys, monkeypatch):

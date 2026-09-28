@@ -1,5 +1,4 @@
 import argparse
-import os
 from pathlib import Path
 from typing import Any, NoReturn
 
@@ -86,7 +85,7 @@ def run(arguments: argparse.Namespace) -> None:
     if arguments.resolve and not arguments.show_secrets:
         # Every value built from a secret then holds `***`. Loading resolved with the
         # real values, and the config caches what its resolvers gave.
-        register_resolver("secret", _masked_secret, replace=True)
+        register_resolver("secret", _mask_secret, replace=True)
         OmegaConf.clear_cache(config)
     try:
         node = config
@@ -132,7 +131,5 @@ def _items(container: DictConfig | ListConfig, resolve: bool) -> dict[Any, Any]:
     return {key: _plain(container._get_node(key), resolve) for key in keys}
 
 
-def _masked_secret(name: str) -> str:
-    if name not in os.environ:
-        raise ValueError(f"Environment variable `{name}` is not set.")
+def _mask_secret(_: Any) -> str:
     return "***"

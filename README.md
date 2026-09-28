@@ -76,7 +76,7 @@ how it [compares with Hydra and other experiment tools](https://omegakit.readthe
 
 Configs import and call Python code: loading one runs its resolvers, and
 validating, checking and building one import the modules it names. Load configs
-only from trusted sources, and read secrets with `${secret:NAME}`. The
+only from trusted sources, and wrap secrets in `${secret:...}`. The
 [Trust model](https://omegakit.readthedocs.io/en/latest/security/trust-model/) page lists what
 runs.
 

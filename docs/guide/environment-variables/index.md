@@ -29,8 +29,8 @@ Without the variables, the defaults after the commas applied. The variables were
 set after `load_config`, and the config still saw them. `oc.decode` made the seed
 the integer 3, not the string `"3"`.
 
-For a secret, such as a token, use `${secret:NAME}` instead, which keeps it out of
-printed configs ([Secrets](../../security/secrets/index.md)). omegakit does not read
+For a secret, such as a token, wrap it as `${secret:${oc.env:NAME}}`, which keeps
+it out of printed configs ([Secrets](../../security/secrets/index.md)). omegakit does not read
 `.env` files. Load them with a tool such as `python-dotenv` before loading the
 config.
 

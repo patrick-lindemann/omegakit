@@ -16,6 +16,10 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- **Breaking:** `${secret:...}` wraps the interpolation that gives the secret, such
+  as `${secret:${oc.env:TOKEN}}`, so a secret can come from any resolver. Replace
+  every `${secret:NAME}` with `${secret:${oc.env:NAME}}`: the old form now gives the
+  text `NAME` itself.
 - **Breaking:** Error messages name a node by its dotted path, such as
   `items.0.model`, everywhere. Errors about `$base` and `$defaults` named a list
   item as `items0.model`, and errors from resolving, from overrides and from
@@ -33,7 +37,7 @@ All notable changes to this project are documented here. The format follows
   wrong type, and a missing PyTorch.
 - `omegakit show --resolve` resolves `${secret:...}` to `***` instead of reading
   the secret and masking its text in the output. A value that another resolver
-  builds from a secret, such as a number from `${oc.decode:${secret:PORT}}`, is
+  builds from a secret, such as a number from `${oc.decode:${secret:...}}`, is
   masked now too; a copy of the secret's text that does not come from
   `${secret:...}` is no longer masked. The secret resolver no longer keeps the
   values it gives in memory.
