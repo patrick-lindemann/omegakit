@@ -1,0 +1,9 @@
+seed: 0
+run_dir: runs/seed${seed}
+data:
+  train:
+    n: 256
+    seed: ${seed}
+  test:
+    n: ${..train.n}
+    seed: 1234

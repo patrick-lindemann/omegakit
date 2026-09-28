@@ -1,0 +1,4 @@
+$base: ~import base.yaml
+model:
+  hidden: 256
+epochs: 200

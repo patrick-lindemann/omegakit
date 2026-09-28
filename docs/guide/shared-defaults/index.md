@@ -1,13 +1,11 @@
 # Shared defaults
 
 `$defaults` gives every mapping next to it the same settings, and each mapping's own
-values win. It suits groups of similar things, such as `curvefit`'s data splits:
+values win. It suits groups of similar things, such as the splits of a dataset:
 
-```{literalinclude} ../../curvefit/configs/base.yaml
+```{literalinclude} experiment.yaml
 :language: yaml
-:caption: configs/base.yaml (excerpt)
-:start-at: "data:"
-:end-before: "trainer:"
+:caption: experiment.yaml
 ```
 
 ```{literalinclude} main.py
@@ -16,19 +14,15 @@ values win. It suits groups of similar things, such as `curvefit`'s data splits:
 ```
 
 ```text
-train curvefit.data.Synthetic 0.1 200 0
-validation curvefit.data.Synthetic 0.1 50 1
-test curvefit.data.Synthetic 0.1 200 1234
+train 256 0.1 0
+validation 64 0.1 1
+test 256 0.1 1234
 ```
 
-All three splits got `$class`, `function` and `noise` from `$defaults`, here
-imported from the sine preset ([Imports](../imports/index.md)), and each keeps its
-own `n` and `seed`. Only mappings receive the defaults: scalars, lists and `$` keys
-next to `$defaults` stay as they are, and nested mappings are reached only through
-a split's own keys.
-
-Defaults are applied after every `$base` is merged, so the test split can extend
-the training split with `$base` and still get the defaults.
+Every split got `n` and `noise` from `$defaults`, and each keeps its own `seed`. The
+validation split also keeps its own `n`. Only mappings receive the defaults:
+scalars, lists and `$` keys next to `$defaults` stay as they are, and nested
+mappings are reached only through a split's own keys.
 
 ## Rules
 

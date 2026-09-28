@@ -1,0 +1,8 @@
+seed: 0
+model:
+  hidden: 32
+  layers: 2
+optimizer:
+  lr: 0.01
+  momentum: 0.9
+epochs: 100

@@ -1,33 +1,16 @@
 # Imports
 
 A string value that starts with `~import` is replaced by another YAML file, or by one
-node of it. `curvefit` keeps the curves it can fit in one file:
+node of it. One file can hold the model sizes that experiments pick from:
 
-```{literalinclude} ../../curvefit/configs/data/presets.yaml
+```{literalinclude} models.yaml
 :language: yaml
-:caption: configs/data/presets.yaml
+:caption: models.yaml
 ```
 
-`base.yaml` imports one of them as the shared settings of its data splits
-([Shared defaults](../shared-defaults/index.md)):
-
-```{literalinclude} ../../curvefit/configs/base.yaml
+```{literalinclude} experiment.yaml
 :language: yaml
-:caption: configs/base.yaml (excerpt)
-:start-at: "data:"
-:end-at: "$defaults:"
-```
-
-`#sine` selects the `sine` node of the file, so the splits get its keys and not a
-`sine:` key around them. Without `#`, the whole file is imported. A node path has
-dots between keys and uses numbers for list items, counting from the end when
-negative: `#sine.function`, `#items.-1`.
-
-An experiment on another curve imports the other node the same way:
-
-```{literalinclude} cubic.yaml
-:language: yaml
-:caption: cubic.yaml
+:caption: experiment.yaml
 ```
 
 ```{literalinclude} main.py
@@ -37,22 +20,28 @@ An experiment on another curve imports the other node the same way:
 ```
 
 ```text
-curvefit.data.cubic 0.05
+{'hidden': 32, 'layers': 2}
 ```
 
-The path is relative to the file that holds it, not to the working directory. It
-may contain interpolations, which see resolvers and the keys written in the same
-file, because the rest of the config is not assembled yet.
+`#small` selects the `small` node of the file, so `model` gets its keys and not a
+`small:` key around them. Without `#`, the whole file is imported. A node path has
+dots between keys and uses numbers for list items, counting from the end when
+negative: `#small.hidden`, `#items.-1`.
 
-Every import is an independent copy, so changing one imported node never changes
-another import of the same file. Imports are replaced before any `$base` is merged,
-which is why `$base: ~import ../base.yaml` works in the experiment files.
+The path is relative to the file that holds it, not to the working directory, so
+the config loads from anywhere. Every import is an independent copy, so changing
+one imported node never changes another import of the same file.
 
 ## Keeping imports inside a directory
 
 By default an import may read any file the process can read. `import_root` limits
-imports to one directory. `curvefit`'s experiments stay inside its `configs`
-directory, and `cubic.yaml` reads from outside its own:
+imports to one directory. `experiments/large.yaml` imports from its parent
+directory, which is outside `experiments`:
+
+```{literalinclude} experiments/large.yaml
+:language: yaml
+:caption: experiments/large.yaml
+```
 
 ```{literalinclude} main.py
 :language: python
@@ -60,8 +49,8 @@ directory, and `cubic.yaml` reads from outside its own:
 ```
 
 ```text
-['train', 'validation', 'test']
-Import `~import ../../curvefit/configs/experiments/poly3-adam.yaml` in `.../guide/imports/cubic.yaml` reads `.../curvefit/configs/experiments/poly3-adam.yaml`, which is outside the import root `.../guide/imports`.
+32
+Import `~import ../models.yaml#large` in `.../experiments/large.yaml` reads `.../models.yaml`, which is outside the import root `.../experiments`.
 ```
 
 `omegakit check` and `omegakit show` take the same limit as `--import-root DIR`. It

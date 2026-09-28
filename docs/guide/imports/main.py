@@ -1,16 +1,15 @@
 from pathlib import Path
 
-from omegakit import REF_KEY, ConfigLoadError, load_config
+from omegakit import ConfigLoadError, load_config
 
 here = Path(__file__).parent
-configs = here.parents[1] / "curvefit" / "configs"
 
-config = load_config(here / "cubic.yaml")
-print(config.data.train.function[REF_KEY], config.data.train.noise)
+config = load_config(here / "experiment.yaml")
+print(config.model)
 
-config = load_config(configs / "experiments" / "poly3-adam.yaml", import_root=configs)
-print(list(config.data))
+config = load_config(here / "experiment.yaml", import_root=here)
+print(config.model.hidden)
 try:
-    load_config(here / "cubic.yaml", import_root=here)
+    load_config(here / "experiments" / "large.yaml", import_root=here / "experiments")
 except ConfigLoadError as error:
-    print(error)
+    print(str(error).replace(str(here), "..."))

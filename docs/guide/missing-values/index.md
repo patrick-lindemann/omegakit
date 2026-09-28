@@ -1,12 +1,11 @@
 # Missing values
 
-`???` marks a value that someone else must fill. `curvefit`'s base leaves the name
-of the experiment open, because every experiment file sets its own:
+`???` marks a value that someone else must fill, such as the name of an
+experiment in a file that every experiment extends:
 
-```{literalinclude} ../../curvefit/configs/base.yaml
+```{literalinclude} experiment.yaml
 :language: yaml
-:caption: configs/base.yaml (excerpt)
-:lines: 2-4
+:caption: experiment.yaml
 ```
 
 ```{literalinclude} main.py
@@ -15,18 +14,19 @@ of the experiment open, because every experiment file sets its own:
 ```
 
 ```text
-Cannot resolve `name`: Missing mandatory value: name
+{'name'}
+Missing mandatory value: name
+set() wide
 ```
 
-A file that uses this one as its `$base`, or an override, can fill the value. A
-`???` that is still open when the config is validated or built raises
-`ConfigValidationError`, naming the key.
+Reading the value while it is still `???` raises OmegaConf's
+`MissingMandatoryValue`, which names the key. Once it is set, here in code, the
+config is complete. A file that uses this one as its `$base`, or an override, fills
+it the same way.
 
-A file such as `base.yaml` is incomplete on purpose: it also has no model and no
-optimizer, which the schema requires. `allow_missing=True` accepts all of that, and
-the run directory that refers to the open name, and still checks every value the
-file does give. `omegakit check configs/base.yaml --allow-missing` does the same
-from the command line ([Validation](../../schemas/validation/index.md)).
+A `???` that is still open when the config is validated or built raises
+`ConfigValidationError`. `validate(config, allow_missing=True)` accepts it, for a
+file that is incomplete on purpose ([Validation](../../schemas/validation/index.md#files-that-are-incomplete-on-purpose)).
 
 ## Rules
 

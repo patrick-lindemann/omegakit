@@ -1,9 +1,7 @@
 from pathlib import Path
 
-from omegakit import CLASS_KEY, load_config
+from omegakit import load_config
 
-experiments = Path(__file__).parents[2] / "curvefit" / "configs" / "experiments"
-
-data = load_config(experiments / "linear-sgd.yaml").data
-for name, split in data.items():
-    print(name, split[CLASS_KEY], split.noise, split.n, split.seed)
+config = load_config(Path(__file__).parent / "experiment.yaml")
+for name, split in config.data.items():
+    print(name, split.n, split.noise, split.seed)

@@ -1,14 +1,16 @@
 from pathlib import Path
 
-from curvefit import Experiment
+from omegaconf import OmegaConf
+from omegaconf.errors import MissingMandatoryValue
 
-from omegakit import ConfigValidationError, load_config, validate
+from omegakit import load_config
 
-configs = Path(__file__).parents[2] / "curvefit" / "configs"
-
-base = load_config(configs / "base.yaml")
+config = load_config(Path(__file__).parent / "experiment.yaml")
+print(OmegaConf.missing_keys(config))
 try:
-    validate(base, schema=Experiment)
-except ConfigValidationError as error:
-    print(error)
-validate(base, schema=Experiment, allow_missing=True)
+    print(config.name)
+except MissingMandatoryValue as error:
+    print(str(error).splitlines()[0])
+
+config.name = "wide"
+print(OmegaConf.missing_keys(config), config.name)

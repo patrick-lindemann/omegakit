@@ -2,13 +2,12 @@ from pathlib import Path
 
 from omegakit import load_config
 
-experiments = Path(__file__).parents[2] / "curvefit" / "configs" / "experiments"
-
-overrides = ["model.degree=5", "trainer.epochs=50"]
-config = load_config(experiments / "poly3-adam.yaml", overrides=overrides)
-print(config.model.degree, config.trainer.epochs)
+here = Path(__file__).parent
 
 config = load_config(
-    experiments / "poly3-adam.yaml", overrides={"optimizer": {"lr": 0.01}}
+    here / "experiment.yaml", overrides=["model.hidden=64", "epochs=50"]
 )
-print(config.optimizer.lr, config.optimizer["$class"])
+print(config.model.hidden, config.epochs)
+
+config = load_config(here / "experiment.yaml", overrides={"optimizer": {"lr": 0.001}})
+print(config.optimizer.lr, config.optimizer.momentum)

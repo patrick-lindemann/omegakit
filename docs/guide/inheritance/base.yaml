@@ -1,0 +1,7 @@
+seed: 0
+model:
+  hidden: 32
+  layers: 2
+optimizer:
+  lr: 0.01
+epochs: 100

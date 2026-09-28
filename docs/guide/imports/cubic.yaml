@@ -1,4 +1,0 @@
-$base: ~import ../../curvefit/configs/experiments/poly3-adam.yaml
-name: poly3-adam-cubic
-data:
-  $defaults: ~import ../../curvefit/configs/data/presets.yaml#cubic

@@ -1,0 +1,11 @@
+data:
+  $defaults:
+    n: 256
+    noise: 0.1
+  train:
+    seed: 0
+  validation:
+    seed: 1
+    n: 64
+  test:
+    seed: 1234

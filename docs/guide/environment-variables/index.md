@@ -1,12 +1,13 @@
 # Environment variables
 
 A config reads environment variables through OmegaConf's `oc.env` resolver. It is
-built into OmegaConf, so it works without any registration. On a cluster, a job
-array can pick each run's seed from the task number:
+built into OmegaConf, so it works without any registration. The data directory
+can differ between machines, and on a cluster, a job array can pick each run's
+seed from the task number:
 
-```{literalinclude} array.yaml
+```{literalinclude} experiment.yaml
 :language: yaml
-:caption: array.yaml
+:caption: experiment.yaml
 ```
 
 ```{literalinclude} main.py
@@ -15,18 +16,19 @@ array can pick each run's seed from the task number:
 ```
 
 ```text
-0 runs/poly3-adam/seed0
-3 runs/poly3-adam/seed3
+data 0
+/datasets/sine 3
 ```
 
-Without `SLURM_ARRAY_TASK_ID`, the default `0` applies. `oc.env` gives a string, and
-`oc.decode` parses it as YAML, so the seed is the integer 3. That matters where the
-value is used as it is: `random.seed("3")` seeds differently from `random.seed(3)`.
+Without a variable, the default after the comma applies. The variables were set
+after `load_config`, and the config still saw them: a variable is read when the
+value is resolved, not while loading. `oc.env` gives a string, and `oc.decode`
+parses it as YAML, so the seed is the integer 3, not the string `"3"`.
 
-The variable is read when the value is resolved, not while loading. For a secret,
-such as a token, use `${secret:NAME}` instead, which keeps it out of printed
-configs ([Secrets](../../security/secrets/index.md)). omegakit does not read `.env`
-files. Load them with a tool such as `python-dotenv` before loading the config.
+For a secret, such as a token, use `${secret:NAME}` instead, which keeps it out of
+printed configs ([Secrets](../../security/secrets/index.md)). omegakit does not read
+`.env` files. Load them with a tool such as `python-dotenv` before loading the
+config.
 
 ## Rules
 

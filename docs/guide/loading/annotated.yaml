@@ -1,0 +1,5 @@
+$meta:
+  hypothesis: A wider model fits the curve better.
+seed: 0
+model:
+  hidden: 256

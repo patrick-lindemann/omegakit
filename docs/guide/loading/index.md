@@ -1,36 +1,35 @@
 # Loading
 
-`load_config` reads a YAML file and assembles it into an OmegaConf `DictConfig`.
-An experiment file of `curvefit` holds only what makes it different, and everything
-else arrives while loading:
+`load_config` reads a YAML file and returns an OmegaConf `DictConfig`, so
+everything OmegaConf offers works on the result:
 
-```{literalinclude} ../../curvefit/configs/experiments/poly3-adam.yaml
+```{literalinclude} experiment.yaml
 :language: yaml
-:caption: configs/experiments/poly3-adam.yaml
+:caption: experiment.yaml
 ```
 
 ```{literalinclude} main.py
 :language: python
 :caption: main.py
-:end-before: keep_meta
+:end-at: print(type(config)
 ```
 
 ```text
-50 cosine
-curvefit.data.Synthetic 200
+DictConfig 32 0.01
 ```
 
-The `$base` line pulled in `base.yaml`, which imports the data presets, and the
-override set the number of epochs last. Paths in `~import` are relative to the file
-that holds them, not to the working directory, so the config loads from anywhere.
+A file this plain loads as it is written. The following pages add what a file can
+do while it loads: take parts from other files, extend a base, share defaults, and
+take overrides.
 
 ## The order of assembly
+
+`load_config` runs the features of the Guide in this order:
 
 1. Every `~import` is replaced by the file or node it names ([Imports](../imports/index.md)).
 2. Every `$base` is merged underneath its node ([Inheritance](../inheritance/index.md)).
 3. Every `$defaults` is merged under its siblings ([Shared defaults](../shared-defaults/index.md)).
-4. The overrides are merged on top
-   ([Overrides](../overrides/index.md)).
+4. The overrides are merged on top ([Overrides](../overrides/index.md)).
 5. `$meta` is removed, unless you pass `keep_meta=True`.
 
 This order explains what works together. `$base: ~import base.yaml` works, because
@@ -42,24 +41,30 @@ Only three things resolve while loading: `~import` paths, and the values of `$ba
 and `$defaults`. Every other `${…}` stays as written until a value is read,
 validated or built ([Interpolation](../interpolation/index.md)).
 
-## Metadata and plain data
+## Metadata
 
-`$meta` holds notes for people and tools, such as the hypothesis of an experiment
-([Instantiation](../../objects/instantiation/index.md)). `load_config` removes it
-unless you ask for it. `walk` visits every mapping of a config, parents first, so a
-script can collect it:
+`$meta` holds notes for people and tools, such as the hypothesis of an experiment.
+`load_config` removes it unless you ask for it, and `walk` visits every mapping of
+a config, parents first, so a script can collect it:
+
+```{literalinclude} annotated.yaml
+:language: yaml
+:caption: annotated.yaml
+```
 
 ```{literalinclude} main.py
 :language: python
-:start-at: keep_meta
+:start-at: annotated.yaml
 ```
 
 ```text
-A cubic follows the sine closely enough to beat a line on the test set.
+False
+A wider model fits the curve better.
 ```
 
-`keep_targets=False` also removes `$class`, `$ref` and `$partial`. That leaves
-plain data for code that builds nothing.
+`keep_targets=False` removes `$class`, `$ref` and `$partial`, which
+[Building objects](../../objects/instantiation/index.md) uses. That leaves plain data
+for code that builds nothing.
 
 ## Rules
 

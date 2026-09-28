@@ -1,20 +1,11 @@
 # Interpolation
 
-omegakit keeps OmegaConf's `${…}` interpolations. They resolve against the
-assembled config, when a value is read, validated or built.
+omegakit keeps OmegaConf's `${…}` interpolations. A value can refer to another
+value of the same config:
 
-`curvefit`'s base derives the run directory from the name and the seed, the tracker
-writes to that directory, and the training split takes the seed of the run:
-
-```{literalinclude} ../../curvefit/configs/base.yaml
+```{literalinclude} experiment.yaml
 :language: yaml
-:caption: configs/base.yaml (excerpt)
-:lines: 2-9
-```
-
-```{literalinclude} ../../curvefit/configs/base.yaml
-:language: yaml
-:start-at: "tracker:"
+:caption: experiment.yaml
 ```
 
 ```{literalinclude} main.py
@@ -23,15 +14,15 @@ writes to that directory, and the training split takes the seed of the run:
 ```
 
 ```text
-runs/poly3-adam/seed0 0
-runs/poly3-adam/seed7 7
+runs/seed0 0 256
+runs/seed7 7
 ```
 
-`${seed}` was not resolved while loading, so the override of `seed` reached the run
-directory, and through it the tracker, and the training split. `${name}` found the
-name that the experiment file sets over the `???` of the base. A relative
-interpolation such as `${..seed}` resolves from the node's final position, which
-lets an imported file refer to its neighbours wherever it is placed.
+`${seed}` is resolved when the value is read, not while loading, so the changed
+seed reached the run directory and the training split. An override of `seed` does
+the same. `${..train.n}` is relative: `..` is the parent of `test`, so the test split
+takes the size of the training split wherever the `data` node ends up, for
+example after an [import](../imports/index.md).
 
 ## Rules
 

@@ -10,6 +10,7 @@ All notable changes to this project are documented here. The format follows
 
 - The Configs section of the documentation is now the Guide, and its pages moved
   from `configs/<page>/` to `guide/<page>/`, such as `guide/loading/`.
+- Each Guide page has its own small example, which shows that page's feature only.
 
 ### Fixed
 

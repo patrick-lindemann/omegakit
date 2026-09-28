@@ -1,11 +1,20 @@
 # Inheritance
 
 `$base` merges shared settings underneath a node. Use it when several files share
-most of their values and differ in a few, as `curvefit`'s experiments do:
+most of their values and differ in a few. A base file holds the common settings:
 
-```{literalinclude} ../../curvefit/configs/experiments/linear-sgd.yaml
+```{literalinclude} base.yaml
 :language: yaml
-:caption: configs/experiments/linear-sgd.yaml
+:caption: base.yaml
+```
+
+An experiment names it as its `$base` and writes only what differs. The base
+arrives through an [import](../imports/index.md), which is how a base file is
+usually named:
+
+```{literalinclude} wide.yaml
+:language: yaml
+:caption: wide.yaml
 ```
 
 ```{literalinclude} main.py
@@ -15,27 +24,15 @@ most of their values and differ in a few, as `curvefit`'s experiments do:
 ```
 
 ```text
-linear-sgd 0 200
-200 1234
+256 2 0.01 200
 ```
 
-`name` comes from the experiment file, which wins over the `name: ???` of the base.
-`seed` and the trainer come from `base.yaml`. Overrides win over both.
+The merge is deep: `wide.yaml` changed the model's `hidden` and kept its `layers`.
+Its own keys win over the base, and everything it does not mention comes from the
+base.
 
-The base can also be a node of the same file, referenced with `${…}`. The test
-split takes the settings of the training split, with a seed of its own:
-
-```{literalinclude} ../../curvefit/configs/base.yaml
-:language: yaml
-:caption: configs/base.yaml (excerpt)
-:start-at: "  train:"
-:end-before: "trainer:"
-```
-
-The reference is relative (`..` is the parent of `test`), so it finds `train`
-wherever `base.yaml` ends up, even as the base of an experiment file.
-
-Lists are replaced, not joined:
+The base can also be a node of the same file, named by a reference. Lists are
+replaced, not joined:
 
 ```{literalinclude} sweep.yaml
 :language: yaml
@@ -48,11 +45,13 @@ Lists are replaced, not joined:
 ```
 
 ```text
-[0] [3, 5]
+[0] [32, 256]
 ```
 
-A `$base` may also be a list of mappings. Later entries win over earlier ones, and
-the node's own keys win over all of them.
+The reference is relative (`..` is the parent of `quick`), so it finds `full`
+wherever the file ends up, even as the base of another file. A `$base` may also be a
+list of mappings. Later entries win over earlier ones, and the node's own keys win
+over all of them.
 
 ## Rules
 

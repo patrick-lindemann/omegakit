@@ -1,6 +1,6 @@
 full:
   seeds: [0, 1, 2]
-  degrees: [3, 5]
+  hidden: [32, 256]
 quick:
   $base: ${..full}
   seeds: [0]

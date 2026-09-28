@@ -1,0 +1,4 @@
+name: ???
+seed: 0
+model:
+  hidden: 32

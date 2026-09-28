@@ -1,0 +1,6 @@
+small:
+  hidden: 32
+  layers: 2
+large:
+  hidden: 256
+  layers: 4
