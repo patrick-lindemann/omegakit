@@ -2,41 +2,41 @@
 
 The dataclasses that validate a config can also describe it to your YAML editor, as
 a JSON Schema: the editor then completes keys and marks mistakes while you type.
-From `curvefit`'s directory:
+From the example project's directory:
 
 ```text
-$ omegakit json-schema curvefit.Experiment -o experiment.schema.json
+$ omegakit json-schema project.Experiment -o experiment.schema.json
 ```
 
 The first line of each experiment file names the schema, which is how the YAML
 extension for VS Code by Red Hat, and other editors that use yaml-language-server,
 find it:
 
-```{literalinclude} ../../curvefit/configs/experiments/linear-sgd.yaml
+```{literalinclude} ../../example/configs/experiments/mlp.yaml
 :language: yaml
-:caption: configs/experiments/linear-sgd.yaml
+:caption: configs/experiments/mlp.yaml
 :lines: 1-3
 ```
 
 The import path must be importable from the current directory, as for `$class`.
 `generate_json_schema(Experiment)` returns the same schema as a dictionary. For a
-file that holds a single node, such as one dataset, generate the schema of that
-node's class instead, such as `curvefit.data.Synthetic`.
+file that holds a single node, such as one model, generate the schema of that
+node's class instead, such as `project.MLP`.
 
 Run the same command with `--check` in CI. It writes nothing, and exits with 1 when
 the committed file no longer matches the classes:
 
 ```text
-$ omegakit json-schema curvefit.Experiment -o experiment.schema.json --check
+$ omegakit json-schema project.Experiment -o experiment.schema.json --check
 ```
 
 ## What the editor checks
 
 Misspelled keys and values of the wrong type are errors at the root, in sections
 such as `data`, and inside a node whose `$class` names exactly the class the field
-expects, such as the trainer. The editor knows nothing about subclasses, so under
-`model: Model` a `$class: curvefit.models.Polynomial` node is accepted as any
-mapping; `validate` still checks it.
+expects, when that class has a schema. The editor knows nothing about subclasses,
+so under `model: nn.Module` a `$class: project.MLP` node is accepted as any mapping;
+`validate` still checks it.
 
 What the schema cannot know is allowed everywhere: interpolations, `???`, `~import`
 and keys that start with `$`. Nothing is required, because a value may still come

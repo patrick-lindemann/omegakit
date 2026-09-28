@@ -170,7 +170,7 @@ SESSION_PAGES = {
     "getting-started": EXAMPLE,
     "reproducible-runs": EXAMPLE,
     "command-line": CURVEFIT,
-    "schemas/editor-support": CURVEFIT,
+    "schemas/editor-support": EXAMPLE,
     "recipes/checking-experiments-in-ci": CURVEFIT,
 }
 READ_ONLY_SESSION_PAGES = ["security/secrets"]

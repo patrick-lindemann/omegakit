@@ -2,19 +2,19 @@ from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 
-from curvefit import Experiment
+from project import Experiment
 
 from omegakit import instantiate, load_config
 
-experiments = Path(__file__).parents[2] / "curvefit" / "configs" / "experiments"
+experiments = Path(__file__).parents[2] / "example" / "configs" / "experiments"
 
-config = load_config(experiments / "poly3-adam.yaml")
+config = load_config(experiments / "mlp.yaml")
 experiment = instantiate(config, schema=Experiment)
 print(type(experiment.data).__name__, type(experiment.data.test).__name__)
 print(type(experiment.model).__name__, experiment.run_dir.parts)
 
-model = instantiate({"$class": "curvefit.models.Polynomial", "degree": "4"})
-print(model.degree + 1)
+data = instantiate({"$class": "project.SineWave", "n": "64", "noise": 0.1, "seed": 0})
+print(len(data))
 
 
 class Loss(Enum):

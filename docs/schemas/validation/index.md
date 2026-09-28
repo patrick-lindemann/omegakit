@@ -10,24 +10,33 @@
 ```
 
 ```text
-Invalid config in `model.degree` (Polynomial): Value 'three' of type 'str' could not be converted to Integer
-`trainer.schedule` must be one of 'constant', 'cosine', but the config gives `'linear'`.
-`model` expects Model, but the config gives `$class: curvefit.data.Synthetic`.
+Invalid config in `model.hidden` (MLPConfig): Value 'wide' of type 'str' could not be converted to Integer
+`model.activation` must be one of 'relu', 'tanh', but the config gives `'gelu'`.
+`model` expects Module, but the config gives `$class: project.SineWave`.
 ```
 
 `schema=Experiment` says what the root must match. The root has no `$class`, so it
 is checked against the plain dataclass `Experiment`, and every node with `$class`
-against its own class's schema, children first. The model's `degree` is checked
-against `Polynomial`'s field, and the trainer's `schedule` against the `Literal` of
-`TrainerConfig`. Each object field is also checked against the class it expects, so
-a dataset where the model should be is caught before anything is built. The error
-is a `ValueError` too.
+against its own class's schema, children first. The model's `hidden` and
+`activation` are checked against `MLPConfig`, the schema of `project.MLP`
+([Configurable classes](../../objects/configurable-classes/index.md)). Each object
+field is also checked against the class it expects, so a dataset where the model
+should be is caught before anything is built. The error is a `ValueError` too.
+
+A class without a schema, such as `torch.optim.Adam` or `torch.nn.Linear`, has
+only its `$class` nodes checked. PyTorch checks its arguments when it is called.
 
 ## Files that are incomplete on purpose
 
-`base.yaml` leaves the name open and names no model or optimizer.
+The example project's `base.yaml` leaves the name open and names no model or
+optimizer.
 `validate(base, schema=Experiment, allow_missing=True)` accepts what is missing and
-still checks every value the file gives ([Missing values](../../guide/missing-values/index.md)).
+still checks every value the file gives ([Missing values](../../guide/missing-values/index.md)):
+
+```{literalinclude} main.py
+:language: python
+:start-at: base = load_config
+```
 
 Validation calls no configured class, but it imports the modules that `$class` and
 `$ref` name and runs every resolver. Validate only configs you trust, and limit the

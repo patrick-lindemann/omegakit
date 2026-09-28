@@ -2,12 +2,15 @@
 
 A plain dataclass describes a config: which keys it has, and what each one holds.
 omegakit checks a config against it before anything is built, and builds a typed
-result from it. `curvefit` describes a whole experiment with two dataclasses:
+result from it. The example project describes a whole experiment with two
+dataclasses:
 
-```{literalinclude} ../../curvefit/curvefit/__init__.py
+```{literalinclude} ../../example/project.py
 :language: python
-:caption: curvefit/__init__.py (excerpt)
-:start-at: "@dataclass"
+:caption: project.py (excerpt)
+:start-at: "class Splits:"
+:end-at: "batch_size: int = 32"
+:prepend: "@dataclass"
 ```
 
 ```{literalinclude} main.py
@@ -17,35 +20,36 @@ result from it. `curvefit` describes a whole experiment with two dataclasses:
 ```
 
 ```text
-Splits Synthetic
-Polynomial ('runs', 'poly3-adam', 'seed0')
-5
+Splits SineWave
+MLP ('runs', 'mlp', 'seed0')
+64
 ```
 
 The root of the experiment file has no `$class`, so `schema=Experiment` says what it
-is. A dataclass named by `$class` is its own schema too: `curvefit`'s models and
-datasets are plain dataclasses, so `degree: "4"` became the integer 4.
+is. A dataclass named by `$class` is its own schema too: `SineWave` is a plain
+dataclass, so `n: "64"` became the integer 64.
 
 ## Field kinds
 
 `Experiment` shows the kinds of field:
 
-- **Values:** `name: str`, `seed: int` and `run_dir: Path`. The config holds plain
-  values, which are converted and checked, so `run_dir` is a `Path`.
+- **Values:** `name: str`, `seed: int`, `run_dir: Path`, `epochs: int` and
+  `batch_size: int`. The config holds plain values, which are converted and checked,
+  so `run_dir` is a `Path`.
 - **Sections:** `data: Splits`. A field annotated with a dataclass holds a plain
   mapping, checked against that dataclass and built into it.
-- **Objects:** `model: Model`, `trainer: Trainer` and the others. The config holds a
-  `$class` node of that class or a subclass, or a `$ref` to an instance, and the
-  result holds the built object. `optimizer` is a partial, and `metrics` holds
-  functions ([Instantiation](../../objects/instantiation/index.md)).
+- **Objects:** `model: nn.Module`, the optimizer and the loss. The config holds a
+  `$class` node of that class or a subclass, or a `$ref` to an object, and the
+  result holds the built object. `optimizer` is a partial, and `loss` a function
+  ([Instantiation](../../objects/instantiation/index.md)).
 - **`Any`:** the value is not checked, but `$class` nodes and reserved keys inside
   it are.
 
-A field without a default is required. `tracker` has the default `None`, so an
+A field without a default is required. `batch_size` has the default 32, so an
 experiment may leave it out.
 
-A class can also carry a schema that differs from its constructor, through
-[`Configurable`](../../objects/configurable-classes/index.md).
+A class that is not a dataclass, such as a PyTorch module, can carry a schema too,
+through [`Configurable`](../../objects/configurable-classes/index.md).
 
 ## Rules
 
