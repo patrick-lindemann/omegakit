@@ -29,6 +29,14 @@ def test_overrides_invalid_type_raises(write_yaml, overrides):
         instantiate({"$class": "tests.helpers.Recorder"}, overrides=overrides)
 
 
+@pytest.mark.parametrize("item", [2, {"a": 1}, None])
+def test_overrides_list_item_that_is_not_a_string_raises(write_yaml, item):
+    with pytest.raises(TypeError, match="must be a `key=value` string"):
+        load_config(write_yaml("c.yaml", "a: 1\n"), overrides=["a=2", item])
+    with pytest.raises(TypeError, match="must be a `key=value` string"):
+        instantiate({"$class": "tests.helpers.Recorder"}, overrides=[item])
+
+
 @pytest.mark.parametrize(
     ("overrides", "match"),
     [

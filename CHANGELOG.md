@@ -15,6 +15,8 @@ All notable changes to this project are documented here. The format follows
 
 ### Fixed
 
+- A list of overrides with an item that is not a string raises `TypeError`, as
+  overrides of the wrong type do, instead of OmegaConf's `ValueError`.
 - The error for `$base` or `$defaults` references that form a cycle names only the
   nodes on the cycle, not the nodes that wait for it or contain it.
 

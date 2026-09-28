@@ -30,7 +30,8 @@ only its learning rate. `instantiate` and `prepare` take `overrides=` too.
 ## Rules
 
 - `overrides` is a `DictConfig`, a `dict`, or a list of `key=value` strings. Any
-  other type, including a `ListConfig`, raises `TypeError`.
+  other type, including a `ListConfig`, raises `TypeError`, and so does a list item
+  that is not a string.
 - Each value in a list is parsed as YAML: `epochs=50` is an integer,
   `seeds=[0, 1]` a list. A string without `=`, such as `a`, sets `a` to `null`.
 - An override that does not parse, has a value OmegaConf does not support, or is
