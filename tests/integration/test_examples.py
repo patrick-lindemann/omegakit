@@ -11,11 +11,12 @@ import pytest
 
 # Runs the example project and the README as a reader would.
 
+pytestmark = pytest.mark.docs
+
 DOCS = Path(__file__).parents[2] / "docs"
 
 
 def test_readme_example_builds(tmp_path):
-    pytest.importorskip("torch")
     readme = (Path(__file__).parents[2] / "README.md").read_text()
     for name, text in re.findall(r"```yaml\n# (\S+)\n(.*?)```", readme, re.S):
         (tmp_path / name).write_text(text)
@@ -40,7 +41,6 @@ EXAMPLE_EXPERIMENTS = sorted((EXAMPLE / "configs" / "experiments").glob("*.yaml"
 
 
 def _train(*arguments: object, cwd: Path) -> str:
-    pytest.importorskip("torch")
     return subprocess.run(
         [sys.executable, str(EXAMPLE / "main.py"), *map(str, arguments)],
         cwd=cwd,
@@ -108,7 +108,6 @@ OUTPUT_BLOCK = r"```\{code-block\} text\n:caption: Output\n\n(.*?)```"
 @pytest.mark.parametrize("page", SESSION_PAGES)
 def test_page_sessions_show_real_output(page, tmp_path, monkeypatch):
     monkeypatch.setenv("TRACKER_TOKEN", "tok-5f3a9c1e7b2d4f60")
-    pytest.importorskip("torch")
     shutil.copytree(
         SESSION_PAGES[page],
         tmp_path,
@@ -142,7 +141,6 @@ def test_page_sessions_show_real_output(page, tmp_path, monkeypatch):
 
 
 def test_ci_recipe_test_file_passes():
-    pytest.importorskip("torch")
     test_file = DOCS / "recipes" / "checking-experiments-in-ci" / "test_experiments.py"
     subprocess.run(
         [sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", test_file],

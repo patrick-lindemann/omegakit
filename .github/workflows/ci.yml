@@ -1,11 +1,22 @@
 name: CI
 
+# A push to any branch, such as develop, runs the quick jobs: lint, docs, the
+# resolvers and the tests on one Python version. A pull request into main and a
+# release candidate run everything. The tests of the library install neither the
+# docs group nor the resolvers group: the docs job runs the docs examples, and
+# test-resolvers the optional resolvers.
 on:
   push:
-    # Tags run CI through the release workflow instead.
+    # Tags run CI through the release candidate workflow instead.
     branches: ["**"]
   pull_request:
+    branches: [main]
   workflow_call:
+    inputs:
+      full:
+        description: Run every job, not only the quick ones.
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -18,8 +29,8 @@ jobs:
         with:
           persist-credentials: false
       - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
-      # Pyright checks the docs example, which needs the docs-examples group.
-      - run: uv sync --locked --group docs-examples
+      # Pyright checks the docs example and the optional resolvers.
+      - run: uv sync --locked --all-groups
       - run: uv run ruff check
       - run: uv run ruff format --check
       - run: uv run pydoclint src
@@ -34,13 +45,18 @@ jobs:
       - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
       - run: uv sync --locked
       - run: uv run sphinx-build -W docs docs/_build
+      - run: uv run --no-sync pytest -m docs
 
   test:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.12", "3.13", "3.14"]
+        python-version: >-
+          ${{ fromJSON(
+            (github.event_name == 'pull_request' || inputs.full)
+            && '["3.12", "3.13", "3.14"]' || '["3.13"]'
+          ) }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -48,11 +64,11 @@ jobs:
       - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
         with:
           python-version: ${{ matrix.python-version }}
-      # The docs examples are PyTorch scripts, so every test job installs PyTorch.
-      - run: uv sync --locked --group docs-examples
-      - run: uv run --no-sync pytest --cov
+      - run: uv sync --locked --no-group docs
+      - run: uv run --no-sync pytest --cov -m "not docs and not resolvers"
 
   test-lowest:
+    if: github.event_name == 'pull_request' || inputs.full
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -64,12 +80,15 @@ jobs:
       # Unlocked resolutions skip the last few days of uploads, so that a compromised
       # or broken release has time to be yanked.
       - run: echo "UV_EXCLUDE_NEWER=$(date -u -d '3 days ago' +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
-      - run: uv sync --resolution lowest-direct --group docs-examples
-      - run: uv run --no-sync pytest --cov -m "not distribution"
+      - run: uv sync --resolution lowest-direct --no-group docs
+      - run: >-
+          uv run --no-sync pytest --cov
+          -m "not distribution and not docs and not resolvers"
 
   test-omegaconf-next:
     # The newest OmegaConf pre-release in the supported range, so that a change in
     # OmegaConf shows up here before it is released to users.
+    if: github.event_name == 'pull_request' || inputs.full
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -78,10 +97,24 @@ jobs:
       - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
         with:
           python-version: "3.13"
-      - run: uv sync --locked --group docs-examples
+      - run: uv sync --locked --no-group docs
       - run: >-
           uv pip install --prerelease if-necessary-or-explicit
           --exclude-newer "$(date -u -d '3 days ago' +%Y-%m-%dT%H:%M:%SZ)"
           "omegaconf>=2.4.0.dev0,<2.5"
       - run: uv run --no-sync python -c "import omegaconf; print(omegaconf.__version__)"
-      - run: uv run --no-sync pytest -W error::UserWarning -m "not distribution"
+      - run: >-
+          uv run --no-sync pytest -W error::UserWarning
+          -m "not distribution and not docs and not resolvers"
+
+  test-resolvers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
+        with:
+          python-version: "3.13"
+      - run: uv sync --locked --no-group docs --group resolvers
+      - run: uv run --no-sync pytest -m resolvers

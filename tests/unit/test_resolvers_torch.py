@@ -12,6 +12,8 @@ from omegakit.resolvers.torch import (
 )
 from omegakit.utils import register_resolver
 
+pytestmark = pytest.mark.resolvers
+
 
 class FakeDtype:
     pass
@@ -48,7 +50,8 @@ def test_missing_torch_error(monkeypatch, register):
 
 
 def test_real_torch_resolvers():
-    torch = pytest.importorskip("torch")
+    import torch
+
     register_torch_resolvers()
     cfg = OmegaConf.create({"dtype": "${dtype:float32}", "cuda": "${cuda_available:}"})
     assert cfg.dtype is torch.float32
@@ -63,7 +66,6 @@ def test_real_torch_resolvers():
 
 
 def test_torch_conflict_does_not_partially_register():
-    pytest.importorskip("torch")
     register_resolver("cuda_available", lambda: False)
     with pytest.raises(ValueError, match="already registered"):
         register_torch_resolvers()

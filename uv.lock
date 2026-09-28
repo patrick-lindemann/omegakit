@@ -670,7 +670,7 @@ wheels = [
 
 [[package]]
 name = "omegakit"
-version = "0.7.0"
+version = "0.8.0"
 source = { editable = "." }
 dependencies = [
     { name = "omegaconf" },
@@ -689,12 +689,14 @@ dev = [
 docs = [
     { name = "furo" },
     { name = "myst-parser" },
+    { name = "numpy" },
     { name = "sphinx" },
     { name = "sphinx-autodoc-typehints" },
     { name = "sphinx-reredirects" },
+    { name = "torch", version = "2.14.0", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "sys_platform == 'darwin'" },
+    { name = "torch", version = "2.14.0+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "sys_platform != 'darwin'" },
 ]
-docs-examples = [
-    { name = "numpy" },
+resolvers = [
     { name = "torch", version = "2.14.0", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "sys_platform == 'darwin'" },
     { name = "torch", version = "2.14.0+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "sys_platform != 'darwin'" },
 ]
@@ -717,14 +719,13 @@ dev = [
 docs = [
     { name = "furo", specifier = ">=2025.9" },
     { name = "myst-parser", specifier = ">=4,<5" },
+    { name = "numpy", specifier = ">=2" },
     { name = "sphinx", specifier = ">=8.2,<9" },
     { name = "sphinx-autodoc-typehints", specifier = ">=3,<4" },
     { name = "sphinx-reredirects", specifier = ">=1,<2" },
-]
-docs-examples = [
-    { name = "numpy", specifier = ">=2" },
     { name = "torch", specifier = ">=2.9", index = "https://download.pytorch.org/whl/cpu" },
 ]
+resolvers = [{ name = "torch", specifier = ">=2.9", index = "https://download.pytorch.org/whl/cpu" }]
 
 [[package]]
 name = "packaging"

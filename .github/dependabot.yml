@@ -2,6 +2,8 @@ version: 2
 updates:
   - package-ecosystem: uv
     directory: /
+    # Updates are tested on develop and released with it.
+    target-branch: develop
     schedule:
       interval: weekly
     # Give new releases time to be yanked or fixed before they are proposed.
@@ -19,6 +21,8 @@ updates:
         update-types: ["version-update:semver-minor", "version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
+    # Updates are tested on develop and released with it.
+    target-branch: develop
     schedule:
       interval: weekly
     cooldown:
