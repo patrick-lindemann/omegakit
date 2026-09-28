@@ -1,5 +1,4 @@
 import inspect
-import os
 from collections.abc import Callable
 from typing import Any
 
@@ -29,28 +28,3 @@ def register_resolver(
         )
     else:
         OmegaConf.register_new_resolver(name, resolver, replace=replace, use_cache=True)
-
-
-# The values that `${secret:...}` has given in this process, so that the command
-# line can mask them wherever they appear.
-SECRET_VALUES: set[str] = set()
-
-
-def read_secret(name: str) -> str:
-    """Read the environment variable of `${secret:NAME}`, and remember its value.
-
-    Args:
-        name: The name of the environment variable.
-
-    Returns:
-        The value of the variable.
-
-    Raises:
-        ValueError: If the variable is not set.
-    """
-    try:
-        value = os.environ[name]
-    except KeyError:
-        raise ValueError(f"Environment variable `{name}` is not set.") from None
-    SECRET_VALUES.add(value)
-    return value

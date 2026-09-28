@@ -27,8 +27,8 @@ it, and validate it with `allowed_modules` and `import_root` before you build it
   resolvers already run while loading, and `keep_targets=False` does not make
   loading safe.
 - `validate`, `instantiate`, `prepare` and `omegakit check` resolve every
-  interpolation, and `omegakit show --resolve` resolves the node it prints and
-  every value that reads `${secret:...}`. So every resolver can run. `oc.env`
+  interpolation, and `omegakit show --resolve` resolves the node it prints. So
+  every resolver can run. `oc.env`
   reads any environment variable. Call `OmegaConf.clear_resolver("oc.env")` before
   loading if you do not need it.
 - Validating and building import the modules that `$class` and `$ref` name, which

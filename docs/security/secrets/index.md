@@ -60,10 +60,11 @@ out of arguments that your code saves, such as hyperparameters in checkpoints.
   with `allow_missing=True`.
 - A config from `load_config` holds `${secret:NAME}` as written.
   `OmegaConf.save` and `OmegaConf.to_yaml` write it that way, unless they resolve.
-- `omegakit show --resolve` first resolves every value in the config that reads
-  `${secret:...}`, also outside `--node`. It then replaces each value that
-  `${secret:...}` gave in the process with `***`, wherever it appears in a printed
-  string. Keys and values that are not strings are never rewritten.
-  `--show-secrets` turns this off. Without `--resolve`, nothing is resolved.
+- `omegakit show --resolve` loads the config with the real values, then resolves
+  `${secret:NAME}` to `***` once it has checked that `NAME` is set. Every printed
+  value built from a secret holds `***` in its place, also one built by another
+  resolver, such as `${oc.decode:${secret:NAME}}`. The secret's value is never
+  read into the output. `--show-secrets` prints the real values. Without
+  `--resolve`, nothing is resolved.
 - Nothing else is masked. Error messages can contain values
   ([Trust model](../trust-model/index.md)).

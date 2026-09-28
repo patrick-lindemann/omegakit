@@ -99,6 +99,5 @@ that `load_config` removes ([Metadata](../../guide/metadata/index.md)).
   interpolations on the path are followed and only the selected node is resolved.
   Missing values print as `???`, and any other resolution error exits with 1 with
   one line.
-- With `--resolve`, every value that `${secret:...}` gives is printed as `***`,
-  also inside longer strings and also when it is read outside `--node`.
-  `--show-secrets` turns this off ([Secrets](../../security/secrets/index.md#rules)).
+- With `--resolve`, `${secret:...}` gives `***`, unless `--show-secrets` is given
+  ([Secrets](../../security/secrets/index.md#rules)).

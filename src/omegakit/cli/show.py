@@ -1,19 +1,15 @@
 import argparse
-import contextlib
-import re
+import os
 from pathlib import Path
 from typing import Any, NoReturn
 
-from omegaconf import DictConfig, ListConfig, Node, OmegaConf
-from omegaconf.errors import OmegaConfBaseException
+from omegaconf import DictConfig, ListConfig, OmegaConf
 
 from omegakit.cli.arguments import split_arguments
 from omegakit.imports import select_node
 from omegakit.load import load_config
-from omegakit.registry import SECRET_VALUES
+from omegakit.registry import register_resolver
 from omegakit.validate import resolve_item
-
-_SECRET = re.compile(r"\$\{\s*secret\s*:")
 
 
 def register(commands: argparse._SubParsersAction) -> None:
@@ -87,6 +83,11 @@ def run(arguments: argparse.Namespace) -> None:
         )
     except Exception as error:
         _fail(paths[0], error)
+    if arguments.resolve and not arguments.show_secrets:
+        # Every value built from a secret then holds `***`. Loading resolved with the
+        # real values, and the config caches what its resolvers gave.
+        register_resolver("secret", _masked_secret, replace=True)
+        OmegaConf.clear_cache(config)
     try:
         node = config
         if arguments.node is not None:
@@ -94,11 +95,7 @@ def run(arguments: argparse.Namespace) -> None:
         if node is None:
             print(f"{paths[0]}: no node `{arguments.node}`")
             raise SystemExit(1)
-        if arguments.resolve and not arguments.show_secrets:
-            _read_secrets(config)
         value = _plain(node, arguments.resolve)
-        if not arguments.show_secrets:
-            value = _mask(value, sorted(filter(None, SECRET_VALUES), key=len)[::-1])
     except Exception as error:
         # Without --resolve, the only error here is a path through an interpolation.
         _fail(
@@ -114,23 +111,6 @@ def _fail(path: Path, error: Exception, hint: str = "") -> NoReturn:
     message = str(error).splitlines()[0] if str(error) else ""
     print(f"{path}: {type(error).__name__}: {message}{hint}")
     raise SystemExit(1) from error
-
-
-def _read_secrets(container: DictConfig | ListConfig) -> None:
-    # Resolves every value that reads `${secret:...}` in the whole config, so that
-    # the resolver remembers each secret, also one used outside the printed node.
-    keys: Any = (
-        range(len(container)) if isinstance(container, ListConfig) else container
-    )
-    for key in keys:
-        node = container._get_node(key)
-        if isinstance(node, (DictConfig, ListConfig)) and not (
-            node._is_missing() or node._is_interpolation()
-        ):
-            _read_secrets(node)
-        elif isinstance(node, Node) and _SECRET.search(str(node._value())):
-            with contextlib.suppress(OmegaConfBaseException):
-                resolve_item(container, key)
 
 
 def _plain(node: Any, resolve: bool) -> Any:
@@ -152,12 +132,7 @@ def _items(container: DictConfig | ListConfig, resolve: bool) -> dict[Any, Any]:
     return {key: _plain(container._get_node(key), resolve) for key in keys}
 
 
-def _mask(value: Any, secrets: list[str]) -> Any:
-    if isinstance(value, dict):
-        return {key: _mask(item, secrets) for key, item in value.items()}
-    if isinstance(value, list):
-        return [_mask(item, secrets) for item in value]
-    if isinstance(value, str):
-        for secret in secrets:
-            value = value.replace(secret, "***")
-    return value
+def _masked_secret(name: str) -> str:
+    if name not in os.environ:
+        raise ValueError(f"Environment variable `{name}` is not set.")
+    return "***"

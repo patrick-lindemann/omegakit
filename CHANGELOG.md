@@ -29,6 +29,12 @@ All notable changes to this project are documented here. The format follows
   not a mapping, a missing attribute (``Module `m` has no attribute `x`.``), an
   import cycle, a `$partial` that is not a boolean, an `overrides` argument of the
   wrong type, and a missing PyTorch.
+- `omegakit show --resolve` resolves `${secret:...}` to `***` instead of reading
+  the secret and masking its text in the output. A value that another resolver
+  builds from a secret, such as a number from `${oc.decode:${secret:PORT}}`, is
+  masked now too; a copy of the secret's text that does not come from
+  `${secret:...}` is no longer masked. The secret resolver no longer keeps the
+  values it gives in memory.
 - The API and Changelog pages moved into the folder of their section, Reference:
   `api/` is now `reference/api/`, and `changelog/` is now `reference/changelog/`.
 - `omegakit export-schema` reports a class it cannot export as a usage error and
