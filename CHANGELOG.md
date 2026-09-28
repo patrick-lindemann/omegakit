@@ -12,6 +12,10 @@ All notable changes to this project are documented here. The format follows
   from `configs/<page>/` to `guide/<page>/`, such as `guide/loading/`.
 - Each Guide page has its own small example, which shows that page's feature only.
 
+### Removed
+
+- The Using with PyTorch recipe.
+
 ### Fixed
 
 - A dataclass schema that OmegaConf cannot validate, such as one with a

@@ -2,11 +2,11 @@
 
 Check every experiment file on every change, so that a broken config fails in CI
 and not an hour into a run. Two steps cover it. `omegakit check` validates each
-file and builds nothing, and a test builds each experiment. From `curvefit`'s
-directory:
+file and builds nothing, and a test builds each experiment. From the example
+project's directory:
 
 ```text
-$ omegakit check configs/experiments/*.yaml --schema curvefit.Experiment --allow-module curvefit --import-root configs
+$ omegakit check configs/experiments/*.yaml --schema project.Experiment --allow-module project --allow-module torch.nn --allow-module torch.optim --import-root configs
 ```
 
 `check` prints nothing and exits with 0 when every file is valid
@@ -21,7 +21,7 @@ the same limits, which also runs the constructors and every `from_config`:
 In a GitHub Actions workflow, run both after installing your project:
 
 ```yaml
-- run: omegakit check configs/experiments/*.yaml --schema curvefit.Experiment --allow-module curvefit --import-root configs
+- run: omegakit check configs/experiments/*.yaml --schema project.Experiment --allow-module project --allow-module torch.nn --allow-module torch.optim --import-root configs
 - run: pytest
 ```
 

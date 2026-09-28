@@ -171,7 +171,7 @@ SESSION_PAGES = {
     "reproducible-runs": EXAMPLE,
     "command-line": CURVEFIT,
     "schemas/editor-support": EXAMPLE,
-    "recipes/checking-experiments-in-ci": CURVEFIT,
+    "recipes/checking-experiments-in-ci": EXAMPLE,
 }
 READ_ONLY_SESSION_PAGES = ["security/secrets"]
 PROGRAMS = {"python": [sys.executable], "omegakit": [sys.executable, "-m", "omegakit"]}

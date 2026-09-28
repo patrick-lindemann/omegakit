@@ -111,7 +111,6 @@ security/secrets/index
 
 recipes/parameter-sweeps/index
 recipes/swapping-implementations/index
-recipes/using-with-pytorch/index
 recipes/checking-experiments-in-ci/index
 ```
 

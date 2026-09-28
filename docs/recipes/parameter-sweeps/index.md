@@ -11,14 +11,14 @@ copy of the config.
 ```
 
 ```text
-poly3-sgd/seed0 0.0158
-poly3-sgd/seed1 0.0156
-poly3-adam/seed0 0.0377
-poly3-adam/seed1 0.0233
-poly5-sgd/seed0 0.0250
-poly5-sgd/seed1 0.0244
-poly5-adam/seed0 0.0305
-poly5-adam/seed1 0.0275
+mlp8-sgd/seed0 0.015
+mlp8-sgd/seed1 0.019
+mlp8-adam/seed0 0.013
+mlp8-adam/seed1 0.012
+mlp32-sgd/seed0 0.012
+mlp32-sgd/seed1 0.012
+mlp32-adam/seed0 0.011
+mlp32-adam/seed1 0.012
 ```
 
 The run directory is an interpolation of the name and the seed, which resolves
@@ -29,7 +29,8 @@ all runs into a temporary directory.
 The optimizer is a class, not a value, so the sweep builds its node with
 `make_node` and assigns it, which replaces the whole node
 ([Swapping implementations](../swapping-implementations/index.md)). Each run seeds
-the generator before it builds the model.
+PyTorch before it builds the model, and `train` is the example project's training
+loop.
 
 omegakit runs nothing in parallel and keeps no record of the runs. For launchers,
 parallel jobs or a sweeper that picks the next values, see how omegakit

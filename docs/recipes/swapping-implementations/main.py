@@ -1,9 +1,7 @@
 from pathlib import Path
 
-from curvefit import Experiment
-from curvefit.data import CsvData
-from curvefit.models import Polynomial
-from curvefit.optim import Adam
+import torch
+from project import MLP, Experiment
 
 from omegakit import (
     PARTIAL_KEY,
@@ -13,24 +11,23 @@ from omegakit import (
     make_node,
 )
 
-curvefit = Path(__file__).parents[2] / "curvefit"
-experiment_file = curvefit / "configs" / "experiments" / "linear-sgd.yaml"
+experiments = Path(__file__).parents[2] / "example" / "configs" / "experiments"
 
-config = load_config(experiment_file)
-config.data.test = make_node(CsvData, path=str(curvefit / "data" / "measurements.csv"))
-config.optimizer = {**make_node(Adam, lr=0.05), PARTIAL_KEY: True}
+config = load_config(experiments / "linear.yaml")
+config.model = make_node(MLP, hidden=16)
+config.optimizer = {**make_node(torch.optim.Adam, lr=0.01), PARTIAL_KEY: True}
 experiment = instantiate(config, schema=Experiment)
 optimizer = experiment.optimizer(experiment.model.parameters())
-print(type(experiment.data.test).__name__, type(optimizer).__name__)
+print(type(experiment.model).__name__, type(optimizer).__name__)
 
-config.data.test = make_node(Polynomial, degree=3)
+config.data.test = make_node(MLP, hidden=8)
 try:
     instantiate(config, schema=Experiment)
 except ConfigValidationError as error:
     print(error)
 
 config = load_config(
-    experiment_file, overrides=["optimizer.$class=curvefit.optim.Adam"]
+    experiments / "linear.yaml", overrides=["optimizer.$class=torch.optim.Adam"]
 )
 experiment = instantiate(config, schema=Experiment)
 try:
