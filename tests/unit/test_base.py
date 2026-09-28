@@ -192,6 +192,35 @@ def test_base_cycle_raises(write_yaml):
         load_config(path)
 
 
+def test_base_cycle_error_names_only_the_nodes_on_the_cycle(write_yaml):
+    path = write_yaml(
+        "c.yaml",
+        "outer:\n"
+        "  $base: {x: 1}\n"
+        "  inner:\n"
+        "    a:\n"
+        "      $base: ${outer.inner.b}\n"
+        "    b:\n"
+        "      $base: ${outer.inner.a}\n"
+        "c:\n"
+        "  $base: ${outer.inner.a}\n",
+    )
+    with pytest.raises(ConfigLoadError) as info:
+        load_config(path)
+    assert str(info.value) == (
+        "`$base` references form a cycle between `outer.inner.a`, `outer.inner.b`."
+    )
+
+
+def test_base_cycle_error_names_an_ancestor_on_the_cycle(write_yaml):
+    path = write_yaml(
+        "c.yaml", "a:\n  $base: ${b}\nb:\n  $base: {y: 1}\n  x:\n    $base: ${a}\n"
+    )
+    with pytest.raises(ConfigLoadError) as info:
+        load_config(path)
+    assert str(info.value) == "`$base` references form a cycle between `a`, `b.x`, `b`."
+
+
 def test_base_interpolation_to_unknown_key_raises_a_config_error(write_yaml):
     with pytest.raises(ConfigLoadError, match="nope") as info:
         load_config(write_yaml("c.yaml", "m:\n  $base: ${nope}\n"))

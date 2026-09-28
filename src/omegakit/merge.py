@@ -18,11 +18,8 @@ def merge_bases(config: DictConfig | ListConfig) -> None:
     Raises:
         ConfigLoadError: If a `$base` is not a mapping or a list of mappings,
             cannot be resolved, or if `$base` references form a cycle.
-    """
-    cycle = _merge_in_dependency_order(config, BASE_KEY, _merge_base)
-    if cycle:
-        nodes = ", ".join(f"`{format_node_path(node)}`" for node in cycle)
-        raise ConfigLoadError(f"`{BASE_KEY}` references form a cycle between {nodes}.")
+    """  # noqa: DOC502
+    _merge_in_dependency_order(config, BASE_KEY, _merge_base)
 
 
 def apply_defaults(config: DictConfig | ListConfig) -> None:
@@ -34,61 +31,66 @@ def apply_defaults(config: DictConfig | ListConfig) -> None:
     Raises:
         ConfigLoadError: If a `$defaults` is not a mapping, cannot be resolved,
             or if `$defaults` references form a cycle.
-    """
-    cycle = _merge_in_dependency_order(config, DEFAULTS_KEY, _merge_defaults)
-    if cycle:
-        nodes = ", ".join(f"`{format_node_path(node)}`" for node in cycle)
-        raise ConfigLoadError(
-            f"`{DEFAULTS_KEY}` references form a cycle between {nodes}."
-        )
+    """  # noqa: DOC502
+    _merge_in_dependency_order(config, DEFAULTS_KEY, _merge_defaults)
 
 
 def _merge_in_dependency_order(
     config: DictConfig | ListConfig,
     key: str,
     merge: Callable[[DictConfig, Any], None],
-) -> list[DictConfig]:
+) -> None:
     while True:
         waiting: list[DictConfig] = []
-        blocked: set[int] = set()
+        # The nodes that each waiting node waits for, by `id`: the holders of `key`
+        # inside its reference, and for an ancestor, the waiting nodes below it.
+        waits_for: dict[int, list[DictConfig]] = {}
         first_error: OmegaConfBaseException | None = None
         merged = False
         for node in list(walk_post_order(config)):
             if node._get_node(key) is None:
                 continue
-            if id(node) not in blocked:
+            if id(node) not in waits_for:
                 try:
                     value = node[key]
                 except InterpolationKeyError as error:
                     if first_error is None:
                         first_error = error
+                    waits_for[id(node)] = []
                 else:
                     referenced = value if isinstance(value, ListConfig) else [value]
-                    if not any(
-                        isinstance(item, DictConfig)
-                        and any(
-                            inner._get_node(key) is not None for inner in walk(item)
-                        )
+                    holders = [
+                        inner
                         for item in referenced
-                    ):
+                        if isinstance(item, DictConfig)
+                        for inner in walk(item)
+                        if inner._get_node(key) is not None
+                    ]
+                    if not holders:
                         merge(node, value)
                         merged = True
                         continue
+                    waits_for[id(node)] = holders
             waiting.append(node)
             # Merging an ancestor replaces its children, so ancestors wait too.
             parent = node._get_parent()
-            while parent is not None and id(parent) not in blocked:
-                blocked.add(id(parent))
+            while parent is not None:
+                waits_for.setdefault(id(parent), []).append(node)
                 parent = parent._get_parent()
         if not waiting:
-            return []
+            return
         if not merged:
             if first_error is not None:
                 raise ConfigLoadError(
                     f"Cannot resolve `{first_error.full_key or key}`: "
                     f"{str(first_error).splitlines()[0]}"
                 ) from first_error
-            return waiting
+            nodes = ", ".join(
+                f"`{format_node_path(node)}`"
+                for node in waiting
+                if _waits_for_itself(node, waits_for)
+            )
+            raise ConfigLoadError(f"`{key}` references form a cycle between {nodes}.")
 
 
 def _merge_base(node: DictConfig, base: Any) -> None:
@@ -126,3 +128,16 @@ def _merge_defaults(node: DictConfig, defaults: Any) -> None:
         item = node._get_node(key)
         if isinstance(item, DictConfig):
             node[key] = OmegaConf.merge(defaults, item)
+
+
+def _waits_for_itself(node: DictConfig, waits_for: dict[int, list[DictConfig]]) -> bool:
+    seen: set[int] = set()
+    pending = list(waits_for[id(node)])
+    while pending:
+        other = pending.pop()
+        if other is node:
+            return True
+        if id(other) not in seen:
+            seen.add(id(other))
+            pending.extend(waits_for[id(other)])
+    return False

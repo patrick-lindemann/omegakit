@@ -65,8 +65,9 @@ of the pipeline under Rules, and that order explains what works together:
 - For a `${…}` value of `$base` or `$defaults`, a node
   waits while its reference points at a node that still holds the same key, or at
   a key that does not exist yet, and the ancestors of a waiting node wait too. A
-  reference that never resolves, and references that form a cycle, raise
-  `ConfigLoadError` naming the nodes. [Inheritance](../inheritance/index.md#rules) and
+  reference that never resolves raises `ConfigLoadError` naming it. References
+  that form a cycle raise `ConfigLoadError` naming the nodes on the cycle, not the
+  nodes that only wait for it. [Inheritance](../inheritance/index.md#rules) and
   [Defaults](../defaults/index.md#rules) say what each reference sees.
 
 **Saving.** Assembly is deterministic: the same files, overrides, environment

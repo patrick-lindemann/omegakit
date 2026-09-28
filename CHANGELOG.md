@@ -4,6 +4,13 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- The error for `$base` or `$defaults` references that form a cycle names only the
+  nodes on the cycle, not the nodes that wait for it or contain it.
+
 ## [0.8.0] - 2026-09-28
 
 ### Added
