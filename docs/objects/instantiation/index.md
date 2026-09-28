@@ -93,7 +93,8 @@ and gets a note naming the node, such as
   `ConfigLoadError`. A config error, a `???`, a failing
   interpolation and an exception from a resolver all raise `ConfigValidationError`
   before any configured class is called. OmegaConf's error is the `__cause__`, and
-  the message names the full key.
+  the message names the full key. A class that cannot serve as a schema raises
+  `SchemaDefinitionError`.
 - A target with a `from_config` attribute is built with `from_config(arguments)`
   instead. The lookup is by name, so any class with that classmethod works,
   `Configurable` or not. `arguments` is a `dict` of the built arguments, or the

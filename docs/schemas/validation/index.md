@@ -47,7 +47,9 @@ run this check, with their own `schema`, before building.
   unless `allow_missing`. The error names the full key.
 - Every `$class` node is checked against its class's schema. Nested `$class`
   nodes are checked before their parent. The class is imported, not called. A
-  class without a schema has only its children checked.
+  class without a schema has only its children checked. A class whose schema is
+  not supported, or does not fit its `__init__`, raises `SchemaDefinitionError`
+  ([Dataclass schemas](../dataclass-schemas/index.md#rules)).
 - `schema` says what the root must match. A root with `$class` must name
   `schema` or a subclass. A root without `$class` is checked against the schema
   of `schema`: a dataclass is its own, and a `Configurable` has its `TConfig`. A
