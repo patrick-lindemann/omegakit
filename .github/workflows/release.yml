@@ -1,9 +1,10 @@
 name: Release
 
-# A push to main releases the version in pyproject.toml, once: it publishes the
-# package to PyPI, then creates the tag and the GitHub release. The commit passed
-# every CI job in its pull request, and a release candidate of the version was
-# tried first. A failed job can be re-run on its own.
+# Merging a release pull request into main releases the version in pyproject.toml,
+# once: it publishes the package to PyPI, then tags the merge commit and creates
+# the GitHub release. The merge passed every CI job in its pull request, and a
+# release candidate of the version was tried first. A failed job can be re-run on
+# its own.
 on:
   push:
     branches: [main]

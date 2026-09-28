@@ -60,10 +60,10 @@ hand, when the `test-omegaconf-next` job shows that a new version works.
 
 ## Branches
 
-- Work happens on `develop`. A push there runs the quick CI jobs: lint, docs and
-  the tests on Python 3.13.
-- `main` holds released versions only. It moves only by fast-forward to `develop`,
-  after a pull request into `main` has passed every CI job.
+- Work happens on `develop`. A push there runs the quick CI jobs: lint, docs, the
+  resolvers and the tests on Python 3.13.
+- `main` holds released versions only. It moves only by merging a release pull
+  request from `develop`, after the pull request has passed every CI job.
 
 ## Releases
 
@@ -77,23 +77,20 @@ hand, when the `test-omegaconf-next` job shows that a new version works.
    ```
 
    Fix a problem on `develop`, and tag the next candidate.
-2. **Release commit.** On the candidate's commit, run `uv version <version>`. In
+2. **Version commit.** On the candidate's commit, run `uv version <version>`. In
    `CHANGELOG.md`, rename `## [Unreleased]` to `## [<version>] - <date>`, check its
    lines against `git log v<previous>..HEAD`, and add the release link at the bottom.
    When a library compared in `docs/comparison/index.md` has had a major release,
    check the page against its documentation again and update its "Checked on"
    line. Commit `pyproject.toml`, `uv.lock` and `CHANGELOG.md` as
-   "Release <version>", and push `develop`.
-3. **Pull request.** Open a pull request from `develop` into `main`. It runs every
-   CI job on the release commit.
-4. **Merge.** When it passes, fast-forward `main`, which marks the pull request as
-   merged:
-
-   ```sh
-   git switch main && git pull && git merge --ff-only develop && git push
-   ```
-
+   "Prepare <version>", and push `develop`.
+3. **Pull request.** Open a pull request from `develop` into `main`, titled
+   "Release <version>". It runs every CI job on the result of the merge.
+4. **Merge.** When it passes, click "Merge pull request". The repository allows
+   only merge commits and names them after the pull request's title, so the merge
+   commit is "Release <version>".
 5. **Release.** The release workflow sees the new version on `main`. After the
    `pypi` environment is approved, it publishes the package to PyPI with
-   attestations, then creates the tag `v<version>` and a GitHub release with the
-   version's changelog section. It refuses a version without a release candidate.
+   attestations, then creates the tag `v<version>` on the merge commit and a GitHub
+   release with the version's changelog section. It refuses a version without a
+   release candidate, and does nothing for a version that is already released.
