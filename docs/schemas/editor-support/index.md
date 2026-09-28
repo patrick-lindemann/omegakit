@@ -9,8 +9,8 @@ The schema of an experiment is a dataclass in `schemas.py`:
 :caption: schemas.py
 ```
 
-`omegakit export-schema` writes its JSON Schema, run from the directory that
-`schemas.py` is in:
+[`omegakit export-schema`](../../command-line/export-schema/index.md) writes its JSON
+Schema, run from the directory that `schemas.py` is in:
 
 ```sh
 omegakit export-schema schemas.Experiment -o experiment.schema.json
@@ -27,12 +27,7 @@ for VS Code by Red Hat, and other editors that use yaml-language-server, find it
 `generate_json_schema(Experiment)` returns the same schema as a dictionary. For a
 file that holds a single node, generate the schema of that node's class instead.
 
-Run the same command with `--check` in CI, to fail when the committed file no
-longer matches the classes:
 
-```sh
-omegakit export-schema schemas.Experiment -o experiment.schema.json --check
-```
 
 In VS Code with the Red Hat YAML extension, errors appear for wrong types and
 misspelled keys, completion offers the root's keys, `Literal` values and the fields

@@ -21,10 +21,10 @@ All notable changes to this project are documented here. The format follows
   its script's complete output.
 - Shared defaults is now Defaults, at `guide/defaults/`, and Building objects comes
   before Schemas.
-- The Command line page explains each command with an example, and leaves the
-  options to `--help`. The pre-commit hook moved to Checking experiments in CI.
-- Handling errors is part of the Guide, at `guide/errors/`, and the Command line page
-  is under Reference.
+- The command line has its own section, with an overview and a page per command,
+  each with examples. The options are left to `--help`. The pre-commit hook moved
+  to Checking experiments in CI.
+- Handling errors is part of the Guide, at `guide/errors/`.
 - The comparison page no longer has a section on OmegaConf itself.
 - The documentation and the README use a small PyTorch project as their example,
   instead of `curvefit`: an MLP fitted to noisy samples of a sine wave, with

@@ -44,7 +44,7 @@ accepts what is missing and still checks every value the file gives:
 ```
 
 To check files from a terminal, a pre-commit hook or CI, use
-[`omegakit check`](../../command-line/index.md).
+[`omegakit check`](../../command-line/check/index.md).
 
 ## Rules
 

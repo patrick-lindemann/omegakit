@@ -10,7 +10,7 @@ omegakit check configs/experiments/*.yaml --schema project.Experiment --allow-mo
 ```
 
 `check` printed nothing, so every file is valid
-([Command line](../../command-line/index.md)). The test builds each experiment with
+([check](../../command-line/check/index.md)). The test builds each experiment with
 the same limits, which also runs the constructors and every `from_config`:
 
 ```{literalinclude} test_experiments.py

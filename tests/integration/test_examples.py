@@ -93,7 +93,9 @@ def test_example_never_overwrites_a_run(tmp_path):
 # copies first.
 SESSION_PAGES = {
     "getting-started": EXAMPLE,
-    "command-line": EXAMPLE,
+    "command-line/check": EXAMPLE,
+    "command-line/show": EXAMPLE,
+    "command-line/export-schema": EXAMPLE,
     "recipes/checking-experiments-in-ci": EXAMPLE,
     "schemas/editor-support": DOCS / "schemas" / "editor-support",
     "security/secrets": DOCS / "security" / "secrets",

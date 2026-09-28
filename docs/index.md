@@ -19,8 +19,10 @@ examples in these pages train a small PyTorch model.
 - **A complete pattern:** the recipes, such as
   [Parameter sweeps](recipes/parameter-sweeps/index.md) or
   [Swapping implementations](recipes/swapping-implementations/index.md).
-- **Reference:** the Rules section at the end of each feature page, the
-  [API](api/index.md) and the [command line](command-line/index.md).
+- **From a terminal:** the [command line](command-line/index.md) checks and prints
+  configs without a script.
+- **Reference:** the Rules section at the end of each feature page, and the
+  [API](api/index.md).
 
 Configs import and call Python code, so load them only from sources you trust.
 The Security section says [what runs](security/trust-model/index.md), how to
@@ -77,6 +79,16 @@ resolvers/torch/index
 ```
 
 ```{toctree}
+:caption: Command line
+:hidden:
+
+command-line/index
+command-line/check/index
+command-line/show/index
+command-line/export-schema/index
+```
+
+```{toctree}
 :caption: Security
 :hidden:
 
@@ -98,7 +110,6 @@ recipes/checking-experiments-in-ci/index
 :caption: Reference
 :hidden:
 
-command-line/index
 api/index
 changelog/index
 ```
