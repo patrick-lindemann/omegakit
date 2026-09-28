@@ -3,8 +3,8 @@ import json
 from pathlib import Path
 
 from omegakit.errors import SchemaDefinitionError
+from omegakit.imports import import_object
 from omegakit.json_schema import generate_json_schema
-from omegakit.targets import import_object
 
 
 def register(commands: argparse._SubParsersAction) -> None:

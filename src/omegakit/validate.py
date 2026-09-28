@@ -18,6 +18,7 @@ from .errors import (
     format_path,
 )
 from .fields import coerce_fields
+from .imports import import_object
 from .keys import CLASS_KEY, META_KEY, PARTIAL_KEY, REF_KEY, RESERVED_PREFIX
 from .schema import (
     check_schema,
@@ -26,7 +27,6 @@ from .schema import (
     find_section,
     split_union,
 )
-from .targets import import_object
 
 
 def validate(

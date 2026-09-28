@@ -2,8 +2,8 @@ import argparse
 from pathlib import Path
 
 from omegakit.cli.arguments import split_arguments
+from omegakit.imports import import_object
 from omegakit.load import load_config
-from omegakit.targets import import_object
 from omegakit.validate import validate
 
 

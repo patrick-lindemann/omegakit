@@ -5,7 +5,7 @@ from .errors import (
     OmegaKitBaseException,
     SchemaDefinitionError,
 )
-from .instantiate import instantiate, prepare
+from .instantiate import instantiate, make_node, prepare
 from .json_schema import generate_json_schema
 from .keys import (
     BASE_KEY,
@@ -18,7 +18,6 @@ from .keys import (
 )
 from .load import load_config
 from .schema import check_schema
-from .targets import make_node
 from .validate import validate
 from .walk import walk
 

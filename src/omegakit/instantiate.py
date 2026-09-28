@@ -1,11 +1,12 @@
 import functools
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from typing import Any, cast, get_args, get_origin, overload
 
 from omegaconf import DictConfig, OmegaConf
 
 from .errors import ConfigValidationError, format_path
 from .fields import coerce_fields
+from .imports import import_object
 from .keys import CLASS_KEY, META_KEY, PARTIAL_KEY, REF_KEY
 from .overrides import merge_overrides
 from .schema import (
@@ -15,7 +16,6 @@ from .schema import (
     find_section,
     split_union,
 )
-from .targets import import_object
 from .validate import check_resolved, resolve_config
 
 
@@ -126,6 +126,29 @@ def prepare(
             module of its own, such as a missing dependency.
     """  # noqa: DOC502
     return _instantiate(config, schema, overrides, allowed_modules, partial=True)
+
+
+def make_node(target: Callable[..., Any], /, **kwargs: Any) -> dict[str, Any]:
+    """Create an instantiable config node for a class or function.
+
+    Args:
+        target: The class or function to build. It must be defined at module level.
+        **kwargs: The node's arguments.
+
+    Returns:
+        The node: `kwargs` plus `$class` set to the import path of `target`.
+
+    Raises:
+        ValueError: If `target` is defined inside a function or a class, where it
+            cannot be imported by its path.
+    """
+    qualname = target.__qualname__
+    if "." in qualname:
+        raise ValueError(
+            f"Cannot create a node for `{qualname}`: only objects defined at module "
+            "level can be imported by their path."
+        )
+    return {CLASS_KEY: f"{target.__module__}.{qualname}", **kwargs}
 
 
 def _instantiate(
