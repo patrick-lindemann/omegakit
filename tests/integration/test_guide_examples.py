@@ -60,7 +60,9 @@ def test_guide_yaml_loads_validates_and_builds(path: Path, monkeypatch):
     "script", SCRIPTS, ids=[str(p.parent.relative_to(DOCS)) for p in SCRIPTS]
 )
 def test_guide_script_output_is_on_its_page(script: Path):
-    if _needs_torch(script.read_text()):
+    # The script, and the modules next to it that it imports, such as `models.py`.
+    code = "".join(path.read_text() for path in script.parent.glob("*.py"))
+    if _needs_torch(code):
         pytest.importorskip("torch")
     output = subprocess.run(
         [sys.executable, str(script)],
