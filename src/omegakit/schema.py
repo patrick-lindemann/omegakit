@@ -26,10 +26,7 @@ from omegaconf.errors import OmegaConfBaseException
 from typing_extensions import NoDefault
 
 from .configurable import Configurable
-from .errors import (
-    OmegaKitBaseException,
-    SchemaDefinitionError,
-)
+from .errors import OmegaKitBaseException, SchemaDefinitionError, describe_error
 
 type FieldKind = Literal["data", "object", "any"]
 
@@ -422,6 +419,12 @@ def _type_hints(schema: type) -> dict[str, Any]:
         raise SchemaDefinitionError(
             f"Cannot resolve the annotations of schema `{schema.__qualname__}`: "
             f"{error}."
+        ) from error
+    # Evaluating an annotation runs arbitrary code, which can raise anything.
+    except Exception as error:
+        raise SchemaDefinitionError(
+            f"Cannot resolve the annotations of schema `{schema.__qualname__}`: "
+            f"{describe_error(error)}."
         ) from error
 
 

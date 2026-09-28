@@ -17,6 +17,9 @@ All notable changes to this project are documented here. The format follows
 
 - A list of overrides with an item that is not a string raises `TypeError`, as
   overrides of the wrong type do, instead of OmegaConf's `ValueError`.
+- A schema annotation that fails to evaluate, such as `"int | 1"`, raises
+  `SchemaDefinitionError`, as the Dataclass schemas page says, instead of the
+  `TypeError` or `SyntaxError` from evaluating it.
 - The error for `$base` or `$defaults` references that form a cycle names only the
   nodes on the cycle, not the nodes that wait for it or contain it.
 

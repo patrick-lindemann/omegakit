@@ -1,6 +1,6 @@
 import sys
 import types
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, make_dataclass
 from decimal import Decimal
 from pathlib import Path
 from typing import Any, ClassVar
@@ -319,6 +319,24 @@ def test_schema_forward_reference_that_does_not_resolve_names_its_field():
         SchemaDefinitionError, match=r"field `missing`.*Import the type at module level"
     ):
         validate({}, schema=ForwardReferences)
+
+
+# Built at runtime, because linters reject these annotations.
+INVALID_UNION = make_dataclass("InvalidUnion", [("count", "int | 1")])
+INVALID_SYNTAX = make_dataclass("InvalidSyntax", [("counts", "list[int")])
+
+
+@pytest.mark.parametrize(
+    ("schema", "cause"), [(INVALID_UNION, TypeError), (INVALID_SYNTAX, SyntaxError)]
+)
+def test_schema_annotation_that_fails_to_evaluate_raises_a_definition_error(
+    schema, cause
+):
+    with pytest.raises(
+        SchemaDefinitionError, match="Cannot resolve the annotations"
+    ) as info:
+        check_schema(schema)
+    assert isinstance(info.value.__cause__, cause)
 
 
 def test_schema_annotation_outside_the_fields_that_does_not_resolve_raises():
