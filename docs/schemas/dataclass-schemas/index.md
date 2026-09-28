@@ -67,7 +67,8 @@ through [`Configurable`](../../objects/configurable-classes/index.md).
   union.
 - Tuples come from lists, and `tuple[A, B]` needs exactly two items. `Sequence`
   and `Mapping` give a `list` and a `dict`. A `TypedDict` field is an unchecked
-  `dict`.
+  `dict`. A `list`, `dict`, `Sequence` or `Mapping` without item types holds any
+  plain values.
 - `init=False` fields and `InitVar`s are not configurable: a key for them is
   unknown. An `InitVar` needs a default.
 - Items of an object `list` or `dict` are `$class` or `$ref` nodes, or plain

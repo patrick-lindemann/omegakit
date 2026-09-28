@@ -66,6 +66,13 @@ def test_types_abstract_containers_give_lists_and_dicts():
     assert (fields["sequence"], fields["mapping"]) == ([1], {"a": 2})
 
 
+def test_types_bare_abstract_containers_hold_any_plain_values():
+    config = {"items": [1, "a", [2]], "table": {"x": {"y": 1}}}
+    validate(config, schema=schemas.BareContainers)
+    built = instantiate(config, schema=schemas.BareContainers)
+    assert (built.items, built.table) == ([1, "a", [2]], {"x": {"y": 1}})
+
+
 def test_types_typed_dict_fields_are_unchecked_dicts():
     assert _fields(point={"x": "a", "extra": [1]})["point"] == {"x": "a", "extra": [1]}
 

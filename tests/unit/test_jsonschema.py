@@ -76,6 +76,11 @@ def test_json_schema_tuples_and_abstract_containers():
     assert _errors(schemas.Types, {"sequence": {"a": 1}})
 
 
+def test_json_schema_bare_abstract_containers():
+    assert _errors(schemas.BareContainers, {"items": [1, "a"], "table": {"x": 1}}) == []
+    assert len(_errors(schemas.BareContainers, {"items": 5, "table": [1]})) == 2
+
+
 def test_json_schema_object_lists():
     encoders = [{"$class": "tests.schemas.TypedEncoder", "width": 2}]
     assert _errors(schemas.ObjectContainers, {"encoders": encoders}) == []

@@ -273,6 +273,14 @@ class PointDict(TypedDict):
 
 
 @dataclass
+class BareContainers:
+    """A schema with abstract containers that name no item type."""
+
+    items: Sequence = field(default_factory=list)
+    table: Mapping = field(default_factory=dict)
+
+
+@dataclass
 class TypesConfig:
     """A schema with the annotations beyond plain values and dataclasses."""
 

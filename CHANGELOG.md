@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- A schema field annotated with a bare `Sequence` or `Mapping`, without item types,
+  holds any plain values, as a bare `list` or `dict` does. It raised
+  `SchemaDefinitionError`.
+
 ### Changed
 
 - **Breaking:** Error messages name a node by its dotted path, such as

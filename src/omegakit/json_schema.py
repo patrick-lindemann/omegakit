@@ -89,14 +89,17 @@ def _json_type(annotation: Any, definitions: dict[str, Any]) -> dict[str, Any]:
             "minItems": len(arguments),
             "maxItems": len(arguments),
         }
-    if annotation in (list, tuple) or origin in (
+    if annotation in (list, tuple, collections.abc.Sequence) or origin in (
         list,
         tuple,
         collections.abc.Sequence,
     ):
         items = _json_value(arguments[0], definitions) if arguments else {}
         return {"type": "array", "items": items}
-    if annotation is dict or origin in (dict, collections.abc.Mapping):
+    if annotation in (dict, collections.abc.Mapping) or origin in (
+        dict,
+        collections.abc.Mapping,
+    ):
         values = _json_value(arguments[1], definitions) if arguments else {}
         return {"type": "object", "additionalProperties": values}
     if isinstance(annotation, type) and is_typeddict(annotation):

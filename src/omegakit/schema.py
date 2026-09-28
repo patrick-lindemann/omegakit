@@ -34,14 +34,11 @@ _SCALAR_TYPES = (int, float, bool, str, bytes, Path)
 _UNSUPPORTED_CONTAINERS = (
     set,
     frozenset,
-    tuple,
     collections.abc.Iterable,
     collections.abc.Collection,
-    collections.abc.Sequence,
     collections.abc.MutableSequence,
     collections.abc.Set,
     collections.abc.MutableSet,
-    collections.abc.Mapping,
     collections.abc.MutableMapping,
 )
 
@@ -329,6 +326,10 @@ def derive_structure_type(annotation: Any) -> Any:
     """
     while isinstance(annotation, TypeAliasType):
         annotation = annotation.__value__
+    if annotation is collections.abc.Sequence:
+        return list
+    if annotation is collections.abc.Mapping:
+        return dict
     origin = get_origin(annotation)
     arguments = get_args(annotation)
     if origin is Literal:
@@ -475,7 +476,13 @@ def _field_kind(
                 "mapping type and one list type in a union, or `Any`."
             )
         return kind
-    if annotation in (list, dict, tuple) or origin in (
+    if annotation in (
+        list,
+        dict,
+        tuple,
+        collections.abc.Sequence,
+        collections.abc.Mapping,
+    ) or origin in (
         list,
         dict,
         tuple,
