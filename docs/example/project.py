@@ -10,6 +10,9 @@ from torch.utils.data import DataLoader, Dataset
 
 from omegakit import Configurable
 
+# The config files of the project, for scripts that run from other directories.
+CONFIGS = Path(__file__).parent / "configs"
+
 
 @dataclass
 class SineWave(Dataset):

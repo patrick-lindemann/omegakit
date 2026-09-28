@@ -161,13 +161,19 @@ def test_scenario_forward_base_to_imported_node_then_instantiate(write_yaml):
         instantiate(cfg.shared)
 
 
-EXAMPLE = Path(__file__).parents[2] / "docs" / "example"
+DOCS = Path(__file__).parents[2] / "docs"
 # The config files that name their JSON Schema in their first line.
 EXAMPLE_CONFIGS = sorted(
     path
-    for path in EXAMPLE.glob("**/*.yaml")
-    if path.read_text().startswith("# yaml-language-server:")
+    for path in DOCS.glob("**/*.yaml")
+    if "_build" not in path.parts
+    and path.read_text().startswith("# yaml-language-server:")
 )
+# The committed JSON Schemas, the directory their module is in, and their class.
+JSON_SCHEMAS = [
+    (DOCS / "example", "project"),
+    (DOCS / "schemas" / "editor-support", "schemas"),
+]
 
 
 def _modeline_schema(path: Path) -> dict:
@@ -177,7 +183,7 @@ def _modeline_schema(path: Path) -> dict:
 
 
 @pytest.mark.parametrize(
-    "path", EXAMPLE_CONFIGS, ids=lambda path: str(path.relative_to(EXAMPLE))
+    "path", EXAMPLE_CONFIGS, ids=lambda path: str(path.relative_to(DOCS))
 )
 def test_scenario_example_yaml_matches_its_schema(path: Path):
     """Editor schema + real files: every example YAML validates, a typo does not."""
@@ -187,10 +193,13 @@ def test_scenario_example_yaml_matches_its_schema(path: Path):
     assert list(validator.iter_errors({**config, "misspeled": 1}))
 
 
-def test_scenario_example_schema_is_current(monkeypatch):
-    """Generator + committed file: the example schema matches the generator."""
+@pytest.mark.parametrize(
+    ("directory", "module"), JSON_SCHEMAS, ids=[module for _, module in JSON_SCHEMAS]
+)
+def test_scenario_example_schema_is_current(monkeypatch, directory, module):
+    """Generator + committed file: each docs schema matches the generator."""
     pytest.importorskip("torch")
-    monkeypatch.syspath_prepend(str(EXAMPLE))
-    project = importlib.import_module("project")
-    generated = generate_json_schema(project.Experiment)
-    assert json.loads((EXAMPLE / "experiment.schema.json").read_text()) == generated
+    monkeypatch.syspath_prepend(str(directory))
+    experiment = importlib.import_module(module).Experiment
+    generated = generate_json_schema(experiment)
+    assert json.loads((directory / "experiment.schema.json").read_text()) == generated

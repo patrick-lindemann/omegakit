@@ -13,20 +13,19 @@ experiment in a file that every experiment extends:
 :caption: main.py
 ```
 
-```text
-{'name'}
-Missing mandatory value: name
-set() wide
+```{code-block} text
+:caption: Output
+
+missing keys: {'name'}
+error: Missing mandatory value: name
+missing keys: set()
+config.name: wide
 ```
 
-Reading the value while it is still `???` raises OmegaConf's
-`MissingMandatoryValue`, which names the key. Once it is set, here in code, the
-config is complete. A file that uses this one as its `$base`, or an override, fills
-it the same way.
-
-A `???` that is still open when the config is validated or built raises
-`ConfigValidationError`. `validate(config, allow_missing=True)` accepts it, for a
-file that is incomplete on purpose ([Validation](../../schemas/validation/index.md#files-that-are-incomplete-on-purpose)).
+Once the name is set, here in code, the config is complete. A file that uses this
+one as its `$base`, or an override, fills it the same way. To validate a file that
+is incomplete on purpose, see
+[Validation](../../schemas/validation/index.md#files-that-are-incomplete-on-purpose).
 
 ## Rules
 

@@ -1,12 +1,17 @@
-from project import MLP
+from models import MLP
 
-from omegakit import check_schema, instantiate, make_node
+from omegakit import ConfigValidationError, check_schema, instantiate, make_node
 
-config = {"$class": "project.MLP", "hidden": "64", "activation": "relu"}
-model = instantiate(config)
-print(type(model).__name__, model.net)
+model = instantiate({"$class": "models.MLP", "hidden": "64", "activation": "relu"})
+print("model:", model)
 
-model = instantiate(make_node(MLP, hidden=8, layers=1))
-print(len(model.net))
+try:
+    instantiate({"$class": "models.MLP", "hidden": 64, "activation": "gelu"})
+except ConfigValidationError as error:
+    print("error:", error)
+
+node = make_node(MLP, hidden=8)
+print("node:", node)
+print("instantiate(node):", instantiate(node))
 
 check_schema(MLP)

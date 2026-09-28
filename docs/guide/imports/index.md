@@ -19,24 +19,19 @@ node of it. One file can hold the model sizes that experiments pick from:
 :end-before: import_root
 ```
 
-```text
-{'hidden': 32, 'layers': 2}
+```{code-block} text
+:caption: Output
+
+config.model: {'hidden': 32, 'layers': 2}
 ```
 
 `#small` selects the `small` node of the file, so `model` gets its keys and not a
-`small:` key around them. Without `#`, the whole file is imported. A node path has
-dots between keys and uses numbers for list items, counting from the end when
-negative: `#small.hidden`, `#items.-1`.
-
-The path is relative to the file that holds it, not to the working directory, so
-the config loads from anywhere. Every import is an independent copy, so changing
-one imported node never changes another import of the same file.
+`small:` key around them. Without `#`, the whole file is imported.
 
 ## Keeping imports inside a directory
 
-By default an import may read any file the process can read. `import_root` limits
-imports to one directory. `experiments/large.yaml` imports from its parent
-directory, which is outside `experiments`:
+`import_root` limits imports to one directory. `experiments/large.yaml` imports from
+its parent directory, which is outside `experiments`:
 
 ```{literalinclude} experiments/large.yaml
 :language: yaml
@@ -48,13 +43,15 @@ directory, which is outside `experiments`:
 :start-at: import_root
 ```
 
-```text
-32
-Import `~import ../models.yaml#large` in `.../experiments/large.yaml` reads `.../models.yaml`, which is outside the import root `.../experiments`.
+```{code-block} text
+:caption: Output
+
+config.model.hidden: 32
+error: Import `~import ../models.yaml#large` in `.../experiments/large.yaml` reads `.../models.yaml`, which is outside the import root `.../experiments`.
 ```
 
-`omegakit check` and `omegakit show` take the same limit as `--import-root DIR`. It
-is a limit, not a sandbox; see [Restricting imports](../../security/restricting-imports/index.md#rules).
+[Restricting imports](../../security/restricting-imports/index.md) says what else
+limits a config, and what these limits do not cover.
 
 ## Rules
 

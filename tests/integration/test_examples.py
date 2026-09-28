@@ -89,32 +89,32 @@ def test_example_never_overwrites_a_run(tmp_path):
 
 # Pages whose shell sessions run in a copy of the example project, and pages whose
 # sessions only read files and run in their own directory.
-SESSION_PAGES = [
-    "getting-started",
-    "reproducible-runs",
-    "command-line",
-    "schemas/editor-support",
-    "recipes/checking-experiments-in-ci",
-]
-READ_ONLY_SESSION_PAGES = ["security/secrets"]
+# Pages with shell sessions, and the directory the sessions run in, which the test
+# copies first.
+SESSION_PAGES = {
+    "getting-started": EXAMPLE,
+    "reproducible-runs": EXAMPLE,
+    "command-line": EXAMPLE,
+    "recipes/checking-experiments-in-ci": EXAMPLE,
+    "schemas/editor-support": DOCS / "schemas" / "editor-support",
+    "security/secrets": DOCS / "security" / "secrets",
+}
 PROGRAMS = {"python": [sys.executable], "omegakit": [sys.executable, "-m", "omegakit"]}
 
 
-@pytest.mark.parametrize("page", SESSION_PAGES + READ_ONLY_SESSION_PAGES)
+@pytest.mark.parametrize("page", SESSION_PAGES)
 def test_page_sessions_show_real_output(page, tmp_path, monkeypatch):
     monkeypatch.setenv("TRACKER_TOKEN", "tok-5f3a9c1e7b2d4f60")
-    directory = DOCS / page
-    if page in SESSION_PAGES:
-        pytest.importorskip("torch")
-        shutil.copytree(
-            EXAMPLE,
-            tmp_path,
-            dirs_exist_ok=True,
-            ignore=shutil.ignore_patterns("runs", "__pycache__"),
-        )
-        directory = tmp_path
+    pytest.importorskip("torch")
+    shutil.copytree(
+        SESSION_PAGES[page],
+        tmp_path,
+        dirs_exist_ok=True,
+        ignore=shutil.ignore_patterns("runs", "__pycache__"),
+    )
+    directory = tmp_path
     text = (DOCS / page / "index.md").read_text()
-    sessions = re.findall(r"```text\n(\$ .*?)```", text, re.S)
+    sessions = re.findall(r":caption: Terminal\n\n(\$ .*?)```", text, re.S)
     assert sessions
     for session in sessions:
         for command, output in re.findall(
@@ -137,3 +137,14 @@ def test_page_sessions_show_real_output(page, tmp_path, monkeypatch):
                 text=True,
             )
             assert (command, result.stdout) == (command, output)
+
+
+def test_ci_recipe_test_file_passes():
+    pytest.importorskip("torch")
+    test_file = DOCS / "recipes" / "checking-experiments-in-ci" / "test_experiments.py"
+    subprocess.run(
+        [sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", test_file],
+        env={**os.environ, "PYTHONPATH": str(EXAMPLE)},
+        check=True,
+        capture_output=True,
+    )

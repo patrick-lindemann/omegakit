@@ -1,27 +1,35 @@
-from pathlib import Path
+from dataclasses import dataclass
+from typing import Literal
 
-from project import Experiment
+from torch import nn
 
 from omegakit import ConfigValidationError, load_config, validate
 
-configs = Path(__file__).parents[2] / "example" / "configs"
-experiment = configs / "experiments" / "mlp.yaml"
 
-validate(load_config(experiment), schema=Experiment)
+@dataclass
+class Training:
+    epochs: int
+    schedule: Literal["constant", "cosine"] = "constant"
 
-for override in ["model.hidden=wide", "model.activation=gelu"]:
-    config = load_config(experiment, overrides=[override])
+
+@dataclass
+class Experiment:
+    training: Training
+    model: nn.Module
+
+
+validate(load_config("experiment.yaml"), schema=Experiment)
+
+for override in [
+    "training.epochs=many",
+    "training.schedule=linear",
+    "model.$class=torch.optim.SGD",
+]:
     try:
-        validate(config, schema=Experiment)
+        validate(
+            load_config("experiment.yaml", overrides=[override]), schema=Experiment
+        )
     except ConfigValidationError as error:
-        print(error)
+        print("error:", error)
 
-config = load_config(experiment)
-config.model = config.data.train
-try:
-    validate(config, schema=Experiment)
-except ConfigValidationError as error:
-    print(error)
-
-base = load_config(configs / "base.yaml")
-validate(base, schema=Experiment, allow_missing=True)
+validate(load_config("incomplete.yaml"), schema=Experiment, allow_missing=True)

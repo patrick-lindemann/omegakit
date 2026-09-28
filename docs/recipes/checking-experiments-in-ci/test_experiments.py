@@ -1,11 +1,8 @@
-from pathlib import Path
-
 import pytest
-from project import Experiment
+from project import CONFIGS, Experiment
 
 from omegakit import instantiate, load_config
 
-CONFIGS = Path(__file__).parents[2] / "example" / "configs"
 EXPERIMENTS = sorted((CONFIGS / "experiments").glob("*.yaml"))
 ALLOWED = ["project", "torch.nn", "torch.optim"]
 

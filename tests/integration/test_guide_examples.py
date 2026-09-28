@@ -1,4 +1,5 @@
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -47,6 +48,8 @@ def test_guide_yaml_loads_validates_and_builds(path: Path, monkeypatch):
     if _needs_torch(path.read_text()):
         pytest.importorskip("torch")
         register_torch_resolvers()
+    # A page's classes live next to its files, such as `models.py`.
+    monkeypatch.syspath_prepend(str(path.parent))
     config = load_config(path)
     validate(config, allow_missing=True)
     if "$class" in config and not OmegaConf.missing_keys(config):
@@ -56,15 +59,18 @@ def test_guide_yaml_loads_validates_and_builds(path: Path, monkeypatch):
 @pytest.mark.parametrize(
     "script", SCRIPTS, ids=[str(p.parent.relative_to(DOCS)) for p in SCRIPTS]
 )
-def test_guide_script_runs(script: Path):
+def test_guide_script_output_is_on_its_page(script: Path):
     if _needs_torch(script.read_text()):
         pytest.importorskip("torch")
-    subprocess.run(
+    output = subprocess.run(
         [sys.executable, str(script)],
         cwd=script.parent,
-        env={
-            **os.environ,
-            "PYTHONPATH": str(EXAMPLE),
-        },
+        env={**os.environ, "PYTHONPATH": str(EXAMPLE)},
         check=True,
-    )
+        capture_output=True,
+        text=True,
+    ).stdout
+    page = (script.parent / "index.md").read_text()
+    shown = re.findall(r":caption: Output\n\n(.*?)```", page, re.S)
+    if shown or output:
+        assert "".join(shown) == output

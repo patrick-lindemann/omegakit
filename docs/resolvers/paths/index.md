@@ -14,9 +14,13 @@ in different places. `register_paths_resolver` registers `${paths:<key>}`:
 :caption: main.py
 ```
 
-```text
-runs/mlp/seed0 data/sine
-/scratch/runs/mlp/seed0 /datasets/sine
+```{code-block} text
+:caption: Output
+
+config.run_dir: runs/mlp/seed0
+config.data_dir: data/sine
+config.run_dir: /scratch/runs/mlp/seed0
+config.data_dir: /datasets/sine
 ```
 
 `${paths:runs}` and `${paths:data}` work inside longer strings, like any

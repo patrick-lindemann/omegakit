@@ -1,46 +1,47 @@
 # Validation
 
 `validate` checks a loaded config against its schemas, and raises
-`ConfigValidationError` at the first problem, naming the key. `instantiate` and
-`prepare` run the same check before they build anything.
+`ConfigValidationError` at the first problem, naming the key:
+
+```{literalinclude} experiment.yaml
+:language: yaml
+:caption: experiment.yaml
+```
 
 ```{literalinclude} main.py
 :language: python
 :caption: main.py
+:end-before: incomplete.yaml
 ```
 
-```text
-Invalid config in `model.hidden` (MLPConfig): Value 'wide' of type 'str' could not be converted to Integer
-`model.activation` must be one of 'relu', 'tanh', but the config gives `'gelu'`.
-`model` expects Module, but the config gives `$class: project.SineWave`.
+```{code-block} text
+:caption: Output
+
+error: Invalid config in `training.epochs` (Experiment): Value 'many' of type 'str' could not be converted to Integer
+error: `training.schedule` must be one of 'constant', 'cosine', but the config gives `'linear'`.
+error: `model` expects Module, but the config gives `$class: torch.optim.SGD`.
 ```
 
-`schema=Experiment` says what the root must match. The root has no `$class`, so it
-is checked against the plain dataclass `Experiment`, and every node with `$class`
-against its own class's schema, children first. The model's `hidden` and
-`activation` are checked against `MLPConfig`, the schema of `project.MLP`
-([Configurable classes](../../objects/configurable-classes/index.md)). Each object
-field is also checked against the class it expects, so a dataset where the model
-should be is caught before anything is built. The error is a `ValueError` too.
-
-A class without a schema, such as `torch.optim.Adam` or `torch.nn.Linear`, has
-only its `$class` nodes checked. PyTorch checks its arguments when it is called.
+The file itself is valid. Each override broke one check: a value that does not
+convert, a value outside its `Literal`, and a `$class` of the wrong class for the
+`model: nn.Module` field, caught before anything was built. How fields are checked
+is on [Dataclass schemas](../dataclass-schemas/index.md).
 
 ## Files that are incomplete on purpose
 
-The example project's `base.yaml` leaves the name open and names no model or
-optimizer.
-`validate(base, schema=Experiment, allow_missing=True)` accepts what is missing and
-still checks every value the file gives ([Missing values](../../guide/missing-values/index.md)):
+A file that others complete, such as a base, can leave values open with `???`
+([Missing values](../../guide/missing-values/index.md)). `allow_missing=True`
+accepts what is missing and still checks every value the file gives:
+
+```{literalinclude} incomplete.yaml
+:language: yaml
+:caption: incomplete.yaml
+```
 
 ```{literalinclude} main.py
 :language: python
-:start-at: base = load_config
+:start-at: incomplete.yaml
 ```
-
-Validation calls no configured class, but it imports the modules that `$class` and
-`$ref` name and runs every resolver. Validate only configs you trust, and limit the
-modules a config can name with `allowed_modules` ([Trust model](../../security/trust-model/index.md)).
 
 To check files from a terminal, a pre-commit hook or CI, use
 [`omegakit check`](../../command-line/index.md).
@@ -73,8 +74,8 @@ run this check, with their own `schema`, before building.
   or unions of them, such as `Callable` and `Protocol`. Reserved keys and nested
   nodes are still checked. Any other value raises `ConfigValidationError` naming
   the field, the expected class and what the config gives.
-- Reserved keys are checked, and `$meta` is ignored. What `from_config` returns is
-  not checked.
+- Reserved keys are checked ([Instantiation](../../objects/instantiation/index.md#rules)).
+  What `from_config` returns is not checked.
 - `$class` or `$ref` raises `ConfigValidationError`, naming the node, when it is
   not a string or not a dotted path, or names a missing module (or parent package)
   or attribute. The `ImportError` is its `__cause__`. So does

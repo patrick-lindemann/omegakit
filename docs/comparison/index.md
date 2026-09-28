@@ -11,9 +11,7 @@ Checked on 2026-09-27 against [Hydra](https://pypi.org/project/hydra-core/) 1.3.
 [OmegaConf](https://pypi.org/project/omegaconf/) 2.3.1, the latest releases on
 PyPI that day.
 
-omegakit keeps every experiment in a YAML file that names its base and its imports
-by explicit paths, checks it against dataclasses, and builds your objects from it.
-You call it from your own `main()`. What it leaves to you is listed on
+What omegakit leaves to you is listed on
 [Reproducible runs](../reproducible-runs/index.md#what-omegakit-does-not-do). It
 also parses no command line: your entrypoint passes the arguments to `load_config`
 as overrides, which change values but cannot add a file.

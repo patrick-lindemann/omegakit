@@ -2,9 +2,13 @@
 
 Installing omegakit adds the `omegakit` command, also available as
 `python -m omegakit`. Run it from the directory that your `$class` paths import
-from, here the example project's:
+from. Here that is the example project's: its experiment files are in
+`configs/experiments`, they extend `configs/base.yaml`, and the dataclass
+`project.Experiment` describes an experiment, with `epochs: int`:
 
-```text
+```{code-block} text
+:caption: Terminal
+
 $ omegakit check configs/experiments/*.yaml --schema project.Experiment --allow-module project --allow-module torch.nn --allow-module torch.optim
 $ omegakit check configs/experiments/mlp.yaml epochs=many --schema project.Experiment
 configs/experiments/mlp.yaml: ConfigValidationError: Invalid config in `epochs` (Experiment): Value 'many' of type 'str' could not be converted to Integer
@@ -20,14 +24,9 @@ runs/mlp/seed3
 ## `check`
 
 `check` loads each file with the overrides and runs
-[`validate`](../schemas/validation/index.md). It prints one line per invalid file
-and nothing for valid ones, and exits with 1 if any file is invalid. `--schema`
-names the class every root must match, `--allow-missing` accepts `???` in files
-such as `base.yaml` that others complete, `--allow-module` limits where `$class`
-and `$ref` may point, and `--import-root` limits where `~import` may read.
-
-To check every experiment file before a commit, run it as a
-[pre-commit](https://pre-commit.com) hook, and in CI
+[`validate`](../schemas/validation/index.md). Above, the first command found no
+problem and printed nothing. To check every experiment file before a commit, run it
+as a [pre-commit](https://pre-commit.com) hook, and in CI
 ([Checking experiments in CI](../recipes/checking-experiments-in-ci/index.md)):
 
 ```yaml
@@ -41,19 +40,13 @@ repos:
         files: ^configs/experiments/.*\.yaml$
 ```
 
-`check` runs code from the files it checks, so run it on trusted content only.
-[Trust model](../security/trust-model/index.md) says what runs and how to set up CI.
-
 ## `show`
 
 `show` prints the assembled config: what imports, `$base`, `$defaults` and
 overrides produced. The test split above is not in `mlp.yaml`; it came from
-`base.yaml` through the experiment's `$base`. Values stay as written unless you pass
-`--resolve`, so an `${oc.env:...}` shows the variable's name, not its value.
-`--resolve` shows the values a run will get; look at a run with it before you
-launch it. `--node` prints one node, by the same dotted path as
-`~import file#node`. With `--resolve`, the values of `${secret:...}` print as `***`
-([Secrets](../security/secrets/index.md)).
+`base.yaml` through the experiment's `$base`. With `--resolve` it prints the values
+a run will get, such as the run directory for `seed=3`; look at a run with it
+before you launch it.
 
 ## `json-schema`
 

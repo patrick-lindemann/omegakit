@@ -23,16 +23,20 @@ usually named:
 :end-before: sweep.yaml
 ```
 
-```text
-256 2 0.01 200
+```{code-block} text
+:caption: Output
+
+config.model.hidden: 256
+config.model.layers: 2
+config.optimizer.lr: 0.01
+config.epochs: 200
 ```
 
 The merge is deep: `wide.yaml` changed the model's `hidden` and kept its `layers`.
 Its own keys win over the base, and everything it does not mention comes from the
 base.
 
-The base can also be a node of the same file, named by a reference. Lists are
-replaced, not joined:
+The base can also be a node of the same file, named by a reference:
 
 ```{literalinclude} sweep.yaml
 :language: yaml
@@ -44,14 +48,16 @@ replaced, not joined:
 :start-at: sweep.yaml
 ```
 
-```text
-[0] [32, 256]
+```{code-block} text
+:caption: Output
+
+config.quick.seeds: [0]
+config.quick.hidden: [32, 256]
 ```
 
-The reference is relative (`..` is the parent of `quick`), so it finds `full`
-wherever the file ends up, even as the base of another file. A `$base` may also be a
-list of mappings. Later entries win over earlier ones, and the node's own keys win
-over all of them.
+`quick` took `hidden` from `full` and replaced its `seeds`: lists are replaced, not
+joined. `..` is the parent of `quick`, so the reference finds `full` wherever the
+file ends up. A `$base` may also be a list of mappings (see Rules).
 
 ## Rules
 

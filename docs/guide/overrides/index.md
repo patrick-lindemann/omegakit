@@ -13,23 +13,19 @@ files:
 :caption: main.py
 ```
 
-```text
-64 50
-0.001 0.9
+```{code-block} text
+:caption: Output
+
+config.model.hidden: 64
+config.epochs: 50
+config.optimizer.lr: 0.001
+config.optimizer.momentum: 0.9
 ```
 
 A list of `key=value` strings is what a command line gives you, so a script can pass
-its arguments straight to `load_config`. Values are read as YAML: `model.hidden=64`
-is an integer. A nested `dict` does the same from code. It merges into the node it
-names, so the optimizer kept its `momentum` and changed only its learning rate.
-
-`instantiate` and `prepare` take `overrides=` too. They merge them into a copy of the
-node they build and leave the config you passed unchanged.
-
-Overrides arrive after the files are assembled, so an `~import`, `$base` or
-`$defaults` inside an override stays literal. They carry the same trust as the
-files, so never build them from untrusted input
-([Trust model](../../security/trust-model/index.md)).
+its arguments straight to `load_config`. `model.hidden=64` became the integer 64. A
+nested `dict` does the same from code: the optimizer kept its `momentum` and changed
+only its learning rate. `instantiate` and `prepare` take `overrides=` too.
 
 ## Rules
 

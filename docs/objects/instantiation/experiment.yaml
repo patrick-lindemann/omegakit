@@ -1,0 +1,10 @@
+model:
+  $class: torch.nn.Linear
+  in_features: 16
+  out_features: 1
+optimizer:
+  $class: torch.optim.SGD
+  $partial: true
+  lr: 0.1
+loss:
+  $ref: torch.nn.functional.mse_loss

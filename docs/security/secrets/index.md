@@ -14,29 +14,32 @@ and save and log configs unresolved:
 :caption: main.py
 ```
 
-```text
+```{code-block} text
+:caption: Output
+
+OmegaConf.to_yaml(config):
 tracking:
   project: sine
   url: https://tracker.example.com/api/runs?token=${secret:TRACKER_TOKEN}
-True
+config.tracking.url: https://tracker.example.com/api/runs?token=tok-5f3a9c1e7b2d4f60
 ```
 
 The config from `load_config` is not resolved, so it shows where the token comes
 from, not the token. Save and log that config, as
 [Reproducible runs](../../reproducible-runs/index.md) does. Your code still reads
 the real URL, for example to pass it to a tracking client. `omegakit show
---resolve` prints each value that `${secret:...}` gave as `***`, also inside a
-longer string:
+--resolve` masks the token:
 
-```text
+```{code-block} text
+:caption: Terminal
+
 $ omegakit show tracked.yaml --node tracking --resolve
 project: sine
 url: https://tracker.example.com/api/runs?token=***
 ```
 
-omegakit does not guess which other values are secret. A secret written into a
-file, read with `oc.env`, or held by a built object prints as it is. To catch a
-secret committed by mistake, run a scanner such as
+Only values from `${secret:...}` are masked (see Rules). To catch a secret committed
+by mistake, run a scanner such as
 [detect-secrets](https://github.com/Yelp/detect-secrets) or
 [gitleaks](https://github.com/gitleaks/gitleaks) as a pre-commit hook. Keep secrets
 out of arguments that your code saves, such as hyperparameters in checkpoints.

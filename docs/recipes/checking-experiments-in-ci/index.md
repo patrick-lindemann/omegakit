@@ -5,11 +5,13 @@ and not an hour into a run. Two steps cover it. `omegakit check` validates each
 file and builds nothing, and a test builds each experiment. From the example
 project's directory:
 
-```text
+```{code-block} text
+:caption: Terminal
+
 $ omegakit check configs/experiments/*.yaml --schema project.Experiment --allow-module project --allow-module torch.nn --allow-module torch.optim --import-root configs
 ```
 
-`check` prints nothing and exits with 0 when every file is valid
+`check` printed nothing, so every file is valid
 ([Command line](../../command-line/index.md)). The test builds each experiment with
 the same limits, which also runs the constructors and every `from_config`:
 
@@ -25,6 +27,5 @@ In a GitHub Actions workflow, run both after installing your project:
 - run: pytest
 ```
 
-Both run code from the configs they check. Run them on your own branches, not on
-pull requests from forks with your secrets
-([Trust model](../../security/trust-model/index.md#checking-configs-in-ci)).
+Both run code from the configs they check, so set up the workflow as
+[Trust model](../../security/trust-model/index.md#checking-configs-in-ci) describes.

@@ -5,10 +5,9 @@ call, reads environment variables and imports other files. Treat a config file l
 a Python file: load it only from sources you trust.
 
 In research, configs travel with results: a checkpoint downloaded with its config, a
-colleague's run directory, the config published with a paper. Loading one of them
-runs its resolvers, validating it imports the modules it names, and building it
-calls them. Read such a config before you load it, and validate it with
-`allowed_modules` and `import_root` before you build it
+colleague's run directory, the config published with a paper. The Rules below list
+what loading, validating and building such a config runs. Read it before you load
+it, and validate it with `allowed_modules` and `import_root` before you build it
 ([Restricting imports](../restricting-imports/index.md)).
 
 ## Checking configs in CI

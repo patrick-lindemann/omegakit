@@ -2,19 +2,31 @@ from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 
-from project import Experiment
+from torch import nn
 
 from omegakit import instantiate, load_config
 
-experiments = Path(__file__).parents[2] / "example" / "configs" / "experiments"
 
-config = load_config(experiments / "mlp.yaml")
-experiment = instantiate(config, schema=Experiment)
-print(type(experiment.data).__name__, type(experiment.data.test).__name__)
-print(type(experiment.model).__name__, experiment.run_dir.parts)
+@dataclass
+class Data:
+    n: int
+    noise: float = 0.1
 
-data = instantiate({"$class": "project.SineWave", "n": "64", "noise": 0.1, "seed": 0})
-print(len(data))
+
+@dataclass
+class Experiment:
+    seed: int
+    run_dir: Path
+    data: Data
+    model: nn.Module
+    epochs: int = 100
+
+
+experiment = instantiate(load_config("experiment.yaml"), schema=Experiment)
+print("experiment.run_dir:", repr(experiment.run_dir))
+print("experiment.data:", experiment.data)
+print("experiment.model:", experiment.model)
+print("experiment.epochs:", experiment.epochs)
 
 
 class Loss(Enum):
@@ -28,4 +40,4 @@ class Evaluation:
 
 
 for value in ["MAE", "mean absolute error"]:
-    print(instantiate({"loss": value}, schema=Evaluation).loss)
+    print(f"loss {value!r}:", instantiate({"loss": value}, schema=Evaluation).loss)

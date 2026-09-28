@@ -1,9 +1,8 @@
 # Overview
 
 A resolver is a function inside an interpolation, such as `${oc.env:TRACKER_TOKEN}`.
-OmegaConf's own resolvers, such as `oc.env`, are always available;
-[Environment variables](../../guide/environment-variables/index.md) shows `oc.env`
-in use.
+[Environment variables](../../guide/environment-variables/index.md) shows OmegaConf's
+`oc.env` in use.
 
 omegakit adds optional resolvers. Each module under `omegakit.resolvers` holds the
 resolvers for one purpose, and has a page in this section, except
@@ -19,9 +18,8 @@ register_paths_resolver({"runs": "/scratch/runs"})
 ## Resolvers for other libraries
 
 Some resolvers need a library that omegakit does not depend on, such as
-[Torch](../torch/index.md). Such a library is required only when you register its
-resolvers, not when you install omegakit. Install it yourself, in the version and
-build your platform needs.
+[Torch](../torch/index.md). Install it yourself, in the version and build your
+platform needs.
 
 ## Rules
 

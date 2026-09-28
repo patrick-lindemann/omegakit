@@ -1,9 +1,10 @@
 # Getting started
 
 This page trains a small PyTorch model from a config in five steps. It fits a
-multilayer perceptron to noisy samples of a sine wave. The model, the dataset and
-the experiment come from `project.py`, the example project of these pages, and have
-nothing omegakit-specific in them.
+multilayer perceptron to noisy samples of a sine wave. The classes come from
+`project.py`, the example project of these pages: `project.MLP` is a PyTorch module
+with `layers` hidden layers of `hidden` units, and `project.SineWave` a PyTorch
+`Dataset` of `n` noisy samples of `sin(x)`.
 
 ```sh
 pip install omegakit
@@ -22,41 +23,56 @@ are the arguments:
 ```{literalinclude} main.py
 :language: python
 :caption: main.py
-:start-at: config = load_config("experiment.yaml")
-:end-at: print(type(model)
+:end-at: print("model:"
 ```
 
-```text
-MLP 1153
+```{code-block} text
+:caption: Output
+
+model: MLP(
+  (net): Sequential(
+    (0): Linear(in_features=1, out_features=32, bias=True)
+    (1): Tanh()
+    (2): Linear(in_features=32, out_features=32, bias=True)
+    (3): Tanh()
+    (4): Linear(in_features=32, out_features=1, bias=True)
+  )
+)
 ```
 
-`load_config` returns an OmegaConf `DictConfig`, so everything OmegaConf offers
-works on it. `instantiate` imports `project.MLP` and calls it with `hidden=32`. Any
-class works the same, such as `torch.nn.Linear`.
+`instantiate` imports `project.MLP` and calls it with `hidden=32`. Any class works
+the same, such as `torch.nn.Linear`.
 
 ## 2. Train the model
 
-The dataset is built the same way. The optimizer needs the model's parameters,
-which exist only once the model is built, so `$partial: true` builds a
-`functools.partial` of `torch.optim.Adam`, which the code calls with them:
+The dataset is built the same way. `$partial: true` builds the optimizer as a
+`functools.partial`, which the code calls with the model's parameters
+([Instantiation](../objects/instantiation/index.md)):
 
 ```{literalinclude} main.py
 :language: python
 :start-at: torch.manual_seed(0)
-:end-at: print(f"loss
+:end-at: print("loss:"
 ```
 
-```text
-loss 0.012
+```{code-block} text
+:caption: Output
+
+loss: 0.012
 ```
 
-The model draws random initial weights, so the script seeds PyTorch before building
-it. The training loop is plain PyTorch.
+The training loop is plain PyTorch.
 
 ## 3. Share a base
 
-Experiments share most of their settings. The example project keeps them in
-`configs/base.yaml`: the seed, the data splits, the loss and the number of epochs.
+Experiments share most of their settings. The example project keeps them in a base
+file:
+
+```{literalinclude} ../example/configs/base.yaml
+:language: yaml
+:caption: configs/base.yaml
+```
+
 Each experiment file names that base and adds what differs:
 
 ```{literalinclude} ../example/configs/experiments/mlp.yaml
@@ -65,8 +81,10 @@ Each experiment file names that base and adds what differs:
 ```
 
 `~import` reads another file, and `$base` merges it underneath the node, so the
-experiment's own keys win. [Imports](../guide/imports/index.md) and
-[Inheritance](../guide/inheritance/index.md) explain both.
+experiment's own keys win ([Imports](../guide/imports/index.md),
+[Inheritance](../guide/inheritance/index.md)). `name: ???` is a value each
+experiment must set ([Missing values](../guide/missing-values/index.md)), and
+`${seed}` refers to another value ([Interpolation](../guide/interpolation/index.md)).
 
 ## 4. Add a schema
 
@@ -81,38 +99,33 @@ A plain dataclass describes the whole experiment:
 ```
 
 `instantiate(config, schema=Experiment)` checks the config against it, then builds
-every object and returns an `Experiment`. In `base.yaml`, `loss` is
-`$ref: torch.nn.functional.mse_loss`, which passes the function itself without
-calling it:
+every object and returns an `Experiment`. Its `loss` is
+`$ref: torch.nn.functional.mse_loss` in `base.yaml`, the function itself. A typo, or
+a value of the wrong type, raises `ConfigValidationError` before any object is
+built:
 
 ```{literalinclude} main.py
 :language: python
-:start-at: config = load_config("configs/experiments/linear.yaml")
+:start-at: config = load_config(CONFIGS
 ```
 
-```text
-linear Linear runs/linear/seed0
-Unknown field(s) 'hiden' in `model` (MLPConfig). Expected one of: hidden, layers, activation.
-```
+```{code-block} text
+:caption: Output
 
-A typo, or a value of the wrong type, raises `ConfigValidationError` before any
-object is built. See [Validation](../schemas/validation/index.md).
+error: Unknown field(s) 'hiden' in `model` (MLPConfig). Expected one of: hidden, layers, activation.
+```
 
 ## 5. Run an experiment
 
-The project's entrypoint does the same for one experiment file, trains the model
-and writes its results to the run directory:
+The project's entrypoint, `main.py`, does the same for one experiment file and the
+overrides it is given, trains the model and saves the run:
 
-```{literalinclude} ../example/main.py
-:language: python
-:caption: main.py
-```
+```{code-block} text
+:caption: Terminal
 
-```text
 $ python main.py configs/experiments/mlp.yaml
 mlp: test loss 0.011
 ```
 
-[Reproducible runs](../reproducible-runs/index.md) explains what it saves and why.
-From here, the Guide covers each feature, starting with
-[Loading](../guide/loading/index.md).
+[Reproducible runs](../reproducible-runs/index.md) walks through it. From here, the
+Guide covers each feature, starting with [Loading](../guide/loading/index.md).

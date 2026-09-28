@@ -7,9 +7,7 @@ does it, and what omegakit leaves to you.
 
 ```{literalinclude} ../example/main.py
 :language: python
-:caption: main.py (excerpt)
-:start-at: experiment_file, *overrides
-:end-at: overrides.txt
+:caption: main.py
 ```
 
 ## Seed before building
@@ -30,19 +28,20 @@ shuffles with PyTorch's generator, so the same seed also gives the same batches.
 :lines: 2-4
 ```
 
-Interpolations resolve after the overrides are merged, so `seed=3` gives
-`runs/mlp/seed3`, and each run of a [sweep](../recipes/parameter-sweeps/index.md)
-gets its own directory. `run_dir.mkdir(parents=True)` fails when the directory
+An override of `seed=3` gives `runs/mlp/seed3`
+([Interpolation](../guide/interpolation/index.md)), so each run of a
+[sweep](../recipes/parameter-sweeps/index.md) gets its own directory. `run_dir.mkdir(parents=True)` fails when the directory
 exists, so a run never overwrites another.
 
 ## Save the config and the overrides
 
-`main.py` saves the config it built from, and the overrides it was given. The
-saved config is assembled: the imports, bases and defaults are merged in, and the
-overrides are applied. It is not resolved: `${seed}` stays as written, and so does
-every other interpolation. Load it again to repeat the run:
+`main.py` saves the config it built from, and the overrides it was given. The saved
+config holds everything the files and overrides gave, with `${seed}` still as
+written (see Rules). Load it again to repeat the run:
 
-```text
+```{code-block} text
+:caption: Terminal
+
 $ python main.py configs/experiments/mlp.yaml model.hidden=64
 mlp: test loss 0.012
 $ python main.py runs/mlp/seed0/config.yaml run_dir=runs/repeat
@@ -51,14 +50,6 @@ mlp: test loss 0.012
 
 The saved config names its own run directory, so the repeat passes a new one. The
 two runs also save the same weights to `model.pt`.
-
-A secret read with `${secret:NAME}` stays in the saved file as written, so the run
-directory holds no token ([Secrets](../security/secrets/index.md)).
-
-## Check before running
-
-Check every experiment file in CI, and look at a run before you launch it, with
-[`omegakit check` and `omegakit show --resolve`](../command-line/index.md).
 
 ## Name runs by their config
 
@@ -70,13 +61,14 @@ code:
 :caption: main.py
 ```
 
-```text
-62234fd68935
+```{code-block} text
+:caption: Output
+
+run name: 62234fd68935
 ```
 
 ## What omegakit does not do
 
-- It creates no directories and writes no files. `main.py` does.
 - It adds no timestamps. Add one to the run directory with your own resolver if you
   need it.
 - It does not record the git commit or the package versions. Save them next to the
@@ -89,7 +81,7 @@ code:
 
 - `load_config`, `validate`, `instantiate` and `prepare` write no files, create no
   directories and seed no random generator. Building calls your classes, which
-  may.
+  may. Your entrypoint does all three, as `main.py` does.
 - Assembly is deterministic: the same files, overrides, environment variables and
   resolvers give the same config.
 - `OmegaConf.save` of a config from `load_config` writes it assembled and

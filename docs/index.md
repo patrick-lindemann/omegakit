@@ -4,37 +4,19 @@ omegakit is a small library on top of [OmegaConf](https://omegaconf.readthedocs.
 for experiment configs. Every experiment is a YAML file in git that names its base
 and its imports by path. You load it from your own `main()`, check it against a
 dataclass, and build your objects from it. The same file and seed give the same run.
-It was developed for machine learning, but nothing in it is specific to that.
-
-```sh
-pip install omegakit
-```
-
-The examples in these pages train a small PyTorch model. One experiment file names
-its base, the model and the optimizer:
-
-```{literalinclude} example/configs/experiments/mlp.yaml
-:language: yaml
-:caption: configs/experiments/mlp.yaml
-```
-
-```python
-from omegakit import instantiate, load_config
-from project import Experiment
-
-config = load_config("configs/experiments/mlp.yaml")
-experiment = instantiate(config, schema=Experiment)
-```
+It was developed for machine learning, but nothing in it is specific to that. The
+examples in these pages train a small PyTorch model.
 
 ## Where to go
 
-- **New to omegakit:** [Getting started](getting-started/index.md),
-  [Reproducible runs](reproducible-runs/index.md), and how omegakit
-  [compares with Hydra and other libraries](comparison/index.md).
+- **New to omegakit:** [Getting started](getting-started/index.md) installs it and
+  trains a model from a config. [Reproducible runs](reproducible-runs/index.md)
+  saves and repeats runs, and [Comparison](comparison/index.md) sets omegakit
+  against Hydra and other libraries.
 - **Looking up a feature:** one page per feature, in the order you meet them.
   The [Guide](guide/loading/index.md) covers how files are loaded and combined,
-  [Schemas](schemas/dataclass-schemas/index.md) how a config is checked, and
-  [Building objects](objects/instantiation/index.md) how objects are built from it.
+  [Building objects](objects/instantiation/index.md) how objects are built from
+  them, and [Schemas](schemas/dataclass-schemas/index.md) how a config is checked.
 - **A complete pattern:** the recipes, such as
   [Parameter sweeps](recipes/parameter-sweeps/index.md) or
   [Swapping implementations](recipes/swapping-implementations/index.md).
@@ -63,11 +45,20 @@ comparison/index
 guide/loading/index
 guide/imports/index
 guide/inheritance/index
-guide/shared-defaults/index
+guide/defaults/index
 guide/overrides/index
 guide/interpolation/index
 guide/environment-variables/index
 guide/missing-values/index
+guide/metadata/index
+```
+
+```{toctree}
+:caption: Building objects
+:hidden:
+
+objects/instantiation/index
+objects/configurable-classes/index
 ```
 
 ```{toctree}
@@ -77,14 +68,6 @@ guide/missing-values/index
 schemas/dataclass-schemas/index
 schemas/validation/index
 schemas/editor-support/index
-```
-
-```{toctree}
-:caption: Building objects
-:hidden:
-
-objects/instantiation/index
-objects/configurable-classes/index
 ```
 
 ```{toctree}

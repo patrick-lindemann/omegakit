@@ -1,15 +1,13 @@
-from pathlib import Path
+import os
 
 from omegakit import ConfigLoadError, load_config
 
-here = Path(__file__).parent
+config = load_config("experiment.yaml")
+print("config.model:", config.model)
 
-config = load_config(here / "experiment.yaml")
-print(config.model)
-
-config = load_config(here / "experiment.yaml", import_root=here)
-print(config.model.hidden)
+config = load_config("experiment.yaml", import_root=".")
+print("config.model.hidden:", config.model.hidden)
 try:
-    load_config(here / "experiments" / "large.yaml", import_root=here / "experiments")
+    load_config("experiments/large.yaml", import_root="experiments")
 except ConfigLoadError as error:
-    print(str(error).replace(str(here), "..."))
+    print("error:", str(error).replace(os.getcwd(), "..."))

@@ -2,51 +2,46 @@
 
 The dataclasses that validate a config can also describe it to your YAML editor, as
 a JSON Schema: the editor then completes keys and marks mistakes while you type.
-From the example project's directory:
+The schema of an experiment is a dataclass in `schemas.py`:
 
-```text
-$ omegakit json-schema project.Experiment -o experiment.schema.json
+```{literalinclude} schemas.py
+:language: python
+:caption: schemas.py
 ```
 
-The first line of each experiment file names the schema, which is how the YAML
-extension for VS Code by Red Hat, and other editors that use yaml-language-server,
-find it:
+`omegakit json-schema` writes its JSON Schema, run from the directory that
+`schemas.py` is in:
 
-```{literalinclude} ../../example/configs/experiments/mlp.yaml
+```{code-block} text
+:caption: Terminal
+
+$ omegakit json-schema schemas.Experiment -o experiment.schema.json
+```
+
+The first line of the config file names the schema, which is how the YAML extension
+for VS Code by Red Hat, and other editors that use yaml-language-server, find it:
+
+```{literalinclude} experiment.yaml
 :language: yaml
-:caption: configs/experiments/mlp.yaml
-:lines: 1-3
+:caption: experiment.yaml
 ```
 
-The import path must be importable from the current directory, as for `$class`.
 `generate_json_schema(Experiment)` returns the same schema as a dictionary. For a
-file that holds a single node, such as one model, generate the schema of that
-node's class instead, such as `project.MLP`.
+file that holds a single node, generate the schema of that node's class instead.
 
-Run the same command with `--check` in CI. It writes nothing, and exits with 1 when
-the committed file no longer matches the classes:
+Run the same command with `--check` in CI, to fail when the committed file no
+longer matches the classes:
 
-```text
-$ omegakit json-schema project.Experiment -o experiment.schema.json --check
+```{code-block} text
+:caption: Terminal
+
+$ omegakit json-schema schemas.Experiment -o experiment.schema.json --check
 ```
-
-## What the editor checks
-
-Misspelled keys and values of the wrong type are errors at the root, in sections
-such as `data`, and inside a node whose `$class` names exactly the class the field
-expects, when that class has a schema. The editor knows nothing about subclasses,
-so under `model: nn.Module` a `$class: project.MLP` node is accepted as any mapping;
-`validate` still checks it.
-
-What the schema cannot know is allowed everywhere: interpolations, `???`, `~import`
-and keys that start with `$`. Nothing is required, because a value may still come
-from a `$base`, `$defaults`, an import or an override; `validate` reports what is
-missing. Enums accept their member names and values, and `Literal` fields their
-values.
 
 In VS Code with the Red Hat YAML extension, errors appear for wrong types and
 misspelled keys, completion offers the root's keys, `Literal` values and the fields
-of a `$class` node, and hover shows a field's type.
+of a `$class` node, and hover shows a field's type. What the schema checks is listed
+under Rules; `validate` checks the rest.
 
 ## Rules
 

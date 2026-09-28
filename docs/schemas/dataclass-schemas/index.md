@@ -2,15 +2,11 @@
 
 A plain dataclass describes a config: which keys it has, and what each one holds.
 omegakit checks a config against it before anything is built, and builds a typed
-result from it. The example project describes a whole experiment with two
-dataclasses:
+result from it:
 
-```{literalinclude} ../../example/project.py
-:language: python
-:caption: project.py (excerpt)
-:start-at: "class Splits:"
-:end-at: "batch_size: int = 32"
-:prepend: "@dataclass"
+```{literalinclude} experiment.yaml
+:language: yaml
+:caption: experiment.yaml
 ```
 
 ```{literalinclude} main.py
@@ -19,34 +15,20 @@ dataclasses:
 :end-before: class Loss
 ```
 
-```text
-Splits SineWave
-MLP ('runs', 'mlp', 'seed0')
-64
+```{code-block} text
+:caption: Output
+
+experiment.run_dir: PosixPath('runs/linear')
+experiment.data: Data(n=256, noise=0.1)
+experiment.model: Linear(in_features=1, out_features=1, bias=True)
+experiment.epochs: 100
 ```
 
-The root of the experiment file has no `$class`, so `schema=Experiment` says what it
-is. A dataclass named by `$class` is its own schema too: `SineWave` is a plain
-dataclass, so `n: "64"` became the integer 64.
-
-## Field kinds
-
-`Experiment` shows the kinds of field:
-
-- **Values:** `name: str`, `seed: int`, `run_dir: Path`, `epochs: int` and
-  `batch_size: int`. The config holds plain values, which are converted and checked,
-  so `run_dir` is a `Path`.
-- **Sections:** `data: Splits`. A field annotated with a dataclass holds a plain
-  mapping, checked against that dataclass and built into it.
-- **Objects:** `model: nn.Module`, the optimizer and the loss. The config holds a
-  `$class` node of that class or a subclass, or a `$ref` to an object, and the
-  result holds the built object. `optimizer` is a partial, and `loss` a function
-  ([Instantiation](../../objects/instantiation/index.md)).
-- **`Any`:** the value is not checked, but `$class` nodes and reserved keys inside
-  it are.
-
-A field without a default is required. `batch_size` has the default 32, so an
-experiment may leave it out.
+`Experiment` has three of the four field kinds that the table under Rules lists.
+`seed`, `run_dir` and `epochs` are values, converted and checked, so `run_dir` is a
+`Path`, and `epochs` took its default. `data` is a section, a plain mapping built
+into `Data`. `model` is an object, a `$class` node
+([Instantiation](../../objects/instantiation/index.md)).
 
 A class that is not a dataclass, such as a PyTorch module, can carry a schema too,
 through [`Configurable`](../../objects/configurable-classes/index.md).
@@ -101,9 +83,11 @@ through [`Configurable`](../../objects/configurable-classes/index.md).
 :start-at: class Loss
 ```
 
-```text
-Loss.MAE
-Loss.MAE
+```{code-block} text
+:caption: Output
+
+loss 'MAE': Loss.MAE
+loss 'mean absolute error': Loss.MAE
 ```
 
 

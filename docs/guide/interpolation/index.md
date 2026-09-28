@@ -13,16 +13,21 @@ value of the same config:
 :caption: main.py
 ```
 
-```text
-runs/seed0 0 256
-runs/seed7 7
+```{code-block} text
+:caption: Output
+
+config.run_dir: runs/seed0
+config.data.train.seed: 0
+config.data.test.n: 256
+config.run_dir: runs/seed7
+config.data.train.seed: 7
 ```
 
-`${seed}` is resolved when the value is read, not while loading, so the changed
-seed reached the run directory and the training split. An override of `seed` does
-the same. `${..train.n}` is relative: `..` is the parent of `test`, so the test split
-takes the size of the training split wherever the `data` node ends up, for
-example after an [import](../imports/index.md).
+`${seed}` was resolved when the value was read, so the changed seed reached the run
+directory and the training split. An override of `seed` does the same. In
+`${..train.n}`, `..` is the parent of `test`, so the test split takes the size of the
+training split wherever the `data` node ends up, for example after an
+[import](../imports/index.md).
 
 ## Rules
 

@@ -1,14 +1,13 @@
 # Restricting imports
 
-Configs travel with results: a checkpoint downloaded with its config, a colleague's
-run directory, the config of a paper's experiment. Such a config can name any
-class, and building it calls that class. Two settings limit what a config can
-reach. Here a shared run's model was swapped for `subprocess.run`:
+A config can name any class, and building it calls that class. Two settings limit
+what a config from someone else can reach
+([Trust model](../trust-model/index.md)). Here a shared run's model was swapped for
+`subprocess.run`:
 
 ```{literalinclude} shared-run/config.yaml
 :language: yaml
-:caption: shared-run/config.yaml (excerpt)
-:lines: 1-7
+:caption: shared-run/config.yaml
 ```
 
 ```{literalinclude} main.py
@@ -16,16 +15,17 @@ reach. Here a shared run's model was swapped for `subprocess.run`:
 :caption: main.py
 ```
 
-```text
-`$class: subprocess.run` in `model` names a module that is not in `allowed_modules`.
+```{code-block} text
+:caption: Output
+
+error: `$class: subprocess.run` in `model` names a module that is not in `allowed_modules`.
 ```
 
-`allowed_modules` names the project and the parts of PyTorch its configs use, and
-rejected the node before `subprocess` was imported. It names `torch.nn` and
+`allowed_modules` names the parts of PyTorch the config may use, and rejected the
+node before `subprocess` was imported. It names `torch.nn` and
 `torch.optim`, not all of `torch`, which holds `torch.load`: loading a pickled file
-can run code. `import_root` keeps any `~import` inside the run's directory. They are limits,
-not a sandbox: a config that passes them still runs code
-([Trust model](../trust-model/index.md)).
+can run code. `import_root` keeps any `~import` inside the run's directory. They are
+limits, not a sandbox: a config that passes them still runs code.
 
 ## Rules
 
@@ -35,8 +35,8 @@ They limit which modules `$class` and `$ref` may name.
 
 - `None`, the default, allows every module, and `[]` none. Any iterable of module
   names works and is read once. A `str` raises `TypeError`.
-- An entry allows that module and its submodules: `["project", "torch.optim"]`
-  allows `project.MLP` and `torch.optim.Adam`, but not `project_evil.X` or
+- An entry allows that module and its submodules: `["mypkg", "torch.optim"]`
+  allows `mypkg.MLP` and `torch.optim.Adam`, but not `mypkg_evil.X` or
   `torch.load`. An entry that names a class allows nothing.
   `$ref: math.pi` needs `"math"`.
 - Every node the validation walk reaches is checked, including nodes under `Any`,

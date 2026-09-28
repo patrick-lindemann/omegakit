@@ -1,4 +1,4 @@
-# Shared defaults
+# Defaults
 
 `$defaults` gives every mapping next to it the same settings, and each mapping's own
 values win. It suits groups of similar things, such as the splits of a dataset:
@@ -13,16 +13,16 @@ values win. It suits groups of similar things, such as the splits of a dataset:
 :caption: main.py
 ```
 
-```text
-train 256 0.1 0
-validation 64 0.1 1
-test 256 0.1 1234
+```{code-block} text
+:caption: Output
+
+config.data.train: {'n': 256, 'noise': 0.1, 'seed': 0}
+config.data.validation: {'n': 64, 'noise': 0.1, 'seed': 1}
+config.data.test: {'n': 256, 'noise': 0.1, 'seed': 1234}
 ```
 
 Every split got `n` and `noise` from `$defaults`, and each keeps its own `seed`. The
-validation split also keeps its own `n`. Only mappings receive the defaults:
-scalars, lists and `$` keys next to `$defaults` stay as they are, and nested
-mappings are reached only through a split's own keys.
+validation split also keeps its own `n`.
 
 ## Rules
 

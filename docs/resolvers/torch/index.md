@@ -2,8 +2,8 @@
 
 `omegakit.resolvers.torch` lets a config name PyTorch data types and check for a
 GPU. PyTorch is not a dependency of omegakit: install it for your platform first
-([Overview](../overview/index.md#resolvers-for-other-libraries)). Register the
-resolvers before loading the configs that use them:
+([Overview](../overview/index.md#resolvers-for-other-libraries)). Here a config uses
+both resolvers:
 
 ```{literalinclude} precision.yaml
 :language: yaml
@@ -15,8 +15,12 @@ resolvers before loading the configs that use them:
 :caption: main.py
 ```
 
-```text
-torch.bfloat16 torch.bfloat16 False
+```{code-block} text
+:caption: Output
+
+config.dtype: torch.bfloat16
+config.use_cuda: False
+model.weight.dtype: torch.bfloat16
 ```
 
 `${dtype:bfloat16}` resolves to `torch.bfloat16`, the object itself, which PyTorch

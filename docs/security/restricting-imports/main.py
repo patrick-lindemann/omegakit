@@ -1,14 +1,7 @@
-from pathlib import Path
-
-from project import Experiment
-
 from omegakit import ConfigValidationError, load_config, validate
 
-shared = Path(__file__).parent / "shared-run"
-allowed = ["project", "torch.nn", "torch.optim"]
-
-config = load_config(shared / "config.yaml", import_root=shared)
+config = load_config("shared-run/config.yaml", import_root="shared-run")
 try:
-    validate(config, schema=Experiment, allowed_modules=allowed)
+    validate(config, allowed_modules=["torch.nn", "torch.optim"])
 except ConfigValidationError as error:
-    print(error)
+    print("error:", error)

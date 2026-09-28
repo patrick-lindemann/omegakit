@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=experiment.schema.json
+training:
+  epochs: 100
+  schedule: cosine
+model:
+  $class: torch.nn.Linear
+  in_features: 1
+  out_features: 1

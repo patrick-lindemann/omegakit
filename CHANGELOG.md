@@ -6,11 +6,19 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- A Metadata page in the Guide, for `$meta`.
+
 ### Changed
 
 - The Configs section of the documentation is now the Guide, and its pages moved
   from `configs/<page>/` to `guide/<page>/`, such as `guide/loading/`.
 - Each Guide page has its own small example, which shows that page's feature only.
+  Every other feature page has a small example of its own too, and each page shows
+  its script's complete output.
+- Shared defaults is now Defaults, at `guide/defaults/`, and Building objects comes
+  before Schemas.
 - The documentation and the README use a small PyTorch project as their example,
   instead of `curvefit`: an MLP fitted to noisy samples of a sine wave, with
   `torch.optim` and `torch.nn` named straight from the configs.

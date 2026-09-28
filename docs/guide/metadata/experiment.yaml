@@ -1,0 +1,10 @@
+$meta:
+  title: Wide MLP
+  description: The baseline MLP with eight times as many hidden units.
+  version: 2
+  author: Jane Doe
+seed: 0
+model:
+  $meta:
+    description: Wider than the baseline's 32 units.
+  hidden: 256

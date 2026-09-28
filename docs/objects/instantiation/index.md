@@ -1,90 +1,57 @@
 # Instantiation
 
 `instantiate` builds Python objects from a config node. `$class` calls a class or
-function, `$ref` imports an object without calling it, and `$partial` defers a call.
-The example project builds a whole experiment from one experiment file:
+function, `$ref` imports an object without calling it, and `$partial` defers a call:
+
+```{literalinclude} experiment.yaml
+:language: yaml
+:caption: experiment.yaml
+```
 
 ```{literalinclude} main.py
 :language: python
 :caption: main.py
 ```
 
-```text
-MLP mse_loss
-Adam 0.01
-0.1
-97
-`$class: subprocess.Popen` in `model` names a module that is not in `allowed_modules`.
+```{code-block} text
+:caption: Output
+
+experiment.model: Linear(in_features=16, out_features=1, bias=True)
+experiment.loss: mse_loss
+optimizer: SGD
+lr: 0.1
+lr: 0.01
+make_model(out_features=3): Linear(in_features=16, out_features=3, bias=True)
+error: `$class: subprocess.Popen` in `model` names a module that is not in `allowed_modules`.
 ```
 
 ## `$class`
 
-`$class: project.MLP` names the class to build, and the node's other keys become its
-arguments:
-
-```{literalinclude} ../../example/configs/experiments/mlp.yaml
-:language: yaml
-:start-at: "model:"
-:end-before: "optimizer:"
-```
-
-Nested nodes with `$class`, in mappings and lists, are built first, so the
-experiment receives built datasets and a built model. A class with a `from_config`
-method, such as every `Configurable`, receives the arguments through it instead; see
-[Configurable classes](../configurable-classes/index.md).
-
-`schema=Experiment` says what the result must be, and gives it that type for your
-editor and type checker. The root's `$class` must name `Experiment` or a subclass. A
-root without `$class`, like the experiment files, is built as if it named
-`Experiment`. Without `schema`, the root must have `$class`.
+`$class: torch.nn.Linear` names the class to build, and the node's other keys became
+its arguments. The root of `experiment.yaml` has no `$class`, so
+`schema=Experiment` says what to build it as, and the result is typed as an
+`Experiment` for your editor and type checker. How `Experiment` checks the config
+is on [Dataclass schemas](../../schemas/dataclass-schemas/index.md).
 
 ## `$ref`
 
-A `$ref` node is replaced by the object it names, without calling it. The loss is
-the function itself:
-
-```{literalinclude} ../../example/configs/base.yaml
-:language: yaml
-:caption: configs/base.yaml (excerpt)
-:start-at: "loss:"
-:end-before: "epochs:"
-```
+`$ref: torch.nn.functional.mse_loss` gave the function itself, uncalled.
 
 ## `$partial` and `prepare`
 
 The optimizer needs the model's parameters, which exist only once the model is
-built. `$partial: true` builds a `functools.partial` with the node's arguments, and
-the code passes the parameters when it calls it:
-
-```{literalinclude} ../../example/configs/experiments/mlp.yaml
-:language: yaml
-:start-at: "optimizer:"
-```
-
-Arguments passed to a partial win over the config's, as `lr=0.1` did above.
-`prepare(node)` does the same for the node you pass: it checks the node and builds
-its children, and gives you a partial for the node itself, to call later with more
-arguments. Above, `prepare(config.model)` gave a partial that built an MLP with 8
-hidden units instead of 32.
-
-## `$meta`
-
-`$meta` holds notes for people and tools, such as the hypothesis of an experiment.
-It is never passed to a constructor or to `from_config`, and `load_config` removes
-it unless you pass `keep_meta=True` ([Loading](../../guide/loading/index.md#metadata)).
+built. `$partial: true` gave a `functools.partial` of `torch.optim.SGD`, which the
+code called with them. Arguments passed to the partial win over the config's, as
+`lr=0.01` did. `prepare(config.model)` gave a partial of the model node itself,
+which built a `Linear` with three outputs.
 
 ## Checking before building
 
 `instantiate` and `prepare` check the node as [`validate`](../../schemas/validation/index.md)
-does before they build anything, so a mistake raises `ConfigValidationError` before
-any configured class is called. `allowed_modules` limits `$class` and `$ref` to your
-own package and the parts of PyTorch the configs use: the override above swapped in
-`subprocess.Popen`, and the module was never imported. It is a limit, not a
-sandbox; see [Trust model](../../security/trust-model/index.md).
-
-An exception raised by a constructor or `from_config` keeps its type and message,
-and gets a note naming the node, such as
-`while instantiating data.train (project.SineWave)`.
+does before they build anything. `allowed_modules` limits `$class` and `$ref` to the
+parts of PyTorch the config uses: the override swapped in `subprocess.Popen`, and
+the module was never imported
+([Restricting imports](../../security/restricting-imports/index.md)).
 
 ## Rules
 
@@ -151,7 +118,7 @@ It allows no other key except `$meta`; another key raises `ConfigValidationError
   `cls(**{**fields, **kwargs})`, where `fields` are the typed config's fields, or
   the arguments when there is no schema.
 
-**Metadata.** `$meta` is never passed to a constructor or to `from_config`.
+
 
 **Reserved keys.**
 

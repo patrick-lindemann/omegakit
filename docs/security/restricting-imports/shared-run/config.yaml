@@ -1,28 +1,7 @@
-name: mlp
 model:
   $class: subprocess.run
-  args:
-  - sh
-  - -c
-  - echo this could run any command
+  args: [sh, -c, echo this could run any command]
 optimizer:
   $class: torch.optim.Adam
   $partial: true
   lr: 0.01
-seed: 0
-run_dir: runs/${name}/seed${seed}
-data:
-  train:
-    $class: project.SineWave
-    'n': 256
-    noise: 0.1
-    seed: ${seed}
-  test:
-    $class: project.SineWave
-    'n': 256
-    noise: 0.1
-    seed: 1234
-loss:
-  $ref: torch.nn.functional.mse_loss
-epochs: 100
-batch_size: 32

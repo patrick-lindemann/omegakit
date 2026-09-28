@@ -1,0 +1,8 @@
+seed: 0
+run_dir: runs/linear
+data:
+  n: 256
+model:
+  $class: torch.nn.Linear
+  in_features: 1
+  out_features: 1
