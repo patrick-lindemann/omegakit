@@ -27,3 +27,17 @@ In a GitHub Actions workflow, run both after installing your project:
 
 Both run code from the configs they check, so set up the workflow as
 [Trust model](../../security/trust-model/index.md#checking-configs-in-ci) describes.
+
+To check every experiment file before each commit as well, run `check` as a
+[pre-commit](https://pre-commit.com) hook:
+
+```yaml
+repos:
+  - repo: local
+    hooks:
+      - id: omegakit-check
+        name: omegakit check
+        entry: omegakit check --schema project.Experiment --allow-module project --allow-module torch.nn --allow-module torch.optim
+        language: system
+        files: ^configs/experiments/.*\.yaml$
+```

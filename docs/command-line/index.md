@@ -2,14 +2,33 @@
 
 Installing omegakit adds the `omegakit` command, also available as
 `python -m omegakit`. Run it from the directory that your `$class` paths import
-from. Here that is the example project's: its experiment files are in
-`configs/experiments`, they extend `configs/base.yaml`, and the dataclass
-`project.Experiment` describes an experiment, with `epochs: int`:
+from. The examples run in the example project's directory: its experiment files are
+in `configs/experiments`, and the dataclass `project.Experiment` describes an
+experiment, with `epochs: int`. Each command's `--help` lists its options.
+
+## `check`
+
+`check` loads config files and [validates](../schemas/validation/index.md) them,
+without building anything. It prints one line per invalid file:
 
 ```text
-$ omegakit check configs/experiments/*.yaml --schema project.Experiment --allow-module project --allow-module torch.nn --allow-module torch.optim
+$ omegakit check configs/experiments/*.yaml --schema project.Experiment
 $ omegakit check configs/experiments/mlp.yaml epochs=many --schema project.Experiment
 configs/experiments/mlp.yaml: ConfigValidationError: Invalid config in `epochs` (Experiment): Value 'many' of type 'str' could not be converted to Integer
+```
+
+```{literalinclude} ../_generated/check.txt
+:language: text
+:caption: omegakit check --help
+```
+
+## `show`
+
+`show` prints a config as `load_config` assembles it, so you see what imports,
+`$base`, `$defaults` and overrides produced. With `--resolve` it prints the values a
+run will get:
+
+```text
 $ omegakit show configs/experiments/mlp.yaml --node data.test
 $class: project.SineWave
 'n': 256
@@ -19,37 +38,25 @@ $ omegakit show configs/experiments/mlp.yaml seed=3 --node run_dir --resolve
 runs/mlp/seed3
 ```
 
-## `check`
-
-`check` loads each file with the overrides and runs
-[`validate`](../schemas/validation/index.md). Above, the first command found no
-problem and printed nothing. To check every experiment file before a commit, run it
-as a [pre-commit](https://pre-commit.com) hook, and in CI
-([Checking experiments in CI](../recipes/checking-experiments-in-ci/index.md)):
-
-```yaml
-repos:
-  - repo: local
-    hooks:
-      - id: omegakit-check
-        name: omegakit check
-        entry: omegakit check --schema project.Experiment --allow-module project --allow-module torch.nn --allow-module torch.optim
-        language: system
-        files: ^configs/experiments/.*\.yaml$
+```{literalinclude} ../_generated/show.txt
+:language: text
+:caption: omegakit show --help
 ```
-
-## `show`
-
-`show` prints the assembled config: what imports, `$base`, `$defaults` and
-overrides produced. The test split above is not in `mlp.yaml`; it came from
-`base.yaml` through the experiment's `$base`. With `--resolve` it prints the values
-a run will get, such as the run directory for `seed=3`; look at a run with it
-before you launch it.
 
 ## `json-schema`
 
-`json-schema` writes the JSON Schema of a class for your editor; see
-[Editor support](../schemas/editor-support/index.md).
+`json-schema` writes the JSON Schema of a class, for your editor
+([Editor support](../schemas/editor-support/index.md)). With `--check` it writes
+nothing, and fails when the file no longer matches the class:
+
+```text
+$ omegakit json-schema project.Experiment -o experiment.schema.json --check
+```
+
+```{literalinclude} ../_generated/json-schema.txt
+:language: text
+:caption: omegakit json-schema --help
+```
 
 ## Rules
 
@@ -67,24 +74,18 @@ Overrides apply to every file.
 a usage error: no config file, an unknown option, a `--schema` or `json-schema`
 path that cannot be imported, or an `--import-root` that is not a directory.
 
-**`omegakit check CONFIG... [KEY=VALUE...] [--schema IMPORT_PATH] [--allow-missing]
-[--allow-module NAME]... [--import-root DIR]`** validates each file
-([Validation](../schemas/validation/index.md#rules)).
+**`check`** validates each file ([Validation](../schemas/validation/index.md#rules)),
+with its options passed to `load_config` and `validate` under the same names.
 
-- `--schema` is passed as `validate`'s `schema`, `--allow-missing` as
-  `allow_missing`, and each `--allow-module` adds an entry to `allowed_modules`
-  ([Restricting imports](../security/restricting-imports/index.md#rules)). `--import-root` is passed to
-  `load_config` as `import_root` ([Imports](../guide/imports/index.md#rules)).
 - It prints `<file>: <exception type>: <message>` for each invalid file and
   nothing for valid ones. Any exception, and a `SystemExit` raised by an imported
   module, marks that file invalid, and the other files are still checked.
   `KeyboardInterrupt` stops the command.
 
-**`omegakit show CONFIG [KEY=VALUE...] [--node KEY] [--resolve] [--keep-meta]
-[--show-secrets] [--import-root DIR]`** prints the assembled config, or the node at
-`KEY`, as YAML. A scalar prints as its value.
+**`show`** prints the assembled config, or the node at `--node`, as YAML. A scalar
+prints as its value.
 
-- `KEY` is a dotted path, walked as `~import file#node` is: `items.0.name`,
+- `--node` takes a dotted path, walked as `~import file#node` is: `items.0.name`,
   `items.-1`. A node that does not exist, or a path through an interpolation
   without `--resolve`, exits with 1.
 - Without `--resolve`, values print as written: `${…}`, `???`, `null`. With it,
@@ -92,12 +93,10 @@ path that cannot be imported, or an `--import-root` that is not a directory.
   Missing values print as `???`, and any other resolution error exits with 1 with
   one line.
 - With `--resolve`, every value that `${secret:...}` gives is printed as `***`,
-  also inside longer strings and also when it is read outside `--node`.
-  `--show-secrets` turns this off ([Secrets](../security/secrets/index.md#rules)).
+  also inside longer strings and also when it is read outside `--node`
+  ([Secrets](../security/secrets/index.md#rules)).
 - The command registers `${secret:...}` for `check` and `show`.
-- `--keep-meta` keeps `$meta` keys.
 
-**`omegakit json-schema IMPORT_PATH [-o FILE] [--check]`** prints or writes the
-JSON Schema of the class at `IMPORT_PATH`. `--check` needs `-o`, writes nothing,
-and exits with 1 if `FILE` is missing or differs from the generated schema,
-compared as JSON.
+**`json-schema`** writes the JSON Schema of the class at its import path
+([Editor support](../schemas/editor-support/index.md#rules)). `--check` needs `-o`,
+and compares the file and the generated schema as JSON.

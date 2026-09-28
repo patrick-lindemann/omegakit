@@ -19,6 +19,9 @@ All notable changes to this project are documented here. The format follows
   its script's complete output.
 - Shared defaults is now Defaults, at `guide/defaults/`, and Building objects comes
   before Schemas.
+- The Command line page explains each command with an example and shows its
+  `--help`, generated when the documentation is built. The pre-commit hook moved to
+  Checking experiments in CI.
 - The documentation and the README use a small PyTorch project as their example,
   instead of `curvefit`: an MLP fitted to noisy samples of a sine wave, with
   `torch.optim` and `torch.nn` named straight from the configs.
