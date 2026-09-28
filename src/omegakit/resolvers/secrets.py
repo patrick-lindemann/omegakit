@@ -1,6 +1,6 @@
 import os
 
-from omegakit.registry import register_resolver
+from omegakit.resolvers import register_resolver
 
 
 def register_secret_resolver(*, replace: bool = False) -> None:

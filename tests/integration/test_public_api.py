@@ -1,6 +1,5 @@
 import subprocess
 import sys
-from types import ModuleType
 
 import omegakit
 import omegakit.resolvers
@@ -54,10 +53,11 @@ assert not any(OmegaConf.has_resolver(name) for name in names)
     )
 
 
-def test_resolvers_package_exports_nothing():
+def test_resolvers_package_exports_only_register_resolver():
     exports = [
         name
         for name, value in vars(omegakit.resolvers).items()
-        if not name.startswith("_") and not isinstance(value, ModuleType)
+        if not name.startswith("_")
+        and getattr(value, "__module__", None) == "omegakit.resolvers"
     ]
-    assert exports == []
+    assert exports == ["register_resolver"]

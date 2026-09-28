@@ -1,7 +1,7 @@
 from collections.abc import Mapping
 from pathlib import Path
 
-from omegakit.registry import register_resolver
+from omegakit.resolvers import register_resolver
 
 
 def register_paths_resolver(

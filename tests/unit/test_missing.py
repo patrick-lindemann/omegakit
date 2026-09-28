@@ -8,7 +8,7 @@ from omegaconf.errors import (
 )
 
 from omegakit import ConfigValidationError, instantiate, load_config, prepare
-from omegakit.registry import register_resolver
+from omegakit.resolvers import register_resolver
 from tests.helpers import CONTAINER, POINT
 
 

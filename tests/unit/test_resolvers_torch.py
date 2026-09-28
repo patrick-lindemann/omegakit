@@ -5,7 +5,7 @@ import pytest
 from omegaconf import OmegaConf
 from omegaconf.errors import InterpolationResolutionError
 
-from omegakit.registry import register_resolver
+from omegakit.resolvers import register_resolver
 from omegakit.resolvers.torch import (
     register_cuda_available_resolver,
     register_torch_dtype_resolver,

@@ -7,7 +7,7 @@ from omegaconf import DictConfig, ListConfig, OmegaConf
 
 from omegakit.cli.arguments import split_arguments
 from omegakit.load import load_config
-from omegakit.registry import register_resolver
+from omegakit.resolvers import register_resolver
 from omegakit.validate import resolve_item
 from omegakit.walk import select_node
 

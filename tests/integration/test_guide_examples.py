@@ -1,3 +1,4 @@
+import math
 import os
 import re
 import subprocess
@@ -8,6 +9,7 @@ import pytest
 from omegaconf import OmegaConf
 
 from omegakit import ConfigLoadError, instantiate, load_config, validate
+from omegakit.resolvers import register_resolver
 from omegakit.resolvers.paths import register_paths_resolver
 from omegakit.resolvers.secrets import register_secret_resolver
 from omegakit.resolvers.torch import register_torch_resolvers
@@ -42,12 +44,16 @@ def examples_importable(monkeypatch):
     "path", YAML_FILES, ids=[str(p.relative_to(DOCS)) for p in YAML_FILES]
 )
 def test_guide_yaml_loads_validates_and_builds(path: Path, monkeypatch):
-    # The secrets page reads a token from the environment, and the paths page
-    # names directories through the paths resolver.
+    # The secrets page reads a token from the environment, the paths page names
+    # directories through the paths resolver, and the resolvers overview registers
+    # a resolver of its own.
     monkeypatch.setenv("TRACKER_TOKEN", "tok-for-the-guide-tests")
     register_secret_resolver()
     register_paths_resolver({"runs": "runs", "data": "data"})
     register_torch_resolvers()
+    register_resolver(
+        "batches", lambda samples, batch_size: math.ceil(samples / batch_size)
+    )
     # A page's classes live next to its files, such as `models.py`.
     monkeypatch.syspath_prepend(str(path.parent))
     config = load_config(path)

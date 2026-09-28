@@ -8,6 +8,8 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- `register_resolver` in `omegakit.resolvers` registers a resolver of your own as
+  omegakit registers its resolvers: cached, on OmegaConf 2.3 and 2.4 alike.
 - A schema field annotated with a bare `Sequence` or `Mapping`, without item types,
   holds any plain values, as a bare `list` or `dict` does. It raised
   `SchemaDefinitionError`.

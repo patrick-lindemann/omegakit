@@ -17,7 +17,7 @@ from omegakit import (
     prepare,
     validate,
 )
-from omegakit.registry import register_resolver
+from omegakit.resolvers import register_resolver
 from tests import schemas
 from tests.schemas import Encoder, EncoderConfig, SectionWithObject, Sub
 

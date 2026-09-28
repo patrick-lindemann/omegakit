@@ -17,7 +17,7 @@ from omegakit import (
     make_node,
     validate,
 )
-from omegakit.registry import register_resolver
+from omegakit.resolvers import register_resolver
 from tests import schemas
 from tests.helpers import POINT, RECORDER, Point
 from tests.schemas import TypedEncoder

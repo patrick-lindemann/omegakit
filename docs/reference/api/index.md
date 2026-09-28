@@ -91,6 +91,7 @@
 ## Resolvers
 
 ```{eval-rst}
+.. autofunction:: omegakit.resolvers.register_resolver
 .. automodule:: omegakit.resolvers.paths
    :members:
 .. automodule:: omegakit.resolvers.secrets
