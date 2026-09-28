@@ -76,3 +76,5 @@ configs/experiments/mlp.yaml: ConfigValidationError: `$class: subprocess.Popen` 
   module, marks that file invalid, and the other files are still checked.
   `KeyboardInterrupt` stops the command.
 - It exits with 1 if any file is invalid.
+- A `--schema` that cannot be imported, or is not a class, is a usage error: it
+  exits with 2 before any file is checked.

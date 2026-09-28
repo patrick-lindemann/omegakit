@@ -103,6 +103,17 @@ def test_cli_check_schema(write_yaml):
     assert _exit_code(["check", "--schema", "tests.schemas.Nope", str(path)]) == 2
 
 
+def test_cli_check_rejects_a_schema_that_is_not_a_class_once(write_yaml, capsys):
+    first = write_yaml("a.yaml", "depth: 2\n")
+    second = write_yaml("b.yaml", "depth: 3\n")
+    assert (
+        _exit_code(["check", "--schema", "builtins.len", str(first), str(second)]) == 2
+    )
+    output = capsys.readouterr()
+    assert output.out == ""
+    assert "--schema builtins.len is not a class" in output.err
+
+
 @pytest.mark.parametrize("import_path", ["nodots", "..mod.X"])
 def test_cli_check_rejects_a_malformed_schema_path(write_yaml, capsys, import_path):
     path = write_yaml("frag.yaml", "depth: 2\n")
@@ -281,6 +292,22 @@ def test_cli_show_errors(write_yaml, capsys):
 def test_cli_export_schema_reports_import_failures(capsys, import_path):
     assert _exit_code(["export-schema", import_path]) == 2
     assert "cannot import" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize(
+    ("import_path", "message"),
+    [
+        ("builtins.int", "neither a dataclass"),
+        ("tests.schemas.UnsupportedField", "unsupported container"),
+    ],
+)
+def test_cli_export_schema_reports_a_class_it_cannot_export(
+    capsys, import_path, message
+):
+    assert _exit_code(["export-schema", import_path]) == 2
+    error = capsys.readouterr().err.splitlines()[-1]
+    assert f"cannot export {import_path}: " in error
+    assert message in error
 
 
 def test_cli_export_schema_check(tmp_path):

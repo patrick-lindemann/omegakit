@@ -2,6 +2,7 @@ import argparse
 import json
 from pathlib import Path
 
+from omegakit.errors import SchemaDefinitionError
 from omegakit.json_schema import generate_json_schema
 from omegakit.targets import import_object
 
@@ -41,9 +42,13 @@ def run(arguments: argparse.Namespace) -> None:
     parser: argparse.ArgumentParser = arguments.parser
     output: Path | None = arguments.output
     try:
-        schema = generate_json_schema(import_object(arguments.schema))
+        target = import_object(arguments.schema)
     except ImportError as error:
         parser.error(f"cannot import {arguments.schema}: {error}")
+    try:
+        schema = generate_json_schema(target)
+    except (TypeError, SchemaDefinitionError) as error:
+        parser.error(f"cannot export {arguments.schema}: {error}")
     if arguments.check:
         if output is None:
             parser.error("--check needs -o/--output")

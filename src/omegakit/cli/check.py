@@ -76,6 +76,8 @@ def run(arguments: argparse.Namespace) -> None:
             schema = import_object(arguments.schema)
         except ImportError as error:
             parser.error(f"cannot import --schema: {error}")
+        if not isinstance(schema, type):
+            parser.error(f"--schema {arguments.schema} is not a class")
     invalid = 0
     for path in paths:
         try:

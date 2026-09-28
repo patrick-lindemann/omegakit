@@ -28,5 +28,7 @@ omegakit export-schema project.Experiment -o experiment.schema.json --check
 - `export-schema` takes the import path of a root schema dataclass, or of a
   `Configurable` class whose schema describes a fragment file. The schema is what
   `generate_json_schema` returns ([Editor support](../../schemas/editor-support/index.md#rules)).
+- A path that cannot be imported, or names a class that `generate_json_schema`
+  rejects, is a usage error: it exits with 2.
 - `--check` needs `-o`. It exits with 1 if the file is missing or differs from the
   generated schema, compared as JSON.

@@ -14,6 +14,10 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- `omegakit export-schema` reports a class it cannot export as a usage error and
+  exits with 2, instead of printing a traceback.
+- `omegakit check --schema` with something that is not a class exits with 2 once,
+  instead of reporting every file as invalid.
 - **Breaking:** Error messages name a node by its dotted path, such as
   `items.0.model`, everywhere. Errors about `$base` and `$defaults` named a list
   item as `items0.model`, and errors from resolving, from overrides and from
