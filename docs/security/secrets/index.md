@@ -30,9 +30,7 @@ from, not the token. Save and log that config, as
 the real URL, for example to pass it to a tracking client. `omegakit show
 --resolve` masks the token:
 
-```{code-block} text
-:caption: Terminal
-
+```text
 $ omegakit show tracked.yaml --node tracking --resolve
 project: sine
 url: https://tracker.example.com/api/runs?token=***

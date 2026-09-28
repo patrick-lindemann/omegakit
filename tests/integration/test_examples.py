@@ -114,7 +114,7 @@ def test_page_sessions_show_real_output(page, tmp_path, monkeypatch):
     )
     directory = tmp_path
     text = (DOCS / page / "index.md").read_text()
-    sessions = re.findall(r":caption: Terminal\n\n(\$ .*?)```", text, re.S)
+    sessions = re.findall(r"```text\n(\$ .*?)```", text, re.S)
     assert sessions
     for session in sessions:
         for command, output in re.findall(

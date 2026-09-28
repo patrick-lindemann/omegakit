@@ -12,9 +12,7 @@ The schema of an experiment is a dataclass in `schemas.py`:
 `omegakit json-schema` writes its JSON Schema, run from the directory that
 `schemas.py` is in:
 
-```{code-block} text
-:caption: Terminal
-
+```text
 $ omegakit json-schema schemas.Experiment -o experiment.schema.json
 ```
 
@@ -32,9 +30,7 @@ file that holds a single node, generate the schema of that node's class instead.
 Run the same command with `--check` in CI, to fail when the committed file no
 longer matches the classes:
 
-```{code-block} text
-:caption: Terminal
-
+```text
 $ omegakit json-schema schemas.Experiment -o experiment.schema.json --check
 ```
 

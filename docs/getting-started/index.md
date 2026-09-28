@@ -120,9 +120,7 @@ error: Unknown field(s) 'hiden' in `model` (MLPConfig). Expected one of: hidden,
 The project's entrypoint, `main.py`, does the same for one experiment file and the
 overrides it is given, trains the model and saves the run:
 
-```{code-block} text
-:caption: Terminal
-
+```text
 $ python main.py configs/experiments/mlp.yaml
 mlp: test loss 0.011
 ```

@@ -39,9 +39,7 @@ exists, so a run never overwrites another.
 config holds everything the files and overrides gave, with `${seed}` still as
 written (see Rules). Load it again to repeat the run:
 
-```{code-block} text
-:caption: Terminal
-
+```text
 $ python main.py configs/experiments/mlp.yaml model.hidden=64
 mlp: test loss 0.012
 $ python main.py runs/mlp/seed0/config.yaml run_dir=runs/repeat

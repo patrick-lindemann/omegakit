@@ -6,9 +6,7 @@ from. Here that is the example project's: its experiment files are in
 `configs/experiments`, they extend `configs/base.yaml`, and the dataclass
 `project.Experiment` describes an experiment, with `epochs: int`:
 
-```{code-block} text
-:caption: Terminal
-
+```text
 $ omegakit check configs/experiments/*.yaml --schema project.Experiment --allow-module project --allow-module torch.nn --allow-module torch.optim
 $ omegakit check configs/experiments/mlp.yaml epochs=many --schema project.Experiment
 configs/experiments/mlp.yaml: ConfigValidationError: Invalid config in `epochs` (Experiment): Value 'many' of type 'str' could not be converted to Integer
