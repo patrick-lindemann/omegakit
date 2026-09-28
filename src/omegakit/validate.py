@@ -40,18 +40,11 @@ def validate(
 
     Args:
         config: The assembled config, such as the result of `load_config`.
-        schema: The class the root of the config must match. A dataclass checks the
-            root as a section. Another class checks the root as a node that builds
-            it: with `$class`, that class must be `schema` or a subclass; without,
-            the root is checked against the schema of `schema`. Defaults to `None`.
-        allow_missing: Accept missing values: `???`, required fields that are not
-            given, and interpolations to missing or unknown keys, as in a library
-            file that its consumers complete. Defaults to `False`.
-        allowed_modules: The modules that `$class` and `$ref` may name. An entry
-            allows that module and its submodules, and an object is also checked
-            against the module it is defined in. `[]` allows none. It limits which
-            modules a config can name; it is not a sandbox. Defaults to `None`,
-            which allows every module.
+        schema: The class the root of the config must match. Defaults to `None`.
+        allow_missing: Accept `???`, required fields that are not given, and
+            interpolations to missing or unknown keys. Defaults to `False`.
+        allowed_modules: The modules, with their submodules, that `$class` and
+            `$ref` may name. Defaults to `None`, which allows every module.
 
     Raises:
         ConfigValidationError: If the config cannot be resolved, does not match a
@@ -368,6 +361,7 @@ def _check_type(
         return
     try:
         valid = check(value, classes)
+    # A `Protocol` that is not runtime-checkable rejects the check; it is skipped.
     except TypeError:
         return
     if not valid:

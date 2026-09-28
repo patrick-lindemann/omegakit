@@ -21,7 +21,7 @@ class Configurable(Generic[TConfig]):
                 object fields built, or the materialized arguments as a mapping when
                 the class has no dataclass schema.
             **kwargs: Call-time arguments from a partial, or extra arguments from a
-                direct caller. They win over config fields of the same name.
+                direct caller.
 
         Returns:
             The created instance.

@@ -99,8 +99,6 @@ def _merge_in_dependency_order(
 
 
 def _merge_base(node: DictConfig, base: Any) -> None:
-    # A base may be a single mapping or a list of mappings. Later list elements take
-    # precedence over earlier ones, and the node's own keys over all.
     if isinstance(base, ListConfig):
         bases = [base[index] for index in range(len(base))]
         if not all(isinstance(item, DictConfig) for item in bases):

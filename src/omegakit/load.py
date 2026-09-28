@@ -27,16 +27,13 @@ def load_config(
         overrides: Values merged on top of the assembled config: a `DictConfig`, a
             `dict`, or a list of `key=value` strings such as `["model.depth=4"]`.
             Defaults to `None`.
-        keep_targets: Keep `$class`, `$ref` and `$partial`. Without them, the
-            config is plain data. Defaults to `True`.
+        keep_targets: Keep `$class`, `$ref` and `$partial`. Defaults to `True`.
         keep_meta: Keep `$meta`. Defaults to `False`.
-        import_root: A directory that every `~import` must stay in, after
-            interpolations and symbolic links are resolved. An import outside it
-            raises `ConfigLoadError`, and a directory that does not exist raises
-            `FileNotFoundError`. Defaults to `None`, which allows any file.
+        import_root: A directory that every `~import` must stay in. Defaults to
+            `None`, which allows any file.
 
     Returns:
-        The parsed configuration.
+        The assembled config.
 
     Raises:
         ConfigLoadError: If a file, an import, a `$base` or `$defaults` value, or
@@ -89,12 +86,6 @@ def load_config(
 
 
 def _strip_keys(config: DictConfig | ListConfig, exclude: set[str]) -> None:
-    """Remove the given keys from every mapping in `config`, in place.
-
-    Args:
-        config: The config to process.
-        exclude: The keys to remove.
-    """
     for node in walk(config):
         for key in list(node.keys()):
             if key in exclude:

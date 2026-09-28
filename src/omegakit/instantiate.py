@@ -49,11 +49,8 @@ def instantiate(
 
     Args:
         config: The node to build. It must have `$class`, unless `schema` is given.
-        schema: The class to build. A root with `$class` must name `schema` or a
-            subclass. A root without `$class` is built as if its `$class` named
-            `schema`: a dataclass gives an instance of itself, and a `Configurable`
-            is built through `from_config`. Defaults to `None`, which builds the
-            root's `$class`.
+        schema: The class to build. Defaults to `None`, which builds the root's
+            `$class`.
         overrides: Values merged into the node first, as in `load_config`. Defaults
             to `None`.
         allowed_modules: The modules that `$class` and `$ref` may name, as in

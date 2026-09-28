@@ -184,7 +184,6 @@ def _coerce(
     allow_missing: bool,
     build: bool,
 ) -> Any:
-    # Validates one value against an annotation through OmegaConf, as a field would.
     try:
         structure = OmegaConf.structured(_value_structure(annotation))
     except OmegaKitBaseException:
