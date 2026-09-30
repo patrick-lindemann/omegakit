@@ -22,7 +22,7 @@ from omegakit.core.utils import describe_error
 
 from .annotation import is_mapping_type, is_sequence_type, split_union
 
-type FieldKind = Literal["data", "object", "any"]
+type _FieldKind = Literal["data", "object", "any"]
 
 _SCALAR_TYPES = (int, float, bool, str, bytes, Path)
 _UNSUPPORTED_CONTAINERS = (
@@ -40,7 +40,7 @@ _UNSUPPORTED_CONTAINERS = (
 @functools.cache
 def classify_fields(
     schema: type, outer: tuple[type, ...] = ()
-) -> Mapping[str, tuple[FieldKind, Any]]:
+) -> Mapping[str, tuple[_FieldKind, Any]]:
     """Classify the configurable fields of a schema.
 
     Args:
@@ -121,7 +121,7 @@ def _type_hints(schema: type) -> dict[str, Any]:
 
 def _field_kind(
     annotation: Any, schema: type, name: str, outer: tuple[type, ...]
-) -> FieldKind:
+) -> _FieldKind:
     while isinstance(annotation, TypeAliasType):
         annotation = annotation.__value__
     origin = get_origin(annotation)
@@ -146,7 +146,7 @@ def _field_kind(
         return "data"
     if origin in (Union, types.UnionType):
         members, _ = split_union(annotation)
-        member_kinds: set[FieldKind] = {
+        member_kinds: set[_FieldKind] = {
             _field_kind(member, schema, name, outer) for member in members
         }
         if len(member_kinds) > 1:
@@ -182,7 +182,7 @@ def _field_kind(
         items = [argument for argument in arguments if argument is not Ellipsis]
         if origin is dict or origin is collections.abc.Mapping:
             items = items[1:]
-        kinds: set[FieldKind] = {
+        kinds: set[_FieldKind] = {
             _field_kind(item, schema, name, outer) for item in items
         }
         if kinds <= {"data"}:
