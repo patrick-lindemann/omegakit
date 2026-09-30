@@ -63,7 +63,7 @@ def classify_fields(
             f"{' -> '.join(cls.__qualname__ for cls in cycle)}. Recursive schemas are "
             "not supported."
         )
-    hints = _type_hints(schema)
+    hints = _resolve_type_hints(schema)
     for name, hint in hints.items():
         if isinstance(hint, dataclasses.InitVar) and not hasattr(schema, name):
             raise SchemaDefinitionError(
@@ -73,7 +73,9 @@ def classify_fields(
     return types.MappingProxyType(
         {
             field.name: (
-                _field_kind(hints[field.name], schema, field.name, (*outer, schema)),
+                _classify_field(
+                    hints[field.name], schema, field.name, (*outer, schema)
+                ),
                 hints[field.name],
             )
             for field in dataclasses.fields(schema)
@@ -82,7 +84,7 @@ def classify_fields(
     )
 
 
-def _type_hints(schema: type) -> dict[str, Any]:
+def _resolve_type_hints(schema: type) -> dict[str, Any]:
     try:
         return get_type_hints(schema)
     except NameError as error:
@@ -119,7 +121,7 @@ def _type_hints(schema: type) -> dict[str, Any]:
         ) from error
 
 
-def _field_kind(
+def _classify_field(
     annotation: Any, schema: type, name: str, outer: tuple[type, ...]
 ) -> _FieldKind:
     while isinstance(annotation, TypeAliasType):
@@ -147,7 +149,7 @@ def _field_kind(
     if origin in (Union, types.UnionType):
         members, _ = split_union(annotation)
         member_kinds: set[_FieldKind] = {
-            _field_kind(member, schema, name, outer) for member in members
+            _classify_field(member, schema, name, outer) for member in members
         }
         if len(member_kinds) > 1:
             raise SchemaDefinitionError(
@@ -183,7 +185,7 @@ def _field_kind(
         if origin is dict or origin is collections.abc.Mapping:
             items = items[1:]
         kinds: set[_FieldKind] = {
-            _field_kind(item, schema, name, outer) for item in items
+            _classify_field(item, schema, name, outer) for item in items
         }
         if kinds <= {"data"}:
             return "data"

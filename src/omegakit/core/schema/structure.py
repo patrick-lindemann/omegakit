@@ -45,13 +45,13 @@ def derive_structure(schema: type) -> type:
         if field.default_factory is not dataclasses.MISSING:
             default = dataclasses.field(
                 default_factory=functools.partial(
-                    _structure_default, field.default_factory, field_type is Any
+                    _make_structure_default, field.default_factory, field_type is Any
                 )
             )
         elif field.default is not dataclasses.MISSING:
             default = dataclasses.field(
                 default_factory=functools.partial(
-                    _structure_default,
+                    _make_structure_default,
                     functools.partial(copy.deepcopy, field.default),
                     field_type is Any,
                 )
@@ -108,7 +108,7 @@ def derive_structure_type(annotation: Any) -> Any:
     return annotation
 
 
-def _structure_default(factory: Callable[[], Any], plain: bool) -> Any:
+def _make_structure_default(factory: Callable[[], Any], plain: bool) -> Any:
     return _to_structure(factory(), plain)
 
 

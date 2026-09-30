@@ -33,7 +33,8 @@ def find_schema(cls: type) -> type | None:
     if issubclass(cls, Configurable):
         parameters = getattr(cls, "__parameters__", ())
         config_type = _find_config_type(
-            cls, {parameter: _type_var_default(parameter) for parameter in parameters}
+            cls,
+            {parameter: _get_type_var_default(parameter) for parameter in parameters},
         )
     else:
         config_type = cls
@@ -52,7 +53,7 @@ def find_schema(cls: type) -> type | None:
     return config_type
 
 
-def _type_var_default(parameter: Any) -> Any:
+def _get_type_var_default(parameter: Any) -> Any:
     return getattr(parameter, "__default__", NoDefault)
 
 
@@ -66,7 +67,9 @@ def _find_config_type(cls: type, substitutions: dict[Any, Any]) -> Any:
         )
         parameters = getattr(origin, "__parameters__", ())
         if not arguments:
-            arguments = tuple(_type_var_default(parameter) for parameter in parameters)
+            arguments = tuple(
+                _get_type_var_default(parameter) for parameter in parameters
+            )
         if origin is Configurable:
             return arguments[0]
         return _find_config_type(origin, dict(zip(parameters, arguments, strict=True)))

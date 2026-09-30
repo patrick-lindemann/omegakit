@@ -12,8 +12,8 @@ def register_secret_resolver(*, replace: bool = False) -> None:
     Raises:
         ValueError: If a resolver named `secret` exists and `replace` is `False`.
     """  # noqa: DOC502
-    register_resolver("secret", _secret, replace=replace)
+    register_resolver("secret", _resolve_secret, replace=replace)
 
 
-def _secret(value: Any) -> Any:
+def _resolve_secret(value: Any) -> Any:
     return value

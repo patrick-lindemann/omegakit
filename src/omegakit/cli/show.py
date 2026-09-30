@@ -109,7 +109,7 @@ class ShowRoutine(Routine[ShowArguments]):
             if node is None:
                 print(f"{args.config}: no node `{args.node}`")
                 raise SystemExit(1)
-            value = _plain(node, args.resolve)
+            value = _to_plain(node, args.resolve)
         except Exception as error:
             # Without --resolve, the only error here is a path through an
             # interpolation.
@@ -130,23 +130,25 @@ def _fail(path: Path, error: Exception, hint: str = "") -> NoReturn:
     raise SystemExit(1) from error
 
 
-def _plain(node: Any, resolve: bool) -> Any:
+def _to_plain(node: Any, resolve: bool) -> Any:
     if isinstance(node, (DictConfig, ListConfig)) and not (
         node._is_missing() or node._is_interpolation()
     ):
         if isinstance(node, ListConfig):
-            return list(_items(node, resolve).values())
-        return _items(node, resolve)
+            return list(_to_plain_items(node, resolve).values())
+        return _to_plain_items(node, resolve)
     if not resolve:
         return node._value()
     return resolve_item(node._get_parent_container(), node._key())
 
 
-def _items(container: DictConfig | ListConfig, resolve: bool) -> dict[Any, Any]:
+def _to_plain_items(
+    container: DictConfig | ListConfig, resolve: bool
+) -> dict[Any, Any]:
     keys: Any = (
         range(len(container)) if isinstance(container, ListConfig) else container
     )
-    return {key: _plain(container._get_node(key), resolve) for key in keys}
+    return {key: _to_plain(container._get_node(key), resolve) for key in keys}
 
 
 def _mask_secret(_: Any) -> str:

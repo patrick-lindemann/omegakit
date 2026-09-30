@@ -66,7 +66,7 @@ def coerce_fields(
             not allow_missing
             and kind != "data"
             and name not in values
-            and name not in _defaulted(schema)
+            and name not in _find_defaulted_fields(schema)
         ):
             raise ConfigValidationError(
                 f"Missing required field `{name}` in {location}."
@@ -119,7 +119,8 @@ def coerce_fields(
             build,
         )
         for name, (kind, annotation) in fields.items()
-        if kind == "data" and (name in data or name not in _defaulted(schema))
+        if kind == "data"
+        and (name in data or name not in _find_defaulted_fields(schema))
     }
 
 
@@ -175,7 +176,7 @@ def _coerce(
     build: bool,
 ) -> Any:
     try:
-        structure = OmegaConf.structured(_value_structure(annotation))
+        structure = OmegaConf.structured(_derive_value_structure(annotation))
     except OmegaKitBaseException:
         raise
     except OmegaConfBaseException as error:
@@ -213,7 +214,7 @@ def _coerce(
 
 
 @functools.cache
-def _value_structure(annotation: Any) -> type:
+def _derive_value_structure(annotation: Any) -> type:
     return dataclasses.make_dataclass(
         "Value", [("value", derive_structure_type(annotation), dataclasses.field())]
     )
@@ -309,7 +310,7 @@ def _build_value(
                 build,
             )
             for name, item in value.items()
-            if name in given or name not in _defaulted(annotation)
+            if name in given or name not in _find_defaulted_fields(annotation)
         }
         return annotation(**items) if build else items
     return value
@@ -345,7 +346,7 @@ def _build_union_value(
 
 
 @functools.cache
-def _defaulted(schema: type) -> frozenset[str]:
+def _find_defaulted_fields(schema: type) -> frozenset[str]:
     return frozenset(
         field.name
         for field in dataclasses.fields(schema)

@@ -38,7 +38,7 @@ def check_schema(cls: type) -> None:
         return
     fields = classify_fields(schema)
     parameters = inspect.signature(cls).parameters
-    hints = _init_hints(cls)
+    hints = _resolve_init_hints(cls)
     keyword_names = {
         name
         for name, parameter in parameters.items()
@@ -82,7 +82,7 @@ def check_schema(cls: type) -> None:
             )
 
 
-def _init_hints(cls: type) -> dict[str, Any]:
+def _resolve_init_hints(cls: type) -> dict[str, Any]:
     try:
         return get_type_hints(cls.__init__)
     except Exception:

@@ -32,7 +32,7 @@ def register_cuda_available_resolver(*, replace: bool = False) -> None:
             `False`.
     """  # noqa: DOC502
     _import_torch()
-    register_resolver("cuda_available", _cuda_available, replace=replace)
+    register_resolver("cuda_available", _is_cuda_available, replace=replace)
 
 
 def register_torch_resolvers(*, replace: bool = False) -> None:
@@ -74,5 +74,5 @@ def _resolve_dtype(name: str) -> Any:
     return dtype
 
 
-def _cuda_available(_: Any = None) -> bool:
+def _is_cuda_available(_: Any = None) -> bool:
     return _import_torch().cuda.is_available()

@@ -49,16 +49,16 @@ def generate_json_schema(schema: type) -> dict[str, Any]:
     definitions: dict[str, Any] = {}
     return {
         "$schema": "http://json-schema.org/draft-07/schema#",
-        **_json_mapping(root, definitions),
+        **_build_mapping_schema(root, definitions),
         "definitions": definitions,
     }
 
 
-def _json_value(annotation: Any, definitions: dict[str, Any]) -> dict[str, Any]:
-    return {"anyOf": [_json_type(annotation, definitions), _PLACEHOLDER]}
+def _build_value_schema(annotation: Any, definitions: dict[str, Any]) -> dict[str, Any]:
+    return {"anyOf": [_build_type_schema(annotation, definitions), _PLACEHOLDER]}
 
 
-def _json_type(annotation: Any, definitions: dict[str, Any]) -> dict[str, Any]:
+def _build_type_schema(annotation: Any, definitions: dict[str, Any]) -> dict[str, Any]:
     while isinstance(annotation, TypeAliasType):
         annotation = annotation.__value__
     origin = get_origin(annotation)
@@ -68,7 +68,11 @@ def _json_type(annotation: Any, definitions: dict[str, Any]) -> dict[str, Any]:
     if annotation is type(None):
         return {"type": "null"}
     if origin in (Union, types.UnionType):
-        return {"anyOf": [_json_type(argument, definitions) for argument in arguments]}
+        return {
+            "anyOf": [
+                _build_type_schema(argument, definitions) for argument in arguments
+            ]
+        }
     if annotation is bool:
         return {"type": "boolean"}
     if annotation is int:
@@ -90,7 +94,9 @@ def _json_type(annotation: Any, definitions: dict[str, Any]) -> dict[str, Any]:
     if origin is tuple and not (len(arguments) == 2 and arguments[1] is Ellipsis):
         return {
             "type": "array",
-            "items": [_json_value(argument, definitions) for argument in arguments],
+            "items": [
+                _build_value_schema(argument, definitions) for argument in arguments
+            ],
             "minItems": len(arguments),
             "maxItems": len(arguments),
         }
@@ -99,26 +105,26 @@ def _json_type(annotation: Any, definitions: dict[str, Any]) -> dict[str, Any]:
         tuple,
         collections.abc.Sequence,
     ):
-        items = _json_value(arguments[0], definitions) if arguments else {}
+        items = _build_value_schema(arguments[0], definitions) if arguments else {}
         return {"type": "array", "items": items}
     if annotation in (dict, collections.abc.Mapping) or origin in (
         dict,
         collections.abc.Mapping,
     ):
-        values = _json_value(arguments[1], definitions) if arguments else {}
+        values = _build_value_schema(arguments[1], definitions) if arguments else {}
         return {"type": "object", "additionalProperties": values}
     if isinstance(annotation, type) and is_typeddict(annotation):
         return {"type": "object"}
     if isinstance(annotation, type) and dataclasses.is_dataclass(annotation):
-        return {"$ref": f"#/definitions/{_json_definition(annotation, definitions)}"}
+        return {"$ref": f"#/definitions/{_add_definition(annotation, definitions)}"}
     if isinstance(annotation, type):
-        return _json_object(annotation, definitions)
+        return _build_object_schema(annotation, definitions)
     if isinstance(origin, type):
-        return _json_object(origin, definitions)
+        return _build_object_schema(origin, definitions)
     return {}
 
 
-def _json_object(cls: Any, definitions: dict[str, Any]) -> dict[str, Any]:
+def _build_object_schema(cls: Any, definitions: dict[str, Any]) -> dict[str, Any]:
     schema = find_schema(cls) if isinstance(cls, type) else None
     if schema is None:
         return {"type": "object"}
@@ -130,23 +136,25 @@ def _json_object(cls: Any, definitions: dict[str, Any]) -> dict[str, Any]:
             },
             "required": [CLASS_KEY],
         },
-        "then": {"$ref": f"#/definitions/{_json_definition(schema, definitions)}"},
+        "then": {"$ref": f"#/definitions/{_add_definition(schema, definitions)}"},
     }
 
 
-def _json_definition(dataclass: type, definitions: dict[str, Any]) -> str:
+def _add_definition(dataclass: type, definitions: dict[str, Any]) -> str:
     name = f"{dataclass.__module__}.{dataclass.__qualname__}"
     if name not in definitions:
         definitions[name] = {}
-        definitions[name] = _json_mapping(dataclass, definitions)
+        definitions[name] = _build_mapping_schema(dataclass, definitions)
     return name
 
 
-def _json_mapping(dataclass: type, definitions: dict[str, Any]) -> dict[str, Any]:
+def _build_mapping_schema(
+    dataclass: type, definitions: dict[str, Any]
+) -> dict[str, Any]:
     return {
         "type": "object",
         "properties": {
-            name: _json_value(annotation, definitions)
+            name: _build_value_schema(annotation, definitions)
             for name, (_, annotation) in classify_fields(dataclass).items()
         },
         "patternProperties": {r"^\$": {}},
