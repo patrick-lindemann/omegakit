@@ -9,8 +9,8 @@ from .errors import (
 from .instantiate import instantiate, prepare
 from .load import load_config
 from .object import CLASS_KEY, PARTIAL_KEY, REF_KEY, make_node
-from .tree import walk
 from .validate import validate
+from .walk import walk
 
 __all__ = [
     "BASE_KEY",

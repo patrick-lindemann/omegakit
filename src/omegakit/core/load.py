@@ -14,8 +14,8 @@ from .assembly import (
 from .errors import ConfigLoadError, OmegaKitBaseException
 from .file import load_yaml
 from .object import CLASS_KEY, PARTIAL_KEY, REF_KEY
-from .tree import walk
 from .utils import describe_error
+from .walk import walk
 
 
 def load_config(
