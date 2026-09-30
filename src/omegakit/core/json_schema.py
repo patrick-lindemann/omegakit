@@ -15,7 +15,7 @@ from typing import (
 
 from .assembly import IMPORT_KEY
 from .object import CLASS_KEY
-from .schema import classify_fields, find_schema
+from .schema import Schema, classify_fields, find_schema
 
 # A value may always be written as an interpolation, a missing value or an import.
 _PLACEHOLDER = {
@@ -140,7 +140,7 @@ def _build_object_schema(cls: Any, definitions: dict[str, Any]) -> dict[str, Any
     }
 
 
-def _add_definition(dataclass: type, definitions: dict[str, Any]) -> str:
+def _add_definition(dataclass: Schema, definitions: dict[str, Any]) -> str:
     name = f"{dataclass.__module__}.{dataclass.__qualname__}"
     if name not in definitions:
         definitions[name] = {}
@@ -149,7 +149,7 @@ def _add_definition(dataclass: type, definitions: dict[str, Any]) -> str:
 
 
 def _build_mapping_schema(
-    dataclass: type, definitions: dict[str, Any]
+    dataclass: Schema, definitions: dict[str, Any]
 ) -> dict[str, Any]:
     return {
         "type": "object",

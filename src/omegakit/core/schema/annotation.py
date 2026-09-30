@@ -3,6 +3,8 @@ import dataclasses
 import types
 from typing import Any, TypeAliasType, Union, get_args, get_origin, is_typeddict
 
+from .schema import Schema
+
 
 def split_union(annotation: Any) -> tuple[tuple[Any, ...], bool]:
     """Split an annotation into its members, following type aliases.
@@ -24,7 +26,7 @@ def split_union(annotation: Any) -> tuple[tuple[Any, ...], bool]:
     return members, len(members) < len(get_args(annotation))
 
 
-def find_section(annotation: Any) -> type | None:
+def find_section(annotation: Any) -> Schema | None:
     """Find the dataclass in an object field's annotation, if there is one.
 
     Args:

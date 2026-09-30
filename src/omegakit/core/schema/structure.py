@@ -19,6 +19,7 @@ from omegaconf import MISSING
 
 from .annotation import is_mapping_type, is_sequence_type, split_union
 from .field import classify_fields
+from .schema import Schema
 
 
 # OmegaConf 2.3 supports neither `Literal`, nor unions with non-scalar members, nor
@@ -26,11 +27,11 @@ from .field import classify_fields
 # types there. The rest is checked after OmegaConf, and building constructs the
 # schema's own classes, so every supported OmegaConf version behaves the same.
 @functools.cache
-def derive_structure(schema: type) -> type:
+def derive_structure(schema: Schema) -> type:
     """Derive the dataclass that OmegaConf validates the data fields of a schema with.
 
     Args:
-        schema: The schema, a dataclass.
+        schema: The schema to derive the structure from.
 
     Returns:
         A dataclass with the data fields of `schema`, whose annotations OmegaConf

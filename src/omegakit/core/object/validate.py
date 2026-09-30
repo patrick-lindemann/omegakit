@@ -8,6 +8,7 @@ from omegaconf.errors import OmegaConfBaseException
 from omegakit.core.assembly import drop_meta
 from omegakit.core.errors import ConfigValidationError
 from omegakit.core.schema import (
+    Schema,
     check_schema,
     classify_fields,
     coerce_fields,
@@ -32,7 +33,7 @@ class Call:
     """A checked `$class` node, or a root checked against a class."""
 
     target: Any
-    schema: type | None
+    schema: Schema | None
     partial: bool
     arguments: dict[str, Any]
     path: tuple[str | int, ...]
@@ -43,7 +44,7 @@ class Call:
 class Section:
     """A checked mapping of a dataclass field without `$class`."""
 
-    schema: type
+    schema: Schema
     fields: dict[str, Any]
     path: tuple[str | int, ...]
 
@@ -229,7 +230,7 @@ def _check_call(
 
 
 def _check_section(
-    schema: type,
+    schema: Schema,
     values: dict[str, Any],
     path: tuple[str | int, ...],
     allow_missing: bool,

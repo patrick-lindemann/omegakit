@@ -11,11 +11,12 @@ from omegakit.core.errors import OmegaKitBaseException, SchemaDefinitionError
 from omegakit.core.utils import describe_error
 
 from .configurable import Configurable
+from .schema import Schema
 from .structure import derive_structure
 
 
 @functools.cache
-def find_schema(cls: type) -> type | None:
+def find_schema(cls: type) -> Schema | None:
     """Find the schema of a class. A schema is a plain dataclass.
 
     Args:

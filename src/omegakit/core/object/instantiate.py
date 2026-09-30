@@ -6,7 +6,7 @@ from omegaconf import DictConfig, OmegaConf
 
 from omegakit.core.assembly import merge_overrides
 from omegakit.core.errors import ConfigValidationError
-from omegakit.core.schema import classify_fields, coerce_fields
+from omegakit.core.schema import Schema, classify_fields, coerce_fields
 from omegakit.core.utils import format_path
 
 from .class_ import CLASS_KEY, call
@@ -168,7 +168,7 @@ def _build(value: Any, partial: bool = False) -> Any:
 
 
 def _build_fields(
-    schema: type, values: dict[str, Any], path: tuple[str | int, ...]
+    schema: Schema, values: dict[str, Any], path: tuple[str | int, ...]
 ) -> dict[str, Any]:
     fields = coerce_fields(schema, values, path, build=True)
     for name, (kind, _) in classify_fields(schema).items():

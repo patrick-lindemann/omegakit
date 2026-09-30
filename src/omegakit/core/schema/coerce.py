@@ -23,11 +23,12 @@ from omegakit.core.utils import (
 
 from .annotation import is_mapping_type, is_sequence_type, split_union
 from .field import classify_fields
+from .schema import Schema
 from .structure import derive_structure, derive_structure_type
 
 
 def coerce_fields(
-    schema: type,
+    schema: Schema,
     values: dict[str, Any],
     path: tuple[str | int, ...],
     allow_missing: bool = False,
@@ -36,7 +37,7 @@ def coerce_fields(
     """Validate and coerce the data fields of a node through OmegaConf.
 
     Args:
-        schema: The schema, a dataclass.
+        schema: The schema of the node.
         values: The node's resolved values, without `$` keys.
         path: The node's path from the config root.
         allow_missing: Keep missing values as `???` instead of raising, including
@@ -346,7 +347,7 @@ def _build_union_value(
 
 
 @functools.cache
-def _find_defaulted_fields(schema: type) -> frozenset[str]:
+def _find_defaulted_fields(schema: Schema) -> frozenset[str]:
     return frozenset(
         field.name
         for field in dataclasses.fields(schema)

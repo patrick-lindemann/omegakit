@@ -21,6 +21,7 @@ from omegakit.core.errors import SchemaDefinitionError
 from omegakit.core.utils import describe_error
 
 from .annotation import is_mapping_type, is_sequence_type, split_union
+from .schema import Schema
 
 type _FieldKind = Literal["data", "object", "any"]
 
@@ -39,12 +40,12 @@ _UNSUPPORTED_CONTAINERS = (
 
 @functools.cache
 def classify_fields(
-    schema: type, outer: tuple[type, ...] = ()
+    schema: Schema, outer: tuple[Schema, ...] = ()
 ) -> Mapping[str, tuple[_FieldKind, Any]]:
     """Classify the configurable fields of a schema.
 
     Args:
-        schema: The schema, a dataclass.
+        schema: The schema whose fields are classified.
         outer: The dataclasses whose fields lead to `schema`, outermost first.
             Defaults to `()`.
 
@@ -84,7 +85,7 @@ def classify_fields(
     )
 
 
-def _resolve_type_hints(schema: type) -> dict[str, Any]:
+def _resolve_type_hints(schema: Schema) -> dict[str, Any]:
     try:
         return get_type_hints(schema)
     except NameError as error:
@@ -122,7 +123,7 @@ def _resolve_type_hints(schema: type) -> dict[str, Any]:
 
 
 def _classify_field(
-    annotation: Any, schema: type, name: str, outer: tuple[type, ...]
+    annotation: Any, schema: Schema, name: str, outer: tuple[Schema, ...]
 ) -> _FieldKind:
     while isinstance(annotation, TypeAliasType):
         annotation = annotation.__value__
