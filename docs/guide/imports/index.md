@@ -61,9 +61,12 @@ limits a config, and what these limits do not cover.
 - A relative `<path>` is relative to the importing file's directory. The path may
   contain `${…}`, which sees resolvers and the keys written in the importing file,
   not keys from a `$base`, another file or overrides.
-- `<node>` is a dotted path from the imported file's root: keys in mappings,
-  integer indices in lists, negative from the end (`#a.b.-1`). Empty means the
-  whole file.
+- `<node>` is a path from the imported file's root, selected with
+  `OmegaConf.select`: `#a.b`, `#a.b[0]` or `#a.b.0`, and `#a.b.-1` from the end.
+  It follows interpolations on the way. Empty means the whole file.
+- A selected single value arrives resolved in the imported file, as
+  `OmegaConf.select` gives it. A selected mapping or list arrives as written, and
+  its `${…}` resolve against the assembled config.
 - An import can replace a mapping value or a list item. An imported file may hold
   a mapping or a list; the root file only a mapping. A file that holds a single
   value, such as `hello` or `5`, is rejected everywhere. An empty file, `null` or
@@ -79,5 +82,5 @@ limits a config, and what these limits do not cover.
   file, with the original error as its `__cause__` where there is one: a file that
   does not exist, cannot be read or is invalid; a cycle; an
   interpolation in the path that fails; more than one `#`, so a file name with `#`
-  cannot be imported; a `<node>` that does not exist, walks through a scalar or an
-  interpolation, or has a bad or out-of-range index.
+  cannot be imported; a `<node>` that does not exist or holds `???`, has a bad
+  index, or passes an interpolation that fails.

@@ -50,7 +50,7 @@ batch_size: 32
 
 ## One node
 
-`--node` prints one node, by the same dotted path as `~import file#node`:
+`--node` prints one node, selected as `~import file#node` selects it:
 
 ```sh
 omegakit show configs/experiments/linear.yaml --node model
@@ -93,12 +93,14 @@ that `load_config` removes ([Metadata](../../guide/metadata/index.md)).
 - `--overrides KEY=VALUE ...` applies in the order given, as the `overrides` of
   `load_config`, and takes its arguments as `check` does
   ([check](../check/index.md#rules)).
-- `--node` takes a dotted path, walked as `~import file#node` is: `items.0.name`,
-  `items.-1`. A node that does not exist, or a path through an interpolation
-  without `--resolve`, exits with 1.
-- Without `--resolve`, values print as written: `${…}`, `???`, `null`. With it,
-  interpolations on the path are followed and only the selected node is resolved.
-  Missing values print as `???`, and any other resolution error exits with 1 with
-  one line.
-- With `--resolve`, `${secret:...}` gives `***`, unless `--show-secrets` is given
+- `--node` selects a node with `OmegaConf.select`, as `~import file#node` does
+  ([Imports](../../guide/imports/index.md#rules)): `items.0.name`,
+  `items[0].name`, `items.-1`. A node that does not exist or holds `???` exits
+  with 1.
+- Without `--resolve`, a mapping or a list prints as written: `${…}`, `???`,
+  `null`. A single value that `--node` selects prints resolved, as
+  `OmegaConf.select` gives it. With `--resolve`, the selected node is resolved and
+  nothing else. Missing values print as `???`, and any other resolution error
+  exits with 1 with one line.
+- `${secret:...}` resolves to `***`, unless `--show-secrets` is given
   ([Secrets](../../security/secrets/index.md#rules)).

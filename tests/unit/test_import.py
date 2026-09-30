@@ -122,12 +122,12 @@ def test_load_import_resolves_relative_to_importer(write_yaml):
     assert cfg.foo.bar.v == 7
 
 
-def test_load_leaf_import_resolves_against_root(write_yaml):
+def test_load_leaf_import_resolves_in_the_imported_file(write_yaml):
     write_yaml("base.yaml", "p: base_p\nq: ${p}\n")
     cfg = load_config(
         write_yaml("main.yaml", 'leaf: "~import base.yaml#q"\np: root_p\n')
     )
-    assert cfg.leaf == "root_p"
+    assert cfg.leaf == "base_p"
 
 
 def test_import_selects_list_index(write_yaml):
@@ -281,18 +281,25 @@ def test_import_with_more_than_one_hash_raises(write_yaml):
         load_config(write_yaml("main.yaml", 'n: "~import lib.yaml#a#b"\n'))
 
 
-@pytest.mark.parametrize("selector", ["c.d", "a.b.x", "a.b.5"])
-def test_import_invalid_selector_raises_missing_node(write_yaml, selector):
-    write_yaml("lib.yaml", "a:\n  b: [0, 1]\nc: 3\n")
-    with pytest.raises(ConfigLoadError, match="selects node"):
+@pytest.mark.parametrize(
+    ("selector", "match"),
+    [
+        ("c.d", "selects node"),
+        ("a.b.5", "selects node"),
+        ("e", "selects node"),
+        ("a.b.x", "is not an int"),
+    ],
+)
+def test_import_invalid_selector_raises(write_yaml, selector, match):
+    write_yaml("lib.yaml", "a:\n  b: [0, 1]\nc: 3\ne: ???\n")
+    with pytest.raises(ConfigLoadError, match=match):
         load_config(write_yaml("main.yaml", f'n: "~import lib.yaml#{selector}"\n'))
 
 
-def test_import_selector_through_an_interpolation_raises(write_yaml):
+def test_import_selector_follows_an_interpolation(write_yaml):
     write_yaml("lib.yaml", "a: ${b}\nb:\n  c: 1\n")
-    path = write_yaml("main.yaml", 'n: "~import lib.yaml#a.c"\n')
-    with pytest.raises(ConfigLoadError, match="`a`, which is an interpolation"):
-        load_config(path)
+    cfg = load_config(write_yaml("main.yaml", 'n: "~import lib.yaml#a.c"\n'))
+    assert cfg.n == 1
 
 
 def test_import_selects_negative_list_index(write_yaml):

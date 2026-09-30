@@ -58,7 +58,8 @@ of the pipeline under Rules, and that order explains what works together:
 **Resolution timing.**
 
 - Resolved while assembling: the path of an `~import`, including any `${…}` in it,
-  and the values of `$base` and `$defaults`.
+  a single value that `~import file#node` selects, and the values of `$base` and
+  `$defaults`.
 - Every other `${…}` resolves when it is read, validated or built, against the
   assembled config. A relative one, such as `${.id}`, resolves at the node's final
   position.

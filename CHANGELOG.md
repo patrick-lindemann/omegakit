@@ -19,6 +19,11 @@ All notable changes to this project are documented here. The format follows
 - **Breaking:** omegakit requires OmegaConf 2.4.0, and no other version. Until
   2.4.0 is released, only its release candidate exists; uv installs it with
   `uv add omegakit --prerelease=allow`.
+- **Breaking:** `~import file#node` and `omegakit show --node` select the node with
+  `OmegaConf.select`. The path also takes `a[0]`, and it follows interpolations
+  instead of rejecting a path through one. A node that holds `???` counts as
+  missing. A selected single value arrives resolved: an import resolves it in the
+  imported file, and `show` prints it resolved, with `${secret:...}` as `***`.
 - **Breaking:** `${secret:...}` wraps the interpolation that gives the secret, such
   as `${secret:${oc.env:TOKEN}}`, so a secret can come from any resolver. Replace
   every `${secret:NAME}` with `${secret:${oc.env:NAME}}`: the old form now gives the

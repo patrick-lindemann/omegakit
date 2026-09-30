@@ -5,10 +5,12 @@ from typing import Any, NoReturn, override
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
 from omegakit.core.load import load_config
-from omegakit.core.tree import resolve_item, select_node
+from omegakit.core.tree import resolve_item
 
 from ._arg import Arguments
 from ._routine import Routine
+
+_NOT_FOUND = object()
 
 
 class ShowArguments(Arguments):
@@ -47,8 +49,8 @@ class ShowRoutine(Routine[ShowArguments]):
         parser.add_argument(
             "--node",
             metavar="KEY",
-            help="print only this node, such as training.model or items.0; it is not "
-            "resolved unless --resolve is given",
+            help="print only this node, selected as OmegaConf.select does, such as "
+            "training.model or items[0]",
         )
         parser.add_argument(
             "--resolve",
@@ -62,7 +64,7 @@ class ShowRoutine(Routine[ShowArguments]):
         parser.add_argument(
             "--show-secrets",
             action="store_true",
-            help="with --resolve, print the values of ${secret:...} instead of ***",
+            help="print the values of ${secret:...} instead of ***",
         )
         parser.add_argument(
             "--import-root",
@@ -96,36 +98,35 @@ class ShowRoutine(Routine[ShowArguments]):
             )
         except Exception as error:
             _fail(args.config, error)
-        if args.resolve and not args.show_secrets:
-            # Every value built from a secret then holds `***`. Loading resolved with
-            # the real values, and the config caches what its resolvers gave.
+        if not args.show_secrets:
+            # Every value built from a secret then holds `***`, also a single value
+            # that --node selects, which OmegaConf resolves. Loading resolved with the
+            # real values, and the config caches what its resolvers gave.
             OmegaConf.register_resolver("secret", _mask_secret, replace=True)
             OmegaConf.clear_cache(config)
         try:
             node = config
             if args.node is not None:
-                node = select_node(config, args.node, resolve=args.resolve)
-            if node is None:
+                node = OmegaConf.select(config, args.node, default=_NOT_FOUND)
+            if node is _NOT_FOUND:
                 print(f"{args.config}: no node `{args.node}`")
                 raise SystemExit(1)
-            value = _to_plain(node, args.resolve)
-        except Exception as error:
-            # Without --resolve, the only error here is a path through an
-            # interpolation.
-            _fail(
-                args.config,
-                error,
-                "" if args.resolve else " Add --resolve to follow it.",
+            value = (
+                _to_plain(node, args.resolve)
+                if isinstance(node, (DictConfig, ListConfig))
+                else node
             )
+        except Exception as error:
+            _fail(args.config, error)
         if isinstance(value, (DictConfig, ListConfig, dict, list)):
             print(OmegaConf.to_yaml(value), end="")
         else:
             print("null" if value is None else value)
 
 
-def _fail(path: Path, error: Exception, hint: str = "") -> NoReturn:
+def _fail(path: Path, error: Exception) -> NoReturn:
     message = str(error).splitlines()[0] if str(error) else ""
-    print(f"{path}: {type(error).__name__}: {message}{hint}")
+    print(f"{path}: {type(error).__name__}: {message}")
     raise SystemExit(1) from error
 
 

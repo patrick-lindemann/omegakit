@@ -170,34 +170,40 @@ broken: ${nope}
 @pytest.mark.parametrize(
     ("node", "output"),
     [
-        ("db.url", "postgres://u:${oc.env:OMEGAKIT_TEST_PASSWORD}@h/db\n"),
+        ("db.url", "postgres://u:hunter2@h/db\n"),
         ("db.empty", "null\n"),
-        ("db.host", "???\n"),
         ("items.1", "name: b\n"),
+        ("items[1].name", "b\n"),
         ("items.-1.name", "b\n"),
-        ("alias", "${items}\n"),
+        ("alias", "- name: a\n- name: b\n"),
     ],
 )
-def test_cli_show_node_is_not_resolved(write_yaml, capsys, monkeypatch, node, output):
+def test_cli_show_node_selects_as_omegaconf(
+    write_yaml, capsys, monkeypatch, node, output
+):
     monkeypatch.setenv("OMEGAKIT_TEST_PASSWORD", "hunter2")
     main(["show", str(write_yaml("app.yaml", SHOW_NODES)), "--node", node])
     assert capsys.readouterr().out == output
 
 
-def test_cli_show_node_through_an_interpolation_needs_resolve(write_yaml, capsys):
-    path = write_yaml("app.yaml", SHOW_NODES)
-    assert _exit_code(["show", str(path), "--node", "alias.0.name"]) == 1
-    message = capsys.readouterr().out
-    assert "`alias`" in message
-    assert "--resolve" in message
-    main(["show", str(path), "--node", "alias.0.name", "--resolve"])
+def test_cli_show_node_follows_interpolations(write_yaml, capsys):
+    main(["show", str(write_yaml("app.yaml", SHOW_NODES)), "--node", "alias.0.name"])
     assert capsys.readouterr().out == "a\n"
 
 
-def test_cli_show_resolves_only_the_selected_node(write_yaml, capsys):
+def test_cli_show_node_that_is_missing_is_no_node(write_yaml, capsys):
     path = write_yaml("app.yaml", SHOW_NODES)
-    main(["show", str(path), "--node", "db.host", "--resolve"])
-    assert capsys.readouterr().out == "???\n"
+    assert _exit_code(["show", str(path), "--node", "db.host"]) == 1
+    assert capsys.readouterr().out == f"{path}: no node `db.host`\n"
+
+
+def test_cli_show_resolves_only_the_selected_node(write_yaml, capsys, monkeypatch):
+    monkeypatch.setenv("OMEGAKIT_TEST_PASSWORD", "hunter2")
+    path = write_yaml("app.yaml", SHOW_NODES)
+    main(["show", str(path), "--node", "db", "--resolve"])
+    assert capsys.readouterr().out == (
+        "url: postgres://u:hunter2@h/db\nempty: null\nhost: ???\n"
+    )
     main(["show", str(path), "--node", "items", "--resolve"])
     assert capsys.readouterr().out == "- name: a\n- name: b\n"
 
@@ -238,10 +244,7 @@ tokens:
         ),
         (["--node", "db.url", "--resolve"], "postgres://u:***@h/db\n"),
         (["--node", "db.password", "--resolve"], "***\n"),
-        (
-            ["--node", "db.password"],
-            "${secret:${oc.env:OMEGAKIT_TEST_PASSWORD}}\n",
-        ),
+        (["--node", "db.password"], "***\n"),
         (
             ["--node", "db.url", "--resolve", "--show-secrets"],
             "postgres://u:correct-horse@h/db\n",

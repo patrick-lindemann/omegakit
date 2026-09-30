@@ -1,16 +1,17 @@
 from pathlib import Path
 from typing import Any
 
-from omegaconf import DictConfig, ListConfig, Node
+from omegaconf import DictConfig, ListConfig, Node, OmegaConf
 from omegaconf.errors import OmegaConfBaseException
 
 from omegakit.core.errors import ConfigLoadError
 from omegakit.core.file import load_yaml
-from omegakit.core.tree import select_node
 from omegakit.core.utils import describe_error
 
 IMPORT_KEY = "~import"
 """Value prefix that replaces a node with another config file or one of its nodes."""
+
+_NOT_FOUND = object()
 
 
 def resolve_imports(
@@ -123,12 +124,12 @@ def _load_import(
         )
         cache[file_path] = imported_config
     try:
-        node = select_node(imported_config, node_path)
-    except ConfigLoadError as error:
+        node = OmegaConf.select(imported_config, node_path, default=_NOT_FOUND)
+    except OmegaConfBaseException as error:
         raise ConfigLoadError(
-            f"Import `{statement}` in `{config_path}`: {error}"
+            f"Import `{statement}` in `{config_path}`: {describe_error(error)}"
         ) from error
-    if node is None:
+    if node is _NOT_FOUND:
         raise ConfigLoadError(
             f"Import `{statement}` in `{config_path}` selects node `{node_path}`, "
             f"which does not exist in `{file_path}`."
