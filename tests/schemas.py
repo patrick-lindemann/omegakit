@@ -269,13 +269,6 @@ class PointDict(TypedDict):
 
 
 @dataclass
-class UnsupportedField:
-    """A schema whose field has an unsupported container."""
-
-    tags: set[str] = field(default_factory=set)
-
-
-@dataclass
 class BareContainers:
     """A schema with containers that name no item type."""
 
