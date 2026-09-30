@@ -13,7 +13,8 @@ from typing import (
     is_typeddict,
 )
 
-from .keys import CLASS_KEY, IMPORT_KEY
+from .assembly import IMPORT_KEY
+from .keys import CLASS_KEY
 from .schema import classify_fields, find_schema
 
 # A value may always be written as an interpolation, a missing value or an import.

@@ -4,9 +4,15 @@ from typing import Any
 from omegaconf import DictConfig
 from omegaconf.errors import OmegaConfBaseException
 
-from .assembly import apply_defaults, merge_bases, merge_overrides, resolve_imports
+from .assembly import (
+    META_KEY,
+    apply_defaults,
+    merge_bases,
+    merge_overrides,
+    resolve_imports,
+)
 from .errors import ConfigLoadError, OmegaKitBaseException
-from .keys import CLASS_KEY, META_KEY, PARTIAL_KEY, REF_KEY
+from .keys import CLASS_KEY, PARTIAL_KEY, REF_KEY
 from .tree import load_file, strip_keys
 from .utils import describe_error
 
@@ -54,13 +60,7 @@ def load_config(
             "must be a mapping."
         )
     try:
-        resolve_imports(
-            config,
-            file_path,
-            visited_paths={file_path},
-            cache={},
-            import_root=import_root,
-        )
+        resolve_imports(config, file_path, import_root)
         merge_bases(config)
         apply_defaults(config)
     except OmegaKitBaseException:
