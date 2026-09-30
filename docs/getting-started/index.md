@@ -119,7 +119,7 @@ built:
 ```{code-block} text
 :caption: Output
 
-error: Unknown field(s) `hiden` in `model` (MLPConfig). Expected one of `hidden`, `layers`, `activation`.
+error: Invalid config in `model.hiden` (MLPConfig): Key 'hiden' not in 'MLPConfig'. Did you mean: 'hidden'?
 ```
 
 ## 5. Run an experiment

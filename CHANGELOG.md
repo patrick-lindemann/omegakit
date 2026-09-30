@@ -10,9 +10,8 @@ All notable changes to this project are documented here. The format follows
 
 - `omegakit --version` prints the installed version, which is also
   `omegakit.__version__`.
-- A schema field annotated with a bare `Sequence` or `Mapping`, without item types,
-  holds any plain values, as a bare `list` or `dict` does. It raised
-  `SchemaDefinitionError`.
+- A schema may contain itself, directly or through other dataclasses, as OmegaConf
+  allows. It raised `SchemaDefinitionError`.
 
 ### Changed
 
@@ -28,6 +27,16 @@ All notable changes to this project are documented here. The format follows
   a single string, such as `hello`, is the mapping `{hello: null}` instead of an
   error; a single number or boolean still raises `ConfigLoadError`, now with
   OmegaConf's message.
+- **Breaking:** OmegaConf checks and converts the data fields of a schema, and its
+  rules replace omegakit's own. A data field accepts what OmegaConf accepts: a
+  `Literal` needs its exact value (`"2"` is no longer `2`), a union no longer
+  converts the items of a list (`["1", 2]` for `list[int] | int`), a tuple cannot
+  hold `???`, and `Sequence`, `Mapping` and `set` raise `SchemaDefinitionError`.
+  Unknown keys, missing fields and wrong values give OmegaConf's messages, such as
+  ``Invalid config in `model.hiden` (MLPConfig): Key 'hiden' not in 'MLPConfig'.
+  Did you mean: 'hidden'?``. OmegaConf builds the dataclasses in data fields, and
+  builds a dataclass default of a given dataclass again, so its `__post_init__`
+  runs again.
 - **Breaking:** A `Configurable` names its schema in the class attribute `schema`
   instead of a type argument: replace `class Model(Configurable[ModelConfig])` with
   `class Model(Configurable)` and `schema = ModelConfig` in its body. `from_config`
@@ -41,14 +50,9 @@ All notable changes to this project are documented here. The format follows
   `items.0.model`, everywhere. Errors about `$base` and `$defaults` named a list
   item as `items0.model`, and errors from resolving, from overrides and from
   values inside a field as `items[0].model`.
-- **Breaking:** A missing required field gives one message for every kind of field,
-  such as ``Missing required field `depth` in `<root>` (ModelConfig).``, with the
-  path of a field inside a nested dataclass (`inner.value`). A plain value used to
-  give OmegaConf's ``Invalid config in `depth` (ModelConfig): Missing mandatory
-  value: depth``.
 - **Breaking:** Error messages share one style: keys and names in backticks,
   "mapping" rather than "dictionary", and "Cannot …". This changes the messages for
-  unknown fields, a `$ref` node with other keys, a `$base` or `$defaults` that is
+  a `$ref` node with other keys, a `$base` or `$defaults` that is
   not a mapping, a missing attribute (``Module `m` has no attribute `x`.``), an
   import cycle, a `$partial` that is not a boolean, an `overrides` argument of the
   wrong type, and a missing PyTorch.

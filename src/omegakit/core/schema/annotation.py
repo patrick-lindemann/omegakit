@@ -1,7 +1,6 @@
-import collections.abc
 import dataclasses
 import types
-from typing import Any, TypeAliasType, Union, get_args, get_origin, is_typeddict
+from typing import Any, TypeAliasType, Union, get_args, get_origin
 
 from .schema import Schema
 
@@ -40,32 +39,3 @@ def find_section(annotation: Any) -> Schema | None:
         if isinstance(member, type) and dataclasses.is_dataclass(member):
             return member
     return None
-
-
-def is_mapping_type(annotation: Any) -> bool:
-    """Tell whether an annotation describes a mapping.
-
-    Args:
-        annotation: The annotation.
-
-    Returns:
-        `True` for a `dict`, a `Mapping`, a dataclass or a `TypedDict`.
-    """
-    origin = get_origin(annotation) or annotation
-    return origin in (dict, collections.abc.Mapping) or (
-        isinstance(annotation, type)
-        and (dataclasses.is_dataclass(annotation) or is_typeddict(annotation))
-    )
-
-
-def is_sequence_type(annotation: Any) -> bool:
-    """Tell whether an annotation describes a sequence.
-
-    Args:
-        annotation: The annotation.
-
-    Returns:
-        `True` for a `list`, a `tuple` or a `Sequence`.
-    """
-    origin = get_origin(annotation) or annotation
-    return origin in (list, tuple, collections.abc.Sequence)

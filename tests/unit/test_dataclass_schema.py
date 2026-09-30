@@ -62,7 +62,7 @@ def test_dataclass_class_node_is_built_with_converted_values():
 
 
 def test_dataclass_class_node_rejects_unknown_key():
-    with pytest.raises(ConfigValidationError, match="Unknown field"):
+    with pytest.raises(ConfigValidationError, match="Key 'beta' not in 'Optimizer'"):
         instantiate({"$class": OPTIMIZER, "lr": 1, "beta": 2})
 
 

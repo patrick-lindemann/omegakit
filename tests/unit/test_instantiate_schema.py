@@ -58,7 +58,7 @@ def test_root_with_class_outside_schema_raises():
 def test_root_without_class_is_validated_against_schema():
     with pytest.raises(ConfigValidationError, match=r"`seed` \(Experiment\)"):
         instantiate({"encoder": ENCODER, "seed": "many"}, schema=Experiment)
-    with pytest.raises(ConfigValidationError, match="Missing required field"):
+    with pytest.raises(ConfigValidationError, match="Missing mandatory value: encoder"):
         instantiate({"seed": 1}, schema=Experiment)
 
 

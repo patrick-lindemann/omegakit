@@ -22,7 +22,7 @@ model: MLP(
   (1): ReLU()
   (2): Linear(in_features=64, out_features=1, bias=True)
 )
-error: `activation` must be one of 'relu', 'tanh', but the config gives `'gelu'`.
+error: Invalid config in `activation` (MLPConfig): Invalid value 'gelu', expected one of ['relu', 'tanh']
 node: {'$class': 'models.MLP', 'hidden': 8}
 instantiate(node): MLP(
   (0): Linear(in_features=1, out_features=8, bias=True)

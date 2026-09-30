@@ -18,7 +18,7 @@
 :caption: Output
 
 error: Invalid config in `training.epochs` (Experiment): Value 'many' of type 'str' could not be converted to Integer
-error: `training.schedule` must be one of 'constant', 'cosine', but the config gives `'linear'`.
+error: Invalid config in `training.schedule` (Experiment): Invalid value 'linear', expected one of ['constant', 'cosine']
 error: `model` expects Module, but the config gives `$class: torch.optim.SGD`.
 ```
 
@@ -58,7 +58,7 @@ run this check, with their own `schema`, before building.
 - Every `$class` node is checked against its class's schema. Nested `$class`
   nodes are checked before their parent. The class is imported, not called. A
   class without a schema has only its children checked. A class whose schema is
-  not supported raises `SchemaDefinitionError`
+  not supported, or does not fit its `__init__`, raises `SchemaDefinitionError`
   ([Dataclass schemas](../dataclass-schemas/index.md#rules)).
 - `schema` says what the root must match. A root with `$class` must name
   `schema` or a subclass. A root without `$class` is checked against the schema

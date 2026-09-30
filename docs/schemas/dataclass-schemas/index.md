@@ -48,33 +48,13 @@ through [`Configurable`](../../objects/configurable-classes/index.md).
 
 | Annotation | Config value | Checked by | The result holds |
 |---|---|---|---|
-| **data**: `int`, `float`, `bool`, `str`, `bytes`, `Path`, `Enum`, `Literal` of `str`, `int` or `bool`, `TypedDict`, dataclasses whose fields are all of this kind, `list`, `dict`, `tuple`, `Sequence` and `Mapping` of these, and unions of these, optional or not | plain values | OmegaConf, then omegakit | the converted value |
-| **object**: any other class, generic classes, unions of classes, `list` or `dict` of these, optional or not, also through a `type` alias | a `$class` or `$ref` node, a list or mapping of them, or `null` if optional | the class check ([Validation](../validation/index.md#rules)), then the node's own schema | the built object |
+| **data**: every annotation that OmegaConf accepts, such as `int`, `str`, `Path`, enums, `Literal`, dataclasses of these, and `list`, `dict`, `tuple` and unions of these, optional or not | plain values | OmegaConf | the value as OmegaConf converts it |
+| **object**: a class that OmegaConf does not accept, a union of such classes, a `list` or `dict` of them, optional or not, also through a `type` alias | a `$class` or `$ref` node, a list or mapping of them, or `null` if optional | the class check ([Validation](../validation/index.md#rules)), then the node's own schema | the built object |
 | **`Any`** | anything | not checked, but `$class` nodes inside are | the value, with `$class` nodes built |
 
-- Enums accept a member name or value, as in the example below. A name wins over
-  an equal value of another member, and a value needs the exact type of the
-  member's value.
-- A `Literal` value is converted like its type, then compared by type and value:
-  `"2"` is valid for `Literal[1, 2]`, `true` is not.
-- A union has at most one mapping member (dataclass, `dict`, `Mapping`,
-  `TypedDict`) and one list member (`list`, `tuple`, `Sequence`). A mapping or a
-  list is checked, with conversion, as that member. A scalar must match a scalar
-  member's type exactly: `"5"` is not an `int`, `True` is not an `int`, `3` is not
-  a `float`, and a string is not a `Path` or an enum. `null` needs `None` in the
-  union.
-- Tuples come from lists, and `tuple[A, B]` needs exactly two items. `Sequence`
-  and `Mapping` give a `list` and a `dict`. A `TypedDict` field is an unchecked
-  `dict`. A `list`, `tuple`, `dict`, `Sequence` or `Mapping` without item types
-  holds any plain values.
-- `init=False` fields and `InitVar`s are not configurable: a key for them is
-  unknown. An `InitVar` needs a default.
-- Items of an object `list` or `dict` are `$class` or `$ref` nodes, or plain
-  mappings when the item type is a dataclass (a section).
-- A field annotated with a dataclass whose fields are all values takes only a
-  plain mapping. A `$class` node there raises `ConfigValidationError`.
-- An absent field takes its dataclass default. A field without one is required.
-  Schema defaults win over constructor defaults.
+- A data field accepts, converts and rejects values as OmegaConf's
+  [structured configs](https://omegaconf.readthedocs.io/en/latest/structured_config.html)
+  do. Enums, for example, take a member name or a value:
 
 ```{literalinclude} main.py
 :language: python
@@ -89,18 +69,23 @@ loss 'MAE': Loss.MAE
 loss 'mean absolute error': Loss.MAE
 ```
 
+- OmegaConf builds the dataclasses inside data fields. A dataclass default of a
+  dataclass that the config gives is built again from its values, so its
+  `__post_init__` runs again, as in `OmegaConf.to_object`.
+- `init=False` fields and `InitVar`s are not configurable: a key for them is
+  unknown.
+- Items of an object `list` or `dict` are `$class` or `$ref` nodes, or plain
+  mappings when the item type is a dataclass (a section).
+- An absent field takes its dataclass default. A field without one is required.
+  Schema defaults win over constructor defaults.
+- A dataclass may contain itself, directly or through others, as OmegaConf allows.
 
-**Unsupported**, raising `SchemaDefinitionError` that names the field and the fix,
+**Unsupported.** An annotation that OmegaConf rejects and that is not built from
+classes, such as `set[int]`, `Sequence[int]` or `int | Encoder`, raises
+`SchemaDefinitionError` with OmegaConf's reason, and so does an annotation that
+does not resolve, such as a name imported under `TYPE_CHECKING`. Both are raised
 wherever the class is reached: in a `$class` or a `schema` that `validate` or
-`instantiate` checks:
-an `InitVar` without a default; `set`, `frozenset` and other abstract containers;
-a container that mixes values and objects; a `tuple`, `Sequence` or `Mapping` of
-objects; a union that mixes values and classes, or has two mapping or two list
-members; `Literal` values other than `str`, `int` and `bool`; an annotation that
-`get_type_hints` cannot resolve, such as a name imported under `TYPE_CHECKING`; a
-dataclass that contains itself, directly or indirectly (the error names the cycle,
-`Tree -> Tree`). A `Configurable` whose schema has a field of its own class is not
-recursive: that field holds an object.
+`instantiate` checks.
 
 **Checking a node.** `validate` checks every node that has a schema, and
 `instantiate` and `prepare` do before they build:
@@ -108,10 +93,11 @@ recursive: that field holds an object.
 1. Check each object and `Any` field, children first
    ([Validation](../validation/index.md#rules)). A plain mapping in a
    field annotated with a dataclass is a section, checked the same way.
-2. Check the node's own keys and values. An unknown key, a missing required field
-   and a value that does not convert raise `ConfigValidationError`, naming the path
-   and the schema class. Values are checked through OmegaConf and converted into
-   the schema's own types. Object and `Any` values never enter OmegaConf.
+2. Check the node's own keys and values with one OmegaConf merge. An unknown key,
+   a missing required field and a wrong value raise `ConfigValidationError` with
+   OmegaConf's message, naming the path and the schema class; a wrong value inside
+   a dataclass in a list is named by its own field, as OmegaConf reports it. Object
+   and `Any` values never enter OmegaConf.
 
 The config is not changed. A dataclass named by `$class` is then called with the
 converted fields ([Instantiation](../../objects/instantiation/index.md#rules)).

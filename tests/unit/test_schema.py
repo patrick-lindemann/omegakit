@@ -17,7 +17,7 @@ from omegakit import (
     validate,
 )
 from tests import schemas
-from tests.schemas import Encoder, EncoderConfig, SectionWithObject, Sub
+from tests.schemas import Encoder, SectionWithObject
 
 
 @dataclass
@@ -63,17 +63,6 @@ class Holder(Configurable):
 
     def __init__(self, section: SectionWithObject | None) -> None:
         self.section = section
-
-
-@dataclass
-class AmbiguousUnionConfig:
-    value: Sub | EncoderConfig | None = None
-
-
-class WithAmbiguousUnion(Configurable):
-    schema = AmbiguousUnionConfig
-
-    def __init__(self, **fields: Any) -> None: ...
 
 
 FIELDS = "tests.schemas.Fields"
@@ -195,8 +184,8 @@ def test_schema_unknown_field_raises():
 def test_schema_missing_required_data_field_raises():
     with pytest.raises(ConfigValidationError) as info:
         instantiate({"$class": "tests.schemas.Model"})
-    assert (
-        str(info.value) == "Missing required field `depth` in `<root>` (ModelConfig)."
+    assert str(info.value) == (
+        "Invalid config in `depth` (ModelConfig): Missing mandatory value: depth"
     )
 
 
@@ -215,18 +204,22 @@ def test_schema_missing_field_of_a_nested_dataclass_names_its_path():
     with pytest.raises(ConfigValidationError) as info:
         validate({"inner": {}}, schema=NestedRequired)
     assert str(info.value) == (
-        "Missing required field `inner.value` in `<root>` (NestedRequired)."
+        "Invalid config in `inner.value` (NestedRequired): Missing mandatory value: "
+        "value"
     )
 
 
 def test_schema_missing_field_of_a_union_member_names_its_path():
     with pytest.raises(ConfigValidationError) as info:
         validate({"either": {}}, schema=NestedRequired)
-    assert str(info.value) == "Missing required field `value` in `either`."
+    assert str(info.value) == (
+        "Invalid config in `either.value` (NestedRequired): Missing mandatory value: "
+        "value"
+    )
 
 
 def test_schema_missing_required_object_field_raises():
-    with pytest.raises(ConfigValidationError, match="Missing required field `encoder`"):
+    with pytest.raises(ConfigValidationError, match="Missing mandatory value: encoder"):
         instantiate({"$class": "tests.schemas.RequiredObject"})
 
 
@@ -254,10 +247,9 @@ def test_schema_validation_happens_at_prepare():
 @pytest.mark.parametrize(
     ("cls", "match"),
     [
-        (WithSet, "unsupported container"),
-        (WithMixedUnion, "mixes value types and classes"),
-        (WithUnresolvable, "field `value`"),
-        (WithAmbiguousUnion, "cannot be told apart"),
+        (WithSet, "OmegaConf does not support"),
+        (WithMixedUnion, "OmegaConf does not support"),
+        (WithUnresolvable, "Cannot resolve the annotations"),
     ],
 )
 def test_schema_outside_supported_subset_raises(cls, match):
@@ -297,7 +289,7 @@ def test_schema_unresolvable_annotation_blames_its_own_field(monkeypatch):
     module.InheritedBase = InheritedBase  # pyright: ignore[reportAttributeAccessIssue]
     monkeypatch.setitem(sys.modules, module.__name__, module)
     exec(SUBCLASS_MODULE, vars(module))
-    with pytest.raises(SchemaDefinitionError, match="field `other`"):
+    with pytest.raises(SchemaDefinitionError, match="'Missing' is not defined"):
         validate({}, schema=module.Subclass)
 
 
@@ -322,18 +314,11 @@ class WithTree(Configurable):
     def __init__(self, child: Tree | None = None) -> None: ...
 
 
-@pytest.mark.parametrize(
-    ("schema", "cycle"),
-    [(Tree, "Tree -> Tree"), (Outer, "Outer -> Inner -> Outer")],
-)
-def test_schema_recursive_dataclasses_raise(schema, cycle):
-    with pytest.raises(SchemaDefinitionError, match=cycle):
-        validate({}, schema=schema)
-
-
-def test_schema_recursive_schema_of_a_class_raises():
-    with pytest.raises(SchemaDefinitionError, match="Tree -> Tree"):
-        validate({}, schema=WithTree)
+def test_schema_recursive_dataclasses_are_supported():
+    tree = instantiate({"child": {"child": {}}}, schema=Tree)
+    assert tree == Tree(child=Tree(child=Tree()))
+    validate({"inner": [{"outer": {"inner": []}}]}, schema=Outer)
+    instantiate({"child": {}}, schema=WithTree)
 
 
 @dataclass
@@ -354,9 +339,9 @@ class UnresolvableClassVar:
     count: int = 0
 
 
-def test_schema_forward_reference_that_does_not_resolve_names_its_field():
+def test_schema_forward_reference_that_does_not_resolve_raises():
     with pytest.raises(
-        SchemaDefinitionError, match=r"field `missing`.*Import the type at module level"
+        SchemaDefinitionError, match="Cannot resolve the annotations of schema"
     ):
         validate({}, schema=ForwardReferences)
 

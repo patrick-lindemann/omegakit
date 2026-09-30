@@ -1,4 +1,4 @@
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
@@ -281,22 +281,11 @@ class PointDict(TypedDict):
 
 
 @dataclass
-class BareContainers:
-    """A schema with containers that name no item type."""
-
-    items: Sequence = field(default_factory=list)
-    table: Mapping = field(default_factory=dict)
-    row: tuple = ()
-
-
-@dataclass
 class TypesConfig:
     """A schema with the annotations beyond plain values and dataclasses."""
 
     pair: tuple[int, str] = (0, "a")
     numbers: tuple[int, ...] = ()
-    sequence: Sequence[int] = field(default_factory=list)
-    mapping: Mapping[str, int] = field(default_factory=dict)
     point: PointDict = field(default_factory=lambda: PointDict(x=0))
     color: Color = Color.RED
     clash: Clash = Clash.A

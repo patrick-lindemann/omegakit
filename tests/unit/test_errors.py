@@ -49,11 +49,6 @@ class UsesPathKeys(Configurable):
 
 
 @dataclasses.dataclass
-class PathKeysInTuple:
-    pair: tuple[dict[Path, int], int]
-
-
-@dataclasses.dataclass
 class Counts:
     counts: list[int]
 
@@ -138,7 +133,7 @@ def test_override_errors_are_load_errors_in_every_function(write_yaml, overrides
 def test_unusable_schema_raises_a_definition_error_wherever_it_is_reached(
     call: Callable[[], Any],
 ):
-    with pytest.raises(SchemaDefinitionError, match="unsupported container"):
+    with pytest.raises(SchemaDefinitionError, match="OmegaConf does not support"):
         call()
 
 
@@ -147,9 +142,8 @@ def test_unusable_schema_raises_a_definition_error_wherever_it_is_reached(
     [
         lambda: validate({"counts": {}}, schema=PathKeys),
         lambda: instantiate({}, schema=PathKeys),
-        lambda: validate({"pair": [{}, 1]}, schema=PathKeysInTuple),
     ],
-    ids=["dataclass schema", "instantiate", "tuple item"],
+    ids=["dataclass schema", "instantiate"],
 )
 def test_schema_that_omegaconf_rejects_raises_a_definition_error(
     call: Callable[[], Any],

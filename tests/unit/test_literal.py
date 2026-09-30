@@ -1,12 +1,10 @@
-from dataclasses import dataclass
-from typing import Any, Literal
+from typing import Any
 
 import pytest
 
 from omegakit import (
     Configurable,
     ConfigValidationError,
-    SchemaDefinitionError,
     instantiate,
     validate,
 )
@@ -19,17 +17,6 @@ class WithLiterals(Configurable):
 
     def __init__(self, **fields: Any) -> None:
         self.fields = fields
-
-
-@dataclass
-class FloatLiteralConfig:
-    value: Literal[1.5] = 1.5  # pyright: ignore[reportInvalidTypeForm]
-
-
-class WithFloatLiteral(Configurable):
-    schema = FloatLiteralConfig
-
-    def __init__(self, **fields: Any) -> None: ...
 
 
 LITERALS = f"{__name__}.WithLiterals"
@@ -70,7 +57,6 @@ def test_literal_accepts_allowed_values():
         ({"maybe": "c"}, "maybe"),
         ({"modes": ["x", "z"]}, r"modes\.1"),
         ({"section": {"mode": "medium"}}, r"section\.mode"),
-        ({"sections": [{"mode": "medium"}]}, r"sections\.0\.mode"),
     ],
 )
 def test_literal_rejects_other_values_with_their_path(values, key):
@@ -78,10 +64,10 @@ def test_literal_rejects_other_values_with_their_path(values, key):
         _fields(**values)
 
 
-def test_literal_values_are_converted_like_their_type_first():
-    assert _fields(level="2")["level"] == 2
+@pytest.mark.parametrize("level", ["2", True])
+def test_literal_values_need_their_exact_value(level):
     with pytest.raises(ConfigValidationError, match="`level`"):
-        _fields(level=True)
+        _fields(level=level)
 
 
 def test_literal_validate_without_building():
@@ -94,8 +80,3 @@ def test_literal_in_a_root_schema():
     validate({"mode": "eval"}, schema=schemas.LiteralConfig)
     with pytest.raises(ConfigValidationError, match="`mode`"):
         validate({"mode": "test"}, schema=schemas.LiteralConfig)
-
-
-def test_literal_values_must_be_plain():
-    with pytest.raises(SchemaDefinitionError, match="strings, integers or booleans"):
-        instantiate({"$class": f"{__name__}.WithFloatLiteral"})
