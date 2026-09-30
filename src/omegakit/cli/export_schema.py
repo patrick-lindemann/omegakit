@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import override
 
 from omegakit.core.errors import SchemaDefinitionError
-from omegakit.core.json_schema import generate_json_schema
+from omegakit.core.schema import generate_json_schema
 from omegakit.core.utils import import_object
 
 from ._arg import Arguments

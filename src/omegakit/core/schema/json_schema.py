@@ -13,9 +13,12 @@ from typing import (
     is_typeddict,
 )
 
-from .assembly import IMPORT_KEY
-from .object import CLASS_KEY
-from .schema import Schema, classify_fields, find_schema
+from omegakit.core.assembly import IMPORT_KEY
+from omegakit.core.object import CLASS_KEY
+
+from .field import classify_fields
+from .lookup import find_schema
+from .schema import Schema
 
 # A value may always be written as an interpolation, a missing value or an import.
 _PLACEHOLDER = {
