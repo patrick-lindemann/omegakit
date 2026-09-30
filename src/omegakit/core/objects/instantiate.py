@@ -1,24 +1,17 @@
 import functools
 from collections.abc import Iterable
-from typing import Any, cast, get_args, get_origin, overload
+from typing import Any, overload
 
 from omegaconf import DictConfig, OmegaConf
 
 from omegakit.core.assembly import merge_overrides
 from omegakit.core.errors import ConfigValidationError
-from omegakit.core.schemas import (
-    check_schema,
-    classify_fields,
-    coerce_fields,
-    find_schema,
-    find_section,
-    split_union,
-)
-from omegakit.core.utils import format_path, import_object
+from omegakit.core.schemas import classify_fields, coerce_fields
+from omegakit.core.utils import format_path
 
-from .classes import CLASS_KEY, call, split_arguments
+from .classes import CLASS_KEY, call
 from .refs import REF_KEY
-from .validate import check_resolved, resolve_config
+from .validate import Call, Ref, Section, check
 
 
 @overload
@@ -147,85 +140,38 @@ def _instantiate(
     if overrides is not None:
         config = config.copy()
         merge_overrides(config, overrides)
-    plain_config = cast(dict[str, Any], resolve_config(config))
-    check_resolved(plain_config, schema=schema, allowed_modules=allowed_modules)
-    if CLASS_KEY in plain_config:
-        return _build(plain_config, partial)
-    return _build(plain_config, partial, target=schema)
+    return _build(check(config, schema, allowed_modules=allowed_modules), partial)
 
 
-def _build(
-    plain_config: dict[str, Any],
-    partial: bool = False,
-    path: tuple[str | int, ...] = (),
-    target: Any = None,
-) -> Any:
-    # `target` stands in for the `$class` of a root that has none.
-    cls = import_object(plain_config[CLASS_KEY]) if target is None else target
-    schema = find_schema(cls) if isinstance(cls, type) else None
-    if schema is not None:
-        check_schema(cls)
-    partial_flag, values = split_arguments(plain_config, path)
-    partial = partial or partial_flag
-    if schema is None:
-        config = {
-            key: _materialize(value, (*path, key)) for key, value in values.items()
-        }
-    elif schema is cls:
-        config = _build_fields(schema, values, path)
-    else:
-        config = schema(**_build_fields(schema, values, path))
-    name = plain_config.get(CLASS_KEY, f"{cls.__module__}.{cls.__qualname__}")
-    return call(cls, config, partial, path, name)
+def _build(value: Any, partial: bool = False) -> Any:
+    if isinstance(value, Call):
+        if value.schema is None:
+            config = {key: _build(item) for key, item in value.arguments.items()}
+        elif value.schema is value.target:
+            config = _build_fields(value.schema, value.arguments, value.path)
+        else:
+            config = value.schema(
+                **_build_fields(value.schema, value.arguments, value.path)
+            )
+        return call(
+            value.target, config, partial or value.partial, value.path, value.name
+        )
+    if isinstance(value, Section):
+        return value.schema(**_build_fields(value.schema, value.fields, value.path))
+    if isinstance(value, Ref):
+        return value.target
+    if isinstance(value, dict):
+        return {key: _build(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_build(item) for item in value]
+    return value
 
 
 def _build_fields(
     schema: type, values: dict[str, Any], path: tuple[str | int, ...]
 ) -> dict[str, Any]:
     fields = coerce_fields(schema, values, path, build=True)
-    for name, (kind, annotation) in classify_fields(schema).items():
-        if kind == "data" or name not in values:
-            continue
-        if kind == "object":
-            fields[name] = _build_object(values[name], annotation, (*path, name))
-        else:
-            fields[name] = _materialize(values[name], (*path, name))
+    for name, (kind, _) in classify_fields(schema).items():
+        if kind != "data" and name in values:
+            fields[name] = _build(values[name])
     return fields
-
-
-def _build_object(value: Any, annotation: Any, path: tuple[str | int, ...]) -> Any:
-    # Follows the annotation into `list` and `dict` fields, where a plain mapping in a
-    # dataclass item is a section, as in `validate`.
-    members, _ = split_union(annotation)
-    if len(members) == 1 and get_origin(members[0]) in (list, dict):
-        item_annotation = get_args(members[0])[-1]
-        if isinstance(value, list):
-            return [
-                _build_object(item, item_annotation, (*path, index))
-                for index, item in enumerate(value)
-            ]
-        if isinstance(value, dict):
-            return {
-                key: _build_object(item, item_annotation, (*path, key))
-                for key, item in value.items()
-            }
-    section = (
-        find_section(annotation)
-        if isinstance(value, dict) and CLASS_KEY not in value and REF_KEY not in value
-        else None
-    )
-    if section is None:
-        return _materialize(value, path)
-    return section(**_build_fields(section, value, path))
-
-
-def _materialize(value: Any, path: tuple[str | int, ...]) -> Any:
-    if isinstance(value, dict):
-        if CLASS_KEY in value:
-            return _build(value, path=path)
-        if REF_KEY in value:
-            return import_object(value[REF_KEY])
-        return {key: _materialize(item, (*path, key)) for key, item in value.items()}
-    if isinstance(value, list):
-        return [_materialize(item, (*path, index)) for index, item in enumerate(value)]
-    return value
