@@ -7,6 +7,11 @@ dataclass, and build your objects from it. The same file and seed give the same 
 It was developed for machine learning, but nothing in it is specific to that. The
 examples in these pages train a small PyTorch model.
 
+omegakit adds functions to OmegaConf and leaves everything else to it. It combines
+files through imports, bases and defaults, builds objects from `$class` nodes and
+checks configs against schemas. Types, conversion, interpolation and resolvers are
+OmegaConf's, and what OmegaConf does not support, omegakit does not add.
+
 ## Where to go
 
 - **New to omegakit:** [Getting started](getting-started/index.md) installs it and
