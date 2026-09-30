@@ -1,7 +1,7 @@
 from typing import Any
 
-from omegakit.core.errors import ConfigValidationError
-from omegakit.core.utils import describe_value, format_path, import_object
+from .errors import ConfigValidationError
+from .utils import describe_value, format_path, import_object
 
 
 def import_target(

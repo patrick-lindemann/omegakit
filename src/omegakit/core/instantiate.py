@@ -4,9 +4,10 @@ from typing import Any, overload
 
 from omegaconf import DictConfig, OmegaConf
 
+from .class_ import CLASS_KEY, call
 from .errors import ConfigValidationError
-from .object import CLASS_KEY, REF_KEY, call
 from .override import merge_overrides
+from .ref import REF_KEY
 from .schema import Schema, classify_fields, coerce_fields
 from .utils import format_path
 from .validate import Call, Ref, Section, check

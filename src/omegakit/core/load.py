@@ -5,13 +5,14 @@ from omegaconf import DictConfig
 from omegaconf.errors import OmegaConfBaseException
 
 from .base import merge_bases
+from .class_ import CLASS_KEY, PARTIAL_KEY
 from .default import apply_defaults
 from .errors import ConfigLoadError, OmegaKitBaseException
 from .file import load_yaml
 from .import_ import resolve_imports
 from .meta import META_KEY
-from .object import CLASS_KEY, PARTIAL_KEY, REF_KEY
 from .override import merge_overrides
+from .ref import REF_KEY
 from .utils import describe_error
 from .walk import walk
 

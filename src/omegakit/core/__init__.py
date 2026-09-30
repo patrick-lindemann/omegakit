@@ -1,4 +1,5 @@
 from .base import BASE_KEY
+from .class_ import CLASS_KEY, PARTIAL_KEY, make_node
 from .configurable import Configurable
 from .default import DEFAULTS_KEY
 from .errors import (
@@ -11,7 +12,7 @@ from .import_ import IMPORT_KEY
 from .instantiate import instantiate, prepare
 from .load import load_config
 from .meta import META_KEY
-from .object import CLASS_KEY, PARTIAL_KEY, REF_KEY, make_node
+from .ref import REF_KEY
 from .validate import validate
 from .walk import walk
 

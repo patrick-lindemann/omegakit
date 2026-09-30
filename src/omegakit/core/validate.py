@@ -5,10 +5,11 @@ from typing import Any, TypeAliasType, get_args, get_origin
 from omegaconf import MISSING, DictConfig, ListConfig, OmegaConf
 from omegaconf.errors import OmegaConfBaseException
 
+from .class_ import CLASS_KEY, import_class, split_arguments
 from .configurable import find_schema
 from .errors import ConfigValidationError
 from .meta import drop_meta
-from .object import CLASS_KEY, REF_KEY, import_class, import_ref, split_arguments
+from .ref import REF_KEY, import_ref
 from .resolve import resolve_container
 from .schema import (
     Schema,
