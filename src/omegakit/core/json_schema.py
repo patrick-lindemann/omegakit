@@ -15,7 +15,7 @@ from typing import (
 
 from .assembly import IMPORT_KEY
 from .keys import CLASS_KEY
-from .schema import classify_fields, find_schema
+from .schemas import classify_fields, find_schema
 
 # A value may always be written as an interpolation, a missing value or an import.
 _PLACEHOLDER = {

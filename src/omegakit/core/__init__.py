@@ -1,5 +1,4 @@
 from .assembly import BASE_KEY, DEFAULTS_KEY, IMPORT_KEY, META_KEY
-from .configurable import Configurable
 from .errors import (
     ConfigLoadError,
     ConfigValidationError,
@@ -10,7 +9,7 @@ from .instantiate import instantiate, make_node, prepare
 from .json_schema import generate_json_schema
 from .keys import CLASS_KEY, PARTIAL_KEY, REF_KEY
 from .load import load_config
-from .schema import check_schema
+from .schemas import Configurable, check_schema
 from .tree import walk
 from .validate import validate
 

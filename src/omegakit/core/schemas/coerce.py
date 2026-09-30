@@ -4,33 +4,26 @@ import enum
 import functools
 import types
 from pathlib import Path
-from typing import (
-    Any,
-    Literal,
-    TypeAliasType,
-    Union,
-    cast,
-    get_args,
-    get_origin,
-)
+from typing import Any, Literal, TypeAliasType, Union, cast, get_args, get_origin
 
 from omegaconf import MISSING, OmegaConf
 from omegaconf.errors import MissingMandatoryValue, OmegaConfBaseException
 
-from .errors import (
+from omegakit.core.errors import (
     ConfigValidationError,
     OmegaKitBaseException,
     SchemaDefinitionError,
 )
-from .schema import (
-    classify_fields,
-    derive_structure,
-    derive_structure_type,
-    is_mapping_type,
-    is_sequence_type,
-    split_union,
+from omegakit.core.utils import (
+    describe_error,
+    describe_value,
+    format_full_key,
+    format_path,
 )
-from .utils import describe_error, describe_value, format_full_key, format_path
+
+from .annotations import is_mapping_type, is_sequence_type, split_union
+from .fields import classify_fields
+from .structure import derive_structure, derive_structure_type
 
 
 def coerce_fields(

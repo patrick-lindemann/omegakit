@@ -12,11 +12,11 @@ from omegaconf.errors import (
 
 from .assembly import META_KEY
 from .errors import ConfigValidationError
-from .fields import coerce_fields
 from .keys import CLASS_KEY, PARTIAL_KEY, REF_KEY
-from .schema import (
+from .schemas import (
     check_schema,
     classify_fields,
+    coerce_fields,
     find_schema,
     find_section,
     split_union,
