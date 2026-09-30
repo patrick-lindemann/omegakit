@@ -4,8 +4,8 @@ omegakit is a small library on top of OmegaConf for experiment configs. Every
 experiment is a YAML file in git that names its base and its imports by path. You
 load it from your own `main()`, check it against a dataclass, and build your objects
 from it. The same file and seed give the same run. Install it with
-`pip install omegakit`, on Python 3.12 or newer. It needs OmegaConf 2.4, which is a
-release candidate until 2.4.0 is out, so uv needs `uv add omegakit --prerelease=allow`.
+`pip install omegakit`, on Python 3.12 or newer. It needs OmegaConf 2.4.0, which is a
+release candidate until it is out, so uv needs `uv add omegakit --prerelease=allow`.
 
 ```yaml
 # base.yaml
@@ -81,6 +81,6 @@ only from trusted sources, and wrap secrets in `${secret:...}`. The
 [Trust model](https://omegakit.readthedocs.io/en/latest/security/trust-model/) page lists what
 runs.
 
-omegakit requires OmegaConf 2.4. It builds on OmegaConf but is not affiliated
+omegakit requires OmegaConf 2.4.0. It builds on OmegaConf but is not affiliated
 with or endorsed by the OmegaConf project.
 [Contributing](https://github.com/patrick-lindemann/omegakit/blob/main/CONTRIBUTING.md).

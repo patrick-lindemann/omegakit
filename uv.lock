@@ -695,7 +695,7 @@ resolvers = [
 
 [package.metadata]
 requires-dist = [
-    { name = "omegaconf", specifier = ">=2.4.0rc1,<2.5" },
+    { name = "omegaconf", specifier = ">=2.4.0rc1,<2.4.1" },
     { name = "typing-extensions", specifier = ">=4.12" },
 ]
 

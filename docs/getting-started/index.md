@@ -10,8 +10,8 @@ with `layers` hidden layers of `hidden` units, and `project.SineWave` a PyTorch
 pip install omegakit
 ```
 
-omegakit needs OmegaConf 2.4. Until OmegaConf 2.4.0 is released, only its release
-candidate exists, and uv installs it only when asked to:
+omegakit needs OmegaConf 2.4.0. Until it is released, only its release candidate
+exists, and uv installs it only when asked to:
 
 ```sh
 uv add omegakit --prerelease=allow
