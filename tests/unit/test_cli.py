@@ -6,7 +6,7 @@ import pytest
 import yaml
 
 from omegakit import generate_json_schema
-from omegakit.cli import main
+from omegakit.__main__ import main
 from tests import schemas
 
 
@@ -84,10 +84,11 @@ def test_cli_check_counts_a_module_that_exits_as_invalid(
     assert lines[1].startswith(f"{invalid}: ConfigValidationError")
 
 
-def test_cli_check_applies_overrides_in_any_position(write_yaml):
+def test_cli_check_applies_overrides(write_yaml):
     path = write_yaml("a.yaml", "model:\n  $class: tests.schemas.Model\n  depth: ???\n")
     assert _exit_code(["check", str(path)]) == 1
-    main(["check", "model.depth=3", str(path)])
+    main(["check", str(path), "--overrides", "model.depth=3"])
+    main(["check", "--overrides", "model.depth=3", "--", str(path)])
 
 
 def test_cli_check_allow_missing(write_yaml):
@@ -142,13 +143,14 @@ def test_cli_check_allow_module(write_yaml, capsys):
 
 
 def test_cli_check_needs_a_config_file():
-    assert _exit_code(["check", "a=1"]) == 2
+    assert _exit_code(["check", "--overrides", "a=1"]) == 2
 
 
-def test_cli_existing_paths_with_equals_are_files(tmp_path, write_yaml):
+def test_cli_arguments_with_equals_are_files(tmp_path, write_yaml):
     path = write_yaml("lr=0.1/app.yaml", "x: 1\n")
     main(["check", str(path)])
     assert _exit_code(["check", str(tmp_path / "lr=0.2/app.yaml")]) == 1
+    assert _exit_code(["check", "a=1"]) == 1
 
 
 def test_cli_show_prints_the_assembled_config(write_yaml, capsys):
@@ -156,8 +158,8 @@ def test_cli_show_prints_the_assembled_config(write_yaml, capsys):
     path = write_yaml(
         "app.yaml", "m:\n  $base: ~import base.yaml\n  b: 3\n  $meta: x\n"
     )
-    main(["show", str(path), "m.a=5"])
-    assert yaml.safe_load(capsys.readouterr().out) == {"m": {"a": 5, "b": 3}}
+    main(["show", str(path), "--overrides", "m.a=5", "m.b=6"])
+    assert yaml.safe_load(capsys.readouterr().out) == {"m": {"a": 5, "b": 6}}
     main(["show", str(path), "--keep-meta", "--node", "m"])
     assert "$meta: x" in capsys.readouterr().out
 

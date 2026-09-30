@@ -35,6 +35,10 @@ All notable changes to this project are documented here. The format follows
   not a mapping, a missing attribute (``Module `m` has no attribute `x`.``), an
   import cycle, a `$partial` that is not a boolean, an `overrides` argument of the
   wrong type, and a missing PyTorch.
+- **Breaking:** `omegakit check` and `omegakit show` take overrides as
+  `--overrides KEY=VALUE ...`, and every other argument is a config file.
+  They used to guess whether an argument was a file or an override. Replace
+  `omegakit show app.yaml seed=3` with `omegakit show app.yaml --overrides seed=3`.
 - `omegakit show --resolve` resolves `${secret:...}` to `***` instead of reading
   the secret and masking its text in the output. A value that another resolver
   builds from a secret, such as a number from `${oc.decode:${secret:...}}`, is

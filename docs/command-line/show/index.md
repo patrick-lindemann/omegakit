@@ -70,7 +70,7 @@ out_features: 1
 the override of the seed reached the training split through `${seed}`:
 
 ```sh
-omegakit show configs/experiments/mlp.yaml seed=3 --node data.train --resolve
+omegakit show configs/experiments/mlp.yaml --overrides seed=3 --node data.train --resolve
 ```
 
 ```{code-block} text
@@ -90,7 +90,8 @@ that `load_config` removes ([Metadata](../../guide/metadata/index.md)).
 
 - `show` takes one config file. It prints the assembled config, or the node at
   `--node`, as YAML. A scalar prints as its value.
-- It tells the file from the `key=value` overrides as `check` does
+- `--overrides KEY=VALUE ...` applies in the order given, as the `overrides` of
+  `load_config`, and takes its arguments as `check` does
   ([check](../check/index.md#rules)).
 - `--node` takes a dotted path, walked as `~import file#node` is: `items.0.name`,
   `items.-1`. A node that does not exist, or a path through an interpolation

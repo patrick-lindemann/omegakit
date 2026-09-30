@@ -1,109 +1,128 @@
-import argparse
+from argparse import ArgumentError, ArgumentParser
 from pathlib import Path
-from typing import Any, NoReturn
+from typing import Any, NoReturn, override
 
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
-from omegakit.cli.arguments import split_arguments
 from omegakit.core.assembly import select_node
 from omegakit.core.load import load_config
 from omegakit.core.validate import resolve_item
 from omegakit.resolvers import register_resolver
 
-
-def register(commands: argparse._SubParsersAction) -> None:
-    """Add the `show` command.
-
-    Args:
-        commands: The subcommands of the `omegakit` parser.
-    """
-    parser = commands.add_parser(
-        "show",
-        help="print a config as assembled by load_config",
-        description="Print a config after imports, bases, defaults and overrides.",
-    )
-    parser.add_argument(
-        "arguments",
-        nargs="+",
-        metavar="CONFIG_OR_OVERRIDE",
-        help="one config file, and key=value overrides",
-    )
-    parser.add_argument(
-        "--node",
-        metavar="KEY",
-        help="print only this node, such as training.model or items.0; it is not "
-        "resolved unless --resolve is given",
-    )
-    parser.add_argument(
-        "--resolve",
-        action="store_true",
-        help="resolve interpolations (only in the selected node, with --node); "
-        "missing values print as ???",
-    )
-    parser.add_argument(
-        "--keep-meta", action="store_true", help="keep $meta keys in the output"
-    )
-    parser.add_argument(
-        "--show-secrets",
-        action="store_true",
-        help="with --resolve, print the values of ${secret:...} instead of ***",
-    )
-    parser.add_argument(
-        "--import-root",
-        type=Path,
-        metavar="DIR",
-        help="reject any ~import of a file outside DIR",
-    )
-    parser.set_defaults(run=run, parser=parser)
+from ._args import Arguments
+from ._routine import Routine
 
 
-def run(arguments: argparse.Namespace) -> None:
-    """Print the config named in `arguments`.
+class ShowArguments(Arguments):
+    """The parsed arguments of the `show` command."""
 
-    Args:
-        arguments: The parsed `show` arguments.
+    config: Path
+    overrides: list[str] | None
+    node: str | None
+    resolve: bool
+    keep_meta: bool
+    show_secrets: bool
+    import_root: Path | None
 
-    Raises:
-        SystemExit: With status 1 if the config cannot be loaded or resolved, or the
-            node does not exist.
-    """
-    parser: argparse.ArgumentParser = arguments.parser
-    paths, overrides = split_arguments(arguments.arguments)
-    if len(paths) != 1:
-        parser.error("give exactly one config file")
-    if arguments.import_root is not None and not arguments.import_root.is_dir():
-        parser.error(f"--import-root {arguments.import_root} is not a directory")
-    try:
-        config = load_config(
-            paths[0],
-            overrides=overrides or None,
-            keep_meta=arguments.keep_meta,
-            import_root=arguments.import_root,
+
+class ShowRoutine(Routine[ShowArguments]):
+    """The `show` command, which prints a config as `load_config` assembles it."""
+
+    name = "show"
+    help = "print a config as assembled by load_config"
+    description = "Print a config after imports, bases, defaults and overrides."
+
+    @override
+    def add_arguments(self, parser: ArgumentParser) -> None:
+        parser.add_argument(
+            "config",
+            type=Path,
+            help="the config file",
         )
-    except Exception as error:
-        _fail(paths[0], error)
-    if arguments.resolve and not arguments.show_secrets:
-        # Every value built from a secret then holds `***`. Loading resolved with the
-        # real values, and the config caches what its resolvers gave.
-        register_resolver("secret", _mask_secret, replace=True)
-        OmegaConf.clear_cache(config)
-    try:
-        node = config
-        if arguments.node is not None:
-            node = select_node(config, arguments.node, resolve=arguments.resolve)
-        if node is None:
-            print(f"{paths[0]}: no node `{arguments.node}`")
-            raise SystemExit(1)
-        value = _plain(node, arguments.resolve)
-    except Exception as error:
-        # Without --resolve, the only error here is a path through an interpolation.
-        _fail(
-            paths[0], error, "" if arguments.resolve else " Add --resolve to follow it."
+        parser.add_argument(
+            "--overrides",
+            action="extend",
+            nargs="+",
+            metavar="KEY=VALUE",
+            help="set values, such as seed=3",
         )
-    if isinstance(value, (DictConfig, ListConfig, dict, list)):
-        print(OmegaConf.to_yaml(value), end="")
-    else:
-        print("null" if value is None else value)
+        parser.add_argument(
+            "--node",
+            metavar="KEY",
+            help="print only this node, such as training.model or items.0; it is not "
+            "resolved unless --resolve is given",
+        )
+        parser.add_argument(
+            "--resolve",
+            action="store_true",
+            help="resolve interpolations (only in the selected node, with --node); "
+            "missing values print as ???",
+        )
+        parser.add_argument(
+            "--keep-meta", action="store_true", help="keep $meta keys in the output"
+        )
+        parser.add_argument(
+            "--show-secrets",
+            action="store_true",
+            help="with --resolve, print the values of ${secret:...} instead of ***",
+        )
+        parser.add_argument(
+            "--import-root",
+            type=Path,
+            metavar="DIR",
+            help="reject any ~import of a file outside DIR",
+        )
+
+    @override
+    def run(self, args: ShowArguments) -> None:
+        """Print the config named in `args`.
+
+        Args:
+            args: The parsed `show` arguments.
+
+        Raises:
+            ArgumentError: If `--import-root` is not a directory.
+            SystemExit: With status 1 if the config cannot be loaded or resolved, or
+                the node does not exist.
+        """
+        if args.import_root is not None and not args.import_root.is_dir():
+            raise ArgumentError(
+                None, f"--import-root {args.import_root} is not a directory"
+            )
+        try:
+            config = load_config(
+                args.config,
+                overrides=args.overrides,
+                keep_meta=args.keep_meta,
+                import_root=args.import_root,
+            )
+        except Exception as error:
+            _fail(args.config, error)
+        if args.resolve and not args.show_secrets:
+            # Every value built from a secret then holds `***`. Loading resolved with
+            # the real values, and the config caches what its resolvers gave.
+            register_resolver("secret", _mask_secret, replace=True)
+            OmegaConf.clear_cache(config)
+        try:
+            node = config
+            if args.node is not None:
+                node = select_node(config, args.node, resolve=args.resolve)
+            if node is None:
+                print(f"{args.config}: no node `{args.node}`")
+                raise SystemExit(1)
+            value = _plain(node, args.resolve)
+        except Exception as error:
+            # Without --resolve, the only error here is a path through an
+            # interpolation.
+            _fail(
+                args.config,
+                error,
+                "" if args.resolve else " Add --resolve to follow it.",
+            )
+        if isinstance(value, (DictConfig, ListConfig, dict, list)):
+            print(OmegaConf.to_yaml(value), end="")
+        else:
+            print("null" if value is None else value)
 
 
 def _fail(path: Path, error: Exception, hint: str = "") -> NoReturn:

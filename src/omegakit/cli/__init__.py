@@ -1,27 +1,21 @@
-import argparse
-import sys
-from pathlib import Path
+from ._args import Arguments
+from ._routine import Routine
+from .check import CheckArguments, CheckRoutine
+from .export_schema import ExportSchemaArguments, ExportSchemaRoutine
+from .show import ShowArguments, ShowRoutine
 
-from omegakit.resolvers.secrets import register_secret_resolver
+ROUTINES: frozenset[Routine] = frozenset(
+    {CheckRoutine(), ExportSchemaRoutine(), ShowRoutine()}
+)
 
-from . import check, export_schema, show
-
-
-def main(arguments: list[str] | None = None) -> None:
-    """Run the `omegakit` command line.
-
-    Args:
-        arguments: The command-line arguments without the program name. Defaults to
-            `None`, which reads them from `sys.argv`.
-    """
-    parser = argparse.ArgumentParser(prog="omegakit")
-    commands = parser.add_subparsers(dest="command", required=True)
-    check.register(commands)
-    show.register(commands)
-    export_schema.register(commands)
-    parsed = parser.parse_args(arguments)
-    register_secret_resolver(replace=True)
-    # `python -m` puts the working directory on the path; installed scripts do not.
-    if str(Path.cwd()) not in sys.path:
-        sys.path.insert(0, str(Path.cwd()))
-    parsed.run(parsed)
+__all__ = [
+    "ROUTINES",
+    "Arguments",
+    "CheckArguments",
+    "CheckRoutine",
+    "ExportSchemaArguments",
+    "ExportSchemaRoutine",
+    "Routine",
+    "ShowArguments",
+    "ShowRoutine",
+]

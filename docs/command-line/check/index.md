@@ -12,12 +12,12 @@ valid print nothing:
 omegakit check configs/experiments/*.yaml --schema project.Experiment
 ```
 
-An invalid file prints one line, with the error that `validate` raised. Overrides
-after the files apply to every file, so you can check a run with the values you
-are about to give it:
+An invalid file prints one line, with the error that `validate` raised.
+`--overrides` sets values in every file, so you can check a run with the values
+you are about to give it:
 
 ```sh
-omegakit check configs/experiments/mlp.yaml epochs=many --schema project.Experiment
+omegakit check configs/experiments/mlp.yaml --overrides epochs=many --schema project.Experiment
 ```
 
 ```{code-block} text
@@ -56,7 +56,7 @@ of PyTorch you use, and `--import-root` keeps every `~import` inside a directory
 ([Restricting imports](../../security/restricting-imports/index.md)):
 
 ```sh
-omegakit check configs/experiments/mlp.yaml 'model.$class=subprocess.Popen' --schema project.Experiment --allow-module project --allow-module torch.nn --allow-module torch.optim --import-root configs
+omegakit check configs/experiments/mlp.yaml --overrides 'model.$class=subprocess.Popen' --schema project.Experiment --allow-module project --allow-module torch.nn --allow-module torch.optim --import-root configs
 ```
 
 ```{code-block} text
@@ -71,11 +71,10 @@ configs/experiments/mlp.yaml: ConfigValidationError: `$class: subprocess.Popen` 
   `--allow-missing`, `--allow-module` and `--import-root` are passed to them as
   `schema`, `allow_missing`, `allowed_modules` and `import_root`
   ([Validation](../../schemas/validation/index.md#rules)).
-- Each argument is a config file or a `key=value` override. An argument that
-  names an existing file is a file, even if it contains `=`. Any other argument is
-  an override if it has a `=` with no `/` before it, and otherwise a file, which
-  then fails to load. Files and overrides can come in any order, so tools that
-  append file names, such as pre-commit, work. The overrides apply to every file.
+- Every argument is a config file. `--overrides KEY=VALUE ...` applies to every
+  file, in the order given, as the `overrides` of `load_config`. It takes the
+  arguments up to the next option, so give the files before it, or end the
+  overrides with `--`. Given more than once, the lists add up.
 - It prints `<file>: <exception type>: <message>` for each invalid file and
   nothing for valid ones. Any exception, and a `SystemExit` raised by an imported
   module, marks that file invalid, and the other files are still checked.
