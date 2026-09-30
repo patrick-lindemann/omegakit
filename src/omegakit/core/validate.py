@@ -5,9 +5,10 @@ from typing import Any, TypeAliasType, get_args, get_origin
 from omegaconf import MISSING, DictConfig, ListConfig, OmegaConf
 from omegaconf.errors import OmegaConfBaseException
 
-from omegakit.core.assembly import drop_meta
-from omegakit.core.errors import ConfigValidationError
-from omegakit.core.schema import (
+from .assembly import drop_meta
+from .errors import ConfigValidationError
+from .object import CLASS_KEY, REF_KEY, import_class, import_ref, split_arguments
+from .schema import (
     Schema,
     check_schema,
     classify_fields,
@@ -16,16 +17,13 @@ from omegakit.core.schema import (
     find_section,
     split_union,
 )
-from omegakit.core.tree import resolve_container
-from omegakit.core.utils import (
+from .tree import resolve_container
+from .utils import (
     describe_error,
     describe_value,
     format_full_key,
     format_path,
 )
-
-from .class_ import CLASS_KEY, import_class, split_arguments
-from .ref import REF_KEY, import_ref
 
 
 @dataclasses.dataclass(frozen=True)

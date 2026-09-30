@@ -4,13 +4,11 @@ from typing import Any, overload
 
 from omegaconf import DictConfig, OmegaConf
 
-from omegakit.core.assembly import merge_overrides
-from omegakit.core.errors import ConfigValidationError
-from omegakit.core.schema import Schema, classify_fields, coerce_fields
-from omegakit.core.utils import format_path
-
-from .class_ import CLASS_KEY, call
-from .ref import REF_KEY
+from .assembly import merge_overrides
+from .errors import ConfigValidationError
+from .object import CLASS_KEY, REF_KEY, call
+from .schema import Schema, classify_fields, coerce_fields
+from .utils import format_path
 from .validate import Call, Ref, Section, check
 
 
