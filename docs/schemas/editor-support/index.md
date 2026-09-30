@@ -37,8 +37,9 @@ under Rules; `validate` checks the rest.
 ## Rules
 
 `generate_json_schema(schema)` and `omegakit export-schema` produce a draft-07 JSON
-Schema for YAML files, from a root schema dataclass or from a `Configurable` class
-whose schema describes a fragment file. Anything else raises `TypeError`.
+Schema for YAML files, from a dataclass that describes a whole config file, or
+from a `Configurable` class whose schema describes a fragment file. Anything else
+raises `TypeError`.
 
 - Any value, scalar or node, may also be `${…}`, `???` or an `~import`.
 - Any mapping accepts `$` keys. Other unknown keys are errors.
