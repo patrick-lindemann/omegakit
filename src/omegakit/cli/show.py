@@ -6,7 +6,6 @@ from omegaconf import DictConfig, ListConfig, OmegaConf
 
 from omegakit.core.load import load_config
 from omegakit.core.tree import resolve_item, select_node
-from omegakit.resolvers import register_resolver
 
 from ._arg import Arguments
 from ._routine import Routine
@@ -100,7 +99,7 @@ class ShowRoutine(Routine[ShowArguments]):
         if args.resolve and not args.show_secrets:
             # Every value built from a secret then holds `***`. Loading resolved with
             # the real values, and the config caches what its resolvers gave.
-            register_resolver("secret", _mask_secret, replace=True)
+            OmegaConf.register_resolver("secret", _mask_secret, replace=True)
             OmegaConf.clear_cache(config)
         try:
             node = config

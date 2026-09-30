@@ -3,8 +3,6 @@ from typing import Any
 
 from omegaconf import OmegaConf
 
-from ._register import register_resolver
-
 
 def register_torch_dtype_resolver(*, replace: bool = False) -> None:
     """Register `${dtype:name}`, which gives the Torch dtype of that name.
@@ -17,7 +15,9 @@ def register_torch_dtype_resolver(*, replace: bool = False) -> None:
         ValueError: If a resolver named `dtype` exists and `replace` is `False`.
     """  # noqa: DOC502
     _import_torch()
-    register_resolver("dtype", _resolve_dtype, replace=replace)
+    OmegaConf.register_resolver(
+        "dtype", _resolve_dtype, replace=replace, use_cache=True
+    )
 
 
 def register_cuda_available_resolver(*, replace: bool = False) -> None:
@@ -32,7 +32,9 @@ def register_cuda_available_resolver(*, replace: bool = False) -> None:
             `False`.
     """  # noqa: DOC502
     _import_torch()
-    register_resolver("cuda_available", _is_cuda_available, replace=replace)
+    OmegaConf.register_resolver(
+        "cuda_available", _is_cuda_available, replace=replace, use_cache=True
+    )
 
 
 def register_torch_resolvers(*, replace: bool = False) -> None:

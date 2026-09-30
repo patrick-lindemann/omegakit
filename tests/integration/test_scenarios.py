@@ -7,6 +7,7 @@ from typing import Any, Self, override
 import pytest
 import yaml
 from jsonschema import Draft7Validator
+from omegaconf import OmegaConf
 
 from omegakit import (
     Configurable,
@@ -17,7 +18,6 @@ from omegakit import (
     make_node,
     validate,
 )
-from omegakit.resolvers import register_resolver
 from tests import schemas
 from tests.helpers import POINT, RECORDER, Point
 from tests.schemas import TypedEncoder
@@ -125,7 +125,7 @@ def test_scenario_node_child_validated_against_its_schema():
 def test_scenario_resolver_object_in_any_field(write_yaml):
     """Resolver + `Any` field: an object returned by a resolver is passed through."""
     encoder = schemas.Encoder(9)
-    register_resolver("encoder", lambda: encoder)
+    OmegaConf.register_resolver("encoder", lambda: encoder)
     cfg = load_config(
         write_yaml(
             "main.yaml",

@@ -8,7 +8,6 @@ from omegaconf.errors import (
 )
 
 from omegakit import ConfigValidationError, instantiate, load_config, prepare
-from omegakit.resolvers import register_resolver
 from tests.helpers import CONTAINER, POINT
 
 
@@ -71,7 +70,7 @@ def test_instantiate_raises_on_missing_value():
     ],
 )
 def test_instantiate_raises_config_errors_for_failed_interpolations(value, cause):
-    register_resolver("fail", _fail)
+    OmegaConf.register_resolver("fail", _fail)
     with pytest.raises(ConfigValidationError, match="`x`") as info:
         instantiate({"$class": POINT, "x": value, "y": 2})
     assert isinstance(info.value.__cause__, cause)

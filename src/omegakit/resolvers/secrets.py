@@ -1,6 +1,6 @@
 from typing import Any
 
-from ._register import register_resolver
+from omegaconf import OmegaConf
 
 
 def register_secret_resolver(*, replace: bool = False) -> None:
@@ -12,7 +12,9 @@ def register_secret_resolver(*, replace: bool = False) -> None:
     Raises:
         ValueError: If a resolver named `secret` exists and `replace` is `False`.
     """  # noqa: DOC502
-    register_resolver("secret", _resolve_secret, replace=replace)
+    OmegaConf.register_resolver(
+        "secret", _resolve_secret, replace=replace, use_cache=True
+    )
 
 
 def _resolve_secret(value: Any) -> Any:

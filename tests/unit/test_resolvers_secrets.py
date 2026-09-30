@@ -3,7 +3,6 @@ from omegaconf import OmegaConf
 from omegaconf.errors import InterpolationResolutionError
 
 from omegakit import ConfigValidationError, validate
-from omegakit.resolvers import register_resolver
 from omegakit.resolvers.secrets import register_secret_resolver
 
 
@@ -18,7 +17,7 @@ def test_secret_gives_the_environment_variable_it_wraps(monkeypatch):
 
 def test_secret_wraps_any_resolver():
     register_secret_resolver()
-    register_resolver("vault", lambda path: f"from-{path}")
+    OmegaConf.register_resolver("vault", lambda path: f"from-{path}")
     assert OmegaConf.create({"password": "${secret:${vault:db}}"}).password == "from-db"
 
 

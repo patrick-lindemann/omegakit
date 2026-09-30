@@ -17,7 +17,6 @@ from omegakit import (
     prepare,
     validate,
 )
-from omegakit.resolvers import register_resolver
 from tests import schemas
 from tests.schemas import Encoder, EncoderConfig, SectionWithObject, Sub
 
@@ -149,7 +148,7 @@ def test_schema_isinstance_check_skipped_for_non_runtime_protocols():
 
 
 def test_schema_any_field_accepts_resolver_objects():
-    register_resolver("obj", lambda: schemas.Encoder(5))
+    OmegaConf.register_resolver("obj", lambda: schemas.Encoder(5))
     obj = instantiate(OmegaConf.create({"$class": FIELDS, "anything": "${obj:}"}))
     assert obj.fields["anything"].width == 5
 

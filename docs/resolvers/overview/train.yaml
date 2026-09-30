@@ -1,4 +1,0 @@
-data:
-  train: 1000
-batch_size: 64
-steps_per_epoch: ${batches:${data.train},${batch_size}}

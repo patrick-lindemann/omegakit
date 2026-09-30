@@ -1,7 +1,7 @@
 from collections.abc import Mapping
 from pathlib import Path
 
-from ._register import register_resolver
+from omegaconf import OmegaConf
 
 
 def register_paths_resolver(
@@ -17,4 +17,4 @@ def register_paths_resolver(
         ValueError: If a resolver named `paths` exists and `replace` is `False`.
     """  # noqa: DOC502
     values = {key: str(value) for key, value in paths.items()}
-    register_resolver("paths", values.get, replace=replace)
+    OmegaConf.register_resolver("paths", values.get, replace=replace, use_cache=True)
