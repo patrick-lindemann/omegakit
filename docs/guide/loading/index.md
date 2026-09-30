@@ -83,7 +83,9 @@ PyYAML, OmegaConf or the file system as its `__cause__`:
 
 - A file that is not valid YAML, has duplicate keys or unknown tags, or is not
   UTF-8. The message names the file, the line and the column.
-- A file that holds a single value, such as `hello` or `5`, instead of a mapping or
-  a list. An empty file, `null` or `~` is an empty mapping.
+- A file that `OmegaConf.load` rejects, such as one that holds a single number or
+  boolean. Other files load as `OmegaConf.load` gives them: a single string such as
+  `hello` is the mapping `{hello: null}`, and an empty file, `null` or `~` an empty
+  mapping.
 - Any error while assembling: see [Imports](../imports/index.md#rules),
   [Inheritance](../inheritance/index.md#rules) and [Defaults](../defaults/index.md#rules).

@@ -24,6 +24,10 @@ All notable changes to this project are documented here. The format follows
   instead of rejecting a path through one. A node that holds `???` counts as
   missing. A selected single value arrives resolved: an import resolves it in the
   imported file, and `show` prints it resolved, with `${secret:...}` as `***`.
+- **Breaking:** Config files load as `OmegaConf.load` gives them. A file that holds
+  a single string, such as `hello`, is the mapping `{hello: null}` instead of an
+  error; a single number or boolean still raises `ConfigLoadError`, now with
+  OmegaConf's message.
 - **Breaking:** `${secret:...}` wraps the interpolation that gives the secret, such
   as `${secret:${oc.env:TOKEN}}`, so a secret can come from any resolver. Replace
   every `${secret:NAME}` with `${secret:${oc.env:NAME}}`: the old form now gives the

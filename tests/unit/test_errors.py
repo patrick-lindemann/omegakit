@@ -164,12 +164,12 @@ def test_omegakit_handler_lets_omegaconf_errors_through():
 def test_nested_import_failure_has_one_prefix_per_import(write_yaml):
     path = write_yaml("a.yaml", "n: ~import b.yaml\n")
     b = write_yaml("b.yaml", "m: ~import c.yaml\n")
-    c = write_yaml("c.yaml", "hello\n")
+    c = write_yaml("c.yaml", "5\n")
     with pytest.raises(ConfigLoadError) as info:
         load_config(path)
     assert str(info.value) == (
-        f"Cannot import `~import c.yaml` in `{b}`: Cannot load `{c}`: it holds a "
-        "single value, not a mapping or a list."
+        f"Cannot import `~import c.yaml` in `{b}`: Cannot load `{c}`: Invalid loaded "
+        "object type: int"
     )
 
 

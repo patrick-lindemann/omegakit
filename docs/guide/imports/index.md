@@ -68,9 +68,8 @@ limits a config, and what these limits do not cover.
   `OmegaConf.select` gives it. A selected mapping or list arrives as written, and
   its `${…}` resolve against the assembled config.
 - An import can replace a mapping value or a list item. An imported file may hold
-  a mapping or a list; the root file only a mapping. A file that holds a single
-  value, such as `hello` or `5`, is rejected everywhere. An empty file, `null` or
-  `~` is an empty mapping.
+  a mapping or a list; the root file only a mapping. Every file loads as
+  `OmegaConf.load` gives it ([Loading](../loading/index.md#rules)).
 - Every import is an independent copy. Each file is read once per `load_config`.
 - A file that imports itself, directly or through others, is a cycle. The same file
   imported from two branches is not.

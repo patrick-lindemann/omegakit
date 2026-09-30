@@ -44,10 +44,18 @@ def test_load_missing_root_file_raises_file_not_found(tmp_path):
         load_config(tmp_path / "missing.yaml")
 
 
-@pytest.mark.parametrize("text", ["hello\n", "5\n", '"a: 1"\n'])
-def test_load_rejects_a_file_with_a_single_value(write_yaml, text):
-    with pytest.raises(ConfigLoadError, match="single value"):
+@pytest.mark.parametrize("text", ["5\n", "true\n"])
+def test_load_rejects_a_file_with_a_single_number_or_boolean(write_yaml, text):
+    with pytest.raises(ConfigLoadError, match="Invalid loaded object type") as info:
         load_config(write_yaml("c.yaml", text))
+    assert isinstance(info.value.__cause__, OSError)
+
+
+@pytest.mark.parametrize(
+    ("text", "config"), [("hello\n", {"hello": None}), ('"a: 1"\n', {"a": 1})]
+)
+def test_load_reads_a_single_string_as_omegaconf_does(write_yaml, text, config):
+    assert load_config(write_yaml("c.yaml", text)) == config
 
 
 @pytest.mark.parametrize("text", ["", "null\n", "~\n", "---\n"])

@@ -167,10 +167,10 @@ def test_import_missing_file_raises(write_yaml):
     assert isinstance(info.value.__cause__, FileNotFoundError)
 
 
-def test_import_rejects_a_file_with_a_single_value(write_yaml):
-    write_yaml("lib.yaml", "hello\n")
+def test_import_rejects_a_file_with_a_single_number(write_yaml):
+    write_yaml("lib.yaml", "5\n")
     path = write_yaml("main.yaml", "n: ~import lib.yaml\n")
-    with pytest.raises(ConfigLoadError, match="single value") as info:
+    with pytest.raises(ConfigLoadError, match="Invalid loaded object type") as info:
         load_config(path)
     assert str(path) in str(info.value)
 
