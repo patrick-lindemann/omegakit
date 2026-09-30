@@ -14,7 +14,7 @@ from typing import (
 )
 
 from .assembly import IMPORT_KEY
-from .keys import CLASS_KEY
+from .objects import CLASS_KEY
 from .schemas import classify_fields, find_schema
 
 # A value may always be written as an interpolation, a missing value or an import.

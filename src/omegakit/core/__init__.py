@@ -5,13 +5,19 @@ from .errors import (
     OmegaKitBaseException,
     SchemaDefinitionError,
 )
-from .instantiate import instantiate, make_node, prepare
 from .json_schema import generate_json_schema
-from .keys import CLASS_KEY, PARTIAL_KEY, REF_KEY
 from .load import load_config
+from .objects import (
+    CLASS_KEY,
+    PARTIAL_KEY,
+    REF_KEY,
+    instantiate,
+    make_node,
+    prepare,
+    validate,
+)
 from .schemas import Configurable, check_schema
 from .tree import walk
-from .validate import validate
 
 __all__ = [
     "BASE_KEY",

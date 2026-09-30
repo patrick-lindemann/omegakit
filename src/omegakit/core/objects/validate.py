@@ -3,14 +3,11 @@ from collections.abc import Callable, Iterable
 from typing import Any, TypeAliasType, get_args, get_origin
 
 from omegaconf import MISSING, DictConfig, ListConfig, OmegaConf
-from omegaconf.errors import (
-    OmegaConfBaseException,
-)
+from omegaconf.errors import OmegaConfBaseException
 
-from .assembly import drop_meta
-from .errors import ConfigValidationError
-from .keys import CLASS_KEY, PARTIAL_KEY, REF_KEY
-from .schemas import (
+from omegakit.core.assembly import drop_meta
+from omegakit.core.errors import ConfigValidationError
+from omegakit.core.schemas import (
     check_schema,
     classify_fields,
     coerce_fields,
@@ -18,14 +15,16 @@ from .schemas import (
     find_section,
     split_union,
 )
-from .tree import resolve_container
-from .utils import (
+from omegakit.core.tree import resolve_container
+from omegakit.core.utils import (
     describe_error,
     describe_value,
     format_full_key,
     format_path,
-    import_object,
 )
+
+from .classes import CLASS_KEY, PARTIAL_KEY, import_class, split_arguments
+from .refs import REF_KEY, import_ref
 
 
 def validate(
@@ -156,7 +155,7 @@ def _check_untyped(
     if CLASS_KEY in value:
         _check_class_node(value, path, allow_missing, allowed_modules)
     elif REF_KEY in value:
-        _import_ref(value, path, allowed_modules)
+        import_ref(value, path, allowed_modules)
     else:
         for key, item in value.items():
             _check_not_reserved(key, path)
@@ -177,13 +176,7 @@ def _check_class_node(
     allow_missing: bool,
     allowed_modules: tuple[str, ...] | None,
 ) -> Any:
-    target = _import(node, CLASS_KEY, path, allowed_modules)
-    if not (callable(target) or hasattr(target, "from_config")):
-        raise ConfigValidationError(
-            f"`{CLASS_KEY}: {node[CLASS_KEY]}` in `{format_path(path)}` is neither "
-            f"callable nor has `from_config`. Use `{REF_KEY}` for an object that is "
-            "used as it is."
-        )
+    target = import_class(node, path, allowed_modules)
     _check_target(target, node, path, allow_missing, allowed_modules)
     return target
 
@@ -195,23 +188,7 @@ def _check_target(
     allow_missing: bool,
     allowed_modules: tuple[str, ...] | None,
 ) -> None:
-    values = {}
-    for key, value in node.items():
-        if key == CLASS_KEY:
-            continue
-        if key == PARTIAL_KEY:
-            if not isinstance(value, bool):
-                raise ConfigValidationError(
-                    f"`{PARTIAL_KEY}` in `{format_path(path)}` must be `true` or "
-                    f"`false`, but the config gives {describe_value(value)}."
-                )
-            continue
-        if isinstance(key, str) and key.startswith("$"):
-            raise ConfigValidationError(
-                f"Key `{key}` in `{format_path(path)}` is not supported next to "
-                f"`{CLASS_KEY}`; keys starting with `$` are reserved."
-            )
-        values[key] = value
+    _, values = split_arguments(node, path)
     schema = find_schema(target) if isinstance(target, type) else None
     if schema is None:
         for key, value in values.items():
@@ -296,7 +273,7 @@ def _check_object(
                 )
             return
         if REF_KEY in value:
-            target = _import_ref(value, path, allowed_modules)
+            target = import_ref(value, path, allowed_modules)
             _check_type(isinstance, target, classes, path, f"`$ref: {value[REF_KEY]}`")
             return
         section = find_section(annotation)
@@ -329,66 +306,3 @@ def _check_type(
         raise ConfigValidationError(
             f"`{format_path(path)}` expects {expected}, but the config gives {given}."
         )
-
-
-def _import_ref(
-    node: dict[str, Any],
-    path: tuple[str | int, ...],
-    allowed_modules: tuple[str, ...] | None,
-) -> Any:
-    if len(node) > 1:
-        raise ConfigValidationError(
-            f"A node using `{REF_KEY}` cannot contain any other keys, but "
-            f"`{format_path(path)}` has {', '.join(f'`{key}`' for key in node)}."
-        )
-    return _import(node, REF_KEY, path, allowed_modules)
-
-
-def _import(
-    node: dict[str, Any],
-    key: str,
-    path: tuple[str | int, ...],
-    allowed_modules: tuple[str, ...] | None,
-) -> Any:
-    import_path = node[key]
-    if not isinstance(import_path, str):
-        raise ConfigValidationError(
-            f"`{key}` in `{format_path(path)}` must be an import path, such as "
-            "`package.module.Name`, but the config gives "
-            f"{describe_value(import_path)}."
-        )
-    # Checked before the import, so that a module that is not allowed never runs.
-    if not _is_allowed(import_path.rpartition(".")[0], allowed_modules):
-        raise ConfigValidationError(
-            f"`{key}: {import_path}` in `{format_path(path)}` names a module that "
-            "is not in `allowed_modules`."
-        )
-    try:
-        target = import_object(import_path)
-    except ImportError as error:
-        # A module that the target's own module fails to import is a missing
-        # dependency, not a mistake in the config.
-        parts = import_path.split(".")
-        targets = {".".join(parts[:end]) for end in range(1, len(parts))}
-        if error.name != import_path and not (
-            isinstance(error, ModuleNotFoundError) and error.name in targets
-        ):
-            raise
-        raise ConfigValidationError(
-            f"Cannot import `{import_path}` in `{format_path(path)}`: {error}"
-        ) from error
-    # An allowed module can import a name from a module that is not allowed.
-    module = getattr(target, "__module__", None)
-    if isinstance(module, str) and not _is_allowed(module, allowed_modules):
-        raise ConfigValidationError(
-            f"`{key}: {import_path}` in `{format_path(path)}` is defined in "
-            f"`{module}`, which is not in `allowed_modules`."
-        )
-    return target
-
-
-def _is_allowed(module: str, allowed_modules: tuple[str, ...] | None) -> bool:
-    return allowed_modules is None or any(
-        module == allowed or module.startswith(f"{allowed}.")
-        for allowed in allowed_modules
-    )

@@ -3,8 +3,8 @@ from pathlib import Path
 from typing import override
 
 from omegakit.core.load import load_config
+from omegakit.core.objects import validate
 from omegakit.core.utils import import_object
-from omegakit.core.validate import validate
 
 from ._args import Arguments
 from ._routine import Routine

@@ -1,13 +1,12 @@
 import functools
-from collections.abc import Callable, Iterable
+from collections.abc import Iterable
 from typing import Any, cast, get_args, get_origin, overload
 
 from omegaconf import DictConfig, OmegaConf
 
-from .assembly import merge_overrides
-from .errors import ConfigValidationError
-from .keys import CLASS_KEY, PARTIAL_KEY, REF_KEY
-from .schemas import (
+from omegakit.core.assembly import merge_overrides
+from omegakit.core.errors import ConfigValidationError
+from omegakit.core.schemas import (
     check_schema,
     classify_fields,
     coerce_fields,
@@ -15,7 +14,10 @@ from .schemas import (
     find_section,
     split_union,
 )
-from .utils import format_path, import_object
+from omegakit.core.utils import format_path, import_object
+
+from .classes import CLASS_KEY, call, split_arguments
+from .refs import REF_KEY
 from .validate import check_resolved, resolve_config
 
 
@@ -128,29 +130,6 @@ def prepare(
     return _instantiate(config, schema, overrides, allowed_modules, partial=True)
 
 
-def make_node(target: Callable[..., Any], /, **kwargs: Any) -> dict[str, Any]:
-    """Create an instantiable config node for a class or function.
-
-    Args:
-        target: The class or function to build. It must be defined at module level.
-        **kwargs: The node's arguments.
-
-    Returns:
-        The node: `kwargs` plus `$class` set to the import path of `target`.
-
-    Raises:
-        ValueError: If `target` is defined inside a function or a class, where it
-            cannot be imported by its path.
-    """
-    qualname = target.__qualname__
-    if "." in qualname:
-        raise ValueError(
-            f"Cannot create a node for `{qualname}`: only objects defined at module "
-            "level can be imported by their path."
-        )
-    return {CLASS_KEY: f"{target.__module__}.{qualname}", **kwargs}
-
-
 def _instantiate(
     config: DictConfig | dict[str, Any],
     schema: type | None,
@@ -186,15 +165,8 @@ def _build(
     schema = find_schema(cls) if isinstance(cls, type) else None
     if schema is not None:
         check_schema(cls)
-    values = {}
-    for key, value in plain_config.items():
-        if key == CLASS_KEY:
-            continue
-        if key == PARTIAL_KEY:
-            if value:
-                partial = True
-            continue
-        values[key] = value
+    partial_flag, values = split_arguments(plain_config, path)
+    partial = partial or partial_flag
     if schema is None:
         config = {
             key: _materialize(value, (*path, key)) for key, value in values.items()
@@ -203,18 +175,8 @@ def _build(
         config = _build_fields(schema, values, path)
     else:
         config = schema(**_build_fields(schema, values, path))
-    try:
-        if hasattr(cls, "from_config"):
-            return (
-                functools.partial(cls.from_config, config)
-                if partial
-                else cls.from_config(config)
-            )
-        return functools.partial(cls, **config) if partial else cls(**config)
-    except Exception as error:
-        name = plain_config.get(CLASS_KEY, f"{cls.__module__}.{cls.__qualname__}")
-        error.add_note(f"while instantiating {format_path(path)} ({name})")
-        raise
+    name = plain_config.get(CLASS_KEY, f"{cls.__module__}.{cls.__qualname__}")
+    return call(cls, config, partial, path, name)
 
 
 def _build_fields(
