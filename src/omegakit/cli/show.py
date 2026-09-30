@@ -8,7 +8,7 @@ from omegakit.core.load import load_config
 from omegakit.core.tree import resolve_item, select_node
 from omegakit.resolvers import register_resolver
 
-from ._args import Arguments
+from ._arg import Arguments
 from ._routine import Routine
 
 

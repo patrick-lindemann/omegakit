@@ -12,7 +12,7 @@ from .assembly import (
     resolve_imports,
 )
 from .errors import ConfigLoadError, OmegaKitBaseException
-from .objects import CLASS_KEY, PARTIAL_KEY, REF_KEY
+from .object import CLASS_KEY, PARTIAL_KEY, REF_KEY
 from .tree import load_file, strip_keys
 from .utils import describe_error
 

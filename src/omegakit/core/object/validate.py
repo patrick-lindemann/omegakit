@@ -7,7 +7,7 @@ from omegaconf.errors import OmegaConfBaseException
 
 from omegakit.core.assembly import drop_meta
 from omegakit.core.errors import ConfigValidationError
-from omegakit.core.schemas import (
+from omegakit.core.schema import (
     check_schema,
     classify_fields,
     coerce_fields,
@@ -23,8 +23,8 @@ from omegakit.core.utils import (
     format_path,
 )
 
-from .classes import CLASS_KEY, import_class, split_arguments
-from .refs import REF_KEY, import_ref
+from .class_ import CLASS_KEY, import_class, split_arguments
+from .ref import REF_KEY, import_ref
 
 
 @dataclasses.dataclass(frozen=True)

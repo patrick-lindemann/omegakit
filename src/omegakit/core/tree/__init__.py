@@ -1,4 +1,4 @@
-from .files import load_file
+from .file import load_file
 from .order import merge_in_dependency_order
 from .resolve import resolve_container, resolve_item
 from .select import select_node

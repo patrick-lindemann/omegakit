@@ -6,11 +6,11 @@ from omegaconf import DictConfig, OmegaConf
 
 from omegakit.core.assembly import merge_overrides
 from omegakit.core.errors import ConfigValidationError
-from omegakit.core.schemas import classify_fields, coerce_fields
+from omegakit.core.schema import classify_fields, coerce_fields
 from omegakit.core.utils import format_path
 
-from .classes import CLASS_KEY, call
-from .refs import REF_KEY
+from .class_ import CLASS_KEY, call
+from .ref import REF_KEY
 from .validate import Call, Ref, Section, check
 
 

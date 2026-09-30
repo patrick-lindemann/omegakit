@@ -1,8 +1,8 @@
 from .base import BASE_KEY, merge_bases
-from .defaults import DEFAULTS_KEY, apply_defaults
-from .imports import IMPORT_KEY, resolve_imports
+from .default import DEFAULTS_KEY, apply_defaults
+from .import_ import IMPORT_KEY, resolve_imports
 from .meta import META_KEY, drop_meta
-from .overrides import merge_overrides
+from .override import merge_overrides
 
 __all__ = [
     "BASE_KEY",

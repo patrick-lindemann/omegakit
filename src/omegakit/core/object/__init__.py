@@ -1,6 +1,6 @@
-from .classes import CLASS_KEY, PARTIAL_KEY, make_node
+from .class_ import CLASS_KEY, PARTIAL_KEY, make_node
 from .instantiate import instantiate, prepare
-from .refs import REF_KEY
+from .ref import REF_KEY
 from .validate import validate
 
 __all__ = [

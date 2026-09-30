@@ -1,4 +1,4 @@
-from ._args import Arguments
+from ._arg import Arguments
 from ._routine import Routine
 from .check import CheckArguments, CheckRoutine
 from .export_schema import ExportSchemaArguments, ExportSchemaRoutine

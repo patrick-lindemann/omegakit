@@ -17,8 +17,8 @@ from typing import (
 
 from omegaconf import MISSING
 
-from .annotations import is_mapping_type, is_sequence_type, split_union
-from .fields import classify_fields
+from .annotation import is_mapping_type, is_sequence_type, split_union
+from .field import classify_fields
 
 
 # OmegaConf 2.3 supports neither `Literal`, nor unions with non-scalar members, nor

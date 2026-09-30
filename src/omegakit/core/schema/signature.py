@@ -7,7 +7,7 @@ from typing import Any, TypeAliasType, Union, get_args, get_origin, get_type_hin
 from omegakit.core.errors import SchemaDefinitionError
 
 from .configurable import Configurable
-from .fields import classify_fields
+from .field import classify_fields
 from .lookup import find_schema
 
 

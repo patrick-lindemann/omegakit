@@ -7,7 +7,7 @@ from omegakit.core.errors import SchemaDefinitionError
 from omegakit.core.json_schema import generate_json_schema
 from omegakit.core.utils import import_object
 
-from ._args import Arguments
+from ._arg import Arguments
 from ._routine import Routine
 
 

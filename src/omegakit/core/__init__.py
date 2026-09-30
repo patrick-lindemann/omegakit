@@ -7,7 +7,7 @@ from .errors import (
 )
 from .json_schema import generate_json_schema
 from .load import load_config
-from .objects import (
+from .object import (
     CLASS_KEY,
     PARTIAL_KEY,
     REF_KEY,
@@ -16,7 +16,7 @@ from .objects import (
     prepare,
     validate,
 )
-from .schemas import Configurable, check_schema
+from .schema import Configurable, check_schema
 from .tree import walk
 
 __all__ = [

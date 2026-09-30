@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from argparse import ArgumentParser
 
-from ._args import Arguments
+from ._arg import Arguments
 
 
 class Routine[TArgs: Arguments](ABC):

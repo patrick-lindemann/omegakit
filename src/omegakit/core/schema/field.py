@@ -20,7 +20,7 @@ from typing import (
 from omegakit.core.errors import SchemaDefinitionError
 from omegakit.core.utils import describe_error
 
-from .annotations import is_mapping_type, is_sequence_type, split_union
+from .annotation import is_mapping_type, is_sequence_type, split_union
 
 type FieldKind = Literal["data", "object", "any"]
 
