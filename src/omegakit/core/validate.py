@@ -7,7 +7,7 @@ from omegaconf.errors import (
     OmegaConfBaseException,
 )
 
-from .assembly import META_KEY
+from .assembly import drop_meta
 from .errors import ConfigValidationError
 from .keys import CLASS_KEY, PARTIAL_KEY, REF_KEY
 from .schemas import (
@@ -74,14 +74,14 @@ def resolve_config(config: DictConfig | ListConfig, allow_missing: bool = False)
             missing or unknown keys, instead of raising. Defaults to `False`.
 
     Returns:
-        The resolved config as `dict`s and `list`s.
+        The resolved config as `dict`s and `list`s, without `$meta`.
 
     Raises:
         ConfigValidationError: If a value is missing or an interpolation fails,
             including an exception from a resolver. OmegaConf's error is the cause.
     """
     try:
-        return resolve_container(config, allow_missing)
+        return drop_meta(resolve_container(config, allow_missing))
     except OmegaConfBaseException as error:
         location = (
             f" `{format_full_key(error.full_key)}`" if error.full_key else " the config"
@@ -153,7 +153,6 @@ def _check_untyped(
         return
     if not isinstance(value, dict):
         return
-    value = {key: item for key, item in value.items() if key != META_KEY}
     if CLASS_KEY in value:
         _check_class_node(value, path, allow_missing, allowed_modules)
     elif REF_KEY in value:
@@ -198,7 +197,7 @@ def _check_target(
 ) -> None:
     values = {}
     for key, value in node.items():
-        if key in (CLASS_KEY, META_KEY):
+        if key == CLASS_KEY:
             continue
         if key == PARTIAL_KEY:
             if not isinstance(value, bool):
@@ -279,22 +278,16 @@ def _check_object(
             and REF_KEY not in value
         ):
             for key, item in value.items():
-                if key != META_KEY:
-                    _check_not_reserved(key, path)
-                    _check_object(
-                        item,
-                        item_annotation,
-                        (*path, key),
-                        allow_missing,
-                        allowed_modules,
-                    )
+                _check_not_reserved(key, path)
+                _check_object(
+                    item, item_annotation, (*path, key), allow_missing, allowed_modules
+                )
             return
         raise ConfigValidationError(
             f"`{format_path(path)}` expects `{classes[0]}`, but the config gives "
             f"{describe_value(value)}."
         )
     if isinstance(value, dict):
-        value = {key: item for key, item in value.items() if key != META_KEY}
         if CLASS_KEY in value:
             target = _check_class_node(value, path, allow_missing, allowed_modules)
             if value.get(PARTIAL_KEY) is not True and isinstance(target, type):

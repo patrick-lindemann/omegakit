@@ -65,6 +65,9 @@ All notable changes to this project are documented here. The format follows
   `TypeError` or `SyntaxError` from evaluating it.
 - The error for `$base` or `$defaults` references that form a cycle names only the
   nodes on the cycle, not the nodes that wait for it or contain it.
+- `validate`, `instantiate` and `prepare` ignore `$meta` in the mapping of a data
+  field, such as a nested dataclass or a `dict[str, int]`, as the Metadata page
+  says, instead of rejecting it as an unknown field or a value of the wrong type.
 
 ## [0.8.0] - 2026-09-28
 

@@ -102,6 +102,13 @@ def test_instantiate_never_passes_meta():
     assert isinstance(obj.point, Point)
 
 
+def test_instantiate_ignores_meta_in_data_fields():
+    obj = instantiate(
+        {"$class": "tests.schemas.Fields", "sub": {"$meta": "note", "value": 1}}
+    )
+    assert obj.fields["sub"].doubled == 2
+
+
 def test_instantiate_builds_classes_in_lists():
     obj = instantiate(
         {"$class": CONTAINER, "name": "c", "point": [{"$class": POINT, "x": 1, "y": 2}]}

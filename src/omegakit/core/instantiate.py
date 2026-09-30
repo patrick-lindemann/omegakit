@@ -4,7 +4,7 @@ from typing import Any, cast, get_args, get_origin, overload
 
 from omegaconf import DictConfig, OmegaConf
 
-from .assembly import META_KEY, merge_overrides
+from .assembly import merge_overrides
 from .errors import ConfigValidationError
 from .keys import CLASS_KEY, PARTIAL_KEY, REF_KEY
 from .schemas import (
@@ -188,7 +188,7 @@ def _build(
         check_schema(cls)
     values = {}
     for key, value in plain_config.items():
-        if key in (CLASS_KEY, META_KEY):
+        if key == CLASS_KEY:
             continue
         if key == PARTIAL_KEY:
             if value:
@@ -246,7 +246,6 @@ def _build_object(value: Any, annotation: Any, path: tuple[str | int, ...]) -> A
             return {
                 key: _build_object(item, item_annotation, (*path, key))
                 for key, item in value.items()
-                if key != META_KEY
             }
     section = (
         find_section(annotation)
@@ -255,21 +254,16 @@ def _build_object(value: Any, annotation: Any, path: tuple[str | int, ...]) -> A
     )
     if section is None:
         return _materialize(value, path)
-    return section(
-        **_build_fields(
-            section, {key: item for key, item in value.items() if key != META_KEY}, path
-        )
-    )
+    return section(**_build_fields(section, value, path))
 
 
 def _materialize(value: Any, path: tuple[str | int, ...]) -> Any:
     if isinstance(value, dict):
-        node = {key: item for key, item in value.items() if key != META_KEY}
-        if CLASS_KEY in node:
-            return _build(node, path=path)
-        if REF_KEY in node:
-            return import_object(node[REF_KEY])
-        return {key: _materialize(item, (*path, key)) for key, item in node.items()}
+        if CLASS_KEY in value:
+            return _build(value, path=path)
+        if REF_KEY in value:
+            return import_object(value[REF_KEY])
+        return {key: _materialize(item, (*path, key)) for key, item in value.items()}
     if isinstance(value, list):
         return [_materialize(item, (*path, index)) for index, item in enumerate(value)]
     return value

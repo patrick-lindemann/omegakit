@@ -201,6 +201,16 @@ def test_validate_ignores_meta():
     validate({"$meta": {"note": 1}, "model": _model(**{"$meta": {"note": 2}})})
 
 
+def test_validate_ignores_meta_in_data_fields():
+    validate(
+        {
+            "$class": "tests.schemas.Fields",
+            "sub": {"$meta": "note", "value": 1},
+            "by_name": {"$meta": "note", "a": {"value": 2}},
+        }
+    )
+
+
 def test_validate_rejects_reserved_keys():
     with pytest.raises(ConfigValidationError, match="`\\$base`"):
         validate({"model": _model(**{"$base": {}})})
