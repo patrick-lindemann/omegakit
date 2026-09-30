@@ -4,9 +4,6 @@ from typing import Any, TypeAliasType, get_args, get_origin
 
 from omegaconf import MISSING, DictConfig, ListConfig, OmegaConf
 from omegaconf.errors import (
-    InterpolationKeyError,
-    InterpolationToMissingValueError,
-    MissingMandatoryValue,
     OmegaConfBaseException,
 )
 
@@ -21,6 +18,7 @@ from .schemas import (
     find_section,
     split_union,
 )
+from .tree import resolve_container
 from .utils import (
     describe_error,
     describe_value,
@@ -83,9 +81,7 @@ def resolve_config(config: DictConfig | ListConfig, allow_missing: bool = False)
             including an exception from a resolver. OmegaConf's error is the cause.
     """
     try:
-        if not allow_missing:
-            return OmegaConf.to_container(config, resolve=True, throw_on_missing=True)
-        return _resolve_allowing_missing(config)
+        return resolve_container(config, allow_missing)
     except OmegaConfBaseException as error:
         location = (
             f" `{format_full_key(error.full_key)}`" if error.full_key else " the config"
@@ -143,36 +139,6 @@ def check_resolved(
         _check_target(schema, config, (), allow_missing, allowed_modules)
         return
     _check_object(config, schema, (), allow_missing, allowed_modules)
-
-
-def resolve_item(container: Any, key: Any) -> Any:
-    """Resolve one item of a container, giving `???` for a missing value.
-
-    Args:
-        container: The `DictConfig` or `ListConfig`.
-        key: The item's key or index.
-
-    Returns:
-        The resolved item, with containers as `dict`s and `list`s, or `???` for a
-        missing value and for an interpolation to a missing or unknown key.
-    """
-    try:
-        value = container[key]
-    except (
-        MissingMandatoryValue,
-        InterpolationToMissingValueError,
-        InterpolationKeyError,
-    ):
-        return MISSING
-    if isinstance(value, (DictConfig, ListConfig)):
-        return _resolve_allowing_missing(value)
-    return value
-
-
-def _resolve_allowing_missing(container: DictConfig | ListConfig) -> Any:
-    if isinstance(container, ListConfig):
-        return [resolve_item(container, index) for index in range(len(container))]
-    return {key: resolve_item(container, key) for key in container}
 
 
 def _check_untyped(

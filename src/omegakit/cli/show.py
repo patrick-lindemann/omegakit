@@ -5,8 +5,7 @@ from typing import Any, NoReturn, override
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
 from omegakit.core.load import load_config
-from omegakit.core.tree import select_node
-from omegakit.core.validate import resolve_item
+from omegakit.core.tree import resolve_item, select_node
 from omegakit.resolvers import register_resolver
 
 from ._args import Arguments
