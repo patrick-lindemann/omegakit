@@ -39,11 +39,10 @@ through [`Configurable`](../../objects/configurable-classes/index.md).
 `schema` for a root without `$class`:
 
 - A dataclass is its own schema.
-- A class that subclasses `Configurable[TConfig]` with a dataclass `TConfig` has
-  `TConfig` ([Configurable classes](../../objects/configurable-classes/index.md#rules)).
-- Any other class or function has none, including a bare `Configurable` and one
-  with a `TypedDict` or `Mapping` `TConfig`. Its arguments are not checked, but the
-  `$class` nodes inside them are.
+- A `Configurable` has its `schema`
+  ([Configurable classes](../../objects/configurable-classes/index.md#rules)).
+- Any other class or function has none, and so has a `Configurable` without a
+  `schema`. Its arguments are not checked, but the `$class` nodes inside them are.
 
 **Field kinds.**
 

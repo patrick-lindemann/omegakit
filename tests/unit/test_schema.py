@@ -25,7 +25,9 @@ class SetConfig:
     values: set[int] = field(default_factory=set)
 
 
-class WithSet(Configurable[SetConfig]):
+class WithSet(Configurable):
+    schema = SetConfig
+
     def __init__(self, **fields: Any) -> None: ...
 
 
@@ -34,7 +36,9 @@ class MixedUnionConfig:
     value: int | Encoder = 0
 
 
-class WithMixedUnion(Configurable[MixedUnionConfig]):
+class WithMixedUnion(Configurable):
+    schema = MixedUnionConfig
+
     def __init__(self, **fields: Any) -> None: ...
 
 
@@ -43,7 +47,9 @@ class UnresolvableConfig:
     value: "Missing" = None  # type: ignore[name-defined]  # noqa: F821
 
 
-class WithUnresolvable(Configurable[UnresolvableConfig]):
+class WithUnresolvable(Configurable):
+    schema = UnresolvableConfig
+
     def __init__(self, **fields: Any) -> None: ...
 
 
@@ -52,7 +58,9 @@ class HolderConfig:
     section: SectionWithObject | None = None
 
 
-class Holder(Configurable[HolderConfig]):
+class Holder(Configurable):
+    schema = HolderConfig
+
     def __init__(self, section: SectionWithObject | None) -> None:
         self.section = section
 
@@ -62,7 +70,9 @@ class AmbiguousUnionConfig:
     value: Sub | EncoderConfig | None = None
 
 
-class WithAmbiguousUnion(Configurable[AmbiguousUnionConfig]):
+class WithAmbiguousUnion(Configurable):
+    schema = AmbiguousUnionConfig
+
     def __init__(self, **fields: Any) -> None: ...
 
 
@@ -164,7 +174,9 @@ class ObjectDefaultConfig:
     encoder: schemas.Encoder = field(default_factory=lambda: schemas.Encoder(width=3))
 
 
-class WithObjectDefault(Configurable[ObjectDefaultConfig]):
+class WithObjectDefault(Configurable):
+    schema = ObjectDefaultConfig
+
     def __init__(self, encoder: schemas.Encoder) -> None:
         self.encoder = encoder
 
@@ -304,7 +316,9 @@ class Inner:
     outer: Outer | None = None
 
 
-class WithTree(Configurable[Tree]):
+class WithTree(Configurable):
+    schema = Tree
+
     def __init__(self, child: Tree | None = None) -> None: ...
 
 

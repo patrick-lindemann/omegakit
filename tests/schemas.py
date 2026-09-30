@@ -66,8 +66,10 @@ class EncoderConfig:
     width: int = 1
 
 
-class TypedEncoder(Configurable[EncoderConfig]):
+class TypedEncoder(Configurable):
     """A `Configurable` built through the default `from_config`."""
+
+    schema = EncoderConfig
 
     def __init__(self, width: int) -> None:
         self.width = width
@@ -82,8 +84,10 @@ class ModelConfig:
     encoder: Encoder | None = None
 
 
-class Model(Configurable[ModelConfig]):
+class Model(Configurable):
     """A class whose `from_config` picks a child by enum and passes extra arguments."""
+
+    schema = ModelConfig
 
     def __init__(
         self, kind: Base, depth: int, encoder: Encoder | None, **extra: Any
@@ -118,8 +122,10 @@ class FieldsConfig:
     factory: Callable[..., Encoder] | None = None
 
 
-class Fields(Configurable[FieldsConfig]):
+class Fields(Configurable):
     """Stores the typed config it receives."""
+
+    schema = FieldsConfig
 
     def __init__(self, **fields: Any) -> None:
         self.fields = fields
@@ -132,8 +138,10 @@ class RequiredObjectConfig:
     encoder: Encoder
 
 
-class RequiredObject(Configurable[RequiredObjectConfig]):
+class RequiredObject(Configurable):
     """Requires an `Encoder`."""
+
+    schema = RequiredObjectConfig
 
     def __init__(self, encoder: Encoder) -> None:
         self.encoder = encoder
@@ -152,7 +160,9 @@ class InitFalseConfig:
     derived: int = field(init=False, default=0)
 
 
-class InitFalse(Configurable[InitFalseConfig]):
+class InitFalse(Configurable):
+    schema = InitFalseConfig
+
     def __init__(self, **fields: Any) -> None:
         self.fields = fields
 
@@ -163,8 +173,10 @@ class PointConfig:
     y: int = 0
 
 
-class Animal(Configurable[PointConfig]):
+class Animal(Configurable):
     """A factory base whose `from_config` returns a subclass."""
+
+    schema = PointConfig
 
     def __init__(self, x: int, y: int) -> None:
         self.x = x
@@ -296,7 +308,9 @@ class TypesConfig:
     maybe_sub: Sub | None = None
 
 
-class Types(Configurable[TypesConfig]):
+class Types(Configurable):
+    schema = TypesConfig
+
     def __init__(self, **fields: Any) -> None:
         self.fields = fields
 
@@ -311,6 +325,8 @@ class ObjectContainersConfig:
     maybe: list[Encoder] | None = None
 
 
-class ObjectContainers(Configurable[ObjectContainersConfig]):
+class ObjectContainers(Configurable):
+    schema = ObjectContainersConfig
+
     def __init__(self, **fields: Any) -> None:
         self.fields = fields

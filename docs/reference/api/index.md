@@ -12,7 +12,7 @@
 .. autofunction:: omegakit.instantiate
 .. autofunction:: omegakit.prepare
 .. autoclass:: omegakit.Configurable
-   :members: from_config
+   :members: schema, from_config
 .. autofunction:: omegakit.make_node
 ```
 

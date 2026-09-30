@@ -12,8 +12,10 @@ class MLPConfig:
     activation: Literal["relu", "tanh"] = "tanh"
 
 
-class MLP(nn.Sequential, Configurable[MLPConfig]):
+class MLP(nn.Sequential, Configurable):
     """A multilayer perceptron from one input to one output."""
+
+    schema = MLPConfig
 
     def __init__(self, hidden: int, activation: Literal["relu", "tanh"] = "tanh"):
         super().__init__(

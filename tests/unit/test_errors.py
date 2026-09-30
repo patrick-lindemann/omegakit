@@ -29,7 +29,9 @@ class Unsupported:
     tags: set[str]
 
 
-class UsesUnsupported(Configurable[Unsupported]):
+class UsesUnsupported(Configurable):
+    schema = Unsupported
+
     def __init__(self, tags: set[str]) -> None:
         self.tags = tags
 
@@ -39,7 +41,9 @@ class PathKeys:
     counts: dict[Path, int] = dataclasses.field(default_factory=dict)
 
 
-class UsesPathKeys(Configurable[PathKeys]):
+class UsesPathKeys(Configurable):
+    schema = PathKeys
+
     def __init__(self, counts: dict[Path, int]) -> None:
         self.counts = counts
 

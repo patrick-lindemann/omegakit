@@ -76,7 +76,9 @@ class HookedConfig:
     items: list[Hooked]
 
 
-class WithHooked(Configurable[HookedConfig]):
+class WithHooked(Configurable):
+    schema = HookedConfig
+
     def __init__(self, **fields: Any) -> None:
         self.fields = fields
 
@@ -249,7 +251,9 @@ class UntypedFieldsConfig:
     runner: Runner | None = None
 
 
-class WithUntypedFields(Configurable[UntypedFieldsConfig]):
+class WithUntypedFields(Configurable):
+    schema = UntypedFieldsConfig
+
     def __init__(self, **fields: Any) -> None:
         self.fields = fields
 

@@ -56,4 +56,4 @@ def test_from_config_missing_value_never_flows_through_a_partial():
 
 
 def test_from_config_direct_raw_call_still_works():
-    assert schemas.TypedEncoder.from_config({"width": 2}).width == 2  # type: ignore[arg-type]
+    assert schemas.TypedEncoder.from_config({"width": 2}).width == 2

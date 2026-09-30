@@ -1,7 +1,7 @@
 # Configurable classes
 
-A class can carry its own schema: subclass `Configurable[TConfig]` with a dataclass
-`TConfig`. Use it for a class that cannot be a dataclass itself, such as a PyTorch
+A class can carry its own schema: subclass `Configurable` and set `schema` to a
+dataclass. Use it for a class that cannot be a dataclass itself, such as a PyTorch
 module, or whose config differs from its constructor:
 
 ```{literalinclude} models.py
@@ -40,8 +40,9 @@ they are checked are as for any
 
 `MLP` uses the default `from_config`, which passes every field of the typed config
 to the constructor. Override it when the config and the constructor differ, for
-example when a field names the subclass to build. Keep `**kwargs` in the signature,
-where arguments given to a partial arrive. A `from_config` that returns a subclass
+example when a field names the subclass to build. Annotate its `config` with the
+schema class to have it typed, and keep `**kwargs` in the signature, where
+arguments given to a partial arrive. A `from_config` that returns a subclass
 annotates the base class as its return type, since `Self` would claim the class it
 was called on.
 
@@ -52,16 +53,15 @@ as a test or a `from_config`, gets the same checks as a config does.
 
 ## Rules
 
-A class that subclasses `Configurable[TConfig]` with a dataclass `TConfig` has
-`TConfig` as its **schema**. Its config is checked against it
+A class that subclasses `Configurable` and sets `schema` to a dataclass has that
+dataclass as its **schema**. Its config is checked against it
 ([Dataclass schemas](../../schemas/dataclass-schemas/index.md#rules)) and built into
-a `TConfig` instance, the typed config, which `from_config` receives.
+an instance of it, the typed config, which `from_config` receives.
 
-**Schema lookup.** The `TConfig` argument is found by walking the original bases
-of the `$class` and substituting type variables, so `class Sub(Mixin[int], Model)`
-and `class Leaf(Mid[Config])` work. An unparametrized generic class uses its type
-variable's default, or has no schema. A type variable that cannot be substituted
-raises `SchemaDefinitionError`. The result is cached per class.
+**Schema lookup.** `schema` is a class attribute, so a subclass inherits it, and
+`schema = None` in a subclass removes it. A `Configurable` without a schema gets
+its built arguments as a mapping, unchecked. A `schema` that is not a dataclass
+raises `SchemaDefinitionError`.
 
 **Building a typed node**, in order:
 
@@ -72,7 +72,7 @@ raises `SchemaDefinitionError`. The result is cached per class.
    [Instantiation](../instantiation/index.md#rules). A plain mapping in a field
    annotated with a dataclass is a section, built the same way. A built object's
    type is not checked again.
-4. Call `TConfig(**fields)`, so `__post_init__` runs.
+4. Call `schema(**fields)`, so `__post_init__` runs.
 5. Call `from_config(typed_config)`, or build a partial of it that passes
    call-time arguments as `**kwargs`.
 

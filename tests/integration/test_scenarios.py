@@ -23,8 +23,10 @@ class WrapperConfig:
     width: Any = 1
 
 
-class Wrapper(Configurable[WrapperConfig]):
+class Wrapper(Configurable):
     """Builds a code-chosen `TypedEncoder` child with `make_node`."""
+
+    schema = WrapperConfig
 
     def __init__(self, inner: TypedEncoder) -> None:
         self.inner = inner

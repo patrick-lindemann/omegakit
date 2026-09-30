@@ -39,7 +39,9 @@ class HolderConfig:
     by_name: dict[str, Encoder] = field(default_factory=dict)
 
 
-class Holder(Configurable[HolderConfig]):
+class Holder(Configurable):
+    schema = HolderConfig
+
     def __init__(self, **fields: Any) -> None:
         self.fields = fields
 

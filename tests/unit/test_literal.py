@@ -14,7 +14,9 @@ from tests import schemas
 from tests.schemas import LiteralConfig
 
 
-class WithLiterals(Configurable[LiteralConfig]):
+class WithLiterals(Configurable):
+    schema = LiteralConfig
+
     def __init__(self, **fields: Any) -> None:
         self.fields = fields
 
@@ -24,7 +26,9 @@ class FloatLiteralConfig:
     value: Literal[1.5] = 1.5  # pyright: ignore[reportInvalidTypeForm]
 
 
-class WithFloatLiteral(Configurable[FloatLiteralConfig]):
+class WithFloatLiteral(Configurable):
+    schema = FloatLiteralConfig
+
     def __init__(self, **fields: Any) -> None: ...
 
 

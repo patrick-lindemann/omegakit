@@ -631,7 +631,6 @@ version = "0.8.0"
 source = { editable = "." }
 dependencies = [
     { name = "omegaconf" },
-    { name = "typing-extensions" },
 ]
 
 [package.dev-dependencies]
@@ -657,10 +656,7 @@ resolvers = [
 ]
 
 [package.metadata]
-requires-dist = [
-    { name = "omegaconf", specifier = ">=2.4.0rc1,<2.4.1" },
-    { name = "typing-extensions", specifier = ">=4.12" },
-]
+requires-dist = [{ name = "omegaconf", specifier = ">=2.4.0rc1,<2.4.1" }]
 
 [package.metadata.requires-dev]
 dev = [

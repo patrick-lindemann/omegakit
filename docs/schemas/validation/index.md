@@ -62,7 +62,7 @@ run this check, with their own `schema`, before building.
   ([Dataclass schemas](../dataclass-schemas/index.md#rules)).
 - `schema` says what the root must match. A root with `$class` must name
   `schema` or a subclass. A root without `$class` is checked against the schema
-  of `schema`: a dataclass is its own, and a `Configurable` has its `TConfig`. A
+  of `schema`: a dataclass is its own, and a `Configurable` has its `schema`. A
   class without one raises. Anything that is not a class raises `TypeError`.
   Without `schema`, only the `$class` nodes are checked.
 - `allow_missing=True` accepts `???`, required fields that are not given, and

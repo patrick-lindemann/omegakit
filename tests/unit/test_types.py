@@ -14,7 +14,9 @@ class InitVarConfig:
     seed: InitVar[int] = 0
 
 
-class WithInitVar(Configurable[InitVarConfig]):
+class WithInitVar(Configurable):
+    schema = InitVarConfig
+
     def __init__(self, **fields: Any) -> None:
         self.fields = fields
 
@@ -24,7 +26,9 @@ class KwOnlyConfig:
     value: int = 0
 
 
-class KwOnly(Configurable[KwOnlyConfig]):
+class KwOnly(Configurable):
+    schema = KwOnlyConfig
+
     def __init__(self, **fields: Any) -> None:
         self.fields = fields
 
@@ -177,7 +181,9 @@ class OptionalsConfig:
     sub: schemas.Sub | None = None
 
 
-class Optionals(Configurable[OptionalsConfig]):
+class Optionals(Configurable):
+    schema = OptionalsConfig
+
     def __init__(self, **fields: Any) -> None:
         self.fields = fields
 
@@ -222,7 +228,9 @@ class ListUnionConfig:
     maybe: int | list[int] | None = 0
 
 
-class ListUnion(Configurable[ListUnionConfig]):
+class ListUnion(Configurable):
+    schema = ListUnionConfig
+
     def __init__(self, **fields: Any) -> None:
         self.fields = fields
 
@@ -262,7 +270,9 @@ class DefaultsConfig:
     holder: DoublingHolder = field(default_factory=DoublingHolder)
 
 
-class Defaults(Configurable[DefaultsConfig]):
+class Defaults(Configurable):
+    schema = DefaultsConfig
+
     def __init__(self, **fields: Any) -> None:
         self.fields = fields
 

@@ -28,6 +28,11 @@ All notable changes to this project are documented here. The format follows
   a single string, such as `hello`, is the mapping `{hello: null}` instead of an
   error; a single number or boolean still raises `ConfigLoadError`, now with
   OmegaConf's message.
+- **Breaking:** A `Configurable` names its schema in the class attribute `schema`
+  instead of a type argument: replace `class Model(Configurable[ModelConfig])` with
+  `class Model(Configurable)` and `schema = ModelConfig` in its body. `from_config`
+  takes `config: Any`; annotate `config` in your own `from_config` to have it typed.
+  omegakit no longer depends on `typing_extensions`.
 - **Breaking:** `${secret:...}` wraps the interpolation that gives the secret, such
   as `${secret:${oc.env:TOKEN}}`, so a secret can come from any resolver. Replace
   every `${secret:NAME}` with `${secret:${oc.env:NAME}}`: the old form now gives the

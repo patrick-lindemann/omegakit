@@ -6,13 +6,13 @@ from omegaconf import MISSING, DictConfig, ListConfig, OmegaConf
 from omegaconf.errors import OmegaConfBaseException
 
 from .assembly import drop_meta
+from .configurable import find_schema
 from .errors import ConfigValidationError
 from .object import CLASS_KEY, REF_KEY, import_class, import_ref, split_arguments
 from .schema import (
     Schema,
     classify_fields,
     coerce_fields,
-    find_schema,
     find_section,
     split_union,
 )
