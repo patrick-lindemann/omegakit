@@ -5,6 +5,7 @@ import sys
 import pytest
 import yaml
 
+import omegakit
 from omegakit import generate_json_schema
 from omegakit.__main__ import main
 from tests import schemas
@@ -49,6 +50,11 @@ def _exit_code(arguments: list[str]) -> int:
     with pytest.raises(SystemExit) as info:
         main(arguments)
     return int(info.value.code or 0)
+
+
+def test_cli_version(capsys):
+    assert _exit_code(["--version"]) == 0
+    assert capsys.readouterr().out == f"omegakit {omegakit.__version__}\n"
 
 
 def test_cli_check_accepts_valid_files(write_yaml, capsys):

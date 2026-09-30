@@ -8,6 +8,8 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- `omegakit --version` prints the installed version, which is also
+  `omegakit.__version__`.
 - `register_resolver` in `omegakit.resolvers` registers a resolver of your own as
   omegakit registers its resolvers: cached, on OmegaConf 2.3 and 2.4 alike.
 - A schema field annotated with a bare `Sequence` or `Mapping`, without item types,

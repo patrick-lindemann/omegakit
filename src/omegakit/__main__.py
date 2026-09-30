@@ -3,6 +3,7 @@ from argparse import ArgumentError, ArgumentParser
 from pathlib import Path
 from typing import Any
 
+from . import __version__
 from .cli import ROUTINES, Arguments, Routine
 from .resolvers.secrets import register_secret_resolver
 
@@ -23,6 +24,9 @@ def main(argv: list[str] | None = None) -> None:
             `None`, which reads them from `sys.argv`.
     """
     parser = ArgumentParser(prog="omegakit")
+    parser.add_argument(
+        "--version", action="version", version=f"%(prog)s {__version__}"
+    )
     subparsers = parser.add_subparsers(dest="command", required=True)
     for routine in ROUTINES:
         subparser = subparsers.add_parser(

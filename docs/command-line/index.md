@@ -11,7 +11,8 @@ Installing omegakit adds the `omegakit` command, also available as
   your editor.
 
 Run it from the directory that your `$class` paths import from, as your own
-scripts do. `omegakit <command> --help` lists a command's options.
+scripts do. `omegakit <command> --help` lists a command's options, and
+`omegakit --version` prints the installed version.
 
 The examples in this section run in the directory of the example project, a small
 PyTorch project. Its experiment files are in `configs/experiments` and extend
