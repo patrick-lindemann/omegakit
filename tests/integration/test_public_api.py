@@ -21,7 +21,6 @@ def test_public_api_exports():
         "REF_KEY",
         "SchemaDefinitionError",
         "check_schema",
-        "generate_json_schema",
         "instantiate",
         "load_config",
         "make_node",

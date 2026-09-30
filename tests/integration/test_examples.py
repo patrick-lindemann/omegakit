@@ -95,9 +95,7 @@ SESSION_PAGES = {
     "getting-started": EXAMPLE,
     "command-line/check": EXAMPLE,
     "command-line/show": EXAMPLE,
-    "command-line/export-schema": EXAMPLE,
     "recipes/checking-experiments-in-ci": EXAMPLE,
-    "schemas/editor-support": DOCS / "schemas" / "editor-support",
     "security/secrets": DOCS / "security" / "secrets",
 }
 PROGRAMS = {"python": [sys.executable], "omegakit": [sys.executable, "-m", "omegakit"]}

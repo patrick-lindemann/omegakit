@@ -18,7 +18,6 @@ from omegakit import (
     OmegaKitBaseException,
     SchemaDefinitionError,
     check_schema,
-    generate_json_schema,
     instantiate,
     load_config,
     prepare,
@@ -97,7 +96,6 @@ def test_base_exception_is_not_a_value_error():
         lambda path: prepare(BAD_NODE),
         lambda path: instantiate({"$class": "tests.helpers.Point"}, overrides=["x=["]),
         lambda path: check_schema(UsesUnsupported),
-        lambda path: generate_json_schema(Unsupported),
     ],
     ids=[
         "load_config",
@@ -106,7 +104,6 @@ def test_base_exception_is_not_a_value_error():
         "prepare",
         "overrides",
         "check_schema",
-        "generate_json_schema",
     ],
 )
 def test_omegaconf_handler_catches_errors_of_every_public_function(
@@ -132,12 +129,11 @@ def test_override_errors_are_load_errors_in_every_function(write_yaml, overrides
     "call",
     [
         lambda: check_schema(UsesUnsupported),
-        lambda: generate_json_schema(Unsupported),
         lambda: validate({"$class": "tests.unit.test_errors.UsesUnsupported"}),
         lambda: instantiate({"$class": "tests.unit.test_errors.UsesUnsupported"}),
         lambda: validate({"tags": ["a"]}, schema=UsesUnsupported),
     ],
-    ids=["check_schema", "generate_json_schema", "validate", "instantiate", "schema"],
+    ids=["check_schema", "validate", "instantiate", "schema"],
 )
 def test_unusable_schema_raises_a_definition_error_wherever_it_is_reached(
     call: Callable[[], Any],

@@ -50,10 +50,14 @@ All notable changes to this project are documented here. The format follows
   values it gives in memory.
 - The API and Changelog pages moved into the folder of their section, Reference:
   `api/` is now `reference/api/`, and `changelog/` is now `reference/changelog/`.
-- `omegakit export-schema` reports a class it cannot export as a usage error and
-  exits with 2, instead of printing a traceback.
 - `omegakit check --schema` with something that is not a class exits with 2 once,
   instead of reporting every file as invalid.
+
+### Removed
+
+- **Breaking:** `generate_json_schema`, the `omegakit export-schema` command and the
+  Editor support page. OmegaConf generates no JSON Schema, and omegakit adds
+  nothing that OmegaConf does not support.
 
 ### Fixed
 

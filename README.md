@@ -66,9 +66,8 @@ every example.
 
 - Run one experiment for many values:
   [Parameter sweeps](https://omegakit.readthedocs.io/en/latest/recipes/parameter-sweeps/)
-- Check configs before anything runs, and get completion in your editor:
-  [Validation](https://omegakit.readthedocs.io/en/latest/schemas/validation/),
-  [Editor support](https://omegakit.readthedocs.io/en/latest/schemas/editor-support/)
+- Check configs before anything runs:
+  [Validation](https://omegakit.readthedocs.io/en/latest/schemas/validation/)
 
 omegakit does not launch jobs, parse your command line or record your runs. See
 how it [compares with Hydra and other experiment tools](https://omegakit.readthedocs.io/en/latest/comparison/).

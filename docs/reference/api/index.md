@@ -28,12 +28,6 @@
 .. autofunction:: omegakit.validate
 ```
 
-## Editor schemas
-
-```{eval-rst}
-.. autofunction:: omegakit.generate_json_schema
-```
-
 ## Traversal
 
 ```{eval-rst}

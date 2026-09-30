@@ -9,7 +9,7 @@ from .errors import (
 from .instantiate import instantiate, prepare
 from .load import load_config
 from .object import CLASS_KEY, PARTIAL_KEY, REF_KEY, make_node
-from .schema import check_schema, generate_json_schema
+from .schema import check_schema
 from .tree import walk
 from .validate import validate
 
@@ -27,7 +27,6 @@ __all__ = [
     "OmegaKitBaseException",
     "SchemaDefinitionError",
     "check_schema",
-    "generate_json_schema",
     "instantiate",
     "load_config",
     "make_node",

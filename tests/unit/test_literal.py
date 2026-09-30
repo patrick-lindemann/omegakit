@@ -7,7 +7,6 @@ from omegakit import (
     Configurable,
     ConfigValidationError,
     SchemaDefinitionError,
-    generate_json_schema,
     instantiate,
     validate,
 )
@@ -96,9 +95,3 @@ def test_literal_in_a_root_schema():
 def test_literal_values_must_be_plain():
     with pytest.raises(SchemaDefinitionError, match="strings, integers or booleans"):
         instantiate({"$class": f"{__name__}.WithFloatLiteral"})
-
-
-def test_literal_json_schema_lists_values():
-    properties = generate_json_schema(schemas.LiteralConfig)["properties"]
-    assert properties["mode"]["anyOf"][0] == {"enum": ["train", "eval"]}
-    assert properties["level"]["anyOf"][0] == {"enum": [1, 2, 3]}

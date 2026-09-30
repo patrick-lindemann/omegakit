@@ -71,7 +71,6 @@ objects/configurable-classes/index
 
 schemas/dataclass-schemas/index
 schemas/validation/index
-schemas/editor-support/index
 ```
 
 ```{toctree}
@@ -90,7 +89,6 @@ resolvers/torch/index
 command-line/index
 command-line/check/index
 command-line/show/index
-command-line/export-schema/index
 ```
 
 ```{toctree}

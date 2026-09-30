@@ -42,8 +42,7 @@ and launches no jobs.
   [structured configs](https://hydra.cc/docs/tutorials/structured_config/intro/)
   check types when a config is composed or changed. omegakit checks each `$class`
   node whose class has a schema, and each object field against the class it
-  expects, before anything is built. It also generates JSON Schemas for editors,
-  and has `omegakit check` for CI.
+  expects, before anything is built, and has `omegakit check` for CI.
 - Use Hydra if you want the command line to compose configs, cluster launchers or
   managed run directories.
   [hydra-zen](https://mit-ll-responsible-ai.github.io/hydra-zen/) generates Hydra

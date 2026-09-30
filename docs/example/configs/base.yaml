@@ -1,4 +1,3 @@
-# yaml-language-server: $schema=../experiment.schema.json
 seed: 0
 name: ???
 run_dir: runs/${name}/seed${seed}

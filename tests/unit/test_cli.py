@@ -1,4 +1,3 @@
-import json
 import subprocess
 import sys
 
@@ -6,41 +5,18 @@ import pytest
 import yaml
 
 import omegakit
-from omegakit import generate_json_schema
 from omegakit.__main__ import main
-from tests import schemas
 
 
-def test_cli_export_schema_prints_the_schema(capsys):
-    main(["export-schema", "tests.schemas.AppConfig"])
-    assert json.loads(capsys.readouterr().out) == generate_json_schema(
-        schemas.AppConfig
-    )
-
-
-def test_cli_export_schema_writes_the_output_file(tmp_path):
-    output = tmp_path / "app.schema.json"
-    main(["export-schema", "tests.schemas.AppConfig", "-o", str(output)])
-    assert json.loads(output.read_text()) == generate_json_schema(schemas.AppConfig)
-
-
-def test_cli_runs_as_a_module_without_warnings(tmp_path):
-    output = tmp_path / "model.schema.json"
-    subprocess.run(
-        [
-            sys.executable,
-            "-W",
-            "error",
-            "-m",
-            "omegakit",
-            "export-schema",
-            "tests.schemas.TypedEncoder",
-            "-o",
-            str(output),
-        ],
+def test_cli_runs_as_a_module_without_warnings(write_yaml):
+    path = write_yaml("a.yaml", "x: 1\n")
+    result = subprocess.run(
+        [sys.executable, "-W", "error", "-m", "omegakit", "show", str(path)],
         check=True,
+        capture_output=True,
+        text=True,
     )
-    assert json.loads(output.read_text()) == generate_json_schema(schemas.TypedEncoder)
+    assert yaml.safe_load(result.stdout) == {"x": 1}
 
 
 MODEL = "model:\n  $class: tests.schemas.Model\n  depth: 2\n"
@@ -313,38 +289,3 @@ def test_cli_show_errors(write_yaml, capsys):
     assert _exit_code(["show", str(path.with_name("nope.yaml"))]) == 1
     assert _exit_code(["show", str(path), str(path)]) == 2
     assert "no node `b`" in capsys.readouterr().out
-
-
-@pytest.mark.parametrize(
-    "import_path", ["tests.schemas.Nope", "tests.no_such_module.X", "nodots"]
-)
-def test_cli_export_schema_reports_import_failures(capsys, import_path):
-    assert _exit_code(["export-schema", import_path]) == 2
-    assert "cannot import" in capsys.readouterr().err
-
-
-@pytest.mark.parametrize(
-    ("import_path", "message"),
-    [
-        ("builtins.int", "neither a dataclass"),
-        ("tests.schemas.UnsupportedField", "unsupported container"),
-    ],
-)
-def test_cli_export_schema_reports_a_class_it_cannot_export(
-    capsys, import_path, message
-):
-    assert _exit_code(["export-schema", import_path]) == 2
-    error = capsys.readouterr().err.splitlines()[-1]
-    assert f"cannot export {import_path}: " in error
-    assert message in error
-
-
-def test_cli_export_schema_check(tmp_path):
-    output = tmp_path / "schema.json"
-    arguments = ["export-schema", "tests.schemas.TypedEncoder", "-o", str(output)]
-    assert _exit_code([*arguments, "--check"]) == 1
-    main(arguments)
-    main([*arguments, "--check"])
-    output.write_text("{}")
-    assert _exit_code([*arguments, "--check"]) == 1
-    assert _exit_code(["export-schema", "tests.schemas.TypedEncoder", "--check"]) == 2

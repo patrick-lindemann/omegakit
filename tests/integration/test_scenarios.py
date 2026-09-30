@@ -1,18 +1,13 @@
-import importlib
-import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Self, override
 
 import pytest
-import yaml
-from jsonschema import Draft7Validator
 from omegaconf import OmegaConf
 
 from omegakit import (
     Configurable,
     ConfigValidationError,
-    generate_json_schema,
     instantiate,
     load_config,
     make_node,
@@ -162,44 +157,3 @@ def test_scenario_forward_base_to_imported_node_then_instantiate(write_yaml):
 
 
 DOCS = Path(__file__).parents[2] / "docs"
-# The config files that name their JSON Schema in their first line.
-EXAMPLE_CONFIGS = sorted(
-    path
-    for path in DOCS.glob("**/*.yaml")
-    if "_build" not in path.parts
-    and path.read_text().startswith("# yaml-language-server:")
-)
-# The committed JSON Schemas, the directory their module is in, and their class.
-JSON_SCHEMAS = [
-    (DOCS / "example", "project"),
-    (DOCS / "schemas" / "editor-support", "schemas"),
-]
-
-
-def _modeline_schema(path: Path) -> dict:
-    first_line = path.read_text().splitlines()[0]
-    name = first_line.removeprefix("# yaml-language-server: $schema=")
-    return json.loads((path.parent / name).read_text())
-
-
-@pytest.mark.parametrize(
-    "path", EXAMPLE_CONFIGS, ids=lambda path: str(path.relative_to(DOCS))
-)
-def test_scenario_example_yaml_matches_its_schema(path: Path):
-    """Editor schema + real files: every example YAML validates, a typo does not."""
-    validator = Draft7Validator(_modeline_schema(path))
-    config = yaml.safe_load(path.read_text())
-    assert list(validator.iter_errors(config)) == []
-    assert list(validator.iter_errors({**config, "misspeled": 1}))
-
-
-@pytest.mark.docs
-@pytest.mark.parametrize(
-    ("directory", "module"), JSON_SCHEMAS, ids=[module for _, module in JSON_SCHEMAS]
-)
-def test_scenario_example_schema_is_current(monkeypatch, directory, module):
-    """Generator + committed file: each docs schema matches the generator."""
-    monkeypatch.syspath_prepend(str(directory))
-    experiment = importlib.import_module(module).Experiment
-    generated = generate_json_schema(experiment)
-    assert json.loads((directory / "experiment.schema.json").read_text()) == generated
