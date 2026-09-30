@@ -5,9 +5,8 @@ from omegaconf import DictConfig, ListConfig
 from omegaconf.errors import InterpolationKeyError, OmegaConfBaseException
 
 from omegakit.core.errors import ConfigLoadError
+from omegakit.core.tree import walk, walk_post_order
 from omegakit.core.utils import describe_error, format_full_key, format_node_path
-
-from .walk import walk, walk_post_order
 
 
 def merge_in_dependency_order(
