@@ -19,7 +19,7 @@ def merge_in_dependency_order(
 
     Args:
         config: The config to process.
-        key: The special key, such as `$base`.
+        key: The special key whose value is merged.
         merge: Merges the resolved value into the node that holds `key`, and
             removes `key` from it.
 

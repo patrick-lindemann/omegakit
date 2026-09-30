@@ -65,7 +65,7 @@ def validate(
     """Check a loaded config against the schemas of the classes it names.
 
     Args:
-        config: The assembled config, such as the result of `load_config`.
+        config: The assembled config.
         schema: The class the root of the config must match. Defaults to `None`.
         allow_missing: Accept `???`, required fields that are not given, and
             interpolations to missing or unknown keys. Defaults to `False`.
@@ -79,7 +79,7 @@ def validate(
             cannot serve as a schema.
         TypeError: If `schema` is not a class, or `allowed_modules` is a string.
         ImportError: If a module that `$class` or `$ref` names fails to import a
-            module of its own, such as a missing dependency.
+            module of its own.
     """  # noqa: DOC502
     check(config, schema, allow_missing, allowed_modules)
 
@@ -111,7 +111,7 @@ def check(
             cannot serve as a schema.
         TypeError: If `schema` is not a class, or `allowed_modules` is a string.
         ImportError: If a module that `$class` or `$ref` names fails to import a
-            module of its own, such as a missing dependency.
+            module of its own.
     """  # noqa: DOC503
     if not isinstance(config, DictConfig):
         config = OmegaConf.create(config)

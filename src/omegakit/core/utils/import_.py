@@ -3,7 +3,7 @@ from typing import Any
 
 
 def import_object(import_path: str) -> Any:
-    """Import an object by its dotted path, such as `package.module.Name`.
+    """Import an object by its dotted path.
 
     Args:
         import_path: The module path and attribute name, separated by a dot.

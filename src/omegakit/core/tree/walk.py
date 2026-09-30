@@ -47,7 +47,7 @@ def strip_keys(config: DictConfig | ListConfig, exclude: set[str]) -> None:
 
     Args:
         config: The config to process.
-        exclude: The keys to remove, such as `$meta`.
+        exclude: The keys to remove.
     """
     for node in walk(config):
         for key in list(node.keys()):

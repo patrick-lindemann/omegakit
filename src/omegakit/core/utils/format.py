@@ -4,7 +4,7 @@ from omegaconf import Node
 
 
 def format_path(path: tuple[str | int, ...]) -> str:
-    """Format a node path from the config root, such as `items.0.model`.
+    """Format a node path from the config root.
 
     Args:
         path: The keys and list indices from the root.
@@ -16,7 +16,7 @@ def format_path(path: tuple[str | int, ...]) -> str:
 
 
 def format_node_path(node: Node) -> str:
-    """Format the path of a config node from its root, such as `items.0.model`.
+    """Format the path of a config node from its root.
 
     Args:
         node: The node.
@@ -32,12 +32,12 @@ def format_node_path(node: Node) -> str:
 
 
 def format_full_key(full_key: str) -> str:
-    """Format the `full_key` of an OmegaConf error, such as `items[0].model`.
+    """Format the `full_key` of an OmegaConf error.
 
     Args:
         full_key: The key path, with list indices in brackets.
 
     Returns:
-        The dotted path, such as `items.0.model`, or `<root>` for an empty one.
+        The dotted path, or `<root>` for an empty one.
     """
     return re.sub(r"\[(-?\d+)\]", r".\1", full_key).lstrip(".") or "<root>"

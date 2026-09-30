@@ -7,7 +7,7 @@ from ._register import register_resolver
 
 
 def register_torch_dtype_resolver(*, replace: bool = False) -> None:
-    """Register `${dtype:float32}`, which gives the Torch dtype of that name.
+    """Register `${dtype:name}`, which gives the Torch dtype of that name.
 
     Args:
         replace: Replace a resolver named `dtype`. Defaults to `False`.

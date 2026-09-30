@@ -8,13 +8,12 @@ from omegakit.core.errors import ConfigLoadError
 def select_node(
     config: DictConfig | ListConfig, node_path: str, resolve: bool = False
 ) -> Node | None:
-    """Select a node by a dotted path, such as `items.0.name`, without resolving it.
+    """Select a node by a dotted path without resolving it.
 
     Args:
         config: The config to select from.
         node_path: The dotted path from `config`.
-        resolve: Follow an interpolation on the way, such as `a` in `a.b` for
-            `a: ${other}`. Defaults to `False`.
+        resolve: Follow an interpolation on the way. Defaults to `False`.
 
     Returns:
         The selected node, unresolved, or `None` if there is none at `node_path`.

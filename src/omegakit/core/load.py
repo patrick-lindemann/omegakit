@@ -30,8 +30,7 @@ def load_config(
     Args:
         file_path: The config file.
         overrides: Values merged on top of the assembled config: a `DictConfig`, a
-            `dict`, or a list of `key=value` strings such as `["model.depth=4"]`.
-            Defaults to `None`.
+            `dict`, or a list of `key=value` strings. Defaults to `None`.
         keep_targets: Keep `$class`, `$ref` and `$partial`. Defaults to `True`.
         keep_meta: Keep `$meta`. Defaults to `False`.
         import_root: A directory that every `~import` must stay in. Defaults to
