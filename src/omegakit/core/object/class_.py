@@ -5,8 +5,8 @@ from typing import Any
 from omegakit.core.errors import ConfigValidationError
 from omegakit.core.utils import describe_value, format_path
 
+from ._target import import_target
 from .ref import REF_KEY
-from .target import import_target
 
 CLASS_KEY = "$class"
 """Import path of the class or function a node is built with."""

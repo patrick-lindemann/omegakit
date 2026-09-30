@@ -3,7 +3,7 @@ from typing import Any
 from omegakit.core.errors import ConfigValidationError
 from omegakit.core.utils import format_path
 
-from .target import import_target
+from ._target import import_target
 
 REF_KEY = "$ref"
 """Import path of an object that replaces the node without being called."""
