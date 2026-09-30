@@ -20,7 +20,6 @@ def test_public_api_exports():
         "PARTIAL_KEY",
         "REF_KEY",
         "SchemaDefinitionError",
-        "check_schema",
         "instantiate",
         "load_config",
         "make_node",

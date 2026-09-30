@@ -163,10 +163,6 @@ class PointConfig:
     y: int = 0
 
 
-class MissingParameter(Configurable[PointConfig]):
-    def __init__(self, x: int, y: int, z: int) -> None: ...
-
-
 class Animal(Configurable[PointConfig]):
     """A factory base whose `from_config` returns a subclass."""
 

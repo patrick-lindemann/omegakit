@@ -3,7 +3,7 @@ from typing import Any
 import pytest
 from typing_extensions import TypeVar
 
-from omegakit import Configurable, SchemaDefinitionError, check_schema, instantiate
+from omegakit import Configurable, SchemaDefinitionError, instantiate, validate
 from tests.schemas import EncoderConfig, TypedEncoder
 
 
@@ -79,4 +79,4 @@ def test_lookup_bare_configurable_has_no_schema():
 
 def test_lookup_failed_substitution_raises():
     with pytest.raises(SchemaDefinitionError, match="Cannot resolve type variable"):
-        check_schema(Broken)
+        validate({}, schema=Broken)

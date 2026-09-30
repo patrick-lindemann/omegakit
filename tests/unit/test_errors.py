@@ -17,7 +17,6 @@ from omegakit import (
     ConfigValidationError,
     OmegaKitBaseException,
     SchemaDefinitionError,
-    check_schema,
     instantiate,
     load_config,
     prepare,
@@ -95,7 +94,6 @@ def test_base_exception_is_not_a_value_error():
         lambda path: instantiate(BAD_NODE),
         lambda path: prepare(BAD_NODE),
         lambda path: instantiate({"$class": "tests.helpers.Point"}, overrides=["x=["]),
-        lambda path: check_schema(UsesUnsupported),
     ],
     ids=[
         "load_config",
@@ -103,7 +101,6 @@ def test_base_exception_is_not_a_value_error():
         "instantiate",
         "prepare",
         "overrides",
-        "check_schema",
     ],
 )
 def test_omegaconf_handler_catches_errors_of_every_public_function(
@@ -128,12 +125,11 @@ def test_override_errors_are_load_errors_in_every_function(write_yaml, overrides
 @pytest.mark.parametrize(
     "call",
     [
-        lambda: check_schema(UsesUnsupported),
         lambda: validate({"$class": "tests.unit.test_errors.UsesUnsupported"}),
         lambda: instantiate({"$class": "tests.unit.test_errors.UsesUnsupported"}),
         lambda: validate({"tags": ["a"]}, schema=UsesUnsupported),
     ],
-    ids=["check_schema", "validate", "instantiate", "schema"],
+    ids=["validate", "instantiate", "schema"],
 )
 def test_unusable_schema_raises_a_definition_error_wherever_it_is_reached(
     call: Callable[[], Any],
@@ -145,12 +141,11 @@ def test_unusable_schema_raises_a_definition_error_wherever_it_is_reached(
 @pytest.mark.parametrize(
     "call",
     [
-        lambda: check_schema(UsesPathKeys),
         lambda: validate({"counts": {}}, schema=PathKeys),
         lambda: instantiate({}, schema=PathKeys),
         lambda: validate({"pair": [{}, 1]}, schema=PathKeysInTuple),
     ],
-    ids=["check_schema", "dataclass schema", "instantiate", "tuple item"],
+    ids=["dataclass schema", "instantiate", "tuple item"],
 )
 def test_schema_that_omegaconf_rejects_raises_a_definition_error(
     call: Callable[[], Any],

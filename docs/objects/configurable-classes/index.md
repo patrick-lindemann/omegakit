@@ -50,12 +50,6 @@ was called on.
 `make_node` creates the node for a class, so code that picks a class itself, such
 as a test or a `from_config`, gets the same checks as a config does.
 
-## Checking the schema against the constructor
-
-`check_schema(cls)` checks that a schema fits the constructor. It runs by itself
-whenever the class is validated or built; call it in a test to catch a mismatch
-without a config, as `main.py` does for `MLP`.
-
 ## Rules
 
 A class that subclasses `Configurable[TConfig]` with a dataclass `TConfig` has
@@ -72,30 +66,18 @@ raises `SchemaDefinitionError`. The result is cached per class.
 **Building a typed node**, in order:
 
 1. Look up the schema.
-2. Run `check_schema`, unless a class in the MRO below `Configurable` overrides
-   `from_config`.
-3. Check the fields, as in
+2. Check the fields, as in
    [Dataclass schemas](../../schemas/dataclass-schemas/index.md#rules).
-4. Build the object and `Any` fields, children first, as in
+3. Build the object and `Any` fields, children first, as in
    [Instantiation](../instantiation/index.md#rules). A plain mapping in a field
    annotated with a dataclass is a section, built the same way. A built object's
    type is not checked again.
-5. Call `TConfig(**fields)`, so `__post_init__` runs.
-6. Call `from_config(typed_config)`, or build a partial of it that passes
+4. Call `TConfig(**fields)`, so `__post_init__` runs.
+5. Call `from_config(typed_config)`, or build a partial of it that passes
    call-time arguments as `**kwargs`.
 
 The whole node is validated before anything configured is built, so an error never
 leaves some children built. Errors name the node path and the schema class.
-
-**`check_schema(cls)`** checks that the schema fits `__init__`, and is cached once
-it passes. Every required `__init__` parameter needs a field. Every field must be a
-keyword parameter, unless `__init__` takes `**kwargs`; a positional-only parameter
-is rejected even then. Every field's annotation must be assignable to its
-parameter's: `int` to `float`, a subclass to its base, unions member by member.
-Generic annotations are skipped, and so is each parameter whose annotation does not
-resolve. A mismatch raises `SchemaDefinitionError` naming the field or parameter. It
-passes unchecked a class without a schema, a dataclass that is its own schema, and a
-class whose MRO overrides `from_config`.
 
 **`from_config`** receives the typed config, children built, plus `**kwargs` from a
 partial or a caller. It returns `Self`, or is annotated with a base class when it

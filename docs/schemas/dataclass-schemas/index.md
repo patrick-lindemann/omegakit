@@ -92,7 +92,7 @@ loss 'mean absolute error': Loss.MAE
 
 
 **Unsupported**, raising `SchemaDefinitionError` that names the field and the fix,
-wherever the class is reached: in `check_schema`, or a `$class` that `validate` or
+wherever the class is reached: in a `$class` or a `schema` that `validate` or
 `instantiate` checks:
 an `InitVar` without a default; `set`, `frozenset` and other abstract containers;
 a container that mixes values and objects; a `tuple`, `Sequence` or `Mapping` of

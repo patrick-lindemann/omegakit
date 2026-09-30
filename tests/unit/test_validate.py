@@ -9,7 +9,6 @@ from omegaconf import OmegaConf
 from omegakit import (
     Configurable,
     ConfigValidationError,
-    SchemaDefinitionError,
     instantiate,
     load_config,
     validate,
@@ -334,11 +333,6 @@ def test_validate_rejects_class_targets_that_cannot_be_built():
             {"$class": "tests.helpers.Recorder", "thing": {"$class": "math.pi"}}
         )
     validate({"thing": {"$ref": "math.pi"}})
-
-
-def test_validate_runs_the_schema_consistency_check():
-    with pytest.raises(SchemaDefinitionError, match="required parameter `z`"):
-        validate({"$class": "tests.schemas.MissingParameter"})
 
 
 def test_validate_root_class_must_match_the_schema():

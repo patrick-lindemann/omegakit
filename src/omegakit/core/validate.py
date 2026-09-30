@@ -10,7 +10,6 @@ from .errors import ConfigValidationError
 from .object import CLASS_KEY, REF_KEY, import_class, import_ref, split_arguments
 from .schema import (
     Schema,
-    check_schema,
     classify_fields,
     coerce_fields,
     find_schema,
@@ -220,7 +219,6 @@ def _check_call(
             for key, value in arguments.items()
         }
     else:
-        check_schema(target)
         arguments = _check_section(
             schema, arguments, path, allow_missing, allowed_modules
         )

@@ -16,12 +16,6 @@
 .. autofunction:: omegakit.make_node
 ```
 
-## Schemas
-
-```{eval-rst}
-.. autofunction:: omegakit.check_schema
-```
-
 ## Validation
 
 ```{eval-rst}

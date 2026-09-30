@@ -1,6 +1,6 @@
 from models import MLP
 
-from omegakit import ConfigValidationError, check_schema, instantiate, make_node
+from omegakit import ConfigValidationError, instantiate, make_node
 
 model = instantiate({"$class": "models.MLP", "hidden": "64", "activation": "relu"})
 print("model:", model)
@@ -13,5 +13,3 @@ except ConfigValidationError as error:
 node = make_node(MLP, hidden=8)
 print("node:", node)
 print("instantiate(node):", instantiate(node))
-
-check_schema(MLP)

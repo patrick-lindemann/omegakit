@@ -12,7 +12,6 @@ from omegakit import (
     Configurable,
     ConfigValidationError,
     SchemaDefinitionError,
-    check_schema,
     instantiate,
     prepare,
     validate,
@@ -251,7 +250,7 @@ def test_schema_validation_happens_at_prepare():
 )
 def test_schema_outside_supported_subset_raises(cls, match):
     with pytest.raises(SchemaDefinitionError, match=match):
-        check_schema(cls)
+        validate({}, schema=cls)
 
 
 def test_schema_plain_mapping_in_dataclass_field_is_built_as_a_section():
@@ -320,7 +319,7 @@ def test_schema_recursive_dataclasses_raise(schema, cycle):
 
 def test_schema_recursive_schema_of_a_class_raises():
     with pytest.raises(SchemaDefinitionError, match="Tree -> Tree"):
-        check_schema(WithTree)
+        validate({}, schema=WithTree)
 
 
 @dataclass
@@ -362,7 +361,7 @@ def test_schema_annotation_that_fails_to_evaluate_raises_a_definition_error(
     with pytest.raises(
         SchemaDefinitionError, match="Cannot resolve the annotations"
     ) as info:
-        check_schema(schema)
+        validate({}, schema=schema)
     assert isinstance(info.value.__cause__, cause)
 
 

@@ -58,6 +58,8 @@ All notable changes to this project are documented here. The format follows
 - **Breaking:** `generate_json_schema`, the `omegakit export-schema` command and the
   Editor support page. OmegaConf generates no JSON Schema, and omegakit adds
   nothing that OmegaConf does not support.
+- **Breaking:** `check_schema`. A schema that does not fit its class's constructor
+  now fails when the object is built, with the note that names the node.
 
 ### Fixed
 
