@@ -5,7 +5,8 @@ from omegaconf import DictConfig, ListConfig, Node
 from omegaconf.errors import OmegaConfBaseException
 
 from omegakit.core.errors import ConfigLoadError
-from omegakit.core.tree import load_file, select_node
+from omegakit.core.file import load_yaml
+from omegakit.core.tree import select_node
 from omegakit.core.utils import describe_error
 
 IMPORT_KEY = "~import"
@@ -108,7 +109,7 @@ def _load_import(
         imported_config = cache[file_path]
     else:
         try:
-            imported_config = load_file(file_path)
+            imported_config = load_yaml(file_path)
         except (OSError, ConfigLoadError) as error:
             raise ConfigLoadError(
                 f"Cannot import `{statement}` in `{config_path}`: {error}"

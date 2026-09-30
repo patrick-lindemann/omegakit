@@ -12,8 +12,9 @@ from .assembly import (
     resolve_imports,
 )
 from .errors import ConfigLoadError, OmegaKitBaseException
+from .file import load_yaml
 from .object import CLASS_KEY, PARTIAL_KEY, REF_KEY
-from .tree import load_file, walk
+from .tree import walk
 from .utils import describe_error
 
 
@@ -52,7 +53,7 @@ def load_config(
         if not import_root.is_dir():
             raise NotADirectoryError(f"`{import_root}` is not a directory.")
     file_path = Path(file_path).resolve()
-    config = load_file(file_path)
+    config = load_yaml(file_path)
     if not isinstance(config, DictConfig):
         raise ConfigLoadError(
             f"Cannot load `{file_path}`: its root is a list, but the root of a config "

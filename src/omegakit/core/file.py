@@ -4,13 +4,13 @@ import yaml
 from omegaconf import DictConfig, ListConfig, OmegaConf
 from omegaconf.errors import OmegaConfBaseException
 
-from omegakit.core.errors import ConfigLoadError, OmegaKitBaseException
-from omegakit.core.utils import describe_error
+from .errors import ConfigLoadError, OmegaKitBaseException
+from .utils import describe_error
 
 _NULL_TAG = "tag:yaml.org,2002:null"
 
 
-def load_file(file_path: Path) -> DictConfig | ListConfig:
+def load_yaml(file_path: Path) -> DictConfig | ListConfig:
     """Load one YAML file.
 
     Args:
