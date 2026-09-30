@@ -2,10 +2,9 @@ from typing import Any
 
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
-from omegakit.core.errors import ConfigLoadError
-from omegakit.core.utils import format_node_path
-
-from ._order import merge_in_dependency_order
+from .errors import ConfigLoadError
+from .order import merge_in_dependency_order
+from .utils import format_node_path
 
 DEFAULTS_KEY = "$defaults"
 """A mapping merged underneath every dict-valued sibling."""

@@ -4,8 +4,8 @@ import yaml
 from omegaconf import DictConfig, OmegaConf
 from omegaconf.errors import OmegaConfBaseException
 
-from omegakit.core.errors import ConfigLoadError, OmegaKitBaseException
-from omegakit.core.utils import describe_error, describe_value, format_full_key
+from .errors import ConfigLoadError, OmegaKitBaseException
+from .utils import describe_error, describe_value, format_full_key
 
 
 def merge_overrides(

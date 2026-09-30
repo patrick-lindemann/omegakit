@@ -4,16 +4,14 @@ from typing import Any
 from omegaconf import DictConfig
 from omegaconf.errors import OmegaConfBaseException
 
-from .assembly import (
-    META_KEY,
-    apply_defaults,
-    merge_bases,
-    merge_overrides,
-    resolve_imports,
-)
+from .base import merge_bases
+from .default import apply_defaults
 from .errors import ConfigLoadError, OmegaKitBaseException
 from .file import load_yaml
+from .import_ import resolve_imports
+from .meta import META_KEY
 from .object import CLASS_KEY, PARTIAL_KEY, REF_KEY
+from .override import merge_overrides
 from .utils import describe_error
 from .walk import walk
 

@@ -4,9 +4,9 @@ from typing import Any
 from omegaconf import DictConfig, ListConfig, Node, OmegaConf
 from omegaconf.errors import OmegaConfBaseException
 
-from omegakit.core.errors import ConfigLoadError
-from omegakit.core.file import load_yaml
-from omegakit.core.utils import describe_error
+from .errors import ConfigLoadError
+from .file import load_yaml
+from .utils import describe_error
 
 IMPORT_KEY = "~import"
 """Value prefix that replaces a node with another config file or one of its nodes."""
