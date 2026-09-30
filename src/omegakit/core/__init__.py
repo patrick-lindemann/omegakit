@@ -1,4 +1,5 @@
 from .assembly import BASE_KEY, DEFAULTS_KEY, IMPORT_KEY, META_KEY
+from .configurable import Configurable
 from .errors import (
     ConfigLoadError,
     ConfigValidationError,
@@ -16,7 +17,7 @@ from .object import (
     prepare,
     validate,
 )
-from .schema import Configurable, check_schema
+from .schema import check_schema
 from .tree import walk
 
 __all__ = [

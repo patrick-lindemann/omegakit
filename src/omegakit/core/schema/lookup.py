@@ -7,10 +7,10 @@ from omegaconf import OmegaConf
 from omegaconf.errors import OmegaConfBaseException
 from typing_extensions import NoDefault
 
+from omegakit.core.configurable import Configurable
 from omegakit.core.errors import OmegaKitBaseException, SchemaDefinitionError
 from omegakit.core.utils import describe_error
 
-from .configurable import Configurable
 from .schema import Schema
 from .structure import derive_structure
 
