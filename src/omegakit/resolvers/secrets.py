@@ -1,6 +1,6 @@
 from typing import Any
 
-from omegakit.resolvers import register_resolver
+from ._register import register_resolver
 
 
 def register_secret_resolver(*, replace: bool = False) -> None:

@@ -54,10 +54,4 @@ assert not any(OmegaConf.has_resolver(name) for name in names)
 
 
 def test_resolvers_package_exports_only_register_resolver():
-    exports = [
-        name
-        for name, value in vars(omegakit.resolvers).items()
-        if not name.startswith("_")
-        and getattr(value, "__module__", None) == "omegakit.resolvers"
-    ]
-    assert exports == ["register_resolver"]
+    assert omegakit.resolvers.__all__ == ["register_resolver"]

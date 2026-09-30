@@ -3,7 +3,7 @@ from typing import Any
 
 from omegaconf import OmegaConf
 
-from omegakit.resolvers import register_resolver
+from ._register import register_resolver
 
 
 def register_torch_dtype_resolver(*, replace: bool = False) -> None:
