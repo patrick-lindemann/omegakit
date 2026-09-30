@@ -40,16 +40,3 @@ def walk_post_order(config: DictConfig | ListConfig) -> Iterator[DictConfig]:
             yield from walk_post_order(node)
     if isinstance(config, DictConfig):
         yield config
-
-
-def strip_keys(config: DictConfig | ListConfig, exclude: set[str]) -> None:
-    """Remove the keys in `exclude` from every mapping node of `config` in place.
-
-    Args:
-        config: The config to process.
-        exclude: The keys to remove.
-    """
-    for node in walk(config):
-        for key in list(node.keys()):
-            if key in exclude:
-                node.pop(key)

@@ -13,7 +13,7 @@ from .assembly import (
 )
 from .errors import ConfigLoadError, OmegaKitBaseException
 from .object import CLASS_KEY, PARTIAL_KEY, REF_KEY
-from .tree import load_file, strip_keys
+from .tree import load_file, walk
 from .utils import describe_error
 
 
@@ -79,5 +79,12 @@ def load_config(
         exclude_keys.add(REF_KEY)
         exclude_keys.add(CLASS_KEY)
         exclude_keys.add(PARTIAL_KEY)
-    strip_keys(config, exclude_keys)
+    _strip_keys(config, exclude_keys)
     return config
+
+
+def _strip_keys(config: DictConfig, exclude: set[str]) -> None:
+    for node in walk(config):
+        for key in list(node.keys()):
+            if key in exclude:
+                node.pop(key)
