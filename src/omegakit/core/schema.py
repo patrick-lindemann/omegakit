@@ -26,7 +26,8 @@ from omegaconf.errors import OmegaConfBaseException
 from typing_extensions import NoDefault
 
 from .configurable import Configurable
-from .errors import OmegaKitBaseException, SchemaDefinitionError, describe_error
+from .errors import OmegaKitBaseException, SchemaDefinitionError
+from .utils import describe_error
 
 type FieldKind = Literal["data", "object", "any"]
 
@@ -45,14 +46,14 @@ _UNSUPPORTED_CONTAINERS = (
 
 @functools.cache
 def find_schema(cls: type) -> type | None:
-    """Find the dataclass schema of a class.
+    """Find the schema of a class. A schema is a plain dataclass.
 
     Args:
         cls: The class to inspect.
 
     Returns:
-        The schema dataclass, or `None` when `cls` is neither a dataclass nor a
-        `Configurable` whose `TConfig` is a dataclass.
+        `cls` itself if it is a dataclass, the `TConfig` of a `Configurable` if
+        that is a dataclass, and otherwise `None`.
 
     Raises:
         SchemaDefinitionError: If the schema uses a dataclass feature outside the
@@ -85,10 +86,10 @@ def find_schema(cls: type) -> type | None:
 def classify_fields(
     schema: type, outer: tuple[type, ...] = ()
 ) -> Mapping[str, tuple[FieldKind, Any]]:
-    """Classify the configurable fields of a schema dataclass.
+    """Classify the configurable fields of a schema.
 
     Args:
-        schema: The schema dataclass.
+        schema: The schema, a dataclass.
         outer: The dataclasses whose fields lead to `schema`, outermost first.
             Defaults to `()`.
 
@@ -271,7 +272,7 @@ def derive_structure(schema: type) -> type:
     """Derive the dataclass that OmegaConf validates the data fields of a schema with.
 
     Args:
-        schema: The schema dataclass.
+        schema: The schema, a dataclass.
 
     Returns:
         A dataclass with the data fields of `schema`, whose annotations OmegaConf

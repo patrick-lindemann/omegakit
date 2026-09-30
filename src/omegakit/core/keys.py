@@ -1,6 +1,3 @@
-RESERVED_PREFIX = "$"
-"""Prefix of every special key. Keys that start with it are reserved."""
-
 META_KEY = "$meta"
 """Metadata attached to a node."""
 

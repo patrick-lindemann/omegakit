@@ -1,15 +1,20 @@
 from pathlib import Path
 from typing import Any
 
-from omegaconf import DictConfig, ListConfig
+from omegaconf import DictConfig
 from omegaconf.errors import OmegaConfBaseException
 
-from .errors import ConfigLoadError, OmegaKitBaseException, describe_error
-from .imports import load_file, resolve_imports
+from .assembly import (
+    apply_defaults,
+    load_file,
+    merge_bases,
+    merge_overrides,
+    resolve_imports,
+    strip_keys,
+)
+from .errors import ConfigLoadError, OmegaKitBaseException
 from .keys import CLASS_KEY, META_KEY, PARTIAL_KEY, REF_KEY
-from .merge import apply_defaults, merge_bases
-from .overrides import merge_overrides
-from .walk import walk
+from .utils import describe_error
 
 
 def load_config(
@@ -81,12 +86,5 @@ def load_config(
         exclude_keys.add(REF_KEY)
         exclude_keys.add(CLASS_KEY)
         exclude_keys.add(PARTIAL_KEY)
-    _strip_keys(config, exclude_keys)
+    strip_keys(config, exclude_keys)
     return config
-
-
-def _strip_keys(config: DictConfig | ListConfig, exclude: set[str]) -> None:
-    for node in walk(config):
-        for key in list(node.keys()):
-            if key in exclude:
-                node.pop(key)

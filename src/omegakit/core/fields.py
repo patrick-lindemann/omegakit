@@ -21,10 +21,6 @@ from .errors import (
     ConfigValidationError,
     OmegaKitBaseException,
     SchemaDefinitionError,
-    describe_error,
-    describe_value,
-    format_full_key,
-    format_path,
 )
 from .schema import (
     classify_fields,
@@ -34,6 +30,7 @@ from .schema import (
     is_sequence_type,
     split_union,
 )
+from .utils import describe_error, describe_value, format_full_key, format_path
 
 
 def coerce_fields(
@@ -46,7 +43,7 @@ def coerce_fields(
     """Validate and coerce the data fields of a node through OmegaConf.
 
     Args:
-        schema: The schema dataclass.
+        schema: The schema, a dataclass.
         values: The node's resolved values, without `$` keys.
         path: The node's path from the config root.
         allow_missing: Keep missing values as `???` instead of raising, including

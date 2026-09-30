@@ -10,22 +10,22 @@ from omegaconf.errors import (
     OmegaConfBaseException,
 )
 
-from .errors import (
-    ConfigValidationError,
-    describe_error,
-    describe_value,
-    format_full_key,
-    format_path,
-)
+from .errors import ConfigValidationError
 from .fields import coerce_fields
-from .imports import import_object
-from .keys import CLASS_KEY, META_KEY, PARTIAL_KEY, REF_KEY, RESERVED_PREFIX
+from .keys import CLASS_KEY, META_KEY, PARTIAL_KEY, REF_KEY
 from .schema import (
     check_schema,
     classify_fields,
     find_schema,
     find_section,
     split_union,
+)
+from .utils import (
+    describe_error,
+    describe_value,
+    format_full_key,
+    format_path,
+    import_object,
 )
 
 
@@ -198,7 +198,7 @@ def _check_untyped(
 
 
 def _check_not_reserved(key: Any, path: tuple[str | int, ...]) -> None:
-    if isinstance(key, str) and key.startswith(RESERVED_PREFIX):
+    if isinstance(key, str) and key.startswith("$"):
         raise ConfigValidationError(
             f"Key `{key}` in `{format_path(path)}` is not supported here; keys "
             "starting with `$` are reserved."
@@ -240,7 +240,7 @@ def _check_target(
                     f"`false`, but the config gives {describe_value(value)}."
                 )
             continue
-        if isinstance(key, str) and key.startswith(RESERVED_PREFIX):
+        if isinstance(key, str) and key.startswith("$"):
             raise ConfigValidationError(
                 f"Key `{key}` in `{format_path(path)}` is not supported next to "
                 f"`{CLASS_KEY}`; keys starting with `$` are reserved."

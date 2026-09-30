@@ -2,9 +2,9 @@ import argparse
 import json
 from pathlib import Path
 
-from omegakit.errors import SchemaDefinitionError
-from omegakit.imports import import_object
-from omegakit.json_schema import generate_json_schema
+from omegakit.core.errors import SchemaDefinitionError
+from omegakit.core.json_schema import generate_json_schema
+from omegakit.core.utils import import_object
 
 
 def register(commands: argparse._SubParsersAction) -> None:

@@ -1,7 +1,6 @@
 import collections.abc
 import dataclasses
 import enum
-import re
 import types
 from pathlib import Path
 from typing import (
@@ -14,7 +13,7 @@ from typing import (
     is_typeddict,
 )
 
-from .keys import CLASS_KEY, IMPORT_KEY, RESERVED_PREFIX
+from .keys import CLASS_KEY, IMPORT_KEY
 from .schema import classify_fields, find_schema
 
 # A value may always be written as an interpolation, a missing value or an import.
@@ -28,8 +27,8 @@ def generate_json_schema(schema: type) -> dict[str, Any]:
     """Generate a JSON Schema for YAML config files.
 
     Args:
-        schema: A root schema dataclass, or a `Configurable` class whose schema
-            describes a fragment file.
+        schema: A dataclass that describes a whole config file, or a `Configurable`
+            class whose schema describes a fragment file.
 
     Returns:
         The JSON Schema (draft-07) as a dictionary.
@@ -149,6 +148,6 @@ def _json_mapping(dataclass: type, definitions: dict[str, Any]) -> dict[str, Any
             name: _json_value(annotation, definitions)
             for name, (_, annotation) in classify_fields(dataclass).items()
         },
-        "patternProperties": {f"^{re.escape(RESERVED_PREFIX)}": {}},
+        "patternProperties": {r"^\$": {}},
         "additionalProperties": False,
     }
