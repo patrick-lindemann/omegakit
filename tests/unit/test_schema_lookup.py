@@ -6,10 +6,8 @@ from typing_extensions import TypeVar
 from omegakit import Configurable, SchemaDefinitionError, check_schema, instantiate
 from tests.schemas import EncoderConfig, TypedEncoder
 
-ConfigT = TypeVar("ConfigT")
 
-
-class Mid(Configurable[ConfigT]):
+class Mid[ConfigT](Configurable[ConfigT]):
     """A generic intermediate class without a type variable default."""
 
     def __init__(self, **fields: Any) -> None:
