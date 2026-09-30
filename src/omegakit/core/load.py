@@ -4,16 +4,10 @@ from typing import Any
 from omegaconf import DictConfig
 from omegaconf.errors import OmegaConfBaseException
 
-from .assembly import (
-    apply_defaults,
-    load_file,
-    merge_bases,
-    merge_overrides,
-    resolve_imports,
-    strip_keys,
-)
+from .assembly import apply_defaults, merge_bases, merge_overrides, resolve_imports
 from .errors import ConfigLoadError, OmegaKitBaseException
 from .keys import CLASS_KEY, META_KEY, PARTIAL_KEY, REF_KEY
+from .tree import load_file, strip_keys
 from .utils import describe_error
 
 

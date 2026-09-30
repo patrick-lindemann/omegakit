@@ -1,50 +1,14 @@
-from collections.abc import Callable
 from pathlib import Path
 from typing import Any, cast
 
 import yaml
 from omegaconf import DictConfig, ListConfig, Node, OmegaConf
-from omegaconf.errors import InterpolationKeyError, OmegaConfBaseException
+from omegaconf.errors import OmegaConfBaseException
 
 from .errors import ConfigLoadError, OmegaKitBaseException
 from .keys import BASE_KEY, DEFAULTS_KEY, IMPORT_KEY
+from .tree import load_file, merge_in_dependency_order, select_node
 from .utils import describe_error, describe_value, format_full_key, format_node_path
-from .walk import walk, walk_post_order
-
-_NULL_TAG = "tag:yaml.org,2002:null"
-
-
-def load_file(file_path: Path) -> DictConfig | ListConfig:
-    """Load one YAML file.
-
-    Args:
-        file_path: The file to load.
-
-    Returns:
-        The file's content.
-
-    Raises:
-        ConfigLoadError: If the file is not valid YAML or not UTF-8, holds a
-            single value instead of a mapping or a list, or holds a value that
-            OmegaConf rejects.
-        OSError: If the file cannot be read.
-    """  # noqa: DOC503
-    try:
-        # `OmegaConf.load` turns a single string into a mapping and fails on other
-        # single values with an `OSError`, so look at the document first.
-        document = yaml.compose(file_path.read_text("utf-8"), Loader=yaml.SafeLoader)
-        if isinstance(document, yaml.ScalarNode) and document.tag != _NULL_TAG:
-            raise ConfigLoadError(
-                f"Cannot load `{file_path}`: it holds a single value, not a mapping "
-                "or a list."
-            )
-        return OmegaConf.load(file_path)
-    except OmegaKitBaseException:
-        raise
-    except (yaml.YAMLError, UnicodeDecodeError, OmegaConfBaseException) as error:
-        raise ConfigLoadError(
-            f"Cannot load `{file_path}`: {describe_error(error)}"
-        ) from error
 
 
 def resolve_imports(
@@ -96,50 +60,6 @@ def resolve_imports(
             )
 
 
-def select_node(
-    config: DictConfig | ListConfig, node_path: str, resolve: bool = False
-) -> Node | None:
-    """Select a node by a dotted path, such as `items.0.name`, without resolving it.
-
-    Args:
-        config: The config to select from.
-        node_path: The dotted path from `config`.
-        resolve: Follow an interpolation on the way, such as `a` in `a.b` for
-            `a: ${other}`. Defaults to `False`.
-
-    Returns:
-        The selected node, unresolved, or `None` if there is none at `node_path`.
-
-    Raises:
-        ConfigLoadError: If the path goes through an interpolation and `resolve`
-            is `False`.
-    """
-    node: Any = config
-    walked: list[str] = []
-    for part in filter(None, node_path.split(".")):
-        if isinstance(node, Node) and node._is_interpolation():
-            if not resolve:
-                raise ConfigLoadError(
-                    f"Node path `{node_path}` goes through `{'.'.join(walked)}`, "
-                    "which is an interpolation."
-                )
-            node = cast(Any, node._get_parent_container())[node._key()]
-        if isinstance(node, DictConfig):
-            node = node._get_node(part)
-        elif (
-            isinstance(node, ListConfig)
-            and part.lstrip("-").isdigit()
-            and -len(node) <= int(part) < len(node)
-        ):
-            node = node._get_node(int(part))
-        else:
-            return None
-        if node is None:
-            return None
-        walked.append(part)
-    return node
-
-
 def merge_bases(config: DictConfig | ListConfig) -> None:
     """Merge every `$base` underneath its node in place, in dependency order.
 
@@ -150,7 +70,7 @@ def merge_bases(config: DictConfig | ListConfig) -> None:
         ConfigLoadError: If a `$base` is not a mapping or a list of mappings,
             cannot be resolved, or if `$base` references form a cycle.
     """  # noqa: DOC502
-    _merge_in_dependency_order(config, BASE_KEY, _merge_base)
+    merge_in_dependency_order(config, BASE_KEY, _merge_base)
 
 
 def apply_defaults(config: DictConfig | ListConfig) -> None:
@@ -163,7 +83,7 @@ def apply_defaults(config: DictConfig | ListConfig) -> None:
         ConfigLoadError: If a `$defaults` is not a mapping, cannot be resolved,
             or if `$defaults` references form a cycle.
     """  # noqa: DOC502
-    _merge_in_dependency_order(config, DEFAULTS_KEY, _merge_defaults)
+    merge_in_dependency_order(config, DEFAULTS_KEY, _merge_defaults)
 
 
 def merge_overrides(
@@ -191,19 +111,6 @@ def merge_overrides(
         raise ConfigLoadError(
             f"Cannot apply the override{location}: {describe_error(error)}"
         ) from error
-
-
-def strip_keys(config: DictConfig | ListConfig, exclude: set[str]) -> None:
-    """Remove the keys in `exclude` from every mapping node of `config` in place.
-
-    Args:
-        config: The config to process.
-        exclude: The keys to remove, such as `$meta`.
-    """
-    for node in walk(config):
-        for key in list(node.keys()):
-            if key in exclude:
-                node.pop(key)
 
 
 def _load_import(
@@ -274,64 +181,6 @@ def _load_import(
     return node
 
 
-def _merge_in_dependency_order(
-    config: DictConfig | ListConfig,
-    key: str,
-    merge: Callable[[DictConfig, Any], None],
-) -> None:
-    while True:
-        waiting: list[DictConfig] = []
-        # The nodes that each waiting node waits for, by `id`: the holders of `key`
-        # inside its reference, and for an ancestor, the waiting nodes below it.
-        waits_for: dict[int, list[DictConfig]] = {}
-        first_error: OmegaConfBaseException | None = None
-        merged = False
-        for node in list(walk_post_order(config)):
-            if node._get_node(key) is None:
-                continue
-            if id(node) not in waits_for:
-                try:
-                    value = node[key]
-                except InterpolationKeyError as error:
-                    if first_error is None:
-                        first_error = error
-                    waits_for[id(node)] = []
-                else:
-                    referenced = value if isinstance(value, ListConfig) else [value]
-                    holders = [
-                        inner
-                        for item in referenced
-                        if isinstance(item, DictConfig)
-                        for inner in walk(item)
-                        if inner._get_node(key) is not None
-                    ]
-                    if not holders:
-                        merge(node, value)
-                        merged = True
-                        continue
-                    waits_for[id(node)] = holders
-            waiting.append(node)
-            # Merging an ancestor replaces its children, so ancestors wait too.
-            parent = node._get_parent()
-            while parent is not None:
-                waits_for.setdefault(id(parent), []).append(node)
-                parent = parent._get_parent()
-        if not waiting:
-            return
-        if not merged:
-            if first_error is not None:
-                raise ConfigLoadError(
-                    f"Cannot resolve `{format_full_key(first_error.full_key or key)}`: "
-                    f"{describe_error(first_error)}"
-                ) from first_error
-            nodes = ", ".join(
-                f"`{format_node_path(node)}`"
-                for node in waiting
-                if _waits_for_itself(node, waits_for)
-            )
-            raise ConfigLoadError(f"`{key}` references form a cycle between {nodes}.")
-
-
 def _merge_base(node: DictConfig, base: Any) -> None:
     if isinstance(base, ListConfig):
         bases = [base[index] for index in range(len(base))]
@@ -362,19 +211,6 @@ def _merge_defaults(node: DictConfig, defaults: Any) -> None:
     for key, item in list(node.items_ex(resolve=False)):
         if not str(key).startswith("$") and isinstance(item, DictConfig):
             node[key] = OmegaConf.merge(defaults, item)
-
-
-def _waits_for_itself(node: DictConfig, waits_for: dict[int, list[DictConfig]]) -> bool:
-    seen: set[int] = set()
-    pending = list(waits_for[id(node)])
-    while pending:
-        other = pending.pop()
-        if other is node:
-            return True
-        if id(other) not in seen:
-            seen.add(id(other))
-            pending.extend(waits_for[id(other)])
-    return False
 
 
 def _parse_overrides(

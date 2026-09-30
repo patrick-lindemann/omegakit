@@ -18,8 +18,8 @@ from .keys import (
 )
 from .load import load_config
 from .schema import check_schema
+from .tree import walk
 from .validate import validate
-from .walk import walk
 
 __all__ = [
     "BASE_KEY",
