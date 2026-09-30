@@ -56,7 +56,7 @@ the newest OmegaConf pre-release in that range.
 Dependabot proposes dependency and GitHub Actions updates weekly against `develop`,
 and they are reviewed and merged by hand. Actions are pinned to commit SHAs, so read the upstream
 changes before merging a bump. The runtime bounds in `pyproject.toml` are changed by
-hand, when the `test-omegaconf-next` job shows that a new version works.
+hand, when every check passes on the new version.
 
 ## Branches
 

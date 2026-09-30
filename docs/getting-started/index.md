@@ -10,6 +10,13 @@ with `layers` hidden layers of `hidden` units, and `project.SineWave` a PyTorch
 pip install omegakit
 ```
 
+omegakit needs OmegaConf 2.4. Until OmegaConf 2.4.0 is released, only its release
+candidate exists, and uv installs it only when asked to:
+
+```sh
+uv add omegakit --prerelease=allow
+```
+
 ## 1. Build an object
 
 A config file names the classes to build with `$class`. The other keys of the node

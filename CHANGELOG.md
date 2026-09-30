@@ -18,6 +18,9 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- **Breaking:** omegakit requires OmegaConf 2.4 and no longer supports 2.3. Until
+  OmegaConf 2.4.0 is released, only its release candidate exists; uv installs it
+  with `uv add omegakit --prerelease=allow`.
 - **Breaking:** `${secret:...}` wraps the interpolation that gives the secret, such
   as `${secret:${oc.env:TOKEN}}`, so a secret can come from any resolver. Replace
   every `${secret:NAME}` with `${secret:${oc.env:NAME}}`: the old form now gives the

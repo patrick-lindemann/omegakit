@@ -53,7 +53,6 @@ through [`Configurable`](../../objects/configurable-classes/index.md).
 | **object**: any other class, generic classes, unions of classes, `list` or `dict` of these, optional or not, also through a `type` alias | a `$class` or `$ref` node, a list or mapping of them, or `null` if optional | the class check ([Validation](../validation/index.md#rules)), then the node's own schema | the built object |
 | **`Any`** | anything | not checked, but `$class` nodes inside are | the value, with `$class` nodes built |
 
-- Behaviour does not depend on the OmegaConf version.
 - Enums accept a member name or value, as in the example below. A name wins over
   an equal value of another member, and a value needs the exact type of the
   member's value.

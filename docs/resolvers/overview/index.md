@@ -18,8 +18,7 @@ register_paths_resolver({"runs": "/scratch/runs"})
 ## Your own resolvers
 
 Register a resolver of your own with `register_resolver` from `omegakit.resolvers`.
-It registers the resolver as omegakit registers its own, on every OmegaConf version
-omegakit supports:
+It registers the resolver as omegakit registers its own:
 
 ```{literalinclude} train.yaml
 :language: yaml
@@ -54,9 +53,8 @@ platform needs.
   `omegakit.resolvers` itself exports only `register_resolver`. Importing omegakit,
   or a resolver module, registers no resolver and imports no optional library.
 - `register_resolver(name, resolver, *, replace=False)` registers `resolver` under
-  `name`, through `OmegaConf.register_resolver` on OmegaConf 2.4 and
-  `OmegaConf.register_new_resolver` on 2.3. Its arguments are not checked against
-  the resolver's annotations, on either version.
+  `name` through `OmegaConf.register_resolver`, cached. Its arguments are not
+  checked against the resolver's annotations.
 - Registering the resolvers of a library that is not installed raises
   `ImportError`, naming what to install.
 - Registration is global to OmegaConf. Registering a name that exists raises
