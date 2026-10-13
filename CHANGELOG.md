@@ -47,6 +47,9 @@ All notable changes to this project are documented here. The format follows
   be given by position. It raises the error of the step that failed, such as
   `ConfigSyntaxError` or `IncludeCycleError`, instead of wrapping it in
   `ConfigLoadError`, and `LoadTypeError` for a file whose root is a list.
+- **Breaking:** `omegakit check --import-root` is now `--include-root`, and
+  `--allow-missing` and `--allow-module` are gone, as `validate` no longer takes
+  `allow_missing` and `allowed_modules`.
 - **Breaking:** `~include file#node` and `omegakit show --node` select the node with
   `OmegaConf.select`. The path also takes `a[0]`, and it follows interpolations
   instead of rejecting a path through one. A node that holds `???` counts as

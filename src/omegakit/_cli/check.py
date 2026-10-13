@@ -2,7 +2,7 @@ from argparse import ArgumentError, ArgumentParser
 from pathlib import Path
 from typing import override
 
-from omegakit._utils import import_object
+from omegakit._core.locate import QualifiedNameSyntaxError, locate
 from omegakit.load import load_config
 from omegakit.validate import validate
 
@@ -16,9 +16,7 @@ class CheckArguments(Arguments):
     configs: list[Path]
     overrides: list[str] | None
     schema: str | None
-    allow_missing: bool
-    allowed_modules: list[str] | None
-    import_root: Path | None
+    include_root: Path | None
 
 
 class CheckRoutine(Routine[CheckArguments]):
@@ -46,40 +44,27 @@ class CheckRoutine(Routine[CheckArguments]):
         )
         parser.add_argument(
             "--schema",
-            metavar="IMPORT_PATH",
+            metavar="QUALIFIED_NAME",
             help="class the root of every file must match, such as myapp.AppConfig",
         )
         parser.add_argument(
-            "--allow-missing",
-            action="store_true",
-            help="accept ??? and other missing values, as in library files",
-        )
-        parser.add_argument(
-            "--allow-module",
-            action="append",
-            dest="allowed_modules",
-            metavar="NAME",
-            help="allow $class and $ref only from this module and its submodules; "
-            "repeatable (default: any module)",
-        )
-        parser.add_argument(
-            "--import-root",
+            "--include-root",
             type=Path,
             metavar="DIR",
-            help="reject any ~import of a file outside DIR",
+            help="reject any ~include of a file outside DIR",
         )
 
     @override
     def run(self, args: CheckArguments) -> None:
-        if args.import_root is not None and not args.import_root.is_dir():
+        if args.include_root is not None and not args.include_root.is_dir():
             raise ArgumentError(
-                None, f"--import-root {args.import_root} is not a directory"
+                None, f"--include-root {args.include_root} is not a directory"
             )
         schema = None
         if args.schema is not None:
             try:
-                schema = import_object(args.schema)
-            except ImportError as error:
+                schema = locate(args.schema)
+            except (QualifiedNameSyntaxError, ImportError) as error:
                 raise ArgumentError(None, f"cannot import --schema: {error}") from error
             if not isinstance(schema, type):
                 raise ArgumentError(None, f"--schema {args.schema} is not a class")
@@ -87,14 +72,9 @@ class CheckRoutine(Routine[CheckArguments]):
         for path in args.configs:
             try:
                 config = load_config(
-                    path, overrides=args.overrides, import_root=args.import_root
+                    path, overrides=args.overrides, include_root=args.include_root
                 )
-                validate(
-                    config,
-                    schema=schema,
-                    allow_missing=args.allow_missing,
-                    allowed_modules=args.allowed_modules,
-                )
+                validate(config, schema)
             # A module that exits while it is imported must not pass the check.
             except (Exception, SystemExit) as error:
                 invalid += 1
