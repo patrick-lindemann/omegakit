@@ -6,8 +6,7 @@ from omegaconf import DictConfig, OmegaConf
 from omegaconf.errors import InterpolationResolutionError
 
 from omegakit._core.errors import (
-    MergeCycleError,
-    MergeReferenceError,
+    ConfigMergeError,
 )
 from omegakit._core.utils.merge import merge_under, walk_mergeable
 
@@ -105,7 +104,7 @@ def test_walk_yields_a_missing_value_as_it_is():
 
 def test_walk_rejects_a_reference_that_never_resolves():
     config = OmegaConf.create({"model": {"$key": "${nope}"}, "data": {"$key": 1}})
-    with pytest.raises(MergeReferenceError, match="nope") as error_info:
+    with pytest.raises(ConfigMergeError, match="nope") as error_info:
         _remove_key(config)
     error_info.match(re.escape("at `model`"))
     assert isinstance(error_info.value.__cause__, InterpolationResolutionError)
@@ -119,7 +118,7 @@ def test_walk_rejects_a_cycle_and_names_only_its_nodes():
             "b": {"items": [{"$key": "${a}"}]},
         }
     )
-    with pytest.raises(MergeCycleError) as error_info:
+    with pytest.raises(ConfigMergeError) as error_info:
         _remove_key(config)
     assert "`a` -> `b.items[0]` -> `a`" in str(error_info.value)
     assert "waiting" not in str(error_info.value)

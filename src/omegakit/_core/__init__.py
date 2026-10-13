@@ -1,7 +1,6 @@
 from .config import Config
 from .configurable import Configurable
 from .errors import (
-    BaseTypeError,
     ConfigFileNotFoundError,
     ConfigFilePermissionError,
     ConfigFileSyntaxError,
@@ -13,10 +12,7 @@ from .errors import (
     ConfigSymbolError,
     ConfigTargetError,
     ConfigValidationError,
-    EachTypeError,
     IncludeRootError,
-    MergeCycleError,
-    MergeReferenceError,
     OmegaKitBaseException,
     OverrideMergeError,
     OverrideSyntaxError,
@@ -61,7 +57,6 @@ __all__ = [
     "PARTIAL_KEY",
     "SYMBOL_KEY",
     "TARGET_KEY",
-    "BaseTypeError",
     "Config",
     "ConfigFileNotFoundError",
     "ConfigFilePermissionError",
@@ -75,10 +70,7 @@ __all__ = [
     "ConfigTargetError",
     "ConfigValidationError",
     "Configurable",
-    "EachTypeError",
     "IncludeRootError",
-    "MergeCycleError",
-    "MergeReferenceError",
     "OmegaKitBaseException",
     "OverrideMergeError",
     "OverrideSyntaxError",

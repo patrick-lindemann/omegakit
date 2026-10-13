@@ -1,7 +1,7 @@
 from omegaconf import DictConfig, ListConfig, TupleConfig
 
 from omegakit._core.errors import (
-    BaseTypeError,
+    ConfigMergeError,
 )
 from omegakit._core.utils.copy import copy_with_root
 from omegakit._core.utils.describe import describe_node
@@ -18,7 +18,7 @@ def merge_bases[TConfig: DictConfig | ListConfig | TupleConfig](
     for node, base in walk_mergeable(config, BASE_KEY):
         bases = list(base) if isinstance(base, ListConfig) else [base]
         if not all(isinstance(item, DictConfig) for item in bases):
-            error = BaseTypeError(
+            error = ConfigMergeError(
                 f"`{BASE_KEY}` must be a mapping or a list of mappings, not `{base!r}`."
             )
             error.add_note(f"  at {describe_node(node)}")

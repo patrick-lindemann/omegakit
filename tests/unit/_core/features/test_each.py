@@ -5,9 +5,7 @@ import pytest
 from omegaconf import OmegaConf
 
 from omegakit._core.errors import (
-    EachTypeError,
-    MergeCycleError,
-    MergeReferenceError,
+    ConfigMergeError,
 )
 from omegakit._core.features.each import apply_each
 
@@ -143,14 +141,14 @@ def test_without_a_copy_the_config_itself_is_changed():
 @pytest.mark.parametrize("each", [3, "text", None, "???", [{"n": 256}]])
 def test_each_that_is_not_a_mapping_is_rejected(each: Any):
     config = OmegaConf.create({"data": {"$each": each, "train": {}}})
-    with pytest.raises(EachTypeError) as error_info:
+    with pytest.raises(ConfigMergeError) as error_info:
         apply_each(config)
     error_info.match(re.escape("at `data`"))
 
 
 def test_reference_that_never_resolves_is_rejected():
     config = OmegaConf.create({"data": {"$each": "${nope}", "train": {}}})
-    with pytest.raises(MergeReferenceError, match="nope"):
+    with pytest.raises(ConfigMergeError, match="nope"):
         apply_each(config)
 
 
@@ -158,7 +156,7 @@ def test_cycle_is_rejected():
     config = OmegaConf.create(
         {"a": {"$each": "${b}", "x": {}}, "b": {"$each": "${a}", "y": {}}}
     )
-    with pytest.raises(MergeCycleError, match="`a` -> `b` -> `a`"):
+    with pytest.raises(ConfigMergeError, match="`a` -> `b` -> `a`"):
         apply_each(config)
 
 
@@ -168,6 +166,6 @@ def test_a_failure_leaves_the_config_unchanged():
         "model": {"$each": 3},
     }
     config = OmegaConf.create(content)
-    with pytest.raises(EachTypeError):
+    with pytest.raises(ConfigMergeError):
         apply_each(config)
     assert config == content

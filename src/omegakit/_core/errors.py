@@ -42,27 +42,11 @@ class ConfigMergeError(ConfigLoadError):
     pass
 
 
-class MergeReferenceError(ConfigMergeError, InterpolationResolutionError):
-    pass
-
-
-class MergeCycleError(ConfigMergeError):
-    pass
-
-
 class ConfigIncludeError(ConfigLoadError):
     pass
 
 
 class IncludeRootError(ConfigIncludeError):
-    pass
-
-
-class BaseTypeError(ConfigMergeError, TypeError):
-    pass
-
-
-class EachTypeError(ConfigMergeError, TypeError):
     pass
 
 

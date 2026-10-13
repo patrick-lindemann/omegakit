@@ -6,9 +6,7 @@ from omegaconf import OmegaConf
 from omegaconf.errors import ReadonlyConfigError
 
 from omegakit._core.errors import (
-    BaseTypeError,
-    MergeCycleError,
-    MergeReferenceError,
+    ConfigMergeError,
 )
 from omegakit._core.features.base import merge_bases
 
@@ -210,27 +208,27 @@ def test_a_copied_part_of_a_config_has_its_own_root():
 @pytest.mark.parametrize("base", [3, "text", None, "???", [{"depth": 2}, 3], ["???"]])
 def test_base_that_holds_no_mappings_is_rejected(base: Any):
     config = OmegaConf.create({"models": [{"$base": base}]})
-    with pytest.raises(BaseTypeError) as error_info:
+    with pytest.raises(ConfigMergeError) as error_info:
         merge_bases(config)
     error_info.match(re.escape("at `models[0]`"))
 
 
 def test_reference_that_never_resolves_is_rejected():
     config = OmegaConf.create({"model": {"$base": "${nope}"}})
-    with pytest.raises(MergeReferenceError, match="nope"):
+    with pytest.raises(ConfigMergeError, match="nope"):
         merge_bases(config)
 
 
 def test_cycle_is_rejected():
     config = OmegaConf.create({"a": {"$base": "${b}"}, "b": {"$base": "${a}"}})
-    with pytest.raises(MergeCycleError, match="`a` -> `b` -> `a`"):
+    with pytest.raises(ConfigMergeError, match="`a` -> `b` -> `a`"):
         merge_bases(config)
 
 
 def test_a_failure_leaves_the_config_unchanged():
     content = {"model": {"$base": {"hidden": 32}}, "data": {"$base": 3}}
     config = OmegaConf.create(content)
-    with pytest.raises(BaseTypeError):
+    with pytest.raises(ConfigMergeError):
         merge_bases(config)
     assert config == content
 

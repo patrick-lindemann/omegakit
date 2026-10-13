@@ -1,6 +1,6 @@
 from omegaconf import DictConfig, ListConfig, TupleConfig
 
-from omegakit._core.errors import EachTypeError
+from omegakit._core.errors import ConfigMergeError
 from omegakit._core.utils.copy import copy_with_root
 from omegakit._core.utils.describe import describe_node
 from omegakit._core.utils.merge import merge_under, walk_mergeable
@@ -15,7 +15,7 @@ def apply_each[TConfig: DictConfig | ListConfig | TupleConfig](
         config = copy_with_root(config)
     for node, each in walk_mergeable(config, EACH_KEY):
         if not isinstance(each, DictConfig):
-            error = EachTypeError(f"`{EACH_KEY}` must be a mapping, not `{each!r}`.")
+            error = ConfigMergeError(f"`{EACH_KEY}` must be a mapping, not `{each!r}`.")
             error.add_note(f"  at {describe_node(node)}")
             raise error
         del node[EACH_KEY]

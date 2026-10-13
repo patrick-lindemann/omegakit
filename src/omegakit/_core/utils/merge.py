@@ -5,8 +5,7 @@ from omegaconf import MISSING, DictConfig, ListConfig, OmegaConf, TupleConfig
 from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
 
 from omegakit._core.errors import (
-    MergeCycleError,
-    MergeReferenceError,
+    ConfigMergeError,
 )
 
 from .describe import describe_error, describe_node
@@ -72,9 +71,7 @@ def walk_mergeable(
             continue
         if unresolved is not None:
             node, cause = unresolved
-            error = MergeReferenceError(
-                f"Cannot resolve `{key}`: {describe_error(cause)}"
-            )
+            error = ConfigMergeError(f"Cannot resolve `{key}`: {describe_error(cause)}")
             error.add_note(f"  at {describe_node(node)}")
             raise error from cause
         # Every holder is blocked, so following the blockers ends in a cycle
@@ -83,7 +80,7 @@ def walk_mergeable(
             chain.append(blockers[id(chain[-1])])
         start = [node is chain[-1] for node in chain].index(True)
         cycle = " -> ".join(describe_node(node) for node in chain[start:])
-        raise MergeCycleError(
+        raise ConfigMergeError(
             f"The `{key}` of these nodes wait for each other: {cycle}."
         )
 
