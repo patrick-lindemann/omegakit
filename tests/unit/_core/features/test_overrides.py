@@ -24,7 +24,8 @@ def test_key_value_strings_set_nested_values():
 
 def test_key_value_strings_are_parsed_as_yaml():
     config = OmegaConf.create({})
-    config = apply_overrides(config, ["epochs=50", "seeds=[0, 1]", "name=mlp", "flag"])
+    overrides = ["epochs=50", "seeds=[0, 1]", "name=mlp", "flag=null"]
+    config = apply_overrides(config, overrides)
     assert config == {"epochs": 50, "seeds": [0, 1], "name": "mlp", "flag": None}
 
 
@@ -99,6 +100,30 @@ def test_rejects_a_string_that_does_not_parse(item: str):
     with pytest.raises(ConfigOverrideError) as error_info:
         apply_overrides(config, [item])
     assert item in str(error_info.value)
+
+
+@pytest.mark.parametrize(
+    "item",
+    [
+        pytest.param("seed", id="no-value"),
+        pytest.param("=5", id="no-key"),
+        pytest.param("layers[0]=1", id="list-item"),
+        pytest.param("model=~include big.yaml", id="include"),
+        pytest.param("model={optimizer: '~include adam.yaml'}", id="nested-include"),
+    ],
+)
+def test_rejects_a_string_that_is_no_override(item: str):
+    content = {"seed": 1, "layers": [3], "model": {}}
+    config = OmegaConf.create(content)
+    with pytest.raises(ConfigOverrideError) as error_info:
+        apply_overrides(config, [item], copy=False)
+    assert item in str(error_info.value)
+    assert config == content
+
+
+def test_a_value_may_hold_an_equals_sign():
+    config = OmegaConf.create({"name": "a"})
+    assert apply_overrides(config, ["name=a=b"]) == {"name": "a=b"}
 
 
 def test_rejects_a_list_item_that_is_not_a_string():

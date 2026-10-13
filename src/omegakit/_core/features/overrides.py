@@ -8,6 +8,9 @@ from omegakit._core.errors import (
 )
 from omegakit._core.utils.copy import copy_with_root
 from omegakit._core.utils.describe import describe_error
+from omegakit._core.utils.walk import walk
+
+from .include import INCLUDE_PREFIX
 
 
 @overload
@@ -36,7 +39,12 @@ def apply_overrides(
         # One at a time, so that a later `key=value` wins over an earlier one
         for item in overrides:
             parsed_item = _parse_dotlist_item(item)
-            apply_overrides(config, parsed_item, copy=False)
+            try:
+                config.merge_with(parsed_item)
+            except (OmegaConfBaseException, ValueError) as error:
+                raise ConfigOverrideError(
+                    f"Cannot apply `{item}`: {describe_error(error)}"
+                ) from error
         return config
     expected_types = (DictConfig, dict) if is_dict else (ListConfig, list)
     if not isinstance(overrides, expected_types):
@@ -60,10 +68,28 @@ def _parse_dotlist_item(item: Any) -> DictConfig:
         raise ConfigOverrideError(
             f"An override in a list must be a `key=value` string, not `{item!r}`."
         )
+    key, separator, _ = item.partition("=")
+    if not separator or not key:
+        raise ConfigOverrideError(
+            f"`{item}` is not an override: write it as `key=value`."
+        )
+    if "[" in key:
+        raise ConfigOverrideError(
+            f"`{item}` names an item of a list, which an override cannot set. Give "
+            "the whole list instead, as in `key=[1, 2]`."
+        )
     try:
-        return OmegaConf.from_dotlist([item])
+        parsed_item = OmegaConf.from_dotlist([item])
     # PyYAML and OmegaConf raise assorted builtin errors for an invalid item
     except Exception as error:
         raise ConfigOverrideError(
             f"Cannot parse `{item}`: {describe_error(error)}"
         ) from error
+    for node in walk(parsed_item):
+        value = node._value()
+        if isinstance(value, str) and value.split(maxsplit=1)[:1] == [INCLUDE_PREFIX]:
+            raise ConfigOverrideError(
+                f"`{item}` cannot include a file: the includes are resolved before "
+                "the overrides are applied."
+            )
+    return parsed_item

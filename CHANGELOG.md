@@ -184,6 +184,14 @@ All notable changes to this project are documented here. The format follows
 
 ### Fixed
 
+- An override that is no `key=value` raises `ConfigOverrideError`. `seed` used to
+  set `seed` to `None`, `=5` created the key `''`, and `layers[0]=1` replaced the
+  list `layers` with a mapping.
+- An override whose value is an include, such as `model=~include big.yaml`, raises
+  `ConfigOverrideError`. It stayed in the config as that text, since the includes
+  are resolved before the overrides are applied.
+- An override that cannot be applied is named in the message, as in ``Cannot apply
+  `model.width=8`: ...``.
 - An included text that ends up as a backslash before `${`, such as `\\${x}`, stays
   that text. The including config resolved it as an interpolation again.
 - `omegakit check` and `omegakit show` print failures to stderr. They went to
