@@ -1,16 +1,20 @@
 import dataclasses
 import functools
 import itertools
+import keyword
 import re
 import types
 from collections.abc import Callable
 from typing import (
     Any,
+    NotRequired,
+    Required,
     TypeAliasType,
     Union,
     get_args,
     get_origin,
     get_type_hints,
+    is_typeddict,
 )
 
 from omegaconf import MISSING, OmegaConf
@@ -63,9 +67,9 @@ def find_schema(target: Any) -> type | None:
     schema = target.schema if issubclass(target, Configurable) else None
     if schema is None:
         return target if dataclasses.is_dataclass(target) else None
-    if not (isinstance(schema, type) and dataclasses.is_dataclass(schema)):
+    if not is_typeddict(schema):
         raise SchemaDefinitionError(
-            f"`{target.__qualname__}.schema` must be a dataclass, not `{schema!r}`."
+            f"`{target.__qualname__}.schema` must be a `TypedDict`, not `{schema!r}`."
         )
     return schema
 
@@ -81,7 +85,9 @@ def split_union(annotation: Any) -> tuple[Any, ...]:
 
 def find_section(annotation: Any) -> type | None:
     for member in split_union(annotation):
-        if isinstance(member, type) and dataclasses.is_dataclass(member):
+        if is_typeddict(member) or (
+            isinstance(member, type) and dataclasses.is_dataclass(member)
+        ):
             return member
     return None
 
@@ -102,6 +108,19 @@ def find_item_annotation(
 def read_fields(schema: type) -> dict[str, SchemaField]:
     try:
         annotations = get_type_hints(schema)
+        if is_typeddict(schema):
+            required_keys = _read_required_keys(schema)
+        else:
+            required_keys = {
+                field.name: (
+                    field.default is dataclasses.MISSING
+                    and field.default_factory is dataclasses.MISSING
+                )
+                # `MISSING` as the default marks a required field, as in OmegaConf
+                or (isinstance(field.default, str) and field.default == MISSING)
+                for field in dataclasses.fields(schema)
+                if field.init
+            }
     # Evaluating an annotation runs arbitrary code, which can raise anything
     except Exception as error:
         raise SchemaDefinitionError(
@@ -109,26 +128,20 @@ def read_fields(schema: type) -> dict[str, SchemaField]:
             f"{describe_error(error)}"
         ) from error
     fields = {}
-    for field in dataclasses.fields(schema):
-        if not field.init:
-            continue
-        annotation = annotations[field.name]
+    for name, is_required in required_keys.items():
+        annotation = annotations[name]
         is_data = _is_data(annotation)
-        if not is_data and not _is_object(annotation):
+        if (
+            not name.isidentifier()
+            or keyword.iskeyword(name)
+            or (not is_data and not _is_object(annotation))
+        ):
             raise SchemaDefinitionError(
-                f"`{schema.__qualname__}.{field.name}` is annotated with "
-                f"`{annotation}`, which OmegaConf does not support and which is not "
-                "a class either."
+                f"`{schema.__qualname__}.{name}` is annotated with `{annotation}`. A "
+                "key is a Python identifier, and its annotation is what OmegaConf "
+                "supports, one `TypedDict` or a class."
             )
-        has_default = (
-            field.default is not dataclasses.MISSING
-            or field.default_factory is not dataclasses.MISSING
-        )
-        # `MISSING` as the default marks a required field, as in OmegaConf
-        is_required = not has_default or (
-            isinstance(field.default, str) and field.default == MISSING
-        )
-        fields[field.name] = SchemaField(annotation, is_data, is_required)
+        fields[name] = SchemaField(annotation, is_data, is_required)
     return fields
 
 
@@ -170,6 +183,22 @@ def _is_data_cached(annotation: Any) -> bool:
     except OmegaConfBaseException:
         return False
     return True
+
+
+def _read_required_keys(schema: type) -> dict[str, bool]:
+    required_keys: dict[str, bool] = {}
+    for base in types.get_original_bases(schema):
+        if is_typeddict(base):
+            required_keys |= _read_required_keys(base)
+    # `__required_keys__` is wrong where the annotations are written as text
+    annotations = get_type_hints(schema, include_extras=True)
+    for name, annotation in annotations.items():
+        if name not in required_keys:
+            origin = get_origin(annotation)
+            required_keys[name] = origin is Required or (
+                origin is not NotRequired and schema.__total__
+            )
+    return required_keys
 
 
 def _is_object(annotation: Any) -> bool:

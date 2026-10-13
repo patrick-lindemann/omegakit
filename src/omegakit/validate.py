@@ -1,6 +1,6 @@
 import dataclasses
 import functools
-from typing import Any, get_origin
+from typing import Any, get_origin, is_typeddict
 
 from omegaconf import DictConfig, ListConfig, TupleConfig
 from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
@@ -116,7 +116,7 @@ def _check_node(
                 "here: keys that start with `$` are reserved."
             )
         section = find_section(annotation)
-        schema = find_schema(section)
+        schema = section if is_typeddict(section) else find_schema(section)
     except OmegaKitBaseException as error:
         error.add_note(f"  at {describe_node(node)}")
         raise
@@ -125,8 +125,11 @@ def _check_node(
             key: _check_value(node, key, active_nodes, item_annotation) for key in keys
         }
         return Items(items)
-    name = f"{section.__module__}.{section.__qualname__}"
     arguments = _check_schema(node, schema, keys, active_nodes)
+    if is_typeddict(section):
+        # A mapping that is checked against a schema stays a mapping
+        return Items(arguments)
+    name = f"{section.__module__}.{section.__qualname__}"
     return Call(node, name, section, schema, False, arguments)
 
 
@@ -137,6 +140,10 @@ def _check_call(
         target_arguments = read_arguments(node)
         target = import_target(node)
         name = node[TARGET_KEY]
+        if is_typeddict(target):
+            raise SchemaTypeError(
+                f"`{TARGET_KEY}: {name}` names a schema, and nothing is built from one."
+            )
         schema = find_schema(target)
     except OmegaKitBaseException as error:
         error.add_note(f"  at {describe_node(node)}")
@@ -239,22 +246,24 @@ def _unwrap_data(value: Any) -> Any:
 def _check_type(value: Any, annotation: Any) -> None:
     if annotation is Any:
         return
+    members = split_union(annotation)
+    # A field that is annotated with a schema takes a mapping of the config
+    if any(is_typeddict(member) for member in members):
+        if isinstance(value, Items) and isinstance(value.items, dict):
+            return
+        members = tuple(member for member in members if not is_typeddict(member))
     # A parametrized class, such as `list[X]`, is checked as the class alone
-    classes = tuple(get_origin(member) or member for member in split_union(annotation))
+    classes = tuple(get_origin(member) or member for member in members)
     try:
-        if not isinstance(value, Call):
+        if not classes:
+            is_valid = False
+        elif not isinstance(value, Call):
             given_value = value.items if isinstance(value, Items) else value
             is_valid = isinstance(given_value, classes)
         elif value.is_partial:
             is_valid = issubclass(functools.partial, classes)
         else:
-            # A class also fits a field that is annotated with its schema
-            schemas: tuple[Any, ...] = tuple(
-                item for item in classes if dataclasses.is_dataclass(item)
-            )
-            is_valid = issubclass(value.target, classes) or (
-                value.schema is not None and issubclass(value.schema, schemas)
-            )
+            is_valid = issubclass(value.target, classes)
     # Not every annotation and target can be checked, such as a `Literal`, a
     # `Protocol` that is not runtime-checkable, and a function as the target
     except TypeError:

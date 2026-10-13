@@ -271,7 +271,7 @@ def test_dataclass_is_built_from_converted_values(targets: ModuleType):
     assert config == {"rate": "1e-3", "optimizer": content}
 
 
-def test_configurable_receives_an_instance_of_its_schema(targets: ModuleType):
+def test_configurable_receives_the_checked_values_as_a_dict(targets: ModuleType):
     config = OmegaConf.create(
         {
             "$target": "config_targets.Model",
@@ -281,10 +281,10 @@ def test_configurable_receives_an_instance_of_its_schema(targets: ModuleType):
     )
     model = instantiate(config)
     assert type(model) is targets.Model
-    assert type(model.config) is targets.ModelConfig
-    assert model.config.depth == 4
-    assert model.config.activation == "relu"
-    assert type(model.config.encoder) is targets.SmallItem
+    assert type(model.config) is dict
+    assert list(model.config) == ["depth", "encoder"]
+    assert model.config["depth"] == 4
+    assert type(model.config["encoder"]) is targets.SmallItem
     assert model.kwargs == {}
 
 
@@ -317,17 +317,25 @@ def test_schema_builds_a_root_without_a_target(targets: ModuleType):
     assert config == content
 
 
-def test_dataclass_field_holds_what_its_node_builds(targets: ModuleType):
+def test_field_that_is_annotated_with_a_schema_holds_a_dict(targets: ModuleType):
     model = {"$target": "config_targets.Model", "depth": 2}
+    encoder = {"$target": "config_targets.Item"}
     config = OmegaConf.create(
-        {"model": model, "backbone": {"$target": "config_targets.Model", "depth": "3"}}
+        {"model": model, "backbone": {"depth": "3", "encoder": encoder}}
     )
     backbone = instantiate(config, targets.Experiment).backbone
-    assert type(backbone) is targets.Model
-    assert backbone.config == targets.ModelConfig(depth=3)
-    config = OmegaConf.create({"model": model, "backbone": {"depth": "3"}})
-    backbone = instantiate(config, targets.Experiment).backbone
-    assert backbone == targets.ModelConfig(depth=3)
+    assert type(backbone) is dict
+    assert backbone["depth"] == 3
+    assert type(backbone["encoder"]) is targets.Item
+    config.backbone = {"$target": "config_targets.Model", "depth": "3"}
+    with pytest.raises(SchemaTypeError):
+        instantiate(config, targets.Experiment)
+
+
+def test_target_that_names_a_schema_is_rejected(targets: ModuleType):
+    config = OmegaConf.create({"$target": "config_targets.ModelConfig", "depth": 3})
+    with pytest.raises(SchemaTypeError, match="ModelConfig"):
+        instantiate(config)
 
 
 def test_field_that_is_not_given_keeps_the_default_of_its_dataclass(
@@ -372,8 +380,8 @@ def test_interpolation_reads_the_config_as_it_is_written(targets: ModuleType):
         }
     )
     model = instantiate(config)
-    assert model.config.depth == 4
-    assert model.config.encoder.kwargs["depth"] == "4"
+    assert model.config["depth"] == 4
+    assert model.config["encoder"].kwargs["depth"] == "4"
 
 
 def test_prepare_defers_a_node_with_a_schema(targets: ModuleType):
@@ -381,7 +389,7 @@ def test_prepare_defers_a_node_with_a_schema(targets: ModuleType):
     make_model = prepare(config)
     assert isinstance(make_model, functools.partial)
     model = make_model(name="called")
-    assert model.config == targets.ModelConfig(depth=4)
+    assert model.config == {"depth": 4}
     assert model.kwargs == {"name": "called"}
     make_optimizer = prepare(OmegaConf.create({"lr": 1}), targets.Optimizer)
     assert targets.CALLS == []

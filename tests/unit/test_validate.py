@@ -317,24 +317,25 @@ def test_class_in_a_dataclass_field_names_the_dataclass_or_a_subclass(
     validate(_make_experiment(optimizer=optimizer), targets.Experiment)
 
 
-def test_class_in_a_dataclass_field_may_use_the_dataclass_as_its_schema(
-    targets: ModuleType,
-):
-    backbone = {"$target": "config_targets.Model", "depth": "2"}
+def test_field_that_is_annotated_with_a_schema_takes_a_mapping(targets: ModuleType):
+    backbone = {"depth": "2", "encoder": {"$target": "config_targets.Item"}}
     validate(_make_experiment(backbone=backbone), targets.Experiment)
+    validate(_make_experiment(backbone=None), targets.Experiment)
     validate(OmegaConf.create(backbone), targets.ModelConfig)
     for values, error_type in (
-        ({"$target": "config_targets.Model", "depth": "deep"}, SchemaValueError),
-        ({"$target": "config_targets.Model", "width": 2}, SchemaKeyError),
-        ({"$target": "config_targets.Optimizer", "lr": 1}, SchemaTypeError),
-        ({"$target": "config_targets.Item", "depth": 2}, SchemaTypeError),
+        ({"depth": "deep"}, SchemaValueError),
+        ({"depth": 2, "width": 2}, SchemaKeyError),
+        ({"activation": "tanh"}, SchemaMissingValueError),
+        ({"$target": "config_targets.Model", "depth": 2}, SchemaTypeError),
+        ({"$target": "config_targets.ModelConfig", "depth": 2}, SchemaTypeError),
+        ([1, 2], SchemaTypeError),
     ):
         with pytest.raises(error_type) as error_info:
             validate(_make_experiment(backbone=values), targets.Experiment)
         assert error_info.value.__notes__ == ["  at `experiment.backbone`"]
-    # `Settings` is a parent of the schema, but the class does not build one
+    model = OmegaConf.create({"$target": "config_targets.Model", "depth": 2})
     with pytest.raises(SchemaTypeError):
-        validate(_make_experiment(settings=backbone), targets.Experiment)
+        validate(model, targets.ModelConfig)
     assert targets.CALLS == []
 
 

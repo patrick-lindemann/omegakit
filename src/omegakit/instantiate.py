@@ -53,13 +53,8 @@ def _build(value: Any) -> Any:
         return type(value.items)(_build(item) for item in value.items)
     if not isinstance(value, Call):
         return value
-    arguments: Any = {
-        key: _build(argument) for key, argument in value.arguments.items()
-    }
+    arguments = {key: _build(argument) for key, argument in value.arguments.items()}
     try:
-        # A `Configurable` gets its arguments as an instance of its schema
-        if value.schema is not None and value.schema is not value.target:
-            arguments = value.schema(**arguments)
         if hasattr(value.target, "from_config"):
             if value.is_partial:
                 instance = functools.partial(value.target.from_config, arguments)

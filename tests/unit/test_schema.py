@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 import dataclasses
 import enum
 import typing
 from collections.abc import Callable, Sequence
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Literal
+from typing import Any, Literal, NotRequired, Required, TypedDict
 
 import pytest
 from omegaconf import MISSING
@@ -39,6 +41,22 @@ class _Section:
     width: int = 1
 
 
+class _LayerConfig(TypedDict):
+    width: int
+    bias: NotRequired[bool]
+    encoder: NotRequired[_Encoder | None]
+
+
+class _WideLayerConfig(_LayerConfig, total=False):
+    scale: float
+    name: Required[str]
+
+
+class _NetworkConfig(TypedDict):
+    layer: _LayerConfig
+    layers: list[_LayerConfig]
+
+
 def _make_schema(annotation: Any) -> type:
     return dataclasses.make_dataclass("Schema", [("value", annotation)])
 
@@ -61,8 +79,8 @@ def test_other_targets_have_no_schema(target: Any):
     assert find_schema(target) is None
 
 
-@pytest.mark.parametrize("schema", [dict, _Section()])
-def test_schema_of_a_configurable_must_be_a_dataclass(schema: Any):
+@pytest.mark.parametrize("schema", [dict, _Section, _Section()])
+def test_schema_of_a_configurable_must_be_a_typed_dict(schema: Any):
     broken = type("Broken", (Configurable,), {"schema": schema})
     with pytest.raises(SchemaDefinitionError, match="Broken"):
         find_schema(broken)
@@ -144,6 +162,29 @@ def test_fields_are_the_arguments_of_the_constructor(targets: ModuleType):
     assert fields["lr"].is_required
     assert not fields["steps"].is_required
     assert not read_fields(targets.Experiment)["optimizer"].is_required
+
+
+def test_keys_of_a_typed_dict_are_required_unless_marked():
+    fields = read_fields(_WideLayerConfig)
+    required_keys = {key for key, field in fields.items() if field.is_required}
+    assert set(fields) == {"width", "bias", "encoder", "scale", "name"}
+    assert required_keys == {"width", "name"}
+    assert fields["width"].is_data
+    assert fields["bias"].annotation is bool
+    assert not fields["encoder"].is_data
+
+
+def test_field_that_holds_a_typed_dict_is_not_data():
+    fields = read_fields(_NetworkConfig)
+    assert not fields["layer"].is_data
+    assert not fields["layers"].is_data
+
+
+@pytest.mark.parametrize("key", ["learning-rate", "class", "2nd"])
+def test_key_that_is_no_identifier_is_rejected(key: str):
+    schema = TypedDict("schema", {key: int})  # pyright: ignore[reportGeneralTypeIssues]
+    with pytest.raises(SchemaDefinitionError, match=key):
+        read_fields(schema)
 
 
 def test_default_that_is_missing_marks_a_required_field():

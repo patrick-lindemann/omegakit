@@ -10,8 +10,8 @@ All notable changes to this project are documented here. The format follows
 
 - `omegakit --version` prints the installed version, which is also
   `omegakit.__version__`.
-- A schema may contain itself, directly or through other dataclasses, as OmegaConf
-  allows. It raised `SchemaDefinitionError`.
+- A schema may contain itself, directly or through other schemas. It raised
+  `SchemaDefinitionError`.
 
 ### Changed
 
@@ -44,11 +44,17 @@ All notable changes to this project are documented here. The format follows
   `Literal` needs its exact value (`"2"` is no longer `2`), a union no longer
   converts the items of a list (`["1", 2]` for `list[int] | int`), a tuple cannot
   hold `???`, and `Sequence`, `Mapping` and `set` raise `SchemaDefinitionError`.
-  Unknown keys, missing fields and wrong values give OmegaConf's messages, such as
-  ``Invalid config in `model.hiden` (MLPConfig): Key 'hiden' not in 'MLPConfig'.
-  Did you mean: 'hidden'?``. OmegaConf builds the dataclasses in data fields, and
-  builds a dataclass default of a given dataclass again, so its `__post_init__`
-  runs again.
+  A wrong value gives OmegaConf's reason, such as `` `hidden` does not match
+  `MLPConfig`: Value 'wide' of type 'str' could not be converted to Integer``.
+- **Breaking:** A schema is a `TypedDict`, named after its values, as in
+  `ModelConfig`. `Configurable.schema` takes nothing else, and a dataclass there
+  raises `SchemaDefinitionError`. A schema only checks and has no defaults: a key is
+  required unless it is `NotRequired` or its `TypedDict` is declared with
+  `total=False`, and the defaults live in the constructor or in the config.
+  `from_config` receives the checked values as a `dict` with the keys that the
+  config gives, no longer an instance of the schema. A field that is annotated with
+  a `TypedDict` holds a mapping without `$target`, which stays a `dict`, and a
+  `$target` that names a `TypedDict` raises `SchemaTypeError`.
 - **Breaking:** A `Configurable` names its schema in the class attribute `schema`
   instead of a type argument: replace `class Model(Configurable[ModelConfig])` with
   `class Model(Configurable)` and `schema = ModelConfig` in its body. `from_config`
