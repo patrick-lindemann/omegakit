@@ -8,6 +8,11 @@ except ImportError as error:
     ) from error
 
 
+def register_numpy_resolvers(*, replace: bool = False, use_cache: bool = True) -> None:
+    """__summary__"""
+    register_numpy_dtype_resolver(replace=replace, use_cache=use_cache)
+
+
 def register_numpy_dtype_resolver(
     *, replace: bool = False, use_cache: bool = True
 ) -> None:
