@@ -41,6 +41,12 @@ All notable changes to this project are documented here. The format follows
 - **Breaking:** `$defaults` is now `$each`, and `DEFAULTS_KEY` is `EACH_KEY`.
   Replace `$defaults: {n: 256}` with `$each: {n: 256}`. The old spelling has no
   alias: a `$defaults` key is rejected as a reserved key.
+- **Breaking:** `load_config(import_root=...)` is now `include_root`. An include of
+  a file outside it raises the new `IncludeRootError`.
+- **Breaking:** `load_config` no longer takes `keep_targets`, and its arguments may
+  be given by position. It raises the error of the step that failed, such as
+  `ConfigSyntaxError` or `IncludeCycleError`, instead of wrapping it in
+  `ConfigLoadError`, and `LoadTypeError` for a file whose root is a list.
 - **Breaking:** `~include file#node` and `omegakit show --node` select the node with
   `OmegaConf.select`. The path also takes `a[0]`, and it follows interpolations
   instead of rejecting a path through one. A node that holds `???` counts as
