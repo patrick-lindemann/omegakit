@@ -8,13 +8,13 @@ from omegaconf import DictConfig, OmegaConf
 from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
 
 from omegakit._core.error import OmegaKitBaseException
-from omegakit._core.target import TargetNotFoundError
-from omegakit._features.class_ import (
-    ClassMissingValueError,
-    ClassSyntaxError,
-    ClassTypeError,
-)
+from omegakit._core.path import PathNotFoundError
 from omegakit._features.symbol import SymbolSyntaxError
+from omegakit._features.target import (
+    TargetMissingValueError,
+    TargetSyntaxError,
+    TargetTypeError,
+)
 from omegakit.schema import (
     SchemaDefinitionError,
     SchemaKeyError,
@@ -57,10 +57,10 @@ def test_accepts_a_valid_config_and_calls_nothing(targets: ModuleType):
     content = {
         "width": 3,
         "model": {
-            "$class": "config_targets.Item",
+            "$target": "config_targets.Item",
             "$meta": {"description": "The model"},
             "width": "${width}",
-            "layers": [{"$class": "config_targets.Item", "$partial": True}],
+            "layers": [{"$target": "config_targets.Item", "$partial": True}],
             "loss": {"$symbol": "math.sqrt"},
         },
         "copy": "${model}",
@@ -73,27 +73,27 @@ def test_accepts_a_valid_config_and_calls_nothing(targets: ModuleType):
 
 
 def test_list_config():
-    validate(OmegaConf.create([{"$class": "fractions.Fraction"}, 1]))
-    with pytest.raises(TargetNotFoundError):
-        validate(OmegaConf.create([{"$class": "fractions.NoSuchName"}]))
+    validate(OmegaConf.create([{"$target": "fractions.Fraction"}, 1]))
+    with pytest.raises(PathNotFoundError):
+        validate(OmegaConf.create([{"$target": "fractions.NoSuchName"}]))
 
 
 def test_part_of_a_config():
     config = OmegaConf.create(
         {
             "width": 3,
-            "model": {"$class": "builtins.dict", "width": "${width}"},
-            "other": {"$class": "fractions.NoSuchName"},
+            "model": {"$target": "builtins.dict", "width": "${width}"},
+            "other": {"$target": "fractions.NoSuchName"},
         }
     )
     validate(config.model)
-    with pytest.raises(TargetNotFoundError):
+    with pytest.raises(PathNotFoundError):
         validate(config.other)
 
 
 def test_read_only_config_is_accepted():
     config = OmegaConf.create(
-        {"model": {"$class": "builtins.dict", "n": "${k}"}, "k": 3}
+        {"model": {"$target": "builtins.dict", "n": "${k}"}, "k": 3}
     )
     OmegaConf.set_readonly(config, True)
     validate(config)
@@ -110,7 +110,7 @@ def test_value_that_cannot_be_read_is_rejected(value: str, error_type: type[Exce
     for content, full_key in (
         ({"lr": value}, "lr"),
         ({"model": {"layers": [{"width": value}]}}, "model.layers[0].width"),
-        ({"model": {"$class": "builtins.dict", "lr": value}}, "model.lr"),
+        ({"model": {"$target": "builtins.dict", "lr": value}}, "model.lr"),
         ({"stages": [1, value]}, "stages[1]"),
     ):
         config = OmegaConf.create(content)
@@ -127,18 +127,18 @@ def test_missing_root_is_rejected():
 @pytest.mark.parametrize(
     ("node", "error_type"),
     [
-        ({"$class": "config_targets.NoSuchName"}, TargetNotFoundError),
-        ({"$class": "???"}, ClassMissingValueError),
-        ({"$class": "builtins.dict", "$partial": "yes"}, ClassTypeError),
-        ({"$class": "builtins.dict", "$foo": 1}, ClassSyntaxError),
-        ({"$symbol": "config_targets.NoSuchName"}, TargetNotFoundError),
+        ({"$target": "config_targets.NoSuchName"}, PathNotFoundError),
+        ({"$target": "???"}, TargetMissingValueError),
+        ({"$target": "builtins.dict", "$partial": "yes"}, TargetTypeError),
+        ({"$target": "builtins.dict", "$foo": 1}, TargetSyntaxError),
+        ({"$symbol": "config_targets.NoSuchName"}, PathNotFoundError),
         ({"$symbol": "math.sqrt", "reduction": "mean"}, SymbolSyntaxError),
     ],
 )
-def test_error_of_a_class_or_symbol_names_its_node(
+def test_error_of_a_target_or_symbol_names_its_node(
     targets: ModuleType, node: dict[str, Any], error_type: type[Exception]
 ):
-    config = OmegaConf.create({"models": [{"$class": "config_targets.Item"}, node]})
+    config = OmegaConf.create({"models": [{"$target": "config_targets.Item"}, node]})
     with pytest.raises(error_type) as error_info:
         validate(config)
     assert error_info.value.__notes__ == ["  at `models[1]`"]
@@ -163,8 +163,8 @@ def test_meta_is_not_read(meta: Any):
     [
         (
             {
-                "a": {"$class": "builtins.dict", "other": "${b}"},
-                "b": {"$class": "builtins.dict", "other": "${a}"},
+                "a": {"$target": "builtins.dict", "other": "${b}"},
+                "b": {"$target": "builtins.dict", "other": "${a}"},
             },
             "`a` -> `b` -> `a`",
         ),
@@ -184,7 +184,7 @@ def test_config_that_contains_itself_is_rejected(content: dict[str, Any], cycle:
 def test_node_that_is_read_several_times_is_no_cycle():
     config = OmegaConf.create(
         {
-            "encoder": {"$class": "builtins.dict", "width": 3},
+            "encoder": {"$target": "builtins.dict", "width": 3},
             "first": {"encoder": "${encoder}", "inner": {"encoder": "${encoder}"}},
             "second": ["${encoder}", "${first}"],
         }
@@ -193,7 +193,7 @@ def test_node_that_is_read_several_times_is_no_cycle():
 
 
 def _make_experiment(**values: Any) -> DictConfig:
-    model = {"$class": "config_targets.Model", "depth": 2}
+    model = {"$target": "config_targets.Model", "depth": 2}
     return OmegaConf.create({"experiment": {"model": model, **values}}).experiment
 
 
@@ -201,23 +201,23 @@ def test_accepts_a_config_that_matches_its_schemas(targets: ModuleType):
     content = {
         "width": "3",
         "experiment": {
-            "$class": "config_targets.Experiment",
+            "$target": "config_targets.Experiment",
             "$meta": {"description": "The baseline"},
             "seed": "${width}",
             "model": {
-                "$class": "config_targets.Model",
+                "$target": "config_targets.Model",
                 "depth": "${width}",
-                "encoder": {"$class": "config_targets.SmallItem"},
+                "encoder": {"$target": "config_targets.SmallItem"},
             },
             "optimizer": {"$meta": {"note": "tuned"}, "lr": "1e-3", "mode": "SLOW"},
             "items": [
-                {"$class": "config_targets.Item"},
+                {"$target": "config_targets.Item"},
                 {"$symbol": "config_targets.ITEM"},
             ],
-            "named_items": {"first": {"$class": "config_targets.make_item"}},
+            "named_items": {"first": {"$target": "config_targets.make_item"}},
             "stages": [{"lr": 0.1}, "${experiment.optimizer}"],
-            "schedule": {"$class": "config_targets.Item", "$partial": True},
-            "extra": {"anything": [{"$class": "config_targets.Item"}]},
+            "schedule": {"$target": "config_targets.Item", "$partial": True},
+            "extra": {"anything": [{"$target": "config_targets.Item"}]},
         },
     }
     config = OmegaConf.create(content)
@@ -272,7 +272,7 @@ def test_value_that_does_not_match_its_schema_is_rejected(
 
 def test_interpolated_value_is_checked_as_its_field(targets: ModuleType):
     config = OmegaConf.create({"seed": "many", "experiment": {"seed": "${seed}"}})
-    config.experiment.model = {"$class": "config_targets.Model", "depth": 1}
+    config.experiment.model = {"$target": "config_targets.Model", "depth": 1}
     with pytest.raises(SchemaValueError, match="seed"):
         validate(config.experiment, targets.Experiment)
 
@@ -280,17 +280,17 @@ def test_interpolated_value_is_checked_as_its_field(targets: ModuleType):
 @pytest.mark.parametrize(
     ("values", "full_key"),
     [
-        ({"model": {"$class": "config_targets.Item"}}, "experiment.model"),
+        ({"model": {"$target": "config_targets.Item"}}, "experiment.model"),
         ({"model": None}, "experiment.model"),
         ({"model": {"depth": 2}}, "experiment.model"),
         ({"model": {"$symbol": "config_targets.SETTINGS"}}, "experiment.model"),
         (
-            {"items": [{"$class": "config_targets.Model", "depth": 1}]},
+            {"items": [{"$target": "config_targets.Model", "depth": 1}]},
             "experiment.items[0]",
         ),
-        ({"items": {"first": {"$class": "config_targets.Item"}}}, "experiment.items"),
+        ({"items": {"first": {"$target": "config_targets.Item"}}}, "experiment.items"),
         ({"named_items": {"first": 3}}, "experiment.named_items.first"),
-        ({"optimizer": {"$class": "config_targets.Item"}}, "experiment.optimizer"),
+        ({"optimizer": {"$target": "config_targets.Item"}}, "experiment.optimizer"),
         ({"optimizer": None}, "experiment.optimizer"),
         ({"optimizer": [1, 2]}, "experiment.optimizer"),
     ],
@@ -307,8 +307,8 @@ def test_object_of_another_class_is_rejected(
 @pytest.mark.parametrize(
     "optimizer",
     [
-        {"$class": "config_targets.Optimizer", "lr": 1},
-        {"$class": "config_targets.FastOptimizer", "lr": 1},
+        {"$target": "config_targets.Optimizer", "lr": 1},
+        {"$target": "config_targets.FastOptimizer", "lr": 1},
     ],
 )
 def test_class_in_a_dataclass_field_names_the_dataclass_or_a_subclass(
@@ -320,14 +320,14 @@ def test_class_in_a_dataclass_field_names_the_dataclass_or_a_subclass(
 def test_class_in_a_dataclass_field_may_use_the_dataclass_as_its_schema(
     targets: ModuleType,
 ):
-    backbone = {"$class": "config_targets.Model", "depth": "2"}
+    backbone = {"$target": "config_targets.Model", "depth": "2"}
     validate(_make_experiment(backbone=backbone), targets.Experiment)
     validate(OmegaConf.create(backbone), targets.ModelConfig)
     for values, error_type in (
-        ({"$class": "config_targets.Model", "depth": "deep"}, SchemaValueError),
-        ({"$class": "config_targets.Model", "width": 2}, SchemaKeyError),
-        ({"$class": "config_targets.Optimizer", "lr": 1}, SchemaTypeError),
-        ({"$class": "config_targets.Item", "depth": 2}, SchemaTypeError),
+        ({"$target": "config_targets.Model", "depth": "deep"}, SchemaValueError),
+        ({"$target": "config_targets.Model", "width": 2}, SchemaKeyError),
+        ({"$target": "config_targets.Optimizer", "lr": 1}, SchemaTypeError),
+        ({"$target": "config_targets.Item", "depth": 2}, SchemaTypeError),
     ):
         with pytest.raises(error_type) as error_info:
             validate(_make_experiment(backbone=values), targets.Experiment)
@@ -340,11 +340,11 @@ def test_class_in_a_dataclass_field_may_use_the_dataclass_as_its_schema(
 
 def test_schema_says_what_the_root_builds(targets: ModuleType):
     validate(OmegaConf.create({"lr": 1}), targets.Optimizer)
-    fast_optimizer = {"$class": "config_targets.FastOptimizer", "lr": 1}
+    fast_optimizer = {"$target": "config_targets.FastOptimizer", "lr": 1}
     validate(OmegaConf.create(fast_optimizer), targets.Optimizer)
-    validate(OmegaConf.create({"$class": "config_targets.SmallItem"}), targets.Item)
+    validate(OmegaConf.create({"$target": "config_targets.SmallItem"}), targets.Item)
     for content, schema in (
-        ({"$class": "config_targets.Item"}, targets.Optimizer),
+        ({"$target": "config_targets.Item"}, targets.Optimizer),
         ({"depth": 1}, targets.Model),
         ([{"lr": 1}], targets.Optimizer),
     ):
@@ -354,23 +354,23 @@ def test_schema_says_what_the_root_builds(targets: ModuleType):
 
 
 def test_annotation_that_cannot_be_checked_takes_any_object():
-    validate(OmegaConf.create({"greeter": {"$class": "fractions.Fraction"}}), _Parts)
+    validate(OmegaConf.create({"greeter": {"$target": "fractions.Fraction"}}), _Parts)
     validate(OmegaConf.create({"greeter": {"$symbol": "math.pi"}}), _Parts)
 
 
 @pytest.mark.parametrize(
     ("values", "is_valid"),
     [
-        ({"alias": {"$class": "builtins.dict"}}, True),
-        ({"alias": {"$class": "builtins.list"}}, False),
-        ({"factory": {"$class": "fractions.Fraction", "$partial": True}}, True),
+        ({"alias": {"$target": "builtins.dict"}}, True),
+        ({"alias": {"$target": "builtins.list"}}, False),
+        ({"factory": {"$target": "fractions.Fraction", "$partial": True}}, True),
         ({"factory": {"$symbol": "math.sqrt"}}, True),
-        ({"factory": {"$class": "fractions.Fraction"}}, False),
-        ({"alias": {"$class": "builtins.dict", "$partial": True}}, False),
-        ({"plain": {"$class": "builtins.list", "$partial": True}}, False),
+        ({"factory": {"$target": "fractions.Fraction"}}, False),
+        ({"alias": {"$target": "builtins.dict", "$partial": True}}, False),
+        ({"plain": {"$target": "builtins.list", "$partial": True}}, False),
         ({"kind": {"$symbol": "builtins.bool"}}, True),
-        ({"kind": {"$class": "builtins.bool"}}, False),
-        ({"plain": [{"$class": "fractions.Fraction"}]}, True),
+        ({"kind": {"$target": "builtins.bool"}}, False),
+        ({"plain": [{"$target": "fractions.Fraction"}]}, True),
         ({"plain": {"first": 1}}, False),
         ({"plain": (1, 2)}, False),
     ],
@@ -411,8 +411,8 @@ def test_data_that_contains_itself_is_rejected():
         ({"first": {"$meta": "???", "a": 1}}, None),
         ({"first": {"a": {"$symbol": "math.inf"}}}, SchemaValueError),
         ({"first": {"$foo": 1}}, ValidationSyntaxError),
-        ({"first": {"$class": "builtins.dict"}}, SchemaTypeError),
-        ({"first": {"a": {"$class": "builtins.int"}}}, SchemaTypeError),
+        ({"first": {"$target": "builtins.dict"}}, SchemaTypeError),
+        ({"first": {"a": {"$target": "builtins.int"}}}, SchemaTypeError),
     ],
 )
 def test_reserved_keys_keep_their_meaning_in_plain_values(
@@ -433,11 +433,11 @@ def test_schema_that_is_not_a_class_is_rejected(schema: Any):
 
 
 def test_class_without_schema_takes_any_arguments(targets: ModuleType):
-    validate(OmegaConf.create({"$class": "config_targets.Item", "seed": "many"}))
+    validate(OmegaConf.create({"$target": "config_targets.Item", "seed": "many"}))
 
 
 def test_schema_that_cannot_be_read_names_the_node(targets: ModuleType):
-    config = OmegaConf.create({"model": {"$class": "config_targets.BrokenModel"}})
+    config = OmegaConf.create({"model": {"$target": "config_targets.BrokenModel"}})
     with pytest.raises(SchemaDefinitionError) as error_info:
         validate(config)
     assert error_info.value.__notes__ == ["  at `model`"]

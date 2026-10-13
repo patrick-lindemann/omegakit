@@ -6,9 +6,9 @@ from omegaconf import DictConfig, ListConfig, TupleConfig
 from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
 
 from ._core.error import OmegaKitBaseException
-from ._features.class_ import CLASS_KEY, import_class, read_arguments
 from ._features.meta import META_KEY
 from ._features.symbol import SYMBOL_KEY, import_symbol
+from ._features.target import TARGET_KEY, import_target, read_arguments
 from ._utils.describe import describe_error, describe_node
 from .schema import (
     SchemaDefinitionError,
@@ -103,7 +103,7 @@ def _check_node(
             for index in range(len(node))
         ]
         return Items(items if isinstance(node, ListConfig) else tuple(items))
-    if CLASS_KEY in node.keys():  # noqa: SIM118
+    if TARGET_KEY in node.keys():  # noqa: SIM118
         return _check_call(node, active_nodes)
     try:
         if SYMBOL_KEY in node.keys():  # noqa: SIM118
@@ -134,9 +134,9 @@ def _check_call(
     node: DictConfig, active_nodes: list[DictConfig | ListConfig | TupleConfig]
 ) -> Call:
     try:
-        class_arguments = read_arguments(node)
-        target = import_class(node)
-        name = node[CLASS_KEY]
+        target_arguments = read_arguments(node)
+        target = import_target(node)
+        name = node[TARGET_KEY]
         schema = find_schema(target)
     except OmegaKitBaseException as error:
         error.add_note(f"  at {describe_node(node)}")
@@ -144,11 +144,11 @@ def _check_call(
     if schema is None:
         arguments = {
             key: _check_value(node, key, active_nodes, Any)
-            for key in class_arguments.keys
+            for key in target_arguments.keys
         }
     else:
-        arguments = _check_schema(node, schema, class_arguments.keys, active_nodes)
-    return Call(node, name, target, schema, class_arguments.is_partial, arguments)
+        arguments = _check_schema(node, schema, target_arguments.keys, active_nodes)
+    return Call(node, name, target, schema, target_arguments.is_partial, arguments)
 
 
 def _check_schema(
@@ -226,7 +226,7 @@ def _check_value(
 def _unwrap_data(value: Any) -> Any:
     if isinstance(value, Call):
         raise SchemaTypeError(
-            f"`{CLASS_KEY}: {value.name}` cannot stand in a field that holds plain "
+            f"`{TARGET_KEY}: {value.name}` cannot stand in a field that holds plain "
             "values."
         )
     if not isinstance(value, Items):
@@ -264,7 +264,7 @@ def _check_type(value: Any, annotation: Any) -> None:
     if isinstance(value, Call) and value.is_partial:
         given = f"a partial of `{value.name}`"
     elif isinstance(value, Call):
-        given = f"`{CLASS_KEY}: {value.name}`"
+        given = f"`{TARGET_KEY}: {value.name}`"
     elif isinstance(value, Items) and isinstance(value.items, dict):
         given = "a mapping"
     elif isinstance(value, Items):

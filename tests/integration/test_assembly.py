@@ -67,13 +67,13 @@ def test_included_base_and_each_are_assembled_before_overrides(tmp_path: Path):
 
 def test_assembled_config_is_instantiated(tmp_path: Path):
     (tmp_path / "limits.yaml").write_text(
-        "$each: {$class: datetime.timedelta, seconds: 30}\n"
+        "$each: {$target: datetime.timedelta, seconds: 30}\n"
         "short: {}\n"
         "long: {hours: '${hours}'}\n"
     )
     experiment_path = tmp_path / "experiment.yaml"
     experiment_path.write_text(
-        "$class: builtins.dict\n"
+        "$target: builtins.dict\n"
         "$meta: {title: Timeouts}\n"
         "hours: 1\n"
         "limits: ~include limits.yaml\n"

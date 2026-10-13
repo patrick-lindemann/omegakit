@@ -1,0 +1,153 @@
+import fractions
+from types import ModuleType
+from typing import Any
+
+import pytest
+from omegaconf import OmegaConf
+from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
+
+from omegakit._core.error import OmegaKitBaseException
+from omegakit._core.path import PathNotFoundError, PathSyntaxError
+from omegakit._features.target import (
+    ConfigTargetError,
+    TargetArguments,
+    TargetInterpolationError,
+    TargetMissingValueError,
+    TargetSyntaxError,
+    TargetTypeError,
+    import_target,
+    make_node,
+    read_arguments,
+)
+
+
+def test_gives_the_target_of_a_node():
+    content = {"half": {"$target": "fractions.Fraction", "numerator": 1}}
+    config = OmegaConf.create(content)
+    assert import_target(config.half) is fractions.Fraction
+    assert config == content
+
+
+def test_node_without_a_target_is_rejected():
+    config = OmegaConf.create({"half": {"numerator": 1}})
+    with pytest.raises(TargetSyntaxError):
+        import_target(config.half)
+
+
+def test_target_can_be_an_interpolation():
+    config = OmegaConf.create(
+        {"name": "Fraction", "half": {"$target": "fractions.${name}"}}
+    )
+    assert import_target(config.half) is fractions.Fraction
+
+
+@pytest.mark.parametrize("value", [1, None, ["fractions.Fraction"]])
+def test_target_that_is_not_a_string_is_rejected(value: Any):
+    config = OmegaConf.create({"half": {"$target": value}})
+    with pytest.raises(TargetTypeError):
+        import_target(config.half)
+
+
+def test_target_that_cannot_be_called_is_rejected():
+    config = OmegaConf.create({"half": {"$target": "math.pi"}})
+    with pytest.raises(TargetTypeError, match=r"\$symbol"):
+        import_target(config.half)
+
+
+def test_target_with_from_config_need_not_be_callable(targets: ModuleType):
+    config = OmegaConf.create({"item": {"$target": "config_targets.FACTORY"}})
+    assert import_target(config.item) is targets.FACTORY
+
+
+@pytest.mark.parametrize(
+    ("path", "error_type"),
+    [("Fraction", PathSyntaxError), ("fractions.NoSuchName", PathNotFoundError)],
+)
+def test_path_errors_pass_through(path: str, error_type: type[Exception]):
+    config = OmegaConf.create({"half": {"$target": path}})
+    with pytest.raises(error_type):
+        import_target(config.half)
+
+
+@pytest.mark.parametrize(
+    ("value", "error_type"),
+    [("???", TargetMissingValueError), ("${nowhere}", TargetInterpolationError)],
+)
+def test_key_that_cannot_be_read_is_rejected(value: str, error_type: type[Exception]):
+    config = OmegaConf.create(
+        {"a": {"$target": value}, "b": {"$target": "builtins.dict", "$partial": value}}
+    )
+    with pytest.raises(error_type, match=r"\$target"):
+        import_target(config.a)
+    with pytest.raises(error_type, match=r"\$partial"):
+        read_arguments(config.b)
+
+
+def test_arguments_are_the_keys_that_are_not_special():
+    config = OmegaConf.create(
+        {"$target": "fractions.Fraction", "$meta": "note", "numerator": 1, 2: "two"}
+    )
+    arguments = read_arguments(config)
+    assert arguments.is_partial is False
+    assert arguments.keys == ["numerator", 2]
+
+
+def test_partial_is_read_from_the_node():
+    config = OmegaConf.create(
+        {
+            "defer": True,
+            "a": {"$target": "builtins.dict", "$partial": True, "n": 1},
+            "b": {"$target": "builtins.dict", "$partial": False},
+            "c": {"$target": "builtins.dict", "$partial": "${defer}"},
+        }
+    )
+    assert read_arguments(config.a) == TargetArguments(True, ["n"])
+    assert read_arguments(config.b) == TargetArguments(False, [])
+    assert read_arguments(config.c) == TargetArguments(True, [])
+
+
+def test_arguments_can_be_read_without_a_target():
+    config = OmegaConf.create({"$partial": True, "width": 3})
+    assert read_arguments(config) == TargetArguments(True, ["width"])
+
+
+@pytest.mark.parametrize("value", ["true", 1, None, [True]])
+def test_partial_that_is_not_a_boolean_is_rejected(value: Any):
+    config = OmegaConf.create({"$target": "builtins.dict", "$partial": value})
+    with pytest.raises(TargetTypeError):
+        read_arguments(config)
+
+
+@pytest.mark.parametrize("key", ["$symbol", "$base", "$foo"])
+def test_other_dollar_key_is_rejected(key: str):
+    config = OmegaConf.create({"$target": "builtins.dict", key: "math.pi", "n": 1})
+    with pytest.raises(TargetSyntaxError, match=rf"\{key}"):
+        read_arguments(config)
+
+
+def test_make_node_names_the_target():
+    node = make_node(fractions.Fraction, numerator=1, denominator=2)
+    assert node == {"$target": "fractions.Fraction", "numerator": 1, "denominator": 2}
+    assert import_target(OmegaConf.create(node)) is fractions.Fraction
+
+
+def test_make_node_rejects_a_target_that_is_not_at_module_level():
+    with pytest.raises(TargetSyntaxError):
+        make_node(fractions.Fraction.from_float)
+
+
+@pytest.mark.parametrize(
+    ("error_type", "parent_type"),
+    [
+        (TargetSyntaxError, ValueError),
+        (TargetTypeError, TypeError),
+        (TargetInterpolationError, InterpolationResolutionError),
+        (TargetMissingValueError, MissingMandatoryValue),
+    ],
+)
+def test_errors_are_also_builtin_or_omegaconf_errors(
+    error_type: type[Exception], parent_type: type[Exception]
+):
+    assert issubclass(error_type, ConfigTargetError)
+    assert issubclass(error_type, OmegaKitBaseException)
+    assert issubclass(error_type, parent_type)

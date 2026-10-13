@@ -14,7 +14,7 @@ epochs: 100
 loss:
   $symbol: torch.nn.functional.mse_loss
 optimizer:
-  $class: torch.optim.SGD
+  $target: torch.optim.SGD
   $partial: true
   lr: 0.1
 ```
@@ -23,7 +23,7 @@ optimizer:
 # linear.yaml
 $base: ~include base.yaml
 model:
-  $class: torch.nn.Linear
+  $target: torch.nn.Linear
   in_features: 16
   out_features: 1
 ```
@@ -52,9 +52,9 @@ optimizer = experiment.optimizer(experiment.model.parameters())
 ```
 
 `linear.yaml` took the seed, the epochs, the loss and the optimizer from
-`base.yaml`, and added a model. `$class` names a class to build, `$symbol` passes a
-function as it is, and `$partial` builds the optimizer later, once the model's
-parameters exist. The dataclass checks the config before anything is built:
+`base.yaml`, and added a model. `$target` names a class or function to call,
+`$symbol` passes a function as it is, and `$partial` builds the optimizer later, once
+the model's parameters exist. The dataclass checks the config before anything is built:
 `epochs: many` raises an error that names the key. The
 [documentation](https://omegakit.readthedocs.io) trains a small PyTorch model in
 every example.

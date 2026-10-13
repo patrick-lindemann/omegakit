@@ -4,7 +4,7 @@ from omegaconf import DictConfig, OmegaConf
 from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
 
 from omegakit._core.error import OmegaKitBaseException
-from omegakit._core.target import import_target
+from omegakit._core.path import import_path
 from omegakit._utils.describe import describe_error
 
 from .meta import META_KEY
@@ -45,14 +45,14 @@ def import_symbol(node: DictConfig) -> Any:
         raise SymbolMissingValueError(f"`{SYMBOL_KEY}` holds `???`.")
     try:
         # Resolves an interpolation, as in `$symbol: ${loss}`
-        import_path = node[SYMBOL_KEY]
+        path = node[SYMBOL_KEY]
     except InterpolationResolutionError as error:
         raise SymbolInterpolationError(
             f"Cannot resolve `{SYMBOL_KEY}`: {describe_error(error)}"
         ) from error
-    if not isinstance(import_path, str):
+    if not isinstance(path, str):
         raise SymbolTypeError(
             f"`{SYMBOL_KEY}` must be an import path, such as `package.module.Name`, "
-            f"not `{import_path!r}`."
+            f"not `{path!r}`."
         )
-    return import_target(import_path)
+    return import_path(path)

@@ -4,7 +4,7 @@ from typing import Any, overload
 
 from omegaconf import DictConfig
 
-from ._features.class_ import CLASS_KEY, ClassSyntaxError
+from ._features.target import TARGET_KEY, TargetSyntaxError
 from ._utils.describe import describe_node
 from .validate import Call, Items, check
 
@@ -37,9 +37,9 @@ def _instantiate(config: DictConfig, schema: type | None, is_partial: bool) -> A
     # Checked before the first call, so that nothing is called for an invalid config
     call = check(config, schema)
     if not isinstance(call, Call):
-        raise ClassSyntaxError(
+        raise TargetSyntaxError(
             f"There is nothing to instantiate: {describe_node(config)} has no "
-            f"`{CLASS_KEY}`."
+            f"`{TARGET_KEY}`."
         )
     if is_partial:
         call = dataclasses.replace(call, is_partial=True)

@@ -21,6 +21,9 @@ All notable changes to this project are documented here. The format follows
 - **Breaking:** `~import` is now `~include`, and `IMPORT_KEY` is `INCLUDE_PREFIX`.
   Replace `~import base.yaml` with `~include base.yaml`. The old spelling has no
   alias: an `~import` value stays the text it is.
+- **Breaking:** `$class` is now `$target`, and `CLASS_KEY` is `TARGET_KEY`. Replace
+  `$class: torch.nn.Linear` with `$target: torch.nn.Linear`. The old spelling has no
+  alias: a `$class` key is rejected as a reserved key.
 - **Breaking:** `$ref` is now `$symbol`, and `REF_KEY` is `SYMBOL_KEY`. Replace
   `$ref: math.sqrt` with `$symbol: math.sqrt`. The old spelling has no alias: a
   `$ref` key is rejected as a reserved key.

@@ -6,99 +6,99 @@ from omegaconf import DictConfig, OmegaConf
 from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
 
 from omegakit._core.error import OmegaKitBaseException
-from omegakit._core.target import import_target
+from omegakit._core.path import import_path
 from omegakit._utils.describe import describe_error
 
 from .meta import META_KEY
 from .symbol import SYMBOL_KEY
 
-CLASS_KEY = "$class"
+TARGET_KEY = "$target"
 PARTIAL_KEY = "$partial"
 
 
-class ConfigClassError(OmegaKitBaseException):
+class ConfigTargetError(OmegaKitBaseException):
     pass
 
 
-class ClassSyntaxError(ConfigClassError, ValueError):
+class TargetSyntaxError(ConfigTargetError, ValueError):
     pass
 
 
-class ClassTypeError(ConfigClassError, TypeError):
+class TargetTypeError(ConfigTargetError, TypeError):
     pass
 
 
-class ClassInterpolationError(ConfigClassError, InterpolationResolutionError):
+class TargetInterpolationError(ConfigTargetError, InterpolationResolutionError):
     pass
 
 
-class ClassMissingValueError(ConfigClassError, MissingMandatoryValue):
+class TargetMissingValueError(ConfigTargetError, MissingMandatoryValue):
     pass
 
 
 @dataclass(frozen=True)
-class ClassArguments:
+class TargetArguments:
     is_partial: bool
     keys: list[Any]
 
 
-def import_class(node: DictConfig) -> Any:
-    if CLASS_KEY not in node.keys():  # noqa: SIM118
-        raise ClassSyntaxError(f"The node has no `{CLASS_KEY}`.")
-    import_path = _read_key(node, CLASS_KEY)
-    if not isinstance(import_path, str):
-        raise ClassTypeError(
-            f"`{CLASS_KEY}` must be an import path, such as `package.module.Name`, "
-            f"not `{import_path!r}`."
+def import_target(node: DictConfig) -> Any:
+    if TARGET_KEY not in node.keys():  # noqa: SIM118
+        raise TargetSyntaxError(f"The node has no `{TARGET_KEY}`.")
+    path = _read_key(node, TARGET_KEY)
+    if not isinstance(path, str):
+        raise TargetTypeError(
+            f"`{TARGET_KEY}` must be an import path, such as `package.module.Name`, "
+            f"not `{path!r}`."
         )
-    target = import_target(import_path)
+    target = import_path(path)
     if not (callable(target) or hasattr(target, "from_config")):
-        raise ClassTypeError(
-            f"`{import_path}` is neither callable nor has `from_config`. Use "
+        raise TargetTypeError(
+            f"`{path}` is neither callable nor has `from_config`. Use "
             f"`{SYMBOL_KEY}` for an object that is used as it is."
         )
     return target
 
 
-def read_arguments(node: DictConfig) -> ClassArguments:
+def read_arguments(node: DictConfig) -> TargetArguments:
     keys = [
         key
         for key in node.keys()  # noqa: SIM118
-        if key not in (CLASS_KEY, PARTIAL_KEY, META_KEY)
+        if key not in (TARGET_KEY, PARTIAL_KEY, META_KEY)
     ]
     reserved_keys = [key for key in keys if str(key).startswith("$")]
     if reserved_keys:
-        raise ClassSyntaxError(
+        raise TargetSyntaxError(
             f"{', '.join(f'`{key}`' for key in reserved_keys)} cannot be an argument "
-            f"of a `{CLASS_KEY}`: keys that start with `$` are reserved."
+            f"of a `{TARGET_KEY}`: keys that start with `$` are reserved."
         )
     is_partial = False
     if PARTIAL_KEY in node.keys():  # noqa: SIM118
         is_partial = _read_key(node, PARTIAL_KEY)
         if not isinstance(is_partial, bool):
-            raise ClassTypeError(
+            raise TargetTypeError(
                 f"`{PARTIAL_KEY}` must be `true` or `false`, not `{is_partial!r}`."
             )
-    return ClassArguments(is_partial, keys)
+    return TargetArguments(is_partial, keys)
 
 
 def make_node(target: Callable[..., Any], /, **kwargs: Any) -> dict[str, Any]:
     qualname = target.__qualname__
     if "." in qualname:
-        raise ClassSyntaxError(
+        raise TargetSyntaxError(
             f"Cannot create a node for `{qualname}`: only objects defined at module "
             "level can be imported by their path."
         )
-    return {CLASS_KEY: f"{target.__module__}.{qualname}", **kwargs}
+    return {TARGET_KEY: f"{target.__module__}.{qualname}", **kwargs}
 
 
 def _read_key(node: DictConfig, key: str) -> Any:
     if OmegaConf.is_missing(node, key):
-        raise ClassMissingValueError(f"`{key}` holds `???`.")
+        raise TargetMissingValueError(f"`{key}` holds `???`.")
     try:
-        # Resolves an interpolation, as in `$class: ${model_class}`
+        # Resolves an interpolation, as in `$target: ${model}`
         return node[key]
     except InterpolationResolutionError as error:
-        raise ClassInterpolationError(
+        raise TargetInterpolationError(
             f"Cannot resolve `{key}`: {describe_error(error)}"
         ) from error
