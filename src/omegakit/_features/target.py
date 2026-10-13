@@ -85,14 +85,19 @@ def read_arguments(node: DictConfig) -> TargetArguments:
     return TargetArguments(is_partial, keys, ARGS_KEY in node_keys)
 
 
-def make_node(target: Callable[..., Any], /, **kwargs: Any) -> dict[str, Any]:
+def make_node(
+    target: Callable[..., Any], /, *args: Any, **kwargs: Any
+) -> dict[str, Any]:
     qualname = target.__qualname__
     if "." in qualname:
         raise TargetSyntaxError(
             f"Cannot create a node for `{qualname}`: only objects defined at module "
             "level can be imported by their path."
         )
-    return {TARGET_KEY: f"{target.__module__}.{qualname}", **kwargs}
+    node = {TARGET_KEY: f"{target.__module__}.{qualname}", **kwargs}
+    if args:
+        node[ARGS_KEY] = list(args)
+    return node
 
 
 def _read_key(node: DictConfig, key: str) -> Any:

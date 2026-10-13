@@ -138,6 +138,12 @@ def test_make_node_names_the_target():
     assert import_target(OmegaConf.create(node)) is fractions.Fraction
 
 
+def test_make_node_writes_positional_arguments_to_args():
+    node = make_node(fractions.Fraction, 1, denominator=2)
+    assert node == {"$target": "fractions.Fraction", "denominator": 2, "$args": [1]}
+    assert "$args" not in make_node(fractions.Fraction, numerator=1)
+
+
 def test_make_node_rejects_a_target_that_is_not_at_module_level():
     with pytest.raises(TargetSyntaxError):
         make_node(fractions.Fraction.from_float)

@@ -294,6 +294,8 @@ def test_error_of_the_target_passes_through_with_a_note(targets: ModuleType):
 def test_node_of_make_node_builds_the_target():
     node = make_node(fractions.Fraction, numerator=1, denominator=2)
     assert instantiate(OmegaConf.create(node)) == fractions.Fraction(1, 2)
+    node = make_node(fractions.Fraction, 3, 4)
+    assert instantiate(OmegaConf.create(node)) == fractions.Fraction(3, 4)
 
 
 def test_dataclass_is_built_from_converted_values(targets: ModuleType):
