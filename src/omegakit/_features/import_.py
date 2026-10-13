@@ -84,8 +84,8 @@ def _resolve_imports(
             )
             raise
         imported_values.append(Assignment(parent, node._key(), imported_value))
-    for parent, key, imported_value in imported_values:
-        parent[key] = imported_value
+    for assignment in imported_values:
+        assignment.parent[assignment.key] = assignment.value
 
 
 def _load_import(

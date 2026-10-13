@@ -1,3 +1,4 @@
+import dataclasses
 import functools
 from typing import Any, overload
 
@@ -41,7 +42,7 @@ def _instantiate(config: DictConfig, schema: type | None, is_partial: bool) -> A
             f"`{CLASS_KEY}`."
         )
     if is_partial:
-        call = call._replace(is_partial=True)
+        call = dataclasses.replace(call, is_partial=True)
     return _build(call)
 
 
@@ -52,24 +53,23 @@ def _build(value: Any) -> Any:
         return type(value.items)(_build(item) for item in value.items)
     if not isinstance(value, Call):
         return value
-    node, name, target, schema, is_partial, checked_arguments = value
     arguments: Any = {
-        key: _build(argument) for key, argument in checked_arguments.items()
+        key: _build(argument) for key, argument in value.arguments.items()
     }
     try:
         # A `Configurable` gets its arguments as an instance of its schema
-        if schema is not None and schema is not target:
-            arguments = schema(**arguments)
-        if hasattr(target, "from_config"):
-            if is_partial:
-                instance = functools.partial(target.from_config, arguments)
+        if value.schema is not None and value.schema is not value.target:
+            arguments = value.schema(**arguments)
+        if hasattr(value.target, "from_config"):
+            if value.is_partial:
+                instance = functools.partial(value.target.from_config, arguments)
             else:
-                instance = target.from_config(arguments)
-        elif is_partial:
-            instance = functools.partial(target, **arguments)
+                instance = value.target.from_config(arguments)
+        elif value.is_partial:
+            instance = functools.partial(value.target, **arguments)
         else:
-            instance = target(**arguments)
+            instance = value.target(**arguments)
     except Exception as error:
-        error.add_note(f"  while calling `{name}` at {describe_node(node)}")
+        error.add_note(f"  while calling `{value.name}` at {describe_node(value.node)}")
         raise
     return instance

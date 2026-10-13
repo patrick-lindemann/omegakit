@@ -6,7 +6,6 @@ import types
 from collections.abc import Callable
 from typing import (
     Any,
-    NamedTuple,
     TypeAliasType,
     Union,
     get_args,
@@ -51,7 +50,8 @@ class SchemaTypeError(ConfigSchemaError, ValidationError):
     pass
 
 
-class SchemaField(NamedTuple):
+@dataclasses.dataclass(frozen=True)
+class SchemaField:
     annotation: Any
     is_data: bool
     is_required: bool

@@ -1,9 +1,11 @@
-from typing import Any, NamedTuple
+from dataclasses import dataclass
+from typing import Any
 
 from omegaconf import DictConfig, ListConfig
 
 
-class Assignment(NamedTuple):
+@dataclass(frozen=True)
+class Assignment:
     parent: DictConfig | ListConfig
     key: Any
     value: Any

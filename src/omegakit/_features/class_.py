@@ -1,5 +1,6 @@
 from collections.abc import Callable
-from typing import Any, NamedTuple
+from dataclasses import dataclass
+from typing import Any
 
 from omegaconf import DictConfig, OmegaConf
 from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
@@ -35,7 +36,8 @@ class ClassMissingValueError(ConfigClassError, MissingMandatoryValue):
     pass
 
 
-class ClassArguments(NamedTuple):
+@dataclass(frozen=True)
+class ClassArguments:
     is_partial: bool
     keys: list[Any]
 

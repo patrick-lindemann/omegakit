@@ -1,6 +1,6 @@
 import dataclasses
 import functools
-from typing import Any, NamedTuple, get_origin
+from typing import Any, get_origin
 
 from omegaconf import DictConfig, ListConfig, TupleConfig
 from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
@@ -44,7 +44,8 @@ class ValidationCycleError(ConfigValidationError):
     pass
 
 
-class Call(NamedTuple):
+@dataclasses.dataclass(frozen=True)
+class Call:
     node: DictConfig
     name: str
     target: Any
@@ -54,7 +55,8 @@ class Call(NamedTuple):
 
 
 # A mapping, list or tuple of the config, unlike a `dict` or `list` that is a value
-class Items(NamedTuple):
+@dataclasses.dataclass(frozen=True)
+class Items:
     items: dict[Any, Any] | list[Any] | tuple[Any, ...]
 
 
@@ -132,7 +134,7 @@ def _check_call(
     node: DictConfig, active_nodes: list[DictConfig | ListConfig | TupleConfig]
 ) -> Call:
     try:
-        is_partial, keys = read_arguments(node)
+        class_arguments = read_arguments(node)
         target = import_class(node)
         name = node[CLASS_KEY]
         schema = find_schema(target)
@@ -140,10 +142,13 @@ def _check_call(
         error.add_note(f"  at {describe_node(node)}")
         raise
     if schema is None:
-        arguments = {key: _check_value(node, key, active_nodes, Any) for key in keys}
+        arguments = {
+            key: _check_value(node, key, active_nodes, Any)
+            for key in class_arguments.keys
+        }
     else:
-        arguments = _check_schema(node, schema, keys, active_nodes)
-    return Call(node, name, target, schema, is_partial, arguments)
+        arguments = _check_schema(node, schema, class_arguments.keys, active_nodes)
+    return Call(node, name, target, schema, class_arguments.is_partial, arguments)
 
 
 def _check_schema(
