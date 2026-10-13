@@ -47,7 +47,7 @@ def _instantiate(
 ) -> Any:
     config = cast_config(config)
     # Checked before the first call, so that nothing is called for an invalid config
-    call = check(config, schema, is_partial)
+    call = check(config, schema, is_deferred=is_partial)
     if not isinstance(call, Call):
         raise ConfigTargetError(
             f"There is nothing to instantiate: {describe_node(config)} has no "
