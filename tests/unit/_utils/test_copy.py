@@ -1,6 +1,6 @@
 from omegaconf import OmegaConf
 
-from omegakit._core.copy import copy_with_root
+from omegakit._utils.copy import copy_with_root
 
 
 def test_copy_with_root_resolves_in_the_copied_root():

@@ -5,7 +5,7 @@ from omegaconf import DictConfig, OmegaConf
 from omegaconf.errors import InterpolationResolutionError
 
 from omegakit._core.error import OmegaKitBaseException
-from omegakit._core.merge import (
+from omegakit._utils.merge import (
     ConfigMergeError,
     MergeCycleError,
     MergeReferenceError,

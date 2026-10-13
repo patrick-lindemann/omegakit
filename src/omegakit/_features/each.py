@@ -1,9 +1,9 @@
 from omegaconf import DictConfig, ListConfig, TupleConfig
 
-from omegakit._core.copy import copy_with_root
 from omegakit._core.error import OmegaKitBaseException
-from omegakit._core.merge import merge_under, walk_mergeable
+from omegakit._utils.copy import copy_with_root
 from omegakit._utils.describe import describe_node
+from omegakit._utils.merge import merge_under, walk_mergeable
 
 EACH_KEY = "$each"
 

@@ -1,7 +1,7 @@
 from omegaconf import DictConfig, ListConfig, TupleConfig
 
-from omegakit._core.copy import copy_with_root
-from omegakit._core.walk import walk
+from omegakit._utils.copy import copy_with_root
+from omegakit._utils.walk import walk
 
 META_KEY = "$meta"
 

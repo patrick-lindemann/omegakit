@@ -1,7 +1,7 @@
 import importlib
 from typing import Any
 
-from .error import OmegaKitBaseException
+from omegakit._core.error import OmegaKitBaseException
 
 _NOT_FOUND = object()
 

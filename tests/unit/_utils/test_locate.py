@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from omegakit._core.error import OmegaKitBaseException
-from omegakit._core.locate import (
+from omegakit._utils.locate import (
     QualifiedNameNotFoundError,
     QualifiedNameSyntaxError,
     locate,

@@ -3,12 +3,12 @@ from typing import Any
 from omegaconf import DictConfig
 
 from ._core.error import OmegaKitBaseException
-from ._core.file import load_yaml
 from ._features.base import merge_bases
 from ._features.each import apply_each
 from ._features.include import resolve_includes
 from ._features.meta import remove_meta
 from ._features.overrides import apply_overrides
+from ._utils.file import load_yaml
 from ._utils.path import PathLike, resolve_path
 
 

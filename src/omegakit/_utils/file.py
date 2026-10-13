@@ -3,9 +3,9 @@ from pathlib import Path
 
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
-from omegakit._utils.describe import describe_error
+from omegakit._core.error import OmegaKitBaseException
 
-from .error import OmegaKitBaseException
+from .describe import describe_error
 
 
 class ConfigFileNotFoundError(OmegaKitBaseException, FileNotFoundError):

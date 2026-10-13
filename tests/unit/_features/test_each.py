@@ -4,12 +4,12 @@ import pytest
 from omegaconf import OmegaConf
 
 from omegakit._core.error import OmegaKitBaseException
-from omegakit._core.merge import MergeCycleError, MergeReferenceError
 from omegakit._features.each import (
     ConfigEachError,
     EachTypeError,
     apply_each,
 )
+from omegakit._utils.merge import MergeCycleError, MergeReferenceError
 
 
 def test_every_mapping_next_to_each_gets_it():

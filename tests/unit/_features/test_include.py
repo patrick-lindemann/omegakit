@@ -4,11 +4,6 @@ import pytest
 from omegaconf import OmegaConf
 from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
 
-from omegakit._core.file import (
-    ConfigFileNotFoundError,
-    ConfigSyntaxError,
-    load_yaml,
-)
 from omegakit._features.include import (
     IncludeCycleError,
     IncludeInterpolationError,
@@ -18,6 +13,11 @@ from omegakit._features.include import (
     IncludeSyntaxError,
     IncludeTypeError,
     resolve_includes,
+)
+from omegakit._utils.file import (
+    ConfigFileNotFoundError,
+    ConfigSyntaxError,
+    load_yaml,
 )
 
 

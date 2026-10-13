@@ -8,13 +8,13 @@ from omegaconf import DictConfig, OmegaConf
 from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
 
 from omegakit._core.error import OmegaKitBaseException
-from omegakit._core.locate import QualifiedNameNotFoundError
 from omegakit._features.symbol import SymbolSyntaxError
 from omegakit._features.target import (
     TargetMissingValueError,
     TargetSyntaxError,
     TargetTypeError,
 )
+from omegakit._utils.locate import QualifiedNameNotFoundError
 from omegakit.schema import (
     SchemaDefinitionError,
     SchemaKeyError,

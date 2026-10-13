@@ -4,9 +4,9 @@ from typing import Any, cast
 from omegaconf import MISSING, DictConfig, ListConfig, OmegaConf, TupleConfig
 from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
 
-from omegakit._utils.describe import describe_error, describe_node
+from omegakit._core.error import OmegaKitBaseException
 
-from .error import OmegaKitBaseException
+from .describe import describe_error, describe_node
 from .walk import walk
 
 

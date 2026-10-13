@@ -2,7 +2,7 @@ from argparse import ArgumentError, ArgumentParser
 from pathlib import Path
 from typing import override
 
-from omegakit._core.locate import QualifiedNameSyntaxError, locate
+from omegakit._utils.locate import QualifiedNameSyntaxError, locate
 from omegakit.load import load_config
 from omegakit.validate import validate
 
