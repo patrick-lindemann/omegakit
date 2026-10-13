@@ -14,6 +14,7 @@ from .symbol import SYMBOL_KEY
 
 TARGET_KEY = "$target"
 PARTIAL_KEY = "$partial"
+ARGS_KEY = "$args"
 
 
 class ConfigTargetError(OmegaKitBaseException):
@@ -40,6 +41,7 @@ class TargetMissingValueError(ConfigTargetError, MissingMandatoryValue):
 class TargetArguments:
     is_partial: bool
     keys: list[Any]
+    has_args: bool
 
 
 def import_target(node: DictConfig) -> Any:
@@ -61,10 +63,11 @@ def import_target(node: DictConfig) -> Any:
 
 
 def read_arguments(node: DictConfig) -> TargetArguments:
+    node_keys = list(node.keys())
     keys = [
         key
-        for key in node.keys()  # noqa: SIM118
-        if key not in (TARGET_KEY, PARTIAL_KEY, META_KEY)
+        for key in node_keys
+        if key not in (TARGET_KEY, PARTIAL_KEY, ARGS_KEY, META_KEY)
     ]
     reserved_keys = [key for key in keys if str(key).startswith("$")]
     if reserved_keys:
@@ -73,13 +76,13 @@ def read_arguments(node: DictConfig) -> TargetArguments:
             f"of a `{TARGET_KEY}`: keys that start with `$` are reserved."
         )
     is_partial = False
-    if PARTIAL_KEY in node.keys():  # noqa: SIM118
+    if PARTIAL_KEY in node_keys:
         is_partial = _read_key(node, PARTIAL_KEY)
         if not isinstance(is_partial, bool):
             raise TargetTypeError(
                 f"`{PARTIAL_KEY}` must be `true` or `false`, not `{is_partial!r}`."
             )
-    return TargetArguments(is_partial, keys)
+    return TargetArguments(is_partial, keys, ARGS_KEY in node_keys)
 
 
 def make_node(target: Callable[..., Any], /, **kwargs: Any) -> dict[str, Any]:

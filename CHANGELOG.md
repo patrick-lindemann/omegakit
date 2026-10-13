@@ -10,6 +10,12 @@ All notable changes to this project are documented here. The format follows
 
 - `omegakit --version` prints the installed version, which is also
   `omegakit.__version__`.
+- `$args` gives the positional arguments of a `$target` node, as a list next to the
+  keyword arguments: `{$target: builtins.int, $args: ["ff"], base: 16}` calls
+  `int("ff", base=16)`. It builds targets that take arguments only by position, such
+  as `torch.nn.Sequential` and `math.sqrt`. With `$partial: true` the items go into
+  the partial. A `$base` or an override replaces the list as a whole. A class with
+  `from_config` and a dataclass take their arguments by name and reject it.
 - A schema may contain itself, directly or through other schemas. It raised
   `SchemaDefinitionError`.
 

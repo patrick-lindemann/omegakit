@@ -1,5 +1,6 @@
 import fractions
 import functools
+import pathlib
 from types import ModuleType
 from typing import Any
 
@@ -157,6 +158,45 @@ def test_target_with_from_config_receives_the_arguments(targets: ModuleType, pat
     later = experiment["later"](depth=2)
     assert later.config == {"a": 1}
     assert later.kwargs == {"depth": 2}
+
+
+def test_args_are_the_positional_arguments_of_the_target():
+    config = OmegaConf.create(
+        {
+            "seed": 3,
+            "parts": ["runs", "mlp"],
+            "path": {"$target": "pathlib.PurePosixPath", "$args": "${parts}"},
+            "mask": {"$target": "builtins.int", "$args": ["ff"], "base": 16},
+            "empty": {"$target": "builtins.list", "$args": []},
+            "steps": {"$target": "builtins.range", "$args": ("${seed}", 10)},
+            "power": {"$target": "builtins.pow", "$partial": True, "$args": [2]},
+        }
+    )
+    assert instantiate(config.path) == pathlib.PurePosixPath("runs/mlp")
+    assert instantiate(config.mask) == 255
+    assert instantiate(config.empty) == []
+    assert instantiate(config.steps) == range(3, 10)
+    assert instantiate(config.power)(10) == 1024
+
+
+def test_items_of_args_are_built_before_the_keyword_arguments(targets: ModuleType):
+    config = OmegaConf.create(
+        {
+            "$target": "config_targets.make_item",
+            "last": {"$target": "config_targets.Item", "name": "keyword"},
+            "$args": [
+                {"$target": "config_targets.Item", "name": "first"},
+                {"layers": [{"$target": "config_targets.Item", "name": "nested"}]},
+                {"$symbol": "config_targets.ITEM"},
+            ],
+        }
+    )
+    with pytest.raises(TypeError) as error_info:
+        instantiate(config)
+    assert error_info.value.__notes__ == [
+        "  while calling `config_targets.make_item` at the root"
+    ]
+    assert targets.CALLS == ["first", "nested", "keyword"]
 
 
 def test_target_and_partial_can_be_interpolations():

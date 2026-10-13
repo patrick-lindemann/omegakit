@@ -145,6 +145,48 @@ def test_error_of_a_target_or_symbol_names_its_node(
     assert targets.CALLS == []
 
 
+@pytest.mark.parametrize(
+    ("node", "error_type", "full_key"),
+    [
+        ({"$target": "math.sqrt", "$args": 2}, TargetTypeError, "models[1]"),
+        ({"$target": "math.sqrt", "$args": {"x": 2}}, TargetTypeError, "models[1]"),
+        (
+            {"$target": "math.sqrt", "$args": ["???"]},
+            ValidationMissingValueError,
+            "models[1].$args[0]",
+        ),
+        (
+            {"$target": "builtins.list", "$args": [[{"$target": "math.nope"}]]},
+            PathNotFoundError,
+            "models[1].$args[0][0]",
+        ),
+        (
+            {"$target": "config_targets.Configured", "$args": [1]},
+            TargetSyntaxError,
+            "models[1]",
+        ),
+        (
+            {"$target": "config_targets.Model", "$args": [1]},
+            TargetSyntaxError,
+            "models[1]",
+        ),
+        ({"$args": [1]}, ValidationSyntaxError, "models[1]"),
+        ({"$symbol": "math.pi", "$args": [1]}, SymbolSyntaxError, "models[1]"),
+    ],
+)
+def test_args_that_cannot_be_passed_are_rejected(
+    targets: ModuleType,
+    node: dict[str, Any],
+    error_type: type[Exception],
+    full_key: str,
+):
+    config = OmegaConf.create({"models": [{"$target": "config_targets.Item"}, node]})
+    with pytest.raises(error_type) as error_info:
+        validate(config)
+    assert error_info.value.__notes__ == [f"  at `{full_key}`"]
+    assert targets.CALLS == []
+
+
 @pytest.mark.parametrize("key", ["$partial", "$base", "$clas"])
 def test_reserved_key_in_a_plain_mapping_is_rejected(key: str):
     config = OmegaConf.create({"model": {key: True, "width": 3}})

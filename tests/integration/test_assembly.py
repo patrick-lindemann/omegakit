@@ -65,6 +65,32 @@ def test_included_base_and_each_are_assembled_before_overrides(tmp_path: Path):
     }
 
 
+def test_positional_arguments_are_assembled_like_any_list(tmp_path: Path):
+    (tmp_path / "step.yaml").write_text("$base: {seconds: 30}\nminutes: 1\n")
+    experiment_path = tmp_path / "experiment.yaml"
+    experiment_path.write_text(
+        "ranges:\n"
+        "  $each: {$target: builtins.range, $args: [3]}\n"
+        "  short: {}\n"
+        "  long: {$base: {$args: [0, 10, 2]}, $args: [7]}\n"
+        "  wide: {}\n"
+        "steps:\n"
+        "  $target: builtins.list\n"
+        "  $args:\n"
+        "    - [~include step.yaml]\n"
+    )
+    config = load_yaml(experiment_path)
+    assert isinstance(config, DictConfig)
+    config = resolve_includes(config, experiment_path)
+    config = merge_bases(config)
+    config = apply_each(config)
+    config = apply_overrides(config, ["ranges.wide.$args=[1, 5]"])
+    assert instantiate(config.ranges.short) == range(3)
+    assert instantiate(config.ranges.long) == range(7)
+    assert instantiate(config.ranges.wide) == range(1, 5)
+    assert instantiate(config.steps) == [{"seconds": 30, "minutes": 1}]
+
+
 def test_assembled_config_is_instantiated(tmp_path: Path):
     (tmp_path / "limits.yaml").write_text(
         "$each: {$target: datetime.timedelta, seconds: 30}\n"

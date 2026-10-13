@@ -8,7 +8,14 @@ from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
 from ._core.error import OmegaKitBaseException
 from ._features.meta import META_KEY
 from ._features.symbol import SYMBOL_KEY, import_symbol
-from ._features.target import TARGET_KEY, import_target, read_arguments
+from ._features.target import (
+    ARGS_KEY,
+    TARGET_KEY,
+    TargetSyntaxError,
+    TargetTypeError,
+    import_target,
+    read_arguments,
+)
 from ._utils.describe import describe_error, describe_node
 from .schema import (
     SchemaDefinitionError,
@@ -58,6 +65,7 @@ class Call:
     is_partial: bool
     arguments: dict[Any, Any]
     result_annotation: Any = Any
+    positional_arguments: list[Any] | tuple[Any, ...] = ()
 
 
 # A mapping, list or tuple of the config, unlike a `dict` or `list` that is a value
@@ -203,9 +211,25 @@ def _check_call(
                 f"`{TARGET_KEY}: {name}` names a schema, and nothing is built from one."
             )
         schema = find_schema(target)
+        if target_arguments.has_args and (
+            schema is not None or hasattr(target, "from_config")
+        ):
+            raise TargetSyntaxError(
+                f"`{name}` takes its arguments by name, so it cannot take `{ARGS_KEY}`."
+            )
     except OmegaKitBaseException as error:
         error.add_note(f"  at {describe_node(node)}")
         raise
+    positional_arguments: list[Any] | tuple[Any, ...] = ()
+    if target_arguments.has_args:
+        checked_args = _check_value(node, ARGS_KEY, active_nodes, Any)
+        if not isinstance(checked_args, Items) or isinstance(checked_args.items, dict):
+            type_error = TargetTypeError(
+                f"`{ARGS_KEY}` must be a list, not `{node[ARGS_KEY]!r}`."
+            )
+            type_error.add_note(f"  at {describe_node(node)}")
+            raise type_error
+        positional_arguments = checked_args.items
     if schema is None:
         arguments = {
             key: _check_value(node, key, active_nodes, Any)
@@ -217,7 +241,15 @@ def _check_call(
         arguments = _check_schema(
             node, schema, target_arguments.keys, active_nodes, is_open
         )
-    return Call(node, name, target, schema, target_arguments.is_partial, arguments)
+    return Call(
+        node,
+        name,
+        target,
+        schema,
+        target_arguments.is_partial,
+        arguments,
+        positional_arguments=positional_arguments,
+    )
 
 
 def _check_schema(

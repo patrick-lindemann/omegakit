@@ -63,12 +63,15 @@ def _build(value: Any) -> Any:
         return type(value.items)(_build(item) for item in value.items)
     if not isinstance(value, Call):
         return value
+    positional_arguments = [_build(argument) for argument in value.positional_arguments]
     arguments = {key: _build(argument) for key, argument in value.arguments.items()}
     try:
         if not hasattr(value.target, "from_config"):
             if value.is_partial:
-                return functools.partial(value.target, **arguments)
-            instance = value.target(**arguments)
+                return functools.partial(
+                    value.target, *positional_arguments, **arguments
+                )
+            instance = value.target(*positional_arguments, **arguments)
         elif not value.is_partial:
             instance = value.target.from_config(arguments)
         elif value.schema is None or value.schema is value.target:

@@ -101,14 +101,21 @@ def test_partial_is_read_from_the_node():
             "c": {"$target": "builtins.dict", "$partial": "${defer}"},
         }
     )
-    assert read_arguments(config.a) == TargetArguments(True, ["n"])
-    assert read_arguments(config.b) == TargetArguments(False, [])
-    assert read_arguments(config.c) == TargetArguments(True, [])
+    assert read_arguments(config.a) == TargetArguments(True, ["n"], False)
+    assert read_arguments(config.b) == TargetArguments(False, [], False)
+    assert read_arguments(config.c) == TargetArguments(True, [], False)
 
 
 def test_arguments_can_be_read_without_a_target():
     config = OmegaConf.create({"$partial": True, "width": 3})
-    assert read_arguments(config) == TargetArguments(True, ["width"])
+    assert read_arguments(config) == TargetArguments(True, ["width"], False)
+
+
+def test_args_are_no_keyword_argument():
+    config = OmegaConf.create({"$target": "builtins.int", "$args": ["ff"], "base": 16})
+    arguments = read_arguments(config)
+    assert arguments.has_args
+    assert arguments.keys == ["base"]
 
 
 @pytest.mark.parametrize("value", ["true", 1, None, [True]])
