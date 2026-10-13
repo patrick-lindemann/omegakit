@@ -134,6 +134,10 @@ def _check_node(
         # A mapping behind `$symbol` is not part of the config, so its keys name nothing
         error.full_key = get_full_key(node)
         raise
+    # A module can raise anything while it is imported
+    except Exception as error:
+        error.add_note(f"  at {describe_node(node)}")
+        raise
     if section is None:
         items = {
             key: _check_value(node, key, active_nodes, item_annotation) for key in keys
@@ -199,6 +203,10 @@ def _check_call(
     except OmegaKitBaseException as error:
         if error.full_key is None:
             error.full_key = get_full_key(node)
+        raise
+    # A module can raise anything while it is imported
+    except Exception as error:
+        error.add_note(f"  at {describe_node(node)}")
         raise
     positional_arguments: list[Any] | tuple[Any, ...] = ()
     positional_keys: list[str] = []

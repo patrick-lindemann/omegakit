@@ -1,6 +1,7 @@
 import fractions
 import re
 from collections.abc import Callable
+from pathlib import Path
 from types import ModuleType
 from typing import Any, Protocol, TypedDict
 
@@ -555,3 +556,15 @@ def test_schema_that_cannot_be_read_names_the_node(targets: ModuleType):
     with pytest.raises(SchemaDefinitionError) as error_info:
         validate(config)
     error_info.match(re.escape("at `model`"))
+
+
+@pytest.mark.parametrize("key", ["$target", "$symbol"])
+def test_error_of_an_import_keeps_its_type_and_names_the_node(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, key: str
+):
+    (tmp_path / "failing_module.py").write_text("raise RuntimeError('no GPU')\n")
+    monkeypatch.syspath_prepend(tmp_path)
+    config = OmegaConf.create({"models": [{key: "failing_module.Model"}]})
+    with pytest.raises(RuntimeError, match="no GPU") as error_info:
+        validate(config)
+    error_info.match(re.escape("`models[0]`"))

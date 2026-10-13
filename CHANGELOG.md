@@ -184,6 +184,9 @@ All notable changes to this project are documented here. The format follows
 
 ### Fixed
 
+- An error that a module raises while `validate` imports it, such as a
+  `RuntimeError` or the `ModuleNotFoundError` of a missing dependency, gets a note
+  that names the node. It passed without a place.
 - A `$symbol` or `$target` may name a submodule that is not imported yet, such as
   `concurrent.futures`. It raised ``Module `concurrent` has no attribute
   `futures`.``
