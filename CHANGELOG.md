@@ -184,6 +184,9 @@ All notable changes to this project are documented here. The format follows
 
 ### Fixed
 
+- An `OSError` while a config file is read, such as an input/output error, passes
+  through. It was reported as `ConfigFileSyntaxError`, as if the content were
+  wrong.
 - An error that a module raises while `validate` imports it, such as a
   `RuntimeError` or the `ModuleNotFoundError` of a missing dependency, gets a note
   that names the node. It passed without a place.

@@ -19,6 +19,9 @@ def load_yaml(file_path: Path) -> DictConfig | ListConfig:
         return OmegaConf.load(file_path)
     except PermissionError as error:
         raise ConfigFilePermissionError(f"Cannot read `{file_path}`.") from error
+    # A failing disk or a file that vanished is no mistake in the content
+    except OSError:
+        raise
     # PyYAML and OmegaConf raise assorted builtin errors for invalid content
     except Exception as error:
         raise ConfigFileSyntaxError(
