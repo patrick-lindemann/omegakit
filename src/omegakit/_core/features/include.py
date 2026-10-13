@@ -10,13 +10,8 @@ from omegaconf.errors import (
 )
 
 from omegakit._core.errors import (
-    IncludeCycleError,
-    IncludeInterpolationError,
-    IncludeMissingValueError,
-    IncludeNodeNotFoundError,
+    ConfigIncludeError,
     IncludeRootError,
-    IncludeSyntaxError,
-    IncludeTypeError,
     OmegaKitBaseException,
 )
 from omegakit._core.utils.assignment import Assignment
@@ -65,7 +60,7 @@ def _resolve_includes(
         parent = node._get_parent()
         try:
             if not isinstance(parent, (DictConfig, ListConfig)):
-                raise IncludeTypeError("An item of a tuple cannot include.")
+                raise ConfigIncludeError("An item of a tuple cannot include.")
             included_value = _load_include(
                 node, config_path, include_root, active_paths, cache
             )
@@ -90,20 +85,20 @@ def _load_include(
         # Resolves interpolations in the statement, as in `~include ${dir}/a.yaml`
         statement = node._dereference_node()._value()
     except InterpolationResolutionError as error:
-        raise IncludeInterpolationError(
+        raise ConfigIncludeError(
             f"Cannot resolve the include: {describe_error(error)}"
         ) from error
     file_path, node_path = _parse_statement(statement)
     try:
         file_path = resolve_path(file_path, relative_to=current_path.parent)
     except (OSError, ValueError) as error:
-        raise IncludeSyntaxError(f"`{file_path}` is not a valid path.") from error
+        raise ConfigIncludeError(f"`{file_path}` is not a valid path.") from error
     if include_root is not None and not file_path.is_relative_to(include_root):
         raise IncludeRootError(
             f"`{file_path}` is outside the include root `{include_root}`."
         )
     if file_path in active_paths:
-        raise IncludeCycleError(f"`{file_path}` is already being loaded.")
+        raise ConfigIncludeError(f"`{file_path}` is already being loaded.")
     if file_path not in cache:
         loaded_config = load_yaml(file_path)
         _resolve_includes(
@@ -115,19 +110,17 @@ def _load_include(
             cache[file_path], node_path, default=_NOT_FOUND, throw_on_missing=True
         )
     except MissingMandatoryValue as error:
-        raise IncludeMissingValueError(
+        raise ConfigIncludeError(
             f"`{node_path}` in `{file_path}` holds `???`."
         ) from error
     except InterpolationResolutionError as error:
-        raise IncludeInterpolationError(
+        raise ConfigIncludeError(
             f"Cannot resolve `{node_path}` in `{file_path}`: {describe_error(error)}"
         ) from error
     except OmegaConfBaseException as error:
-        raise IncludeNodeNotFoundError(
-            f"`{file_path}` has no node `{node_path}`."
-        ) from error
+        raise ConfigIncludeError(f"`{file_path}` has no node `{node_path}`.") from error
     if selected_value is _NOT_FOUND:
-        raise IncludeNodeNotFoundError(f"`{file_path}` has no node `{node_path}`.")
+        raise ConfigIncludeError(f"`{file_path}` has no node `{node_path}`.")
     if isinstance(selected_value, str):
         # A resolved string must not be read as an interpolation again
         selected_value = selected_value.replace("${", "\\${")
@@ -140,7 +133,7 @@ def _parse_statement(statement: str) -> tuple[Path, str]:
     file_path = file_path.strip()
     node_path = node_path.strip()
     if not file_path:
-        raise IncludeSyntaxError("The include names no file.")
+        raise ConfigIncludeError("The include names no file.")
     if "#" in node_path:
-        raise IncludeSyntaxError("The include contains more than one `#`.")
+        raise ConfigIncludeError("The include contains more than one `#`.")
     return Path(file_path), node_path

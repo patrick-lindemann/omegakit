@@ -22,7 +22,7 @@ All notable changes to this project are documented here. The format follows
 - `make_node` takes positional arguments and writes them to `$args`, as in
   `make_node(torch.nn.Sequential, layer_a, layer_b)`.
 - `omegakit` exports every error class, such as `SchemaTypeError` and
-  `IncludeCycleError`, the `Config` type and `ARGS_KEY`, next to `load_config`,
+  `ConfigIncludeError`, the `Config` type and `ARGS_KEY`, next to `load_config`,
   `validate`, `instantiate`, `prepare`, `make_node`, `Configurable`, `walk` and the
   other key names.
 - A schema may contain itself, directly or through other schemas. It raised
@@ -49,7 +49,7 @@ All notable changes to this project are documented here. The format follows
   a file outside it raises the new `IncludeRootError`.
 - **Breaking:** `load_config` no longer takes `keep_targets`, and its arguments may
   be given by position. It raises the error of the step that failed, such as
-  `ConfigFileSyntaxError` or `IncludeCycleError`, instead of wrapping it in
+  `ConfigFileSyntaxError` or `ConfigIncludeError`, instead of wrapping it in
   `ConfigLoadError`, and `ConfigFileSyntaxError` for a file whose root is a list.
 - `ConfigLoadError` is the parent of every error that `load_config` raises, and
   `ConfigValidationError` of every error that `validate`, `instantiate` and

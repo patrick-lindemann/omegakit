@@ -54,31 +54,7 @@ class ConfigIncludeError(ConfigLoadError):
     pass
 
 
-class IncludeSyntaxError(ConfigIncludeError, ValueError):
-    pass
-
-
-class IncludeInterpolationError(ConfigIncludeError, InterpolationResolutionError):
-    pass
-
-
-class IncludeTypeError(ConfigIncludeError, TypeError):
-    pass
-
-
-class IncludeCycleError(ConfigIncludeError):
-    pass
-
-
-class IncludeNodeNotFoundError(ConfigIncludeError):
-    pass
-
-
 class IncludeRootError(ConfigIncludeError):
-    pass
-
-
-class IncludeMissingValueError(ConfigIncludeError, MissingMandatoryValue):
     pass
 
 

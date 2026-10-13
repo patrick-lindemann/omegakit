@@ -7,13 +7,8 @@ from omegaconf import OmegaConf
 from omegakit._core.errors import (
     ConfigFileNotFoundError,
     ConfigFileSyntaxError,
-    IncludeCycleError,
-    IncludeInterpolationError,
-    IncludeMissingValueError,
-    IncludeNodeNotFoundError,
+    ConfigIncludeError,
     IncludeRootError,
-    IncludeSyntaxError,
-    IncludeTypeError,
 )
 from omegakit._core.features.include import resolve_includes
 from omegakit._core.utils.file import load_yaml
@@ -141,7 +136,7 @@ def test_a_path_does_not_see_keys_of_another_include(tmp_path: Path, text: str):
     (tmp_path / "second.yaml").write_text("a: 1")
     path = tmp_path / "main.yaml"
     path.write_text(text)
-    with pytest.raises(IncludeInterpolationError):
+    with pytest.raises(ConfigIncludeError):
         _load(path)
 
 
@@ -270,7 +265,7 @@ def test_rejects_an_included_file_with_invalid_yaml(tmp_path: Path):
 def test_rejects_a_malformed_statement(tmp_path: Path, statement: str):
     path = tmp_path / "main.yaml"
     path.write_text(f'value: "{statement}"')
-    with pytest.raises(IncludeSyntaxError):
+    with pytest.raises(ConfigIncludeError):
         _load(path)
 
 
@@ -279,7 +274,7 @@ def test_rejects_a_node_that_does_not_exist(tmp_path: Path, node_path: str):
     (tmp_path / "other.yaml").write_text("model: {hidden: 32}\nseeds: [3, 7]")
     path = tmp_path / "main.yaml"
     path.write_text(f'value: "~include other.yaml#{node_path}"')
-    with pytest.raises(IncludeNodeNotFoundError, match=r"other\.yaml"):
+    with pytest.raises(ConfigIncludeError, match=r"other\.yaml"):
         _load(path)
 
 
@@ -287,7 +282,7 @@ def test_rejects_a_node_that_holds_a_missing_value(tmp_path: Path):
     (tmp_path / "other.yaml").write_text("data: ???")
     path = tmp_path / "main.yaml"
     path.write_text('data: "~include other.yaml#data"')
-    with pytest.raises(IncludeMissingValueError, match=r"other\.yaml"):
+    with pytest.raises(ConfigIncludeError, match=r"other\.yaml"):
         _load(path)
 
 
@@ -309,14 +304,14 @@ def test_rejects_an_interpolation_that_does_not_resolve(tmp_path: Path, text: st
     (tmp_path / "other.yaml").write_text("broken: ${nope}")
     path = tmp_path / "main.yaml"
     path.write_text(text)
-    with pytest.raises(IncludeInterpolationError):
+    with pytest.raises(ConfigIncludeError):
         _load(path)
 
 
 def test_rejects_a_file_that_includes_itself(tmp_path: Path):
     path = tmp_path / "main.yaml"
     path.write_text('a: "~include main.yaml#b"\nb: 1')
-    with pytest.raises(IncludeCycleError, match=r"main\.yaml"):
+    with pytest.raises(ConfigIncludeError, match=r"main\.yaml"):
         _load(path)
 
 
@@ -325,7 +320,7 @@ def test_rejects_a_cycle_between_files(tmp_path: Path):
     (tmp_path / "b.yaml").write_text("a: ~include a.yaml")
     path = tmp_path / "main.yaml"
     path.write_text("a: ~include a.yaml")
-    with pytest.raises(IncludeCycleError, match=r"a\.yaml"):
+    with pytest.raises(ConfigIncludeError, match=r"a\.yaml"):
         _load(path)
 
 
@@ -336,7 +331,7 @@ def test_finds_a_cycle_through_another_spelling_of_a_path(tmp_path: Path):
     )
     path = tmp_path / "main.yaml"
     path.write_text("model: ~include configs/model.yaml")
-    with pytest.raises(IncludeCycleError):
+    with pytest.raises(ConfigIncludeError):
         _load(path)
 
 
@@ -346,7 +341,7 @@ def test_finds_a_cycle_for_a_relative_config_path(
     (tmp_path / "main.yaml").write_text('a: "~include main.yaml#b"\nb: 1')
     monkeypatch.chdir(tmp_path)
     config = load_yaml(Path("main.yaml"))
-    with pytest.raises(IncludeCycleError):
+    with pytest.raises(ConfigIncludeError):
         resolve_includes(config, "main.yaml")
 
 
@@ -365,7 +360,7 @@ def test_rejects_a_file_outside_the_include_root(tmp_path: Path):
 
 def test_rejects_an_include_in_a_tuple():
     config = OmegaConf.create({"items": ("~include model.yaml",)})
-    with pytest.raises(IncludeTypeError):
+    with pytest.raises(ConfigIncludeError):
         resolve_includes(config, "main.yaml")
 
 

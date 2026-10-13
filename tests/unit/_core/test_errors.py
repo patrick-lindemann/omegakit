@@ -27,7 +27,6 @@ from omegakit._core.errors import (
         ConfigFileNotFoundError,
         ConfigFilePermissionError,
         ConfigFileSyntaxError,
-        ConfigFileSyntaxError,
         ConfigIncludeError,
         ConfigMergeError,
         ConfigOverrideError,
