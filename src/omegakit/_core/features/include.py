@@ -129,7 +129,7 @@ def _load_include(
         raise ConfigIncludeError(f"`{file_path}` has no node `{node_path}`.")
     if isinstance(selected_value, str):
         # A resolved string must not be read as an interpolation again
-        selected_value = selected_value.replace("${", "\\${")
+        selected_value = re.sub(r"(\\*)\$\{", r"\1\1\\${", selected_value)
     return selected_value
 
 

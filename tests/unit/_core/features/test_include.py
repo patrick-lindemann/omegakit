@@ -168,6 +168,13 @@ def test_an_escaped_interpolation_stays_text(tmp_path: Path, statement: str, key
     assert OmegaConf.select(_load(path), key) == "${not_a_key}"
 
 
+def test_a_backslash_before_an_escaped_interpolation_stays_text(tmp_path: Path):
+    (tmp_path / "other.yaml").write_text(r"text: '\\\${x}'")
+    path = tmp_path / "main.yaml"
+    path.write_text("x: 99\nvalue: ~include other.yaml#text")
+    assert _load(path).value == r"\${x}"
+
+
 def test_two_includes_of_a_file_are_independent(tmp_path: Path):
     (tmp_path / "model.yaml").write_text("hidden: 32")
     path = tmp_path / "main.yaml"

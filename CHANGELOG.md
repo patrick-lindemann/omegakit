@@ -184,6 +184,8 @@ All notable changes to this project are documented here. The format follows
 
 ### Fixed
 
+- An included text that ends up as a backslash before `${`, such as `\\${x}`, stays
+  that text. The including config resolved it as an interpolation again.
 - `omegakit check` and `omegakit show` print failures to stderr. They went to
   stdout, so `omegakit show app.yaml > out.yaml` wrote the error into the file.
 - A schema field annotated with a bare `tuple` holds a `tuple`, as the Dataclass
