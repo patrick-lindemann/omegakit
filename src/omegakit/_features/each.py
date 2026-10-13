@@ -4,30 +4,28 @@ from omegakit._core.error import OmegaKitBaseException
 from omegakit._core.merge import copy_with_root, merge_under, walk_mergeable
 from omegakit._utils.describe import describe_node
 
-DEFAULTS_KEY = "$defaults"
+EACH_KEY = "$each"
 
 
-class ConfigDefaultsError(OmegaKitBaseException):
+class ConfigEachError(OmegaKitBaseException):
     pass
 
 
-class DefaultsTypeError(ConfigDefaultsError, TypeError):
+class EachTypeError(ConfigEachError, TypeError):
     pass
 
 
-def apply_defaults[ConfigT: DictConfig | ListConfig | TupleConfig](
+def apply_each[ConfigT: DictConfig | ListConfig | TupleConfig](
     config: ConfigT, copy: bool = True
 ) -> ConfigT:
     if copy:
         config = copy_with_root(config)
-    for node, defaults in walk_mergeable(config, DEFAULTS_KEY):
-        if not isinstance(defaults, DictConfig):
-            error = DefaultsTypeError(
-                f"`{DEFAULTS_KEY}` must be a mapping, not `{defaults!r}`."
-            )
+    for node, each in walk_mergeable(config, EACH_KEY):
+        if not isinstance(each, DictConfig):
+            error = EachTypeError(f"`{EACH_KEY}` must be a mapping, not `{each!r}`.")
             error.add_note(f"  at {describe_node(node)}")
             raise error
-        del node[DEFAULTS_KEY]
+        del node[EACH_KEY]
         for key in list(node.keys()):
             child = node._get_node(key)
             # Only a child that holds a mapping, not `null`, `???` or `${...}`
@@ -36,5 +34,5 @@ def apply_defaults[ConfigT: DictConfig | ListConfig | TupleConfig](
                 and isinstance(child._value(), dict)
                 and not str(key).startswith("$")
             ):
-                merge_under(child, defaults)
+                merge_under(child, each)
     return config

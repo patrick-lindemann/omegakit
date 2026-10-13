@@ -5,7 +5,7 @@ from omegaconf import DictConfig
 
 from omegakit._core.file import load_yaml
 from omegakit._features.base import merge_bases
-from omegakit._features.defaults import apply_defaults
+from omegakit._features.each import apply_each
 from omegakit._features.include import resolve_includes
 from omegakit._features.meta import remove_meta
 from omegakit._features.overrides import apply_overrides
@@ -37,11 +37,11 @@ def test_overrides_win_over_included_values(tmp_path: Path):
     }
 
 
-def test_included_base_and_defaults_are_assembled_before_overrides(tmp_path: Path):
+def test_included_base_and_each_are_assembled_before_overrides(tmp_path: Path):
     (tmp_path / "base.yaml").write_text(
         "epochs: 200\n"
         "data:\n"
-        "  $defaults: {n: 256, noise: 0.1}\n"
+        "  $each: {n: 256, noise: 0.1}\n"
         "  train: {seed: 0}\n"
         "  test: {$base: '${..train}', seed: 1234}\n"
     )
@@ -53,7 +53,7 @@ def test_included_base_and_defaults_are_assembled_before_overrides(tmp_path: Pat
     assert isinstance(config, DictConfig)
     config = resolve_includes(config, experiment_path)
     config = merge_bases(config)
-    config = apply_defaults(config)
+    config = apply_each(config)
     config = apply_overrides(config, ["data.train.seed=7", "epochs=1"])
     assert config == {
         "epochs": 1,
@@ -67,7 +67,7 @@ def test_included_base_and_defaults_are_assembled_before_overrides(tmp_path: Pat
 
 def test_assembled_config_is_instantiated(tmp_path: Path):
     (tmp_path / "limits.yaml").write_text(
-        "$defaults: {$class: datetime.timedelta, seconds: 30}\n"
+        "$each: {$class: datetime.timedelta, seconds: 30}\n"
         "short: {}\n"
         "long: {hours: '${hours}'}\n"
     )
@@ -83,7 +83,7 @@ def test_assembled_config_is_instantiated(tmp_path: Path):
     assert isinstance(config, DictConfig)
     config = resolve_includes(config, experiment_path)
     config = merge_bases(config)
-    config = apply_defaults(config)
+    config = apply_each(config)
     config = apply_overrides(config, ["hours=2"])
     experiment = instantiate(config)
     assert experiment == {

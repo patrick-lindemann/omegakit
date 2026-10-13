@@ -24,6 +24,9 @@ All notable changes to this project are documented here. The format follows
 - **Breaking:** `$ref` is now `$symbol`, and `REF_KEY` is `SYMBOL_KEY`. Replace
   `$ref: math.sqrt` with `$symbol: math.sqrt`. The old spelling has no alias: a
   `$ref` key is rejected as a reserved key.
+- **Breaking:** `$defaults` is now `$each`, and `DEFAULTS_KEY` is `EACH_KEY`.
+  Replace `$defaults: {n: 256}` with `$each: {n: 256}`. The old spelling has no
+  alias: a `$defaults` key is rejected as a reserved key.
 - **Breaking:** `~include file#node` and `omegakit show --node` select the node with
   `OmegaConf.select`. The path also takes `a[0]`, and it follows interpolations
   instead of rejecting a path through one. A node that holds `???` counts as
@@ -53,12 +56,12 @@ All notable changes to this project are documented here. The format follows
   every `${secret:NAME}` with `${secret:${oc.env:NAME}}`: the old form now gives the
   text `NAME` itself.
 - **Breaking:** Error messages name a node by its dotted path, such as
-  `items.0.model`, everywhere. Errors about `$base` and `$defaults` named a list
+  `items.0.model`, everywhere. Errors about `$base` and `$each` named a list
   item as `items0.model`, and errors from resolving, from overrides and from
   values inside a field as `items[0].model`.
 - **Breaking:** Error messages share one style: keys and names in backticks,
   "mapping" rather than "dictionary", and "Cannot …". This changes the messages for
-  a `$symbol` node with other keys, a `$base` or `$defaults` that is
+  a `$symbol` node with other keys, a `$base` or `$each` that is
   not a mapping, a missing attribute (``Module `m` has no attribute `x`.``), an
   include cycle, a `$partial` that is not a boolean, an `overrides` argument of the
   wrong type, and a missing PyTorch.
@@ -94,7 +97,7 @@ All notable changes to this project are documented here. The format follows
 - A schema annotation that fails to evaluate, such as `"int | 1"`, raises
   `SchemaDefinitionError`, as the Dataclass schemas page says, instead of the
   `TypeError` or `SyntaxError` from evaluating it.
-- The error for `$base` or `$defaults` references that form a cycle names only the
+- The error for `$base` or `$each` references that form a cycle names only the
   nodes on the cycle, not the nodes that wait for it or contain it.
 - `validate`, `instantiate` and `prepare` ignore `$meta` in the mapping of a data
   field, such as a nested dataclass or a `dict[str, int]`, as the Metadata page
