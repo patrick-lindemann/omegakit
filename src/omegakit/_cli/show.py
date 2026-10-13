@@ -4,10 +4,10 @@ from typing import Any, NoReturn, override
 
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
-from omegakit.core.load import load_config
-from omegakit.core.resolve import resolve_item
+from omegakit._core.resolve import resolve_item
+from omegakit.load import load_config
 
-from ._arg import Arguments
+from ._args import Arguments
 from ._routine import Routine
 
 _NOT_FOUND = object()

@@ -1,21 +1,8 @@
-from typing import Any
-
 from omegaconf import OmegaConf
 
 
-def register_secret_resolver(*, replace: bool = False) -> None:
-    """Register `${secret:...}`, which gives the value that it wraps unchanged.
-
-    Args:
-        replace: Replace a resolver named `secret`. Defaults to `False`.
-
-    Raises:
-        ValueError: If a resolver named `secret` exists and `replace` is `False`.
-    """  # noqa: DOC502
+def register_secret_resolver(*, replace: bool = False, use_cache: bool = True) -> None:
+    """__summary__"""
     OmegaConf.register_resolver(
-        "secret", _resolve_secret, replace=replace, use_cache=True
+        "secret", lambda value: value, replace=replace, use_cache=use_cache
     )
-
-
-def _resolve_secret(value: Any) -> Any:
-    return value

@@ -1,0 +1,2 @@
+class OmegaKitBaseException(Exception):
+    pass

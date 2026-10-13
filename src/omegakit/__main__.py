@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any
 
 from . import __version__
-from .cli import ROUTINES, Arguments, Routine
+from ._cli import ROUTINES, Arguments, Routine
 from .resolvers.secrets import register_secret_resolver
 
 
