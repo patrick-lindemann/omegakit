@@ -4,7 +4,6 @@ from typing import Any, NoReturn, override
 
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
-from omegakit._core.resolve import resolve_item
 from omegakit.load import load_config
 
 from ._args import Arguments
@@ -22,7 +21,7 @@ class ShowArguments(Arguments):
     resolve: bool
     keep_meta: bool
     show_secrets: bool
-    import_root: Path | None
+    include_root: Path | None
 
 
 class ShowRoutine(Routine[ShowArguments]):
@@ -30,7 +29,7 @@ class ShowRoutine(Routine[ShowArguments]):
 
     name = "show"
     help = "print a config as assembled by load_config"
-    description = "Print a config after imports, bases, defaults and overrides."
+    description = "Print a config after includes, bases, $each and overrides."
 
     @override
     def add_arguments(self, parser: ArgumentParser) -> None:
@@ -55,8 +54,7 @@ class ShowRoutine(Routine[ShowArguments]):
         parser.add_argument(
             "--resolve",
             action="store_true",
-            help="resolve interpolations (only in the selected node, with --node); "
-            "missing values print as ???",
+            help="resolve interpolations (only in the selected node, with --node)",
         )
         parser.add_argument(
             "--keep-meta", action="store_true", help="keep $meta keys in the output"
@@ -67,10 +65,10 @@ class ShowRoutine(Routine[ShowArguments]):
             help="print the values of ${secret:...} instead of ***",
         )
         parser.add_argument(
-            "--import-root",
+            "--include-root",
             type=Path,
             metavar="DIR",
-            help="reject any ~import of a file outside DIR",
+            help="reject any ~include of a file outside DIR",
         )
 
     @override
@@ -81,20 +79,20 @@ class ShowRoutine(Routine[ShowArguments]):
             args: The parsed `show` arguments.
 
         Raises:
-            ArgumentError: If `--import-root` is not a directory.
+            ArgumentError: If `--include-root` is not a directory.
             SystemExit: With status 1 if the config cannot be loaded or resolved, or
                 the node does not exist.
         """
-        if args.import_root is not None and not args.import_root.is_dir():
+        if args.include_root is not None and not args.include_root.is_dir():
             raise ArgumentError(
-                None, f"--import-root {args.import_root} is not a directory"
+                None, f"--include-root {args.include_root} is not a directory"
             )
         try:
             config = load_config(
                 args.config,
                 overrides=args.overrides,
                 keep_meta=args.keep_meta,
-                import_root=args.import_root,
+                include_root=args.include_root,
             )
         except Exception as error:
             _fail(args.config, error)
@@ -111,44 +109,19 @@ class ShowRoutine(Routine[ShowArguments]):
             if node is _NOT_FOUND:
                 print(f"{args.config}: no node `{args.node}`")
                 raise SystemExit(1)
-            value = (
-                _to_plain(node, args.resolve)
-                if isinstance(node, (DictConfig, ListConfig))
-                else node
-            )
+            if isinstance(node, (DictConfig, ListConfig)):
+                text = OmegaConf.to_yaml(node, resolve=args.resolve)
+            else:
+                text = "null\n" if node is None else f"{node}\n"
         except Exception as error:
             _fail(args.config, error)
-        if isinstance(value, (DictConfig, ListConfig, dict, list)):
-            print(OmegaConf.to_yaml(value), end="")
-        else:
-            print("null" if value is None else value)
+        print(text, end="")
 
 
 def _fail(path: Path, error: Exception) -> NoReturn:
     message = str(error).splitlines()[0] if str(error) else ""
     print(f"{path}: {type(error).__name__}: {message}")
     raise SystemExit(1) from error
-
-
-def _to_plain(node: Any, resolve: bool) -> Any:
-    if isinstance(node, (DictConfig, ListConfig)) and not (
-        node._is_missing() or node._is_interpolation()
-    ):
-        if isinstance(node, ListConfig):
-            return list(_to_plain_items(node, resolve).values())
-        return _to_plain_items(node, resolve)
-    if not resolve:
-        return node._value()
-    return resolve_item(node._get_parent_container(), node._key())
-
-
-def _to_plain_items(
-    container: DictConfig | ListConfig, resolve: bool
-) -> dict[Any, Any]:
-    keys: Any = (
-        range(len(container)) if isinstance(container, ListConfig) else container
-    )
-    return {key: _to_plain(container._get_node(key), resolve) for key in keys}
 
 
 def _mask_secret(_: Any) -> str:
