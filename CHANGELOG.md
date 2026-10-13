@@ -86,7 +86,7 @@ All notable changes to this project are documented here. The format follows
   included file, and `show` prints it resolved, with `${secret:...}` as `***`.
 - **Breaking:** Config files load as `OmegaConf.load` gives them. A file that holds
   a single string, such as `hello`, is the mapping `{hello: null}` instead of an
-  error; a single number or boolean still raises `ConfigLoadError`, now with
+  error; a single number or boolean raises `ConfigFileSyntaxError`, with
   OmegaConf's message.
 - **Breaking:** OmegaConf checks and converts the data fields of a schema, and its
   rules replace omegakit's own. A data field accepts what OmegaConf accepts: a
@@ -151,10 +151,9 @@ All notable changes to this project are documented here. The format follows
   as `${secret:${oc.env:TOKEN}}`, so a secret can come from any resolver. Replace
   every `${secret:NAME}` with `${secret:${oc.env:NAME}}`: the old form now gives the
   text `NAME` itself.
-- **Breaking:** Error messages name a node by its dotted path, such as
-  `items.0.model`, everywhere. Errors about `$base` and `$each` named a list
-  item as `items0.model`, and errors from resolving, from overrides and from
-  values inside a field as `items[0].model`.
+- **Breaking:** Error messages name a node by its full key, such as
+  `items[0].model`, everywhere. Errors about `$base` and `$each` named a list
+  item as `items0.model`.
 - **Breaking:** Error messages share one style: keys and names in backticks,
   "mapping" rather than "dictionary", and "Cannot …". This changes the messages for
   a `$symbol` node with other keys, a `$base` or `$each` that is
