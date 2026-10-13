@@ -21,6 +21,7 @@ def walk_mergeable(
             for node in walk(config, "post-order")
             if isinstance(node, DictConfig) and key in node.keys()  # noqa: SIM118
         ]
+        # The consumer deletes `key` from every node it is given, or this never ends
         if not holders:
             return
         holder_ids = {id(holder) for holder in holders}
