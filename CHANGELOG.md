@@ -184,6 +184,8 @@ All notable changes to this project are documented here. The format follows
 
 ### Fixed
 
+- `register_torch_device_resolver` no longer warns that the resolver cannot be
+  inspected.
 - An override that is no `key=value` raises `ConfigOverrideError`. `seed` used to
   set `seed` to `None`, `=5` created the key `''`, and `layers[0]=1` replaced the
   list `layers` with a mapping.

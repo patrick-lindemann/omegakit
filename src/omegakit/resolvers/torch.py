@@ -34,7 +34,7 @@ def register_torch_device_resolver(
 ) -> None:
     """__summary__"""
     OmegaConf.register_resolver(
-        "torch.device", torch.device, replace=replace, use_cache=use_cache
+        "torch.device", _resolve_device, replace=replace, use_cache=use_cache
     )
 
 
@@ -45,6 +45,11 @@ def register_torch_dtype_resolver(
     OmegaConf.register_resolver(
         "torch.dtype", _resolve_dtype, replace=replace, use_cache=use_cache
     )
+
+
+# OmegaConf cannot read the signature of `torch.device` itself
+def _resolve_device(name: str) -> Any:
+    return torch.device(name)
 
 
 def _resolve_dtype(name: str) -> Any:
