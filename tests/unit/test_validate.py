@@ -8,7 +8,7 @@ from omegaconf import DictConfig, OmegaConf
 from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
 
 from omegakit._core.error import OmegaKitBaseException
-from omegakit._core.path import PathNotFoundError
+from omegakit._core.locate import PathNotFoundError
 from omegakit._features.symbol import SymbolSyntaxError
 from omegakit._features.target import (
     TargetMissingValueError,

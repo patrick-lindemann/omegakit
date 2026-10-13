@@ -6,7 +6,7 @@ from omegaconf import OmegaConf
 from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
 
 from omegakit._core.error import OmegaKitBaseException
-from omegakit._core.path import PathNotFoundError, PathSyntaxError
+from omegakit._core.locate import PathNotFoundError, PathSyntaxError
 from omegakit._features.symbol import (
     ConfigSymbolError,
     SymbolInterpolationError,

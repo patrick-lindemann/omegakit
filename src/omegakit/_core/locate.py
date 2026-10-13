@@ -14,7 +14,7 @@ class PathNotFoundError(OmegaKitBaseException, ImportError):
     pass
 
 
-def import_path(path: str) -> Any:
+def locate(path: str) -> Any:
     module_path, _, attr_name = path.rpartition(".")
     if not all(path.split(".")) or not module_path:
         raise PathSyntaxError(

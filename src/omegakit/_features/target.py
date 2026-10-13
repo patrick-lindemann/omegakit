@@ -6,7 +6,7 @@ from omegaconf import DictConfig, OmegaConf
 from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
 
 from omegakit._core.error import OmegaKitBaseException
-from omegakit._core.path import import_path
+from omegakit._core.locate import locate
 from omegakit._utils.describe import describe_error
 
 from .meta import META_KEY
@@ -53,7 +53,7 @@ def import_target(node: DictConfig) -> Any:
             f"`{TARGET_KEY}` must be an import path, such as `package.module.Name`, "
             f"not `{path!r}`."
         )
-    target = import_path(path)
+    target = locate(path)
     if not (callable(target) or hasattr(target, "from_config")):
         raise TargetTypeError(
             f"`{path}` is neither callable nor has `from_config`. Use "

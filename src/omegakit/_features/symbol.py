@@ -4,7 +4,7 @@ from omegaconf import DictConfig, OmegaConf
 from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
 
 from omegakit._core.error import OmegaKitBaseException
-from omegakit._core.path import import_path
+from omegakit._core.locate import locate
 from omegakit._utils.describe import describe_error
 
 from .meta import META_KEY
@@ -55,4 +55,4 @@ def import_symbol(node: DictConfig) -> Any:
             f"`{SYMBOL_KEY}` must be an import path, such as `package.module.Name`, "
             f"not `{path!r}`."
         )
-    return import_path(path)
+    return locate(path)

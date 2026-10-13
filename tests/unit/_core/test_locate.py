@@ -6,22 +6,22 @@ from pathlib import Path
 import pytest
 
 from omegakit._core.error import OmegaKitBaseException
-from omegakit._core.path import (
+from omegakit._core.locate import (
     PathNotFoundError,
     PathSyntaxError,
-    import_path,
+    locate,
 )
 
 
 def test_imports_an_attribute_of_a_module():
-    assert import_path("math.sqrt") is math.sqrt
-    assert import_path("os.path.join") is os.path.join
+    assert locate("math.sqrt") is math.sqrt
+    assert locate("os.path.join") is os.path.join
 
 
 @pytest.mark.parametrize("path", ["", "sqrt", ".sqrt", "math.", "math..sqrt"])
 def test_malformed_path_is_rejected(path: str):
     with pytest.raises(PathSyntaxError):
-        import_path(path)
+        locate(path)
 
 
 @pytest.mark.parametrize(
@@ -35,7 +35,7 @@ def test_malformed_path_is_rejected(path: str):
 )
 def test_unknown_target_is_not_found(path: str):
     with pytest.raises(PathNotFoundError):
-        import_path(path)
+        locate(path)
 
 
 def test_missing_dependency_of_the_module_passes_through(
@@ -45,7 +45,7 @@ def test_missing_dependency_of_the_module_passes_through(
     monkeypatch.syspath_prepend(tmp_path)
     monkeypatch.delitem(sys.modules, "needs_dependency", raising=False)
     with pytest.raises(ModuleNotFoundError) as error_info:
-        import_path("needs_dependency.Name")
+        locate("needs_dependency.Name")
     assert not isinstance(error_info.value, OmegaKitBaseException)
 
 

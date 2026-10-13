@@ -7,7 +7,7 @@ from typing import Any
 import pytest
 from omegaconf import OmegaConf
 
-from omegakit._core.path import PathNotFoundError
+from omegakit._core.locate import PathNotFoundError
 from omegakit._features.target import TargetSyntaxError, make_node
 from omegakit.instantiate import instantiate, prepare
 from omegakit.schema import (
