@@ -139,7 +139,7 @@ def test_error_of_a_target_or_symbol_names_its_node(
     config = OmegaConf.create({"models": [{"$target": "config_targets.Item"}, node]})
     with pytest.raises(error_type) as error_info:
         validate(config)
-    error_info.match(re.escape("at `models[1]`"))
+    error_info.match(re.escape("at `models[1]"))
     assert targets.CALLS == []
 
 

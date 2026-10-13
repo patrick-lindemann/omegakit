@@ -4,7 +4,6 @@ import types
 from typing import Any, get_args, get_origin, is_typeddict
 
 from omegaconf import DictConfig, ListConfig, OmegaConf, TupleConfig
-from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
 
 from .config import Config, cast_config
 from .errors import (
@@ -13,7 +12,6 @@ from .errors import (
     ConfigValidationError,
     OmegaKitBaseException,
     SchemaDefinitionError,
-    ValidationInterpolationError,
     ValidationMissingValueError,
 )
 from .features.meta import META_KEY
@@ -32,7 +30,8 @@ from .schema import (
     read_positions,
     split_union,
 )
-from .utils.describe import describe_error, describe_node, get_full_key
+from .utils.describe import describe_node, get_full_key
+from .utils.read import read_value
 
 
 @dataclasses.dataclass(frozen=True)
@@ -204,7 +203,7 @@ def _check_call(
     positional_arguments: list[Any] | tuple[Any, ...] = ()
     positional_keys: list[str] = []
     if target_arguments.has_args:
-        args = _read_value(node, ARGS_KEY)
+        args = read_value(node, ARGS_KEY)
         args_annotation: Any = Any
         try:
             if not isinstance(args, (ListConfig, TupleConfig)):
@@ -314,7 +313,7 @@ def _check_value(
     active_nodes: list[Config],
     annotation: Any,
 ) -> Any:
-    value = _read_value(parent, key)
+    value = read_value(parent, key)
     if isinstance(value, (DictConfig, ListConfig, TupleConfig)):
         value = _check_node(value, active_nodes, annotation)
     try:
@@ -324,22 +323,6 @@ def _check_value(
             error.full_key = parent._get_full_key(key)
         raise
     return typed_value
-
-
-def _read_value(parent: Config, key: Any) -> Any:
-    try:
-        return parent[key]
-    except MissingMandatoryValue:
-        # The error of OmegaConf says the same and would only lengthen the traceback
-        raise ValidationMissingValueError(
-            "The value is `???`. Set it in the config or with an override.",
-            parent._get_full_key(key),
-        ) from None
-    except InterpolationResolutionError as error:
-        raise ValidationInterpolationError(
-            f"Cannot resolve the value: {describe_error(error)}",
-            parent._get_full_key(key),
-        ) from error
 
 
 def _unwrap_data(value: Any) -> Any:

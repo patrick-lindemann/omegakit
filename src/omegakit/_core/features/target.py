@@ -2,16 +2,13 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
-from omegaconf import DictConfig, OmegaConf
-from omegaconf.errors import InterpolationResolutionError
+from omegaconf import DictConfig
 
 from omegakit._core.errors import (
     ConfigTargetError,
-    ValidationInterpolationError,
-    ValidationMissingValueError,
 )
-from omegakit._core.utils.describe import describe_error
 from omegakit._core.utils.locate import locate
+from omegakit._core.utils.read import read_value
 
 from .meta import META_KEY
 from .symbol import SYMBOL_KEY
@@ -31,7 +28,7 @@ class TargetArguments:
 def import_target(node: DictConfig) -> Any:
     if TARGET_KEY not in node.keys():  # noqa: SIM118
         raise ConfigTargetError(f"The node has no `{TARGET_KEY}`.")
-    qualified_name = _read_key(node, TARGET_KEY)
+    qualified_name = read_value(node, TARGET_KEY)
     if not isinstance(qualified_name, str):
         raise ConfigTargetError(
             f"`{TARGET_KEY}` must be an import path, such as `package.module.Name`, "
@@ -61,7 +58,7 @@ def read_arguments(node: DictConfig) -> TargetArguments:
         )
     is_partial = False
     if PARTIAL_KEY in node_keys:
-        is_partial = _read_key(node, PARTIAL_KEY)
+        is_partial = read_value(node, PARTIAL_KEY)
         if not isinstance(is_partial, bool):
             raise ConfigTargetError(
                 f"`{PARTIAL_KEY}` must be `true` or `false`, not `{is_partial!r}`."
@@ -82,15 +79,3 @@ def make_node(
     if args:
         node[ARGS_KEY] = list(args)
     return node
-
-
-def _read_key(node: DictConfig, key: str) -> Any:
-    if OmegaConf.is_missing(node, key):
-        raise ValidationMissingValueError(f"`{key}` holds `???`.")
-    try:
-        # Resolves an interpolation, as in `$target: ${model}`
-        return node[key]
-    except InterpolationResolutionError as error:
-        raise ValidationInterpolationError(
-            f"Cannot resolve `{key}`: {describe_error(error)}"
-        ) from error

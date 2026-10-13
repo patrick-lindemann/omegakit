@@ -160,6 +160,8 @@ All notable changes to this project are documented here. The format follows
   not a mapping, a missing attribute (``Module `m` has no attribute `x`.``), an
   include cycle, a `$partial` that is not a boolean, an `overrides` argument of the
   wrong type, and a missing PyTorch.
+- A `???` or a failing interpolation in `$target`, `$partial` or `$symbol` is
+  located at that key, as in ``(at `model.$target`)``.
 - Error messages say more about the fix: a `???` says to set the value in the
   config or with an override, an unknown key lists the fields of its schema, a
   module that is not found asks to check its spelling and `sys.path`, an include

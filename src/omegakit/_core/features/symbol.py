@@ -1,15 +1,12 @@
 from typing import Any
 
-from omegaconf import DictConfig, OmegaConf
-from omegaconf.errors import InterpolationResolutionError
+from omegaconf import DictConfig
 
 from omegakit._core.errors import (
     ConfigSymbolError,
-    ValidationInterpolationError,
-    ValidationMissingValueError,
 )
-from omegakit._core.utils.describe import describe_error
 from omegakit._core.utils.locate import locate
+from omegakit._core.utils.read import read_value
 
 from .meta import META_KEY
 
@@ -25,15 +22,7 @@ def import_symbol(node: DictConfig) -> Any:
             f"A `{SYMBOL_KEY}` cannot stand next to other keys, but there is "
             f"{', '.join(f'`{key}`' for key in other_keys)}."
         )
-    if OmegaConf.is_missing(node, SYMBOL_KEY):
-        raise ValidationMissingValueError(f"`{SYMBOL_KEY}` holds `???`.")
-    try:
-        # Resolves an interpolation, as in `$symbol: ${loss}`
-        qualified_name = node[SYMBOL_KEY]
-    except InterpolationResolutionError as error:
-        raise ValidationInterpolationError(
-            f"Cannot resolve `{SYMBOL_KEY}`: {describe_error(error)}"
-        ) from error
+    qualified_name = read_value(node, SYMBOL_KEY)
     if not isinstance(qualified_name, str):
         raise ConfigSymbolError(
             f"`{SYMBOL_KEY}` must be an import path, such as `package.module.Name`, "
