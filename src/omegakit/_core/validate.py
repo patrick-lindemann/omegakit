@@ -7,14 +7,11 @@ from omegaconf import DictConfig, ListConfig, OmegaConf, TupleConfig
 from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
 
 from .errors import (
+    ConfigSchemaError,
     ConfigTargetError,
     ConfigValidationError,
     OmegaKitBaseException,
     SchemaDefinitionError,
-    SchemaKeyError,
-    SchemaMissingValueError,
-    SchemaTypeError,
-    SchemaValueError,
     ValidationInterpolationError,
     ValidationMissingValueError,
 )
@@ -75,7 +72,7 @@ def check(
     checked_config = _check_node(config, [], annotation, is_deferred)
     try:
         typed_config = _check_type(checked_config, annotation)
-    except SchemaTypeError as error:
+    except ConfigSchemaError as error:
         error.add_note(f"  at {describe_node(config)}")
         raise
     return typed_config
@@ -128,7 +125,7 @@ def _check_node(
             if key_annotation is not Any and not isinstance(key, key_annotation)
         ]
         if wrong_keys:
-            raise SchemaKeyError(
+            raise ConfigSchemaError(
                 f"{', '.join(f'`{key!r}`' for key in wrong_keys)} is not a "
                 f"`{key_annotation.__name__}`, as the keys of `{annotation}` are."
             )
@@ -156,7 +153,7 @@ def _check_items(
     if item_annotations is None:
         item_annotations = [item_annotation] * len(node)
     if len(item_annotations) != len(node):
-        length_error = SchemaValueError(
+        length_error = ConfigSchemaError(
             f"Expected {len(item_annotations)} items, but the config gives {len(node)}."
         )
         length_error.add_note(f"  at {describe_node(node)}")
@@ -188,7 +185,7 @@ def _check_call(
         target = import_target(node)
         name = node[TARGET_KEY]
         if is_typeddict(target):
-            raise SchemaTypeError(
+            raise ConfigSchemaError(
                 f"`{TARGET_KEY}: {name}` names a schema, and nothing is built from one."
             )
         schema = find_schema(target)
@@ -212,7 +209,7 @@ def _check_call(
                 fields = read_fields(schema)
                 positions = read_positions(schema)
                 if len(args) > len(positions):
-                    raise SchemaValueError(
+                    raise ConfigSchemaError(
                         f"`{schema.__qualname__}` takes {len(positions)} positional "
                         f"arguments, but `{ARGS_KEY}` gives {len(args)}."
                     )
@@ -262,13 +259,13 @@ def _check_schema(
         fields = read_fields(schema)
         unknown_keys = [key for key in keys if key not in fields]
         if unknown_keys:
-            raise SchemaKeyError(
+            raise ConfigSchemaError(
                 f"{', '.join(f'`{key}`' for key in unknown_keys)} is not a field of "
                 f"`{schema.__qualname__}`."
             )
         repeated_keys = [key for key in keys if key in positional_keys]
         if repeated_keys:
-            raise SchemaKeyError(
+            raise ConfigSchemaError(
                 f"{', '.join(f'`{key}`' for key in repeated_keys)} is given twice, by "
                 f"`{ARGS_KEY}` and by name."
             )
@@ -278,7 +275,7 @@ def _check_schema(
             if field.is_required and key not in keys and key not in positional_keys
         ]
         if missing_keys and not is_open:
-            raise SchemaMissingValueError(
+            raise ConfigSchemaError(
                 f"`{schema.__qualname__}` requires "
                 f"{', '.join(f'`{key}`' for key in missing_keys)}."
             )
@@ -313,7 +310,7 @@ def _check_value(
         value = _check_node(value, active_nodes, annotation)
     try:
         typed_value = _check_type(value, annotation)
-    except SchemaTypeError as error:
+    except ConfigSchemaError as error:
         error.add_note(f"  at `{parent._get_full_key(key)}`")
         raise
     return typed_value
@@ -336,7 +333,7 @@ def _read_value(parent: DictConfig | ListConfig | TupleConfig, key: Any) -> Any:
 
 def _unwrap_data(value: Any) -> Any:
     if isinstance(value, Call):
-        raise SchemaTypeError(
+        raise ConfigSchemaError(
             f"`{TARGET_KEY}: {value.name}` cannot stand in a field that holds plain "
             "values."
         )
@@ -396,4 +393,4 @@ def _check_type(value: Any, annotation: Any) -> Any:
     else:
         given = f"`{value!r}`"
     expected = annotation.__qualname__ if isinstance(annotation, type) else annotation
-    raise SchemaTypeError(f"Expected `{expected}`, but the config gives {given}.")
+    raise ConfigSchemaError(f"Expected `{expected}`, but the config gives {given}.")

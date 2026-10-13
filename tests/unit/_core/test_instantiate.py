@@ -9,13 +9,10 @@ import pytest
 from omegaconf import OmegaConf
 
 from omegakit._core.errors import (
+    ConfigSchemaError,
     ConfigTargetError,
     ConfigValidationError,
     QualifiedNameNotFoundError,
-    SchemaKeyError,
-    SchemaMissingValueError,
-    SchemaTypeError,
-    SchemaValueError,
     ValidationInterpolationError,
     ValidationMissingValueError,
 )
@@ -195,10 +192,14 @@ def test_dataclass_binds_args_to_its_fields(targets: ModuleType):
 @pytest.mark.parametrize(
     ("node", "error_type", "full_key"),
     [
-        ({"$args": [0.5], "lr": 1}, SchemaKeyError, "optimizer"),
-        ({"$args": [0.5, 3, "slow", [0, 1], "logs", 6]}, SchemaValueError, "optimizer"),
-        ({"$args": ["fast"]}, SchemaValueError, "optimizer.$args[0]"),
-        ({"$args": [], "steps": 3}, SchemaMissingValueError, "optimizer"),
+        ({"$args": [0.5], "lr": 1}, ConfigSchemaError, "optimizer"),
+        (
+            {"$args": [0.5, 3, "slow", [0, 1], "logs", 6]},
+            ConfigSchemaError,
+            "optimizer",
+        ),
+        ({"$args": ["fast"]}, ConfigSchemaError, "optimizer.$args[0]"),
+        ({"$args": [], "steps": 3}, ConfigSchemaError, "optimizer"),
     ],
 )
 def test_args_that_do_not_fit_a_dataclass_are_rejected(
@@ -420,7 +421,7 @@ def test_field_that_is_annotated_with_a_schema_holds_a_dict(targets: ModuleType)
     assert backbone["depth"] == 3
     assert type(backbone["encoder"]) is targets.Item
     config.backbone = {"$target": "config_targets.Model", "depth": "3"}
-    with pytest.raises(SchemaTypeError):
+    with pytest.raises(ConfigSchemaError):
         instantiate(config, targets.Experiment)
 
 
@@ -455,7 +456,7 @@ def test_dict_of_a_symbol_is_checked_against_the_schema(targets: ModuleType):
 
 def test_target_that_names_a_schema_is_rejected(targets: ModuleType):
     config = OmegaConf.create({"$target": "config_targets.ModelConfig", "depth": 3})
-    with pytest.raises(SchemaTypeError, match="ModelConfig"):
+    with pytest.raises(ConfigSchemaError, match="ModelConfig"):
         instantiate(config)
 
 
@@ -531,10 +532,10 @@ def test_partial_is_completed_when_it_is_called(targets: ModuleType):
         assert model.config == {"activation": "tanh", "depth": 3}
         assert model.kwargs == {"name": "called"}
         assert make_model(depth=3, activation="relu").config["activation"] == "relu"
-        with pytest.raises(SchemaMissingValueError, match="depth") as error_info:
+        with pytest.raises(ConfigSchemaError, match="depth") as error_info:
             make_model()
         error_info.match(re.escape(f"at `{key}`"))
-    with pytest.raises(SchemaMissingValueError):
+    with pytest.raises(ConfigSchemaError):
         instantiate(config.root)
 
 
@@ -550,13 +551,16 @@ def test_partial_of_a_dataclass_is_a_partial_of_the_class(targets: ModuleType):
 @pytest.mark.parametrize(
     ("values", "error_type"),
     [
-        ({"seed": "many"}, SchemaValueError),
+        ({"seed": "many"}, ConfigSchemaError),
         (
             {"stages": [{"$target": "config_targets.Optimizer", "lr": "fast"}]},
-            SchemaValueError,
+            ConfigSchemaError,
         ),
-        ({"items": [{"$target": "config_targets.Model", "depth": 1}]}, SchemaTypeError),
-        ({"optimizer": {"lr": 1}}, SchemaTypeError),
+        (
+            {"items": [{"$target": "config_targets.Model", "depth": 1}]},
+            ConfigSchemaError,
+        ),
+        ({"optimizer": {"lr": 1}}, ConfigSchemaError),
     ],
 )
 def test_nothing_is_called_if_a_value_does_not_match_its_schema(
@@ -586,9 +590,9 @@ def test_partial_fits_where_a_callable_is_expected(targets: ModuleType):
     )
     targets.CALLS.clear()
     for values in ({"items": [partial_item]}, {"model": {**model, "$partial": True}}):
-        with pytest.raises(SchemaTypeError, match="a partial of"):
+        with pytest.raises(ConfigSchemaError, match="a partial of"):
             instantiate(OmegaConf.create({**experiment, **values}), targets.Experiment)
-    with pytest.raises(SchemaTypeError, match="a partial of"):
+    with pytest.raises(ConfigSchemaError, match="a partial of"):
         instantiate(OmegaConf.create(partial_item), targets.Item)
     item = OmegaConf.create({"$target": "config_targets.Item"})
     assert isinstance(prepare(item, targets.Item), functools.partial)
@@ -600,7 +604,7 @@ def test_result_is_checked_against_the_class(targets: ModuleType):
     assert type(instantiate(item, targets.Item)) is targets.Item
     for path in ("make_item", "FACTORY"):
         config = OmegaConf.create({"$target": f"config_targets.{path}"})
-        with pytest.raises(SchemaTypeError, match="returned") as error_info:
+        with pytest.raises(ConfigSchemaError, match="returned") as error_info:
             instantiate(config, targets.Optimizer)
         error_info.match(re.escape("at the root"))
 
@@ -614,7 +618,7 @@ def test_result_of_a_function_is_checked_in_a_field(targets: ModuleType):
     config = OmegaConf.create({**experiment, "items": [made_item]})
     assert type(instantiate(config).items[0]) is targets.Item
     config = OmegaConf.create({**experiment, "optimizer": made_item})
-    with pytest.raises(SchemaTypeError, match="returned") as error_info:
+    with pytest.raises(ConfigSchemaError, match="returned") as error_info:
         instantiate(config)
     error_info.match(re.escape("at `optimizer`"))
 
@@ -622,13 +626,13 @@ def test_result_of_a_function_is_checked_in_a_field(targets: ModuleType):
 def test_prepare_cannot_check_the_result_of_a_function(targets: ModuleType):
     config = OmegaConf.create({"$target": "config_targets.make_item"})
     assert type(prepare(config)()) is targets.Item
-    with pytest.raises(SchemaTypeError, match="make_item"):
+    with pytest.raises(ConfigSchemaError, match="make_item"):
         prepare(config, targets.Item)
 
 
 def test_schema_is_not_the_class_of_a_result(targets: ModuleType):
     model = OmegaConf.create({"$target": "config_targets.Model", "depth": 1})
-    with pytest.raises(SchemaTypeError, match="ModelConfig"):
+    with pytest.raises(ConfigSchemaError, match="ModelConfig"):
         instantiate(model, targets.ModelConfig)
     with pytest.raises(ConfigTargetError, match="the root"):
         instantiate(OmegaConf.create({"depth": 1}), targets.ModelConfig)
@@ -636,9 +640,9 @@ def test_schema_is_not_the_class_of_a_result(targets: ModuleType):
 
 
 def test_schema_without_anything_to_build_is_rejected(targets: ModuleType):
-    with pytest.raises(SchemaTypeError):
+    with pytest.raises(ConfigSchemaError):
         instantiate(OmegaConf.create({"depth": 1}), targets.Model)
-    with pytest.raises(SchemaTypeError, match="a mapping"):
+    with pytest.raises(ConfigSchemaError, match="a mapping"):
         instantiate(OmegaConf.create({"lr": 1}), targets.Optimizer)
     with pytest.raises(ConfigTargetError, match="the root"):
         prepare(OmegaConf.create({"$symbol": "config_targets.SETTINGS"}), dict)
@@ -654,7 +658,7 @@ def test_configurable_that_is_a_dataclass_is_checked_as_one(targets: ModuleType)
     config = OmegaConf.create({"$target": "config_targets.Layer", "width": "3"})
     assert instantiate(config) == targets.Layer(width=3)
     config.width = "wide"
-    with pytest.raises(SchemaValueError):
+    with pytest.raises(ConfigSchemaError):
         instantiate(config)
 
 
@@ -669,7 +673,7 @@ def test_text_is_not_read_as_an_interpolation_again(targets: ModuleType, text: s
             "steps": "${test_text:}",
         }
     )
-    with pytest.raises(SchemaValueError, match="steps"):
+    with pytest.raises(ConfigSchemaError, match="steps"):
         instantiate(config, targets.Optimizer)
     del config["steps"]
     assert str(instantiate(config, targets.Optimizer).log_dir) == text

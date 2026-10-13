@@ -25,8 +25,8 @@ from omegaconf.errors import (
 
 from .configurable import Configurable
 from .errors import (
+    ConfigSchemaError,
     SchemaDefinitionError,
-    SchemaValueError,
 )
 from .utils.describe import describe_error
 
@@ -165,7 +165,7 @@ def convert_data(schema: type, values: dict[str, Any]) -> dict[str, Any]:
     except (OmegaConfBaseException, OverflowError) as error:
         full_key = getattr(error, "full_key", None)
         key = f"`{full_key}`" if full_key else "A value"
-        raise SchemaValueError(
+        raise ConfigSchemaError(
             f"{key} does not match `{schema.__qualname__}`: {describe_error(error)}"
         ) from error
     return {key: converted_values[key] for key in values}
@@ -181,7 +181,7 @@ def convert_item(annotation: Any, value: Any) -> Any:
         typed_item = OmegaConf.structured(structure(item=_escape_texts(value)))
         converted_item: Any = OmegaConf.to_container(typed_item, resolve=True)
     except (OmegaConfBaseException, OverflowError) as error:
-        raise SchemaValueError(
+        raise ConfigSchemaError(
             f"The item does not match `{annotation}`: {describe_error(error)}"
         ) from error
     return converted_item["item"]

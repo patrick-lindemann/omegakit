@@ -4,7 +4,7 @@ from typing import Any, get_origin, is_typeddict, overload
 
 from omegaconf import DictConfig
 
-from .errors import ConfigTargetError, SchemaMissingValueError, SchemaTypeError
+from .errors import ConfigSchemaError, ConfigTargetError
 from .features.target import TARGET_KEY
 from .schema import read_fields, split_union
 from .utils.describe import describe_node
@@ -45,7 +45,7 @@ def _instantiate(config: DictConfig, schema: type | None, is_partial: bool) -> A
         )
     if is_partial:
         if schema is not None and not isinstance(call.target, type):
-            raise SchemaTypeError(
+            raise ConfigSchemaError(
                 f"`{call.name}` is a function, and the result of a partial cannot be "
                 f"checked to be a `{schema.__qualname__}`."
             )
@@ -96,7 +96,7 @@ def _build(value: Any) -> Any:
         expected = (
             annotation.__qualname__ if isinstance(annotation, type) else annotation
         )
-        type_error = SchemaTypeError(
+        type_error = ConfigSchemaError(
             f"Expected `{expected}`, but `{value.name}` returned `{instance!r}`."
         )
         type_error.add_note(f"  at {describe_node(value.node)}")
@@ -115,7 +115,7 @@ def _call_from_config(
         key for key, field in fields.items() if field.is_required and key not in values
     ]
     if missing_keys:
-        error = SchemaMissingValueError(
+        error = ConfigSchemaError(
             f"`{schema.__qualname__}` requires "
             f"{', '.join(f'`{key}`' for key in missing_keys)}."
         )

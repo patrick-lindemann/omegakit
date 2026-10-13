@@ -18,10 +18,10 @@ All notable changes to this project are documented here. The format follows
   `from_config` takes its arguments by name and rejects it. A dataclass binds the
   items to its fields by position, as its constructor does: each is converted and
   checked like the value of that key, a field that is also given by name raises
-  `SchemaKeyError`, and more items than positions raise `SchemaValueError`.
+  `ConfigSchemaError`, and more items than positions raise `ConfigSchemaError`.
 - `make_node` takes positional arguments and writes them to `$args`, as in
   `make_node(torch.nn.Sequential, layer_a, layer_b)`.
-- `omegakit` exports every error class, such as `SchemaTypeError` and
+- `omegakit` exports every error class, such as `ConfigSchemaError` and
   `ConfigIncludeError`, the `Config` type and `ARGS_KEY`, next to `load_config`,
   `validate`, `instantiate`, `prepare`, `make_node`, `Configurable`, `walk` and the
   other key names.
@@ -85,7 +85,7 @@ All notable changes to this project are documented here. The format follows
   `from_config` receives the checked values as a `dict` with the keys that the
   config gives, no longer an instance of the schema. A field that is annotated with
   a `TypedDict` holds a mapping without `$target`, which stays a `dict`, and a
-  `$target` that names a `TypedDict` raises `SchemaTypeError`.
+  `$target` that names a `TypedDict` raises `ConfigSchemaError`.
 - **Breaking:** A dataclass is a class that `$target` builds, never a schema. A
   field that is annotated with a dataclass holds an object, so it takes a `$target`
   or a `$symbol`. A mapping without `$target` raises ``Expected `Data`, but the
@@ -93,7 +93,7 @@ All notable changes to this project are documented here. The format follows
   for `validate(config, Data)`. It used to be built as the dataclass.
 - **Breaking:** The second argument of `instantiate` and `prepare` is the class of
   the result, and `instantiate` checks what was built against it with `isinstance`:
-  a target that returns something else raises `SchemaTypeError`. A schema is
+  a target that returns something else raises `ConfigSchemaError`. A schema is
   accepted only by `validate`. Only a mapping with `$target` is instantiated: a root
   without one raises, with a class as in ``Expected `Training`, but the config gives
   a mapping.``, and so does a root that is a `$symbol`.
@@ -102,14 +102,14 @@ All notable changes to this project are documented here. The format follows
   argument of the call that is a key of the schema goes into the `dict` that
   `from_config` receives, as written, and replaces a value of the config. Every
   other argument still arrives as `**kwargs`. A required key that is still open
-  raises `SchemaMissingValueError` at the call. Such a partial wraps a function of
+  raises `ConfigSchemaError` at the call. Such a partial wraps a function of
   omegakit instead of `from_config` and takes keyword arguments only.
 - **Breaking:** A field takes at most one `TypedDict`: a union of two, such as
   `section: OptimizerConfig | SchedulerConfig`, raises `SchemaDefinitionError`.
 - **Breaking:** The result of a function that `$target` names is checked with
   `isinstance` when the function returns, in a field that is annotated with a
   class. It used to pass unchecked. `prepare(config, Class)` raises
-  `SchemaTypeError` for a root whose `$target` is a function, since the result of a
+  `ConfigSchemaError` for a root whose `$target` is a function, since the result of a
   partial cannot be checked.
 - **Breaking:** A tuple may hold objects and mappings, and every position follows
   its annotation: in `pair: tuple[nn.Module, float]` the first item is checked by
@@ -117,13 +117,13 @@ All notable changes to this project are documented here. The format follows
   `phases: tuple[OptimizerConfig, ...]` are checked against the `TypedDict`. A
   tuple that is annotated with a class raised `SchemaDefinitionError`, and a mapping
   in a tuple of schemas was not checked. A wrong number of items raises
-  `SchemaValueError`, as in ``Expected 2 items, but the config gives 1.``
+  `ConfigSchemaError`, as in ``Expected 2 items, but the config gives 1.``
 - **Breaking:** The keys of every dictionary follow its key annotation, also where
-  the items are mappings or objects: the key `1` raises `SchemaKeyError` in
+  the items are mappings or objects: the key `1` raises `ConfigSchemaError` in
   `models: dict[str, Model]`. A field that is annotated `type[X]` takes a subclass
   of `X` and no other class. A `$symbol` to a `dict` in a field that is annotated
   with a `TypedDict` is checked against it like a mapping of the config, and the
-  field holds a checked copy. It raised `SchemaTypeError`.
+  field holds a checked copy. It raised `ConfigSchemaError`.
 - **Breaking:** A `Configurable` names its schema in the class attribute `schema`
   instead of a type argument: replace `class Model(Configurable[ModelConfig])` with
   `class Model(Configurable)` and `schema = ModelConfig` in its body. `from_config`

@@ -35,7 +35,7 @@ def test_reports_every_invalid_file(
     broken.write_text("a: ~include missing.yaml\n")
     assert _exit_code(["check", str(bad), str(good), str(broken)]) == 1
     lines = capsys.readouterr().out.splitlines()
-    assert lines[0].startswith(f"{bad}: Schema")
+    assert lines[0].startswith(f"{bad}: ConfigSchemaError: ")
     assert lines[1].startswith(f"{broken}: ConfigFileNotFoundError: ")
     assert len(lines) == 2
 

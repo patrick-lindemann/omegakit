@@ -1,8 +1,6 @@
 from omegaconf.errors import (
-    ConfigKeyError,
     InterpolationResolutionError,
     MissingMandatoryValue,
-    ValidationError,
 )
 
 
@@ -75,20 +73,4 @@ class ConfigSchemaError(ConfigValidationError):
 
 
 class SchemaDefinitionError(OmegaKitBaseException, TypeError):
-    pass
-
-
-class SchemaKeyError(ConfigSchemaError, ConfigKeyError):
-    pass
-
-
-class SchemaMissingValueError(ConfigSchemaError, MissingMandatoryValue):
-    pass
-
-
-class SchemaValueError(ConfigSchemaError, ValidationError):
-    pass
-
-
-class SchemaTypeError(ConfigSchemaError, ValidationError):
     pass

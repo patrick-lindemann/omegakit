@@ -8,15 +8,12 @@ import pytest
 from omegaconf import DictConfig, OmegaConf
 
 from omegakit._core.errors import (
+    ConfigSchemaError,
     ConfigSymbolError,
     ConfigTargetError,
     ConfigValidationError,
     QualifiedNameNotFoundError,
     SchemaDefinitionError,
-    SchemaKeyError,
-    SchemaMissingValueError,
-    SchemaTypeError,
-    SchemaValueError,
     ValidationInterpolationError,
     ValidationMissingValueError,
 )
@@ -275,14 +272,18 @@ def test_accepts_a_config_that_matches_its_schemas(targets: ModuleType):
 @pytest.mark.parametrize(
     ("values", "error_type", "full_key"),
     [
-        ({"sed": 1}, SchemaKeyError, "experiment"),
-        ({"seed": "many"}, SchemaValueError, "experiment"),
+        ({"sed": 1}, ConfigSchemaError, "experiment"),
+        ({"seed": "many"}, ConfigSchemaError, "experiment"),
         ({"seed": "???"}, ValidationMissingValueError, "experiment.seed"),
-        ({"optimizer": {}}, SchemaMissingValueError, "experiment.optimizer"),
-        ({"optimizer": {"lr": 1, "total": 2}}, SchemaKeyError, "experiment.optimizer"),
+        ({"optimizer": {}}, ConfigSchemaError, "experiment.optimizer"),
+        (
+            {"optimizer": {"lr": 1, "total": 2}},
+            ConfigSchemaError,
+            "experiment.optimizer",
+        ),
         (
             {"optimizer": {"lr": 1, "betas": [1]}},
-            SchemaValueError,
+            ConfigSchemaError,
             "experiment.optimizer",
         ),
         (
@@ -297,42 +298,42 @@ def test_accepts_a_config_that_matches_its_schemas(targets: ModuleType):
         ),
         (
             {"stages": [{"lr": 1}, {"lr": "x"}]},
-            SchemaValueError,
+            ConfigSchemaError,
             "experiment.stages[1]",
         ),
         (
             {"schedules": {"warmup": {"steps": 2}}},
-            SchemaMissingValueError,
+            ConfigSchemaError,
             "experiment.schedules.warmup",
         ),
         (
             {"pair": [{"$target": "config_targets.Item"}, "x"]},
-            SchemaValueError,
+            ConfigSchemaError,
             "experiment.pair[1]",
         ),
         (
             {"pair": [{"$target": "config_targets.Item"}]},
-            SchemaValueError,
+            ConfigSchemaError,
             "experiment.pair",
         ),
         (
             {"pair": [{"$target": "config_targets.Model", "depth": 1}, 0.5]},
-            SchemaTypeError,
+            ConfigSchemaError,
             "experiment.pair[0]",
         ),
         (
             {"phases": [{"depth": 1}, {"depht": 2}]},
-            SchemaKeyError,
+            ConfigSchemaError,
             "experiment.phases[1]",
         ),
         (
             {"named_items": {1: {"$target": "config_targets.Item"}}},
-            SchemaKeyError,
+            ConfigSchemaError,
             "experiment.named_items",
         ),
         (
             {"backbone": {"$symbol": "config_targets.SETTINGS"}},
-            SchemaKeyError,
+            ConfigSchemaError,
             "experiment.backbone",
         ),
     ],
@@ -358,7 +359,7 @@ def test_interpolated_value_is_checked_as_its_field(targets: ModuleType):
     experiment = {"$target": "config_targets.Experiment", "seed": "${seed}"}
     config = OmegaConf.create({"seed": "many", "experiment": experiment})
     config.experiment.model = {"$target": "config_targets.Model", "depth": 1}
-    with pytest.raises(SchemaValueError, match="seed"):
+    with pytest.raises(ConfigSchemaError, match="seed"):
         validate(config.experiment, targets.Experiment)
 
 
@@ -386,7 +387,7 @@ def test_interpolated_value_is_checked_as_its_field(targets: ModuleType):
 def test_object_of_another_class_is_rejected(
     targets: ModuleType, values: dict[str, Any], full_key: str
 ):
-    with pytest.raises(SchemaTypeError) as error_info:
+    with pytest.raises(ConfigSchemaError) as error_info:
         validate(_make_experiment(**values), targets.Experiment)
     error_info.match(re.escape(f"at `{full_key}`"))
     assert targets.CALLS == []
@@ -411,19 +412,19 @@ def test_field_that_is_annotated_with_a_schema_takes_a_mapping(targets: ModuleTy
     validate(_make_experiment(backbone=None), targets.Experiment)
     validate(OmegaConf.create(backbone), targets.ModelConfig)
     for values, error_type in (
-        ({"depth": "deep"}, SchemaValueError),
-        ({"depth": 2, "width": 2}, SchemaKeyError),
-        ({"activation": "tanh"}, SchemaMissingValueError),
-        ({"$target": "config_targets.Model", "depth": 2}, SchemaTypeError),
-        ({"$target": "config_targets.ModelConfig", "depth": 2}, SchemaTypeError),
-        ({"$symbol": "config_targets.ITEM"}, SchemaTypeError),
-        ([1, 2], SchemaTypeError),
+        ({"depth": "deep"}, ConfigSchemaError),
+        ({"depth": 2, "width": 2}, ConfigSchemaError),
+        ({"activation": "tanh"}, ConfigSchemaError),
+        ({"$target": "config_targets.Model", "depth": 2}, ConfigSchemaError),
+        ({"$target": "config_targets.ModelConfig", "depth": 2}, ConfigSchemaError),
+        ({"$symbol": "config_targets.ITEM"}, ConfigSchemaError),
+        ([1, 2], ConfigSchemaError),
     ):
         with pytest.raises(error_type) as error_info:
             validate(_make_experiment(backbone=values), targets.Experiment)
         error_info.match(re.escape("at `experiment.backbone`"))
     model = OmegaConf.create({"$target": "config_targets.Model", "depth": 2})
-    with pytest.raises(SchemaTypeError):
+    with pytest.raises(ConfigSchemaError):
         validate(model, targets.ModelConfig)
     assert targets.CALLS == []
 
@@ -436,11 +437,11 @@ def test_result_of_a_function_is_not_known_before_it_is_called(targets: ModuleTy
 def test_partial_may_leave_required_keys_open(targets: ModuleType):
     model = {"$target": "config_targets.Model", "$partial": True}
     validate(OmegaConf.create({"models": [model, {**model, "activation": "tanh"}]}))
-    with pytest.raises(SchemaMissingValueError):
+    with pytest.raises(ConfigSchemaError):
         validate(OmegaConf.create({**model, "$partial": False}))
-    with pytest.raises(SchemaKeyError):
+    with pytest.raises(ConfigSchemaError):
         validate(OmegaConf.create({**model, "width": 3}))
-    with pytest.raises(SchemaValueError):
+    with pytest.raises(ConfigSchemaError):
         validate(OmegaConf.create({**model, "depth": "deep"}))
 
 
@@ -456,7 +457,7 @@ def test_schema_says_what_the_root_builds(targets: ModuleType):
         ({"lr": 1}, targets.Optimizer),
         ([{"lr": 1}], targets.Optimizer),
     ):
-        with pytest.raises(SchemaTypeError) as error_info:
+        with pytest.raises(ConfigSchemaError) as error_info:
             validate(OmegaConf.create(content), schema)
         error_info.match(re.escape("at the root"))
 
@@ -493,14 +494,14 @@ def test_annotation_is_checked_as_its_class(values: dict[str, Any], is_valid: bo
     if is_valid:
         validate(config, _Parts)
         return
-    with pytest.raises(SchemaTypeError) as error_info:
+    with pytest.raises(ConfigSchemaError) as error_info:
         validate(config, _Parts)
     error_info.match(re.escape(f"at `{next(iter(values))}`"))
 
 
 def test_mapping_for_a_list_of_objects_names_the_field(targets: ModuleType):
     for values in ({"items": {"first": 1}}, {"stages": {"lr": 1}}):
-        with pytest.raises(SchemaTypeError, match="a mapping") as error_info:
+        with pytest.raises(ConfigSchemaError, match="a mapping") as error_info:
             validate(_make_experiment(**values), targets.Experiment)
         error_info.match(re.escape(f"at `experiment.{next(iter(values))}`"))
 
@@ -522,10 +523,10 @@ def test_data_that_contains_itself_is_rejected():
     [
         ({"$meta": {"note": "tuned"}, "first": {"a": "1"}}, None),
         ({"first": {"$meta": "???", "a": 1}}, None),
-        ({"first": {"a": {"$symbol": "math.inf"}}}, SchemaValueError),
+        ({"first": {"a": {"$symbol": "math.inf"}}}, ConfigSchemaError),
         ({"first": {"$foo": 1}}, ConfigValidationError),
-        ({"first": {"$target": "builtins.dict"}}, SchemaTypeError),
-        ({"first": {"a": {"$target": "builtins.int"}}}, SchemaTypeError),
+        ({"first": {"$target": "builtins.dict"}}, ConfigSchemaError),
+        ({"first": {"a": {"$target": "builtins.int"}}}, ConfigSchemaError),
     ],
 )
 def test_reserved_keys_keep_their_meaning_in_plain_values(

@@ -13,8 +13,8 @@ from omegaconf import MISSING
 
 from omegakit._core.configurable import Configurable
 from omegakit._core.errors import (
+    ConfigSchemaError,
     SchemaDefinitionError,
-    SchemaValueError,
 )
 from omegakit._core.schema import convert_data, convert_item, find_schema, read_fields
 
@@ -223,7 +223,7 @@ def test_data_is_converted_as_omegaconf_converts_it(targets: ModuleType):
 def test_data_that_does_not_match_is_rejected(
     targets: ModuleType, values: dict[str, Any], key: str
 ):
-    with pytest.raises(SchemaValueError, match="Optimizer") as error_info:
+    with pytest.raises(ConfigSchemaError, match="Optimizer") as error_info:
         convert_data(targets.Optimizer, values)
     assert key in str(error_info.value)
 
@@ -241,19 +241,19 @@ def test_text_is_not_read_as_an_interpolation_or_a_missing_value(
     converted = convert_data(schema, values)
     assert converted["name"] == text
     assert converted["names"] == {"first": [text, "plain"]}
-    with pytest.raises(SchemaValueError):
+    with pytest.raises(ConfigSchemaError):
         convert_data(targets.Optimizer, {"lr": text})
-    with pytest.raises(SchemaValueError):
+    with pytest.raises(ConfigSchemaError):
         convert_data(targets.Optimizer, {"betas": [0.5, text]})
 
 
 def test_item_is_converted_as_its_annotation():
     assert convert_item(float, "0.5") == 0.5
     assert convert_item(_Color, "RED") is _Color.RED
-    with pytest.raises(SchemaValueError):
+    with pytest.raises(ConfigSchemaError):
         convert_item(float, "high")
 
 
 def test_number_that_is_too_large_is_rejected(targets: ModuleType):
-    with pytest.raises(SchemaValueError, match="Optimizer"):
+    with pytest.raises(ConfigSchemaError, match="Optimizer"):
         convert_data(targets.Optimizer, {"lr": 10**400})
