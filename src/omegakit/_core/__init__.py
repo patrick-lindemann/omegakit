@@ -2,11 +2,9 @@ from .config import Config
 from .configurable import Configurable
 from .errors import (
     BaseTypeError,
-    ConfigEachError,
     ConfigFileNotFoundError,
     ConfigFilePermissionError,
     ConfigIncludeError,
-    ConfigInheritanceError,
     ConfigLoadError,
     ConfigMergeError,
     ConfigOverrideError,
@@ -72,11 +70,9 @@ __all__ = [
     "TARGET_KEY",
     "BaseTypeError",
     "Config",
-    "ConfigEachError",
     "ConfigFileNotFoundError",
     "ConfigFilePermissionError",
     "ConfigIncludeError",
-    "ConfigInheritanceError",
     "ConfigLoadError",
     "ConfigMergeError",
     "ConfigOverrideError",

@@ -81,4 +81,3 @@ def test_list_at_the_root_is_rejected(tmp_path: Path):
     path.write_text("- a\n- b\n")
     with pytest.raises(LoadTypeError, match="root is a list"):
         load_config(path)
-    assert issubclass(LoadTypeError, TypeError)

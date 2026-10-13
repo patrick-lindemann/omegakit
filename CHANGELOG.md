@@ -51,6 +51,10 @@ All notable changes to this project are documented here. The format follows
   be given by position. It raises the error of the step that failed, such as
   `ConfigSyntaxError` or `IncludeCycleError`, instead of wrapping it in
   `ConfigLoadError`, and `LoadTypeError` for a file whose root is a list.
+- `ConfigLoadError` is the parent of every error that `load_config` raises, and
+  `ConfigValidationError` of every error that `validate`, `instantiate` and
+  `prepare` raise about the config. `SchemaDefinitionError` belongs to neither,
+  since it reports a wrong schema.
 - **Breaking:** `omegakit check --import-root` is now `--include-root`, and
   `--allow-missing` and `--allow-module` are gone, as `validate` no longer takes
   `allow_missing` and `allowed_modules`.

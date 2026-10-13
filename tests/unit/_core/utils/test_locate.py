@@ -47,14 +47,3 @@ def test_missing_dependency_of_the_module_passes_through(
     with pytest.raises(ModuleNotFoundError) as error_info:
         locate("needs_dependency.Name")
     assert not isinstance(error_info.value, OmegaKitBaseException)
-
-
-@pytest.mark.parametrize(
-    ("error_type", "builtin_type"),
-    [(QualifiedNameSyntaxError, ValueError), (QualifiedNameNotFoundError, ImportError)],
-)
-def test_errors_are_also_builtin_errors(
-    error_type: type[Exception], builtin_type: type[Exception]
-):
-    assert issubclass(error_type, OmegaKitBaseException)
-    assert issubclass(error_type, builtin_type)

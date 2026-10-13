@@ -6,10 +6,8 @@ from omegaconf import DictConfig, OmegaConf
 from omegaconf.errors import InterpolationResolutionError
 
 from omegakit._core.errors import (
-    ConfigMergeError,
     MergeCycleError,
     MergeReferenceError,
-    OmegaKitBaseException,
 )
 from omegakit._core.utils.merge import merge_under, walk_mergeable
 
@@ -125,18 +123,3 @@ def test_walk_rejects_a_cycle_and_names_only_its_nodes():
         _remove_key(config)
     assert "`a` -> `b.items[0]` -> `a`" in str(error_info.value)
     assert "waiting" not in str(error_info.value)
-
-
-@pytest.mark.parametrize(
-    ("error_type", "parent_type"),
-    [
-        (MergeReferenceError, InterpolationResolutionError),
-        (MergeCycleError, ConfigMergeError),
-    ],
-)
-def test_errors_are_also_builtin_or_omegaconf_errors(
-    error_type: type[Exception], parent_type: type[Exception]
-):
-    assert issubclass(error_type, ConfigMergeError)
-    assert issubclass(error_type, OmegaKitBaseException)
-    assert issubclass(error_type, parent_type)

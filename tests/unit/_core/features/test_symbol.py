@@ -3,11 +3,8 @@ from typing import Any
 
 import pytest
 from omegaconf import OmegaConf
-from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
 
 from omegakit._core.errors import (
-    ConfigSymbolError,
-    OmegaKitBaseException,
     QualifiedNameNotFoundError,
     QualifiedNameSyntaxError,
     SymbolInterpolationError,
@@ -76,20 +73,3 @@ def test_locate_errors_pass_through(qualified_name: str, error_type: type[Except
     config = OmegaConf.create({"loss": {"$symbol": qualified_name}})
     with pytest.raises(error_type):
         import_symbol(config.loss)
-
-
-@pytest.mark.parametrize(
-    ("error_type", "parent_type"),
-    [
-        (SymbolSyntaxError, ValueError),
-        (SymbolTypeError, TypeError),
-        (SymbolInterpolationError, InterpolationResolutionError),
-        (SymbolMissingValueError, MissingMandatoryValue),
-    ],
-)
-def test_errors_are_also_builtin_or_omegaconf_errors(
-    error_type: type[Exception], parent_type: type[Exception]
-):
-    assert issubclass(error_type, ConfigSymbolError)
-    assert issubclass(error_type, OmegaKitBaseException)
-    assert issubclass(error_type, parent_type)

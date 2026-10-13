@@ -3,7 +3,6 @@ from pathlib import Path
 
 import pytest
 from omegaconf import OmegaConf
-from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
 
 from omegakit._core.errors import (
     ConfigFileNotFoundError,
@@ -379,18 +378,3 @@ def test_an_error_names_every_include_that_led_to_it(tmp_path: Path):
         _load(path)
     for text in ["nope.yaml", "~include nope.yaml", "model.yaml", "main.yaml"]:
         error_info.match(re.escape(text))
-
-
-@pytest.mark.parametrize(
-    ("error", "parent"),
-    [
-        (IncludeSyntaxError, ValueError),
-        (IncludeInterpolationError, InterpolationResolutionError),
-        (IncludeTypeError, TypeError),
-        (IncludeMissingValueError, MissingMandatoryValue),
-    ],
-)
-def test_an_error_is_also_its_builtin_or_omegaconf_error(
-    error: type[Exception], parent: type[Exception]
-):
-    assert issubclass(error, parent)

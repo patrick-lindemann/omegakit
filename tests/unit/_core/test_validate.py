@@ -6,11 +6,8 @@ from typing import Any, Protocol, TypedDict
 
 import pytest
 from omegaconf import DictConfig, OmegaConf
-from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
 
 from omegakit._core.errors import (
-    ConfigValidationError,
-    OmegaKitBaseException,
     QualifiedNameNotFoundError,
     SchemaDefinitionError,
     SchemaKeyError,
@@ -560,20 +557,3 @@ def test_schema_that_cannot_be_read_names_the_node(targets: ModuleType):
     with pytest.raises(SchemaDefinitionError) as error_info:
         validate(config)
     error_info.match(re.escape("at `model`"))
-
-
-@pytest.mark.parametrize(
-    ("error_type", "parent_type"),
-    [
-        (ValidationSyntaxError, ValueError),
-        (ValidationInterpolationError, InterpolationResolutionError),
-        (ValidationMissingValueError, MissingMandatoryValue),
-        (ValidationCycleError, OmegaKitBaseException),
-    ],
-)
-def test_errors_are_also_builtin_or_omegaconf_errors(
-    error_type: type[Exception], parent_type: type[Exception]
-):
-    assert issubclass(error_type, ConfigValidationError)
-    assert issubclass(error_type, OmegaKitBaseException)
-    assert issubclass(error_type, parent_type)

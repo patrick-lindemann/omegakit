@@ -10,27 +10,35 @@ class OmegaKitBaseException(Exception):
     pass
 
 
-class ConfigFileNotFoundError(OmegaKitBaseException, FileNotFoundError):
+class ConfigLoadError(OmegaKitBaseException):
     pass
 
 
-class ConfigFilePermissionError(OmegaKitBaseException, PermissionError):
+class ConfigValidationError(OmegaKitBaseException):
     pass
 
 
-class ConfigSyntaxError(OmegaKitBaseException, ValueError):
+class ConfigFileNotFoundError(ConfigLoadError, FileNotFoundError):
     pass
 
 
-class QualifiedNameSyntaxError(OmegaKitBaseException, ValueError):
+class ConfigFilePermissionError(ConfigLoadError, PermissionError):
     pass
 
 
-class QualifiedNameNotFoundError(OmegaKitBaseException, ImportError):
+class ConfigSyntaxError(ConfigLoadError, ValueError):
     pass
 
 
-class ConfigMergeError(OmegaKitBaseException):
+class QualifiedNameSyntaxError(ConfigValidationError, ValueError):
+    pass
+
+
+class QualifiedNameNotFoundError(ConfigValidationError, ImportError):
+    pass
+
+
+class ConfigMergeError(ConfigLoadError):
     pass
 
 
@@ -42,15 +50,11 @@ class MergeCycleError(ConfigMergeError):
     pass
 
 
-class ConfigLoadError(OmegaKitBaseException):
-    pass
-
-
 class LoadTypeError(ConfigLoadError, TypeError):
     pass
 
 
-class ConfigIncludeError(OmegaKitBaseException):
+class ConfigIncludeError(ConfigLoadError):
     pass
 
 
@@ -82,23 +86,15 @@ class IncludeMissingValueError(ConfigIncludeError, MissingMandatoryValue):
     pass
 
 
-class ConfigInheritanceError(OmegaKitBaseException):
+class BaseTypeError(ConfigMergeError, TypeError):
     pass
 
 
-class BaseTypeError(ConfigInheritanceError, TypeError):
+class EachTypeError(ConfigMergeError, TypeError):
     pass
 
 
-class ConfigEachError(OmegaKitBaseException):
-    pass
-
-
-class EachTypeError(ConfigEachError, TypeError):
-    pass
-
-
-class ConfigOverrideError(OmegaKitBaseException):
+class ConfigOverrideError(ConfigLoadError):
     pass
 
 
@@ -111,10 +107,6 @@ class OverrideTypeError(ConfigOverrideError, TypeError):
 
 
 class OverrideMergeError(ConfigOverrideError):
-    pass
-
-
-class ConfigValidationError(OmegaKitBaseException):
     pass
 
 
@@ -134,7 +126,7 @@ class ValidationCycleError(ConfigValidationError):
     pass
 
 
-class ConfigTargetError(OmegaKitBaseException):
+class ConfigTargetError(ConfigValidationError):
     pass
 
 
@@ -154,7 +146,7 @@ class TargetMissingValueError(ConfigTargetError, MissingMandatoryValue):
     pass
 
 
-class ConfigSymbolError(OmegaKitBaseException):
+class ConfigSymbolError(ConfigValidationError):
     pass
 
 
@@ -174,11 +166,11 @@ class SymbolMissingValueError(ConfigSymbolError, MissingMandatoryValue):
     pass
 
 
-class ConfigSchemaError(OmegaKitBaseException):
+class ConfigSchemaError(ConfigValidationError):
     pass
 
 
-class SchemaDefinitionError(ConfigSchemaError, TypeError):
+class SchemaDefinitionError(OmegaKitBaseException, TypeError):
     pass
 
 

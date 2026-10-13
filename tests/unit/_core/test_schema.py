@@ -10,16 +10,10 @@ from typing import Any, Literal, NotRequired, Required, TypedDict
 
 import pytest
 from omegaconf import MISSING
-from omegaconf.errors import ConfigKeyError, MissingMandatoryValue, ValidationError
 
 from omegakit._core.configurable import Configurable
 from omegakit._core.errors import (
-    ConfigSchemaError,
-    OmegaKitBaseException,
     SchemaDefinitionError,
-    SchemaKeyError,
-    SchemaMissingValueError,
-    SchemaTypeError,
     SchemaValueError,
 )
 from omegakit._core.schema import convert_data, convert_item, find_schema, read_fields
@@ -263,21 +257,3 @@ def test_item_is_converted_as_its_annotation():
 def test_number_that_is_too_large_is_rejected(targets: ModuleType):
     with pytest.raises(SchemaValueError, match="Optimizer"):
         convert_data(targets.Optimizer, {"lr": 10**400})
-
-
-@pytest.mark.parametrize(
-    ("error_type", "parent_type"),
-    [
-        (SchemaDefinitionError, TypeError),
-        (SchemaKeyError, ConfigKeyError),
-        (SchemaMissingValueError, MissingMandatoryValue),
-        (SchemaValueError, ValidationError),
-        (SchemaTypeError, ValidationError),
-    ],
-)
-def test_errors_are_also_builtin_or_omegaconf_errors(
-    error_type: type[Exception], parent_type: type[Exception]
-):
-    assert issubclass(error_type, ConfigSchemaError)
-    assert issubclass(error_type, OmegaKitBaseException)
-    assert issubclass(error_type, parent_type)

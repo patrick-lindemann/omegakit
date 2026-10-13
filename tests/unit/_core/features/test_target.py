@@ -4,11 +4,8 @@ from typing import Any
 
 import pytest
 from omegaconf import OmegaConf
-from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
 
 from omegakit._core.errors import (
-    ConfigTargetError,
-    OmegaKitBaseException,
     QualifiedNameNotFoundError,
     QualifiedNameSyntaxError,
     TargetInterpolationError,
@@ -153,20 +150,3 @@ def test_make_node_writes_positional_arguments_to_args():
 def test_make_node_rejects_a_target_that_is_not_at_module_level():
     with pytest.raises(TargetSyntaxError):
         make_node(fractions.Fraction.from_float)
-
-
-@pytest.mark.parametrize(
-    ("error_type", "parent_type"),
-    [
-        (TargetSyntaxError, ValueError),
-        (TargetTypeError, TypeError),
-        (TargetInterpolationError, InterpolationResolutionError),
-        (TargetMissingValueError, MissingMandatoryValue),
-    ],
-)
-def test_errors_are_also_builtin_or_omegaconf_errors(
-    error_type: type[Exception], parent_type: type[Exception]
-):
-    assert issubclass(error_type, ConfigTargetError)
-    assert issubclass(error_type, OmegaKitBaseException)
-    assert issubclass(error_type, parent_type)

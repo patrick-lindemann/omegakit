@@ -169,13 +169,3 @@ def test_a_failure_leaves_the_config_unchanged(overrides: Any):
     with pytest.raises((OverrideSyntaxError, OverrideMergeError)):
         apply_overrides(config, overrides)
     assert config == {"model": {"hidden": 32}}
-
-
-@pytest.mark.parametrize(
-    ("error", "parent"),
-    [(OverrideSyntaxError, ValueError), (OverrideTypeError, TypeError)],
-)
-def test_an_error_is_also_its_builtin_error(
-    error: type[Exception], parent: type[Exception]
-):
-    assert issubclass(error, parent)

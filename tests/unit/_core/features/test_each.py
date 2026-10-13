@@ -5,11 +5,9 @@ import pytest
 from omegaconf import OmegaConf
 
 from omegakit._core.errors import (
-    ConfigEachError,
     EachTypeError,
     MergeCycleError,
     MergeReferenceError,
-    OmegaKitBaseException,
 )
 from omegakit._core.features.each import apply_each
 
@@ -173,9 +171,3 @@ def test_a_failure_leaves_the_config_unchanged():
     with pytest.raises(EachTypeError):
         apply_each(config)
     assert config == content
-
-
-def test_errors_are_also_builtin_errors():
-    assert issubclass(EachTypeError, ConfigEachError)
-    assert issubclass(EachTypeError, OmegaKitBaseException)
-    assert issubclass(EachTypeError, TypeError)

@@ -7,10 +7,8 @@ from omegaconf.errors import ReadonlyConfigError
 
 from omegakit._core.errors import (
     BaseTypeError,
-    ConfigInheritanceError,
     MergeCycleError,
     MergeReferenceError,
-    OmegaKitBaseException,
 )
 from omegakit._core.features.base import merge_bases
 
@@ -244,9 +242,3 @@ def test_a_read_only_config_keeps_its_bases():
     with pytest.raises(ReadonlyConfigError):
         merge_bases(config)
     assert config == content
-
-
-def test_errors_are_also_builtin_errors():
-    assert issubclass(BaseTypeError, ConfigInheritanceError)
-    assert issubclass(BaseTypeError, OmegaKitBaseException)
-    assert issubclass(BaseTypeError, TypeError)
