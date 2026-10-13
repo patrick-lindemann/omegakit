@@ -7,14 +7,13 @@ from omegaconf import DictConfig, ListConfig, OmegaConf, TupleConfig
 from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
 
 from .errors import (
+    ConfigTargetError,
     OmegaKitBaseException,
     SchemaDefinitionError,
     SchemaKeyError,
     SchemaMissingValueError,
     SchemaTypeError,
     SchemaValueError,
-    TargetSyntaxError,
-    TargetTypeError,
     ValidationCycleError,
     ValidationInterpolationError,
     ValidationMissingValueError,
@@ -195,7 +194,7 @@ def _check_call(
             )
         schema = find_schema(target)
         if target_arguments.has_args and hasattr(target, "from_config"):
-            raise TargetSyntaxError(
+            raise ConfigTargetError(
                 f"`{name}` takes its arguments by name, so it cannot take `{ARGS_KEY}`."
             )
     except OmegaKitBaseException as error:
@@ -208,7 +207,7 @@ def _check_call(
         args_annotation: Any = Any
         try:
             if not isinstance(args, (ListConfig, TupleConfig)):
-                raise TargetTypeError(f"`{ARGS_KEY}` must be a list, not `{args!r}`.")
+                raise ConfigTargetError(f"`{ARGS_KEY}` must be a list, not `{args!r}`.")
             if schema is not None:
                 # A dataclass binds the items to its fields, as its constructor does
                 fields = read_fields(schema)

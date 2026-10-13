@@ -6,10 +6,9 @@ from omegaconf import DictConfig, OmegaConf
 from omegaconf.errors import InterpolationResolutionError
 
 from omegakit._core.errors import (
-    TargetInterpolationError,
-    TargetMissingValueError,
-    TargetSyntaxError,
-    TargetTypeError,
+    ConfigTargetError,
+    ValidationInterpolationError,
+    ValidationMissingValueError,
 )
 from omegakit._core.utils.describe import describe_error
 from omegakit._core.utils.locate import locate
@@ -31,16 +30,16 @@ class TargetArguments:
 
 def import_target(node: DictConfig) -> Any:
     if TARGET_KEY not in node.keys():  # noqa: SIM118
-        raise TargetSyntaxError(f"The node has no `{TARGET_KEY}`.")
+        raise ConfigTargetError(f"The node has no `{TARGET_KEY}`.")
     qualified_name = _read_key(node, TARGET_KEY)
     if not isinstance(qualified_name, str):
-        raise TargetTypeError(
+        raise ConfigTargetError(
             f"`{TARGET_KEY}` must be an import path, such as `package.module.Name`, "
             f"not `{qualified_name!r}`."
         )
     target = locate(qualified_name)
     if not (callable(target) or hasattr(target, "from_config")):
-        raise TargetTypeError(
+        raise ConfigTargetError(
             f"`{qualified_name}` is neither callable nor has `from_config`. Use "
             f"`{SYMBOL_KEY}` for an object that is used as it is."
         )
@@ -56,7 +55,7 @@ def read_arguments(node: DictConfig) -> TargetArguments:
     ]
     reserved_keys = [key for key in keys if str(key).startswith("$")]
     if reserved_keys:
-        raise TargetSyntaxError(
+        raise ConfigTargetError(
             f"{', '.join(f'`{key}`' for key in reserved_keys)} cannot be an argument "
             f"of a `{TARGET_KEY}`: keys that start with `$` are reserved."
         )
@@ -64,7 +63,7 @@ def read_arguments(node: DictConfig) -> TargetArguments:
     if PARTIAL_KEY in node_keys:
         is_partial = _read_key(node, PARTIAL_KEY)
         if not isinstance(is_partial, bool):
-            raise TargetTypeError(
+            raise ConfigTargetError(
                 f"`{PARTIAL_KEY}` must be `true` or `false`, not `{is_partial!r}`."
             )
     return TargetArguments(is_partial, keys, ARGS_KEY in node_keys)
@@ -75,7 +74,7 @@ def make_node(
 ) -> dict[str, Any]:
     qualname = target.__qualname__
     if "." in qualname:
-        raise TargetSyntaxError(
+        raise ConfigTargetError(
             f"Cannot create a node for `{qualname}`: only objects defined at module "
             "level can be imported by their path."
         )
@@ -87,11 +86,11 @@ def make_node(
 
 def _read_key(node: DictConfig, key: str) -> Any:
     if OmegaConf.is_missing(node, key):
-        raise TargetMissingValueError(f"`{key}` holds `???`.")
+        raise ValidationMissingValueError(f"`{key}` holds `???`.")
     try:
         # Resolves an interpolation, as in `$target: ${model}`
         return node[key]
     except InterpolationResolutionError as error:
-        raise TargetInterpolationError(
+        raise ValidationInterpolationError(
             f"Cannot resolve `{key}`: {describe_error(error)}"
         ) from error

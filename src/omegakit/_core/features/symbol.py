@@ -4,10 +4,9 @@ from omegaconf import DictConfig, OmegaConf
 from omegaconf.errors import InterpolationResolutionError
 
 from omegakit._core.errors import (
-    SymbolInterpolationError,
-    SymbolMissingValueError,
-    SymbolSyntaxError,
-    SymbolTypeError,
+    ConfigSymbolError,
+    ValidationInterpolationError,
+    ValidationMissingValueError,
 )
 from omegakit._core.utils.describe import describe_error
 from omegakit._core.utils.locate import locate
@@ -19,24 +18,24 @@ SYMBOL_KEY = "$symbol"
 
 def import_symbol(node: DictConfig) -> Any:
     if SYMBOL_KEY not in node.keys():  # noqa: SIM118
-        raise SymbolSyntaxError(f"The node has no `{SYMBOL_KEY}`.")
+        raise ConfigSymbolError(f"The node has no `{SYMBOL_KEY}`.")
     other_keys = [key for key in node.keys() if key not in (SYMBOL_KEY, META_KEY)]  # noqa: SIM118
     if other_keys:
-        raise SymbolSyntaxError(
+        raise ConfigSymbolError(
             f"A `{SYMBOL_KEY}` cannot stand next to other keys, but there is "
             f"{', '.join(f'`{key}`' for key in other_keys)}."
         )
     if OmegaConf.is_missing(node, SYMBOL_KEY):
-        raise SymbolMissingValueError(f"`{SYMBOL_KEY}` holds `???`.")
+        raise ValidationMissingValueError(f"`{SYMBOL_KEY}` holds `???`.")
     try:
         # Resolves an interpolation, as in `$symbol: ${loss}`
         qualified_name = node[SYMBOL_KEY]
     except InterpolationResolutionError as error:
-        raise SymbolInterpolationError(
+        raise ValidationInterpolationError(
             f"Cannot resolve `{SYMBOL_KEY}`: {describe_error(error)}"
         ) from error
     if not isinstance(qualified_name, str):
-        raise SymbolTypeError(
+        raise ConfigSymbolError(
             f"`{SYMBOL_KEY}` must be an import path, such as `package.module.Name`, "
             f"not `{qualified_name!r}`."
         )

@@ -9,12 +9,12 @@ import pytest
 from omegaconf import OmegaConf
 
 from omegakit._core.errors import (
+    ConfigTargetError,
     QualifiedNameNotFoundError,
     SchemaKeyError,
     SchemaMissingValueError,
     SchemaTypeError,
     SchemaValueError,
-    TargetSyntaxError,
     ValidationCycleError,
     ValidationInterpolationError,
     ValidationMissingValueError,
@@ -259,9 +259,9 @@ def test_object_is_returned_as_it_is():
 @pytest.mark.parametrize("content", [{"width": 3}, {"$symbol": "math.sqrt"}])
 def test_node_without_a_target_is_rejected(content: dict[str, Any]):
     config = OmegaConf.create({"model": content})
-    with pytest.raises(TargetSyntaxError, match="`model`"):
+    with pytest.raises(ConfigTargetError, match="`model`"):
         instantiate(config.model)
-    with pytest.raises(TargetSyntaxError, match="the root"):
+    with pytest.raises(ConfigTargetError, match="the root"):
         prepare(config)
 
 
@@ -274,7 +274,7 @@ def test_node_without_a_target_is_rejected(content: dict[str, Any]):
             ValidationInterpolationError,
         ),
         ({"$target": "config_targets.NoSuchName"}, QualifiedNameNotFoundError),
-        ({"$target": "config_targets.Item", "$foo": 1}, TargetSyntaxError),
+        ({"$target": "config_targets.Item", "$foo": 1}, ConfigTargetError),
         ({"$symbol": "config_targets.NoSuchName"}, QualifiedNameNotFoundError),
     ],
 )
@@ -630,7 +630,7 @@ def test_schema_is_not_the_class_of_a_result(targets: ModuleType):
     model = OmegaConf.create({"$target": "config_targets.Model", "depth": 1})
     with pytest.raises(SchemaTypeError, match="ModelConfig"):
         instantiate(model, targets.ModelConfig)
-    with pytest.raises(TargetSyntaxError, match="the root"):
+    with pytest.raises(ConfigTargetError, match="the root"):
         instantiate(OmegaConf.create({"depth": 1}), targets.ModelConfig)
     assert targets.CALLS == []
 
@@ -640,13 +640,13 @@ def test_schema_without_anything_to_build_is_rejected(targets: ModuleType):
         instantiate(OmegaConf.create({"depth": 1}), targets.Model)
     with pytest.raises(SchemaTypeError, match="a mapping"):
         instantiate(OmegaConf.create({"lr": 1}), targets.Optimizer)
-    with pytest.raises(TargetSyntaxError, match="the root"):
+    with pytest.raises(ConfigTargetError, match="the root"):
         prepare(OmegaConf.create({"$symbol": "config_targets.SETTINGS"}), dict)
 
 
 @pytest.mark.parametrize("content", [[{"$target": "builtins.dict"}], (1, 2)])
 def test_list_is_rejected(content: Any):
-    with pytest.raises(TargetSyntaxError, match="the root"):
+    with pytest.raises(ConfigTargetError, match="the root"):
         instantiate(OmegaConf.create(content))
 
 

@@ -5,12 +5,11 @@ import pytest
 from omegaconf import OmegaConf
 
 from omegakit._core.errors import (
+    ConfigSymbolError,
     QualifiedNameNotFoundError,
     QualifiedNameSyntaxError,
-    SymbolInterpolationError,
-    SymbolMissingValueError,
-    SymbolSyntaxError,
-    SymbolTypeError,
+    ValidationInterpolationError,
+    ValidationMissingValueError,
 )
 from omegakit._core.features.symbol import import_symbol
 
@@ -23,7 +22,7 @@ def test_gives_the_object_of_a_node():
 
 def test_node_without_a_symbol_is_rejected():
     config = OmegaConf.create({"loss": {"reduction": "mean"}})
-    with pytest.raises(SymbolSyntaxError):
+    with pytest.raises(ConfigSymbolError):
         import_symbol(config.loss)
 
 
@@ -39,26 +38,26 @@ def test_symbol_can_be_an_interpolation():
 
 def test_other_key_next_to_a_symbol_is_rejected():
     config = OmegaConf.create({"loss": {"$symbol": "math.sqrt", "reduction": "mean"}})
-    with pytest.raises(SymbolSyntaxError, match="reduction"):
+    with pytest.raises(ConfigSymbolError, match="reduction"):
         import_symbol(config.loss)
 
 
 @pytest.mark.parametrize("value", [1, None, ["math.sqrt"], {"path": "math.sqrt"}])
 def test_symbol_that_is_not_a_string_is_rejected(value: Any):
     config = OmegaConf.create({"loss": {"$symbol": value}})
-    with pytest.raises(SymbolTypeError):
+    with pytest.raises(ConfigSymbolError):
         import_symbol(config.loss)
 
 
 def test_missing_symbol_is_rejected():
     config = OmegaConf.create({"loss": {"$symbol": "???"}})
-    with pytest.raises(SymbolMissingValueError):
+    with pytest.raises(ValidationMissingValueError):
         import_symbol(config.loss)
 
 
 def test_failing_interpolation_is_rejected():
     config = OmegaConf.create({"loss": {"$symbol": "${nowhere}"}})
-    with pytest.raises(SymbolInterpolationError):
+    with pytest.raises(ValidationInterpolationError):
         import_symbol(config.loss)
 
 

@@ -6,12 +6,11 @@ import pytest
 from omegaconf import OmegaConf
 
 from omegakit._core.errors import (
+    ConfigTargetError,
     QualifiedNameNotFoundError,
     QualifiedNameSyntaxError,
-    TargetInterpolationError,
-    TargetMissingValueError,
-    TargetSyntaxError,
-    TargetTypeError,
+    ValidationInterpolationError,
+    ValidationMissingValueError,
 )
 from omegakit._core.features.target import (
     TargetArguments,
@@ -30,7 +29,7 @@ def test_gives_the_target_of_a_node():
 
 def test_node_without_a_target_is_rejected():
     config = OmegaConf.create({"half": {"numerator": 1}})
-    with pytest.raises(TargetSyntaxError):
+    with pytest.raises(ConfigTargetError):
         import_target(config.half)
 
 
@@ -44,13 +43,13 @@ def test_target_can_be_an_interpolation():
 @pytest.mark.parametrize("value", [1, None, ["fractions.Fraction"]])
 def test_target_that_is_not_a_string_is_rejected(value: Any):
     config = OmegaConf.create({"half": {"$target": value}})
-    with pytest.raises(TargetTypeError):
+    with pytest.raises(ConfigTargetError):
         import_target(config.half)
 
 
 def test_target_that_cannot_be_called_is_rejected():
     config = OmegaConf.create({"half": {"$target": "math.pi"}})
-    with pytest.raises(TargetTypeError, match=r"\$symbol"):
+    with pytest.raises(ConfigTargetError, match=r"\$symbol"):
         import_target(config.half)
 
 
@@ -74,7 +73,10 @@ def test_locate_errors_pass_through(qualified_name: str, error_type: type[Except
 
 @pytest.mark.parametrize(
     ("value", "error_type"),
-    [("???", TargetMissingValueError), ("${nowhere}", TargetInterpolationError)],
+    [
+        ("???", ValidationMissingValueError),
+        ("${nowhere}", ValidationInterpolationError),
+    ],
 )
 def test_key_that_cannot_be_read_is_rejected(value: str, error_type: type[Exception]):
     config = OmegaConf.create(
@@ -124,14 +126,14 @@ def test_args_are_no_keyword_argument():
 @pytest.mark.parametrize("value", ["true", 1, None, [True]])
 def test_partial_that_is_not_a_boolean_is_rejected(value: Any):
     config = OmegaConf.create({"$target": "builtins.dict", "$partial": value})
-    with pytest.raises(TargetTypeError):
+    with pytest.raises(ConfigTargetError):
         read_arguments(config)
 
 
 @pytest.mark.parametrize("key", ["$symbol", "$base", "$foo"])
 def test_other_dollar_key_is_rejected(key: str):
     config = OmegaConf.create({"$target": "builtins.dict", key: "math.pi", "n": 1})
-    with pytest.raises(TargetSyntaxError, match=rf"\{key}"):
+    with pytest.raises(ConfigTargetError, match=rf"\{key}"):
         read_arguments(config)
 
 
@@ -148,5 +150,5 @@ def test_make_node_writes_positional_arguments_to_args():
 
 
 def test_make_node_rejects_a_target_that_is_not_at_module_level():
-    with pytest.raises(TargetSyntaxError):
+    with pytest.raises(ConfigTargetError):
         make_node(fractions.Fraction.from_float)

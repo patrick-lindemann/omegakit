@@ -74,39 +74,7 @@ class ConfigTargetError(ConfigValidationError):
     pass
 
 
-class TargetSyntaxError(ConfigTargetError, ValueError):
-    pass
-
-
-class TargetTypeError(ConfigTargetError, TypeError):
-    pass
-
-
-class TargetInterpolationError(ConfigTargetError, InterpolationResolutionError):
-    pass
-
-
-class TargetMissingValueError(ConfigTargetError, MissingMandatoryValue):
-    pass
-
-
 class ConfigSymbolError(ConfigValidationError):
-    pass
-
-
-class SymbolSyntaxError(ConfigSymbolError, ValueError):
-    pass
-
-
-class SymbolTypeError(ConfigSymbolError, TypeError):
-    pass
-
-
-class SymbolInterpolationError(ConfigSymbolError, InterpolationResolutionError):
-    pass
-
-
-class SymbolMissingValueError(ConfigSymbolError, MissingMandatoryValue):
     pass
 
 

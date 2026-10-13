@@ -4,7 +4,7 @@ from typing import Any, get_origin, is_typeddict, overload
 
 from omegaconf import DictConfig
 
-from .errors import SchemaMissingValueError, SchemaTypeError, TargetSyntaxError
+from .errors import ConfigTargetError, SchemaMissingValueError, SchemaTypeError
 from .features.target import TARGET_KEY
 from .schema import read_fields, split_union
 from .utils.describe import describe_node
@@ -39,7 +39,7 @@ def _instantiate(config: DictConfig, schema: type | None, is_partial: bool) -> A
     # Checked before the first call, so that nothing is called for an invalid config
     call = check(config, schema, is_partial)
     if not isinstance(call, Call):
-        raise TargetSyntaxError(
+        raise ConfigTargetError(
             f"There is nothing to instantiate: {describe_node(config)} has no "
             f"`{TARGET_KEY}`."
         )

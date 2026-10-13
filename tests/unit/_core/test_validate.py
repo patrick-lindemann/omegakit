@@ -8,16 +8,14 @@ import pytest
 from omegaconf import DictConfig, OmegaConf
 
 from omegakit._core.errors import (
+    ConfigSymbolError,
+    ConfigTargetError,
     QualifiedNameNotFoundError,
     SchemaDefinitionError,
     SchemaKeyError,
     SchemaMissingValueError,
     SchemaTypeError,
     SchemaValueError,
-    SymbolSyntaxError,
-    TargetMissingValueError,
-    TargetSyntaxError,
-    TargetTypeError,
     ValidationCycleError,
     ValidationInterpolationError,
     ValidationMissingValueError,
@@ -118,11 +116,11 @@ def test_missing_root_is_rejected():
     ("node", "error_type"),
     [
         ({"$target": "config_targets.NoSuchName"}, QualifiedNameNotFoundError),
-        ({"$target": "???"}, TargetMissingValueError),
-        ({"$target": "builtins.dict", "$partial": "yes"}, TargetTypeError),
-        ({"$target": "builtins.dict", "$foo": 1}, TargetSyntaxError),
+        ({"$target": "???"}, ValidationMissingValueError),
+        ({"$target": "builtins.dict", "$partial": "yes"}, ConfigTargetError),
+        ({"$target": "builtins.dict", "$foo": 1}, ConfigTargetError),
         ({"$symbol": "config_targets.NoSuchName"}, QualifiedNameNotFoundError),
-        ({"$symbol": "math.sqrt", "reduction": "mean"}, SymbolSyntaxError),
+        ({"$symbol": "math.sqrt", "reduction": "mean"}, ConfigSymbolError),
     ],
 )
 def test_error_of_a_target_or_symbol_names_its_node(
@@ -138,8 +136,8 @@ def test_error_of_a_target_or_symbol_names_its_node(
 @pytest.mark.parametrize(
     ("node", "error_type", "full_key"),
     [
-        ({"$target": "math.sqrt", "$args": 2}, TargetTypeError, "models[1]"),
-        ({"$target": "math.sqrt", "$args": {"x": 2}}, TargetTypeError, "models[1]"),
+        ({"$target": "math.sqrt", "$args": 2}, ConfigTargetError, "models[1]"),
+        ({"$target": "math.sqrt", "$args": {"x": 2}}, ConfigTargetError, "models[1]"),
         (
             {"$target": "math.sqrt", "$args": ["???"]},
             ValidationMissingValueError,
@@ -152,21 +150,21 @@ def test_error_of_a_target_or_symbol_names_its_node(
         ),
         (
             {"$target": "config_targets.Configured", "$args": [1]},
-            TargetSyntaxError,
+            ConfigTargetError,
             "models[1]",
         ),
         (
             {"$target": "config_targets.Model", "$args": [1]},
-            TargetSyntaxError,
+            ConfigTargetError,
             "models[1]",
         ),
         (
             {"$target": "config_targets.Layer", "$args": [1]},
-            TargetSyntaxError,
+            ConfigTargetError,
             "models[1]",
         ),
         ({"$args": [1]}, ValidationSyntaxError, "models[1]"),
-        ({"$symbol": "math.pi", "$args": [1]}, SymbolSyntaxError, "models[1]"),
+        ({"$symbol": "math.pi", "$args": [1]}, ConfigSymbolError, "models[1]"),
     ],
 )
 def test_args_that_cannot_be_passed_are_rejected(
