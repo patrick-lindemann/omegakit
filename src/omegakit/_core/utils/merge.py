@@ -4,22 +4,13 @@ from typing import Any, cast
 from omegaconf import MISSING, DictConfig, ListConfig, OmegaConf, TupleConfig
 from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
 
-from omegakit._core.error import OmegaKitBaseException
+from omegakit._core.errors import (
+    MergeCycleError,
+    MergeReferenceError,
+)
 
 from .describe import describe_error, describe_node
 from .walk import walk
-
-
-class ConfigMergeError(OmegaKitBaseException):
-    pass
-
-
-class MergeReferenceError(ConfigMergeError, InterpolationResolutionError):
-    pass
-
-
-class MergeCycleError(ConfigMergeError):
-    pass
 
 
 def walk_mergeable(

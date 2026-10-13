@@ -3,21 +3,13 @@ from pathlib import Path
 
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
-from omegakit._core.error import OmegaKitBaseException
+from omegakit._core.errors import (
+    ConfigFileNotFoundError,
+    ConfigFilePermissionError,
+    ConfigSyntaxError,
+)
 
 from .describe import describe_error
-
-
-class ConfigFileNotFoundError(OmegaKitBaseException, FileNotFoundError):
-    pass
-
-
-class ConfigFilePermissionError(OmegaKitBaseException, PermissionError):
-    pass
-
-
-class ConfigSyntaxError(OmegaKitBaseException, ValueError):
-    pass
 
 
 def load_yaml(file_path: Path) -> DictConfig | ListConfig:

@@ -6,21 +6,21 @@ import pytest
 from omegaconf import OmegaConf
 from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
 
-from omegakit._core.error import OmegaKitBaseException
-from omegakit._core.features.target import (
+from omegakit._core.errors import (
     ConfigTargetError,
-    TargetArguments,
+    OmegaKitBaseException,
+    QualifiedNameNotFoundError,
+    QualifiedNameSyntaxError,
     TargetInterpolationError,
     TargetMissingValueError,
     TargetSyntaxError,
     TargetTypeError,
+)
+from omegakit._core.features.target import (
+    TargetArguments,
     import_target,
     make_node,
     read_arguments,
-)
-from omegakit._core.utils.locate import (
-    QualifiedNameNotFoundError,
-    QualifiedNameSyntaxError,
 )
 
 

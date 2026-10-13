@@ -8,20 +8,19 @@ from typing import Any
 import pytest
 from omegaconf import OmegaConf
 
-from omegakit._core.features.target import TargetSyntaxError, make_node
-from omegakit._core.instantiate import instantiate, prepare
-from omegakit._core.schema import (
+from omegakit._core.errors import (
+    QualifiedNameNotFoundError,
     SchemaKeyError,
     SchemaMissingValueError,
     SchemaTypeError,
     SchemaValueError,
-)
-from omegakit._core.utils.locate import QualifiedNameNotFoundError
-from omegakit._core.validate import (
+    TargetSyntaxError,
     ValidationCycleError,
     ValidationInterpolationError,
     ValidationMissingValueError,
 )
+from omegakit._core.features.target import make_node
+from omegakit._core.instantiate import instantiate, prepare
 
 
 def test_builds_the_object_of_a_class():

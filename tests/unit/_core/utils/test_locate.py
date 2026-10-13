@@ -5,12 +5,12 @@ from pathlib import Path
 
 import pytest
 
-from omegakit._core.error import OmegaKitBaseException
-from omegakit._core.utils.locate import (
+from omegakit._core.errors import (
+    OmegaKitBaseException,
     QualifiedNameNotFoundError,
     QualifiedNameSyntaxError,
-    locate,
 )
+from omegakit._core.utils.locate import locate
 
 
 def test_imports_an_attribute_of_a_module():

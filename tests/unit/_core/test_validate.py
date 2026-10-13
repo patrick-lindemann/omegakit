@@ -8,29 +8,25 @@ import pytest
 from omegaconf import DictConfig, OmegaConf
 from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
 
-from omegakit._core.error import OmegaKitBaseException
-from omegakit._core.features.symbol import SymbolSyntaxError
-from omegakit._core.features.target import (
-    TargetMissingValueError,
-    TargetSyntaxError,
-    TargetTypeError,
-)
-from omegakit._core.schema import (
+from omegakit._core.errors import (
+    ConfigValidationError,
+    OmegaKitBaseException,
+    QualifiedNameNotFoundError,
     SchemaDefinitionError,
     SchemaKeyError,
     SchemaMissingValueError,
     SchemaTypeError,
     SchemaValueError,
-)
-from omegakit._core.utils.locate import QualifiedNameNotFoundError
-from omegakit._core.validate import (
-    ConfigValidationError,
+    SymbolSyntaxError,
+    TargetMissingValueError,
+    TargetSyntaxError,
+    TargetTypeError,
     ValidationCycleError,
     ValidationInterpolationError,
     ValidationMissingValueError,
     ValidationSyntaxError,
-    validate,
 )
+from omegakit._core.validate import validate
 
 
 class _Greeter(Protocol):

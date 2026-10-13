@@ -1,35 +1,20 @@
 from typing import Any
 
 from omegaconf import DictConfig, OmegaConf
-from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
+from omegaconf.errors import InterpolationResolutionError
 
-from omegakit._core.error import OmegaKitBaseException
+from omegakit._core.errors import (
+    SymbolInterpolationError,
+    SymbolMissingValueError,
+    SymbolSyntaxError,
+    SymbolTypeError,
+)
 from omegakit._core.utils.describe import describe_error
 from omegakit._core.utils.locate import locate
 
 from .meta import META_KEY
 
 SYMBOL_KEY = "$symbol"
-
-
-class ConfigSymbolError(OmegaKitBaseException):
-    pass
-
-
-class SymbolSyntaxError(ConfigSymbolError, ValueError):
-    pass
-
-
-class SymbolTypeError(ConfigSymbolError, TypeError):
-    pass
-
-
-class SymbolInterpolationError(ConfigSymbolError, InterpolationResolutionError):
-    pass
-
-
-class SymbolMissingValueError(ConfigSymbolError, MissingMandatoryValue):
-    pass
 
 
 def import_symbol(node: DictConfig) -> Any:

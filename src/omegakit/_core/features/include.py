@@ -9,7 +9,16 @@ from omegaconf.errors import (
     OmegaConfBaseException,
 )
 
-from omegakit._core.error import OmegaKitBaseException
+from omegakit._core.errors import (
+    IncludeCycleError,
+    IncludeInterpolationError,
+    IncludeMissingValueError,
+    IncludeNodeNotFoundError,
+    IncludeRootError,
+    IncludeSyntaxError,
+    IncludeTypeError,
+    OmegaKitBaseException,
+)
 from omegakit._core.utils.assignment import Assignment
 from omegakit._core.utils.copy import copy_with_root
 from omegakit._core.utils.describe import describe_error
@@ -21,38 +30,6 @@ INCLUDE_PREFIX = "~include"
 
 _INCLUDE_PATTERN = re.compile(rf"{INCLUDE_PREFIX}(\s|$)")
 _NOT_FOUND = object()
-
-
-class ConfigIncludeError(OmegaKitBaseException):
-    pass
-
-
-class IncludeSyntaxError(ConfigIncludeError, ValueError):
-    pass
-
-
-class IncludeInterpolationError(ConfigIncludeError, InterpolationResolutionError):
-    pass
-
-
-class IncludeTypeError(ConfigIncludeError, TypeError):
-    pass
-
-
-class IncludeCycleError(ConfigIncludeError):
-    pass
-
-
-class IncludeNodeNotFoundError(ConfigIncludeError):
-    pass
-
-
-class IncludeRootError(ConfigIncludeError):
-    pass
-
-
-class IncludeMissingValueError(ConfigIncludeError, MissingMandatoryValue):
-    pass
 
 
 def resolve_includes[TConfig: DictConfig | ListConfig | TupleConfig](

@@ -1,19 +1,11 @@
 from omegaconf import DictConfig, ListConfig, TupleConfig
 
-from omegakit._core.error import OmegaKitBaseException
+from omegakit._core.errors import EachTypeError
 from omegakit._core.utils.copy import copy_with_root
 from omegakit._core.utils.describe import describe_node
 from omegakit._core.utils.merge import merge_under, walk_mergeable
 
 EACH_KEY = "$each"
-
-
-class ConfigEachError(OmegaKitBaseException):
-    pass
-
-
-class EachTypeError(ConfigEachError, TypeError):
-    pass
 
 
 def apply_each[TConfig: DictConfig | ListConfig | TupleConfig](

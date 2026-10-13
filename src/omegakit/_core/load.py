@@ -2,7 +2,7 @@ from typing import Any
 
 from omegaconf import DictConfig
 
-from .error import OmegaKitBaseException
+from .errors import LoadTypeError
 from .features.base import merge_bases
 from .features.each import apply_each
 from .features.include import resolve_includes
@@ -10,14 +10,6 @@ from .features.meta import remove_meta
 from .features.overrides import apply_overrides
 from .utils.file import load_yaml
 from .utils.path import PathLike, resolve_path
-
-
-class ConfigLoadError(OmegaKitBaseException):
-    pass
-
-
-class LoadTypeError(ConfigLoadError, TypeError):
-    pass
 
 
 def load_config(

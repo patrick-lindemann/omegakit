@@ -5,14 +5,13 @@ import pytest
 from omegaconf import DictConfig, OmegaConf
 from omegaconf.errors import InterpolationResolutionError
 
-from omegakit._core.error import OmegaKitBaseException
-from omegakit._core.utils.merge import (
+from omegakit._core.errors import (
     ConfigMergeError,
     MergeCycleError,
     MergeReferenceError,
-    merge_under,
-    walk_mergeable,
+    OmegaKitBaseException,
 )
+from omegakit._core.utils.merge import merge_under, walk_mergeable
 
 
 def _remove_key(config: DictConfig) -> list[Any]:

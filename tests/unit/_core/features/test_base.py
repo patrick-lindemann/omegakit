@@ -5,13 +5,14 @@ import pytest
 from omegaconf import OmegaConf
 from omegaconf.errors import ReadonlyConfigError
 
-from omegakit._core.error import OmegaKitBaseException
-from omegakit._core.features.base import (
+from omegakit._core.errors import (
     BaseTypeError,
     ConfigInheritanceError,
-    merge_bases,
+    MergeCycleError,
+    MergeReferenceError,
+    OmegaKitBaseException,
 )
-from omegakit._core.utils.merge import MergeCycleError, MergeReferenceError
+from omegakit._core.features.base import merge_bases
 
 
 def test_own_keys_win_over_the_base():

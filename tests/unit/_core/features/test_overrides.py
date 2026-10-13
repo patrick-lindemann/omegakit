@@ -5,12 +5,12 @@ from typing import Any
 import pytest
 from omegaconf import OmegaConf
 
-from omegakit._core.features.overrides import (
+from omegakit._core.errors import (
     OverrideMergeError,
     OverrideSyntaxError,
     OverrideTypeError,
-    apply_overrides,
 )
+from omegakit._core.features.overrides import apply_overrides
 
 
 @dataclass

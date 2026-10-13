@@ -1,17 +1,12 @@
 import importlib
 from typing import Any
 
-from omegakit._core.error import OmegaKitBaseException
+from omegakit._core.errors import (
+    QualifiedNameNotFoundError,
+    QualifiedNameSyntaxError,
+)
 
 _NOT_FOUND = object()
-
-
-class QualifiedNameSyntaxError(OmegaKitBaseException, ValueError):
-    pass
-
-
-class QualifiedNameNotFoundError(OmegaKitBaseException, ImportError):
-    pass
 
 
 def locate(qualified_name: str) -> Any:

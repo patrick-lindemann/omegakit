@@ -3,9 +3,14 @@ from dataclasses import dataclass
 from typing import Any
 
 from omegaconf import DictConfig, OmegaConf
-from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
+from omegaconf.errors import InterpolationResolutionError
 
-from omegakit._core.error import OmegaKitBaseException
+from omegakit._core.errors import (
+    TargetInterpolationError,
+    TargetMissingValueError,
+    TargetSyntaxError,
+    TargetTypeError,
+)
 from omegakit._core.utils.describe import describe_error
 from omegakit._core.utils.locate import locate
 
@@ -15,26 +20,6 @@ from .symbol import SYMBOL_KEY
 TARGET_KEY = "$target"
 PARTIAL_KEY = "$partial"
 ARGS_KEY = "$args"
-
-
-class ConfigTargetError(OmegaKitBaseException):
-    pass
-
-
-class TargetSyntaxError(ConfigTargetError, ValueError):
-    pass
-
-
-class TargetTypeError(ConfigTargetError, TypeError):
-    pass
-
-
-class TargetInterpolationError(ConfigTargetError, InterpolationResolutionError):
-    pass
-
-
-class TargetMissingValueError(ConfigTargetError, MissingMandatoryValue):
-    pass
 
 
 @dataclass(frozen=True)

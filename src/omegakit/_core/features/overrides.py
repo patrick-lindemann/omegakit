@@ -3,25 +3,13 @@ from typing import Any, overload
 from omegaconf import DictConfig, ListConfig, OmegaConf
 from omegaconf.errors import OmegaConfBaseException
 
-from omegakit._core.error import OmegaKitBaseException
+from omegakit._core.errors import (
+    OverrideMergeError,
+    OverrideSyntaxError,
+    OverrideTypeError,
+)
 from omegakit._core.utils.copy import copy_with_root
 from omegakit._core.utils.describe import describe_error
-
-
-class ConfigOverrideError(OmegaKitBaseException):
-    pass
-
-
-class OverrideSyntaxError(ConfigOverrideError, ValueError):
-    pass
-
-
-class OverrideTypeError(ConfigOverrideError, TypeError):
-    pass
-
-
-class OverrideMergeError(ConfigOverrideError):
-    pass
 
 
 @overload

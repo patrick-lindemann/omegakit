@@ -6,23 +6,24 @@ from typing import Any, get_args, get_origin, is_typeddict
 from omegaconf import DictConfig, ListConfig, OmegaConf, TupleConfig
 from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
 
-from .error import OmegaKitBaseException
-from .features.meta import META_KEY
-from .features.symbol import SYMBOL_KEY, import_symbol
-from .features.target import (
-    ARGS_KEY,
-    TARGET_KEY,
-    TargetSyntaxError,
-    TargetTypeError,
-    import_target,
-    read_arguments,
-)
-from .schema import (
+from .errors import (
+    OmegaKitBaseException,
     SchemaDefinitionError,
     SchemaKeyError,
     SchemaMissingValueError,
     SchemaTypeError,
     SchemaValueError,
+    TargetSyntaxError,
+    TargetTypeError,
+    ValidationCycleError,
+    ValidationInterpolationError,
+    ValidationMissingValueError,
+    ValidationSyntaxError,
+)
+from .features.meta import META_KEY
+from .features.symbol import SYMBOL_KEY, import_symbol
+from .features.target import ARGS_KEY, TARGET_KEY, import_target, read_arguments
+from .schema import (
     convert_data,
     convert_item,
     find_item_annotation,
@@ -36,26 +37,6 @@ from .schema import (
     split_union,
 )
 from .utils.describe import describe_error, describe_node
-
-
-class ConfigValidationError(OmegaKitBaseException):
-    pass
-
-
-class ValidationSyntaxError(ConfigValidationError, ValueError):
-    pass
-
-
-class ValidationInterpolationError(ConfigValidationError, InterpolationResolutionError):
-    pass
-
-
-class ValidationMissingValueError(ConfigValidationError, MissingMandatoryValue):
-    pass
-
-
-class ValidationCycleError(ConfigValidationError):
-    pass
 
 
 @dataclasses.dataclass(frozen=True)

@@ -5,19 +5,17 @@ import pytest
 from omegaconf import OmegaConf
 from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
 
-from omegakit._core.error import OmegaKitBaseException
-from omegakit._core.features.symbol import (
+from omegakit._core.errors import (
     ConfigSymbolError,
+    OmegaKitBaseException,
+    QualifiedNameNotFoundError,
+    QualifiedNameSyntaxError,
     SymbolInterpolationError,
     SymbolMissingValueError,
     SymbolSyntaxError,
     SymbolTypeError,
-    import_symbol,
 )
-from omegakit._core.utils.locate import (
-    QualifiedNameNotFoundError,
-    QualifiedNameSyntaxError,
-)
+from omegakit._core.features.symbol import import_symbol
 
 
 def test_gives_the_object_of_a_node():

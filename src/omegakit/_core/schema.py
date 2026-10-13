@@ -20,39 +20,15 @@ from typing import (
 
 from omegaconf import MISSING, OmegaConf
 from omegaconf.errors import (
-    ConfigKeyError,
-    MissingMandatoryValue,
     OmegaConfBaseException,
-    ValidationError,
 )
 
 from .configurable import Configurable
-from .error import OmegaKitBaseException
+from .errors import (
+    SchemaDefinitionError,
+    SchemaValueError,
+)
 from .utils.describe import describe_error
-
-
-class ConfigSchemaError(OmegaKitBaseException):
-    pass
-
-
-class SchemaDefinitionError(ConfigSchemaError, TypeError):
-    pass
-
-
-class SchemaKeyError(ConfigSchemaError, ConfigKeyError):
-    pass
-
-
-class SchemaMissingValueError(ConfigSchemaError, MissingMandatoryValue):
-    pass
-
-
-class SchemaValueError(ConfigSchemaError, ValidationError):
-    pass
-
-
-class SchemaTypeError(ConfigSchemaError, ValidationError):
-    pass
 
 
 @dataclasses.dataclass(frozen=True)

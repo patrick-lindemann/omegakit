@@ -1,19 +1,13 @@
 from omegaconf import DictConfig, ListConfig, TupleConfig
 
-from omegakit._core.error import OmegaKitBaseException
+from omegakit._core.errors import (
+    BaseTypeError,
+)
 from omegakit._core.utils.copy import copy_with_root
 from omegakit._core.utils.describe import describe_node
 from omegakit._core.utils.merge import merge_under, walk_mergeable
 
 BASE_KEY = "$base"
-
-
-class ConfigInheritanceError(OmegaKitBaseException):
-    pass
-
-
-class BaseTypeError(ConfigInheritanceError, TypeError):
-    pass
 
 
 def merge_bases[TConfig: DictConfig | ListConfig | TupleConfig](
