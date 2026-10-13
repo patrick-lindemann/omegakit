@@ -49,12 +49,24 @@ All notable changes to this project are documented here. The format follows
   a file outside it raises the new `IncludeRootError`.
 - **Breaking:** `load_config` no longer takes `keep_targets`, and its arguments may
   be given by position. It raises the error of the step that failed, such as
-  `ConfigFileSyntaxError` or `ConfigIncludeError`, instead of wrapping it in
-  `ConfigLoadError`, and `ConfigFileSyntaxError` for a file whose root is a list.
-- `ConfigLoadError` is the parent of every error that `load_config` raises, and
-  `ConfigValidationError` of every error that `validate`, `instantiate` and
-  `prepare` raise about the config. `SchemaDefinitionError` belongs to neither,
-  since it reports a wrong schema.
+  `ConfigFileSyntaxError` or `ConfigIncludeError`, instead of raising
+  `ConfigLoadError` itself, and `ConfigFileSyntaxError` for a file whose root is a
+  list.
+- **Breaking:** omegakit has 18 error classes. `ConfigLoadError` is the parent of
+  every error that `load_config` raises: `ConfigFileNotFoundError`,
+  `ConfigFilePermissionError`, `ConfigFileSyntaxError`, `ConfigIncludeError` with
+  `IncludeRootError`, `ConfigMergeError` for `$base` and `$each`, and
+  `ConfigOverrideError`. `ConfigValidationError` is the parent of every error that
+  `validate`, `instantiate` and `prepare` raise about the config:
+  `ValidationMissingValueError` for a `???`, `ValidationInterpolationError`,
+  `QualifiedNameSyntaxError`, `QualifiedNameNotFoundError`, `ConfigTargetError`,
+  `ConfigSymbolError` and `ConfigSchemaError`. `SchemaDefinitionError` belongs to
+  neither, since it reports a wrong schema.
+- **Breaking:** `OmegaKitBaseException` is no longer an `OmegaConfBaseException`,
+  and no error is an OmegaConf error, a `TypeError` or a `ValueError`. Catch
+  `OmegaKitBaseException` or one of its classes instead. `ConfigFileNotFoundError`
+  is still a `FileNotFoundError`, `ConfigFilePermissionError` a `PermissionError`
+  and `QualifiedNameNotFoundError` an `ImportError`.
 - **Breaking:** `omegakit check --import-root` is now `--include-root`, and
   `--allow-missing` and `--allow-module` are gone, as `validate` no longer takes
   `allow_missing` and `allowed_modules`.
@@ -170,7 +182,7 @@ All notable changes to this project are documented here. The format follows
 
 - A schema field annotated with a bare `tuple` holds a `tuple`, as the Dataclass
   schemas page says, instead of a `list`.
-- A list of overrides with an item that is not a string raises `TypeError`, as
+- A list of overrides with an item that is not a string raises `ConfigOverrideError`, as
   overrides of the wrong type do, instead of OmegaConf's `ValueError`.
 - A schema annotation that fails to evaluate, such as `"int | 1"`, raises
   `SchemaDefinitionError`, as the Dataclass schemas page says, instead of the

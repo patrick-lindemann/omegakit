@@ -1,9 +1,3 @@
-from omegaconf.errors import (
-    InterpolationResolutionError,
-    MissingMandatoryValue,
-)
-
-
 class OmegaKitBaseException(Exception):
     pass
 
@@ -24,11 +18,11 @@ class ConfigFilePermissionError(ConfigLoadError, PermissionError):
     pass
 
 
-class ConfigFileSyntaxError(ConfigLoadError, ValueError):
+class ConfigFileSyntaxError(ConfigLoadError):
     pass
 
 
-class QualifiedNameSyntaxError(ConfigValidationError, ValueError):
+class QualifiedNameSyntaxError(ConfigValidationError):
     pass
 
 
@@ -52,11 +46,11 @@ class ConfigOverrideError(ConfigLoadError):
     pass
 
 
-class ValidationInterpolationError(ConfigValidationError, InterpolationResolutionError):
+class ValidationInterpolationError(ConfigValidationError):
     pass
 
 
-class ValidationMissingValueError(ConfigValidationError, MissingMandatoryValue):
+class ValidationMissingValueError(ConfigValidationError):
     pass
 
 
@@ -72,5 +66,5 @@ class ConfigSchemaError(ConfigValidationError):
     pass
 
 
-class SchemaDefinitionError(OmegaKitBaseException, TypeError):
+class SchemaDefinitionError(OmegaKitBaseException):
     pass

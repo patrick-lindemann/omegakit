@@ -72,3 +72,11 @@ def test_error_is_also_its_builtin_error(
     error_type: type[Exception], builtin_type: type[Exception]
 ):
     assert issubclass(error_type, builtin_type)
+
+
+@pytest.mark.parametrize(
+    "error_type",
+    [ConfigTargetError, ConfigSymbolError, ConfigSchemaError, SchemaDefinitionError],
+)
+def test_error_is_no_builtin_type_error(error_type: type[Exception]):
+    assert not issubclass(error_type, TypeError)
