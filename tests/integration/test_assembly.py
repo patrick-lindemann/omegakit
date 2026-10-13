@@ -1,15 +1,8 @@
 import datetime
 from pathlib import Path
 
-from omegaconf import DictConfig
-
-from omegakit._core.features.base import merge_bases
-from omegakit._core.features.each import apply_each
-from omegakit._core.features.include import resolve_includes
-from omegakit._core.features.meta import remove_meta
-from omegakit._core.features.overrides import apply_overrides
 from omegakit._core.instantiate import instantiate
-from omegakit._core.utils.file import load_yaml
+from omegakit._core.load import load_config
 
 
 def test_overrides_win_over_included_values(tmp_path: Path):
@@ -26,11 +19,7 @@ def test_overrides_win_over_included_values(tmp_path: Path):
     experiment_path.write_text(
         "$meta: {title: Wide MLP}\nlr: 0.1\nmodel: ~include configs/model.yaml\n"
     )
-    config = load_yaml(experiment_path)
-    assert isinstance(config, DictConfig)
-    config = resolve_includes(config, experiment_path)
-    config = apply_overrides(config, ["model.hidden=256", "lr=0.01"])
-    config = remove_meta(config)
+    config = load_config(experiment_path, ["model.hidden=256", "lr=0.01"])
     assert config == {
         "lr": 0.01,
         "model": {"hidden": 256, "optimizer": {"lr": 0.01, "momentum": 0.9}},
@@ -49,12 +38,7 @@ def test_included_base_and_each_are_assembled_before_overrides(tmp_path: Path):
     experiment_path.write_text(
         "$base: ~include base.yaml\ndata:\n  validation: {n: 64}\n"
     )
-    config = load_yaml(experiment_path)
-    assert isinstance(config, DictConfig)
-    config = resolve_includes(config, experiment_path)
-    config = merge_bases(config)
-    config = apply_each(config)
-    config = apply_overrides(config, ["data.train.seed=7", "epochs=1"])
+    config = load_config(experiment_path, ["data.train.seed=7", "epochs=1"])
     assert config == {
         "epochs": 1,
         "data": {
@@ -79,12 +63,7 @@ def test_positional_arguments_are_assembled_like_any_list(tmp_path: Path):
         "  $args:\n"
         "    - [~include step.yaml]\n"
     )
-    config = load_yaml(experiment_path)
-    assert isinstance(config, DictConfig)
-    config = resolve_includes(config, experiment_path)
-    config = merge_bases(config)
-    config = apply_each(config)
-    config = apply_overrides(config, ["ranges.wide.$args=[1, 5]"])
+    config = load_config(experiment_path, ["ranges.wide.$args=[1, 5]"])
     assert instantiate(config.ranges.short) == range(3)
     assert instantiate(config.ranges.long) == range(7)
     assert instantiate(config.ranges.wide) == range(1, 5)
@@ -105,12 +84,7 @@ def test_assembled_config_is_instantiated(tmp_path: Path):
         "limits: ~include limits.yaml\n"
         "clock: {$symbol: datetime.datetime}\n"
     )
-    config = load_yaml(experiment_path)
-    assert isinstance(config, DictConfig)
-    config = resolve_includes(config, experiment_path)
-    config = merge_bases(config)
-    config = apply_each(config)
-    config = apply_overrides(config, ["hours=2"])
+    config = load_config(experiment_path, ["hours=2"])
     experiment = instantiate(config)
     assert experiment == {
         "hours": 2,
