@@ -16,9 +16,9 @@ class BaseTypeError(ConfigInheritanceError, TypeError):
     pass
 
 
-def merge_bases[ConfigT: DictConfig | ListConfig | TupleConfig](
-    config: ConfigT, copy: bool = True
-) -> ConfigT:
+def merge_bases[TConfig: DictConfig | ListConfig | TupleConfig](
+    config: TConfig, copy: bool = True
+) -> TConfig:
     if copy:
         config = copy_with_root(config)
     for node, base in walk_mergeable(config, BASE_KEY):

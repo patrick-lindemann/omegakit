@@ -51,9 +51,9 @@ class IncludeMissingValueError(ConfigIncludeError, MissingMandatoryValue):
     pass
 
 
-def resolve_includes[ConfigT: DictConfig | ListConfig | TupleConfig](
-    config: ConfigT, config_path: PathLike, copy: bool = True
-) -> ConfigT:
+def resolve_includes[TConfig: DictConfig | ListConfig | TupleConfig](
+    config: TConfig, config_path: PathLike, copy: bool = True
+) -> TConfig:
     if copy:
         config = copy_with_root(config)
     config_path = resolve_path(config_path)

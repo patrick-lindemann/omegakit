@@ -6,9 +6,9 @@ from omegakit._core.walk import walk
 META_KEY = "$meta"
 
 
-def remove_meta[ConfigT: DictConfig | ListConfig | TupleConfig](
-    config: ConfigT, copy: bool = True
-) -> ConfigT:
+def remove_meta[TConfig: DictConfig | ListConfig | TupleConfig](
+    config: TConfig, copy: bool = True
+) -> TConfig:
     if copy:
         config = copy_with_root(config)
     for node in walk(config):

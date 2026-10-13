@@ -16,9 +16,9 @@ class EachTypeError(ConfigEachError, TypeError):
     pass
 
 
-def apply_each[ConfigT: DictConfig | ListConfig | TupleConfig](
-    config: ConfigT, copy: bool = True
-) -> ConfigT:
+def apply_each[TConfig: DictConfig | ListConfig | TupleConfig](
+    config: TConfig, copy: bool = True
+) -> TConfig:
     if copy:
         config = copy_with_root(config)
     for node, each in walk_mergeable(config, EACH_KEY):
