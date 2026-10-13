@@ -1,423 +1,460 @@
-import sys
+import dataclasses
 from collections.abc import Callable
-from dataclasses import dataclass
+from types import ModuleType
 from typing import Any, Protocol
 
 import pytest
-from omegaconf import OmegaConf
+from omegaconf import DictConfig, OmegaConf
+from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
 
-from omegakit import (
-    Configurable,
+from omegakit._core.error import OmegaKitBaseException
+from omegakit._core.target import TargetNotFoundError
+from omegakit._features.class_ import (
+    ClassMissingValueError,
+    ClassSyntaxError,
+    ClassTypeError,
+)
+from omegakit._features.symbol import SymbolSyntaxError
+from omegakit.schema import (
+    SchemaDefinitionError,
+    SchemaKeyError,
+    SchemaMissingValueError,
+    SchemaTypeError,
+    SchemaValueError,
+)
+from omegakit.validate import (
     ConfigValidationError,
-    instantiate,
-    load_config,
+    ValidationCycleError,
+    ValidationInterpolationError,
+    ValidationMissingValueError,
+    ValidationSyntaxError,
     validate,
 )
-from tests import schemas
-from tests.helpers import FAILING
-
-MODEL = "tests.schemas.Model"
 
 
-class WideEncoder(schemas.Encoder):
-    """A subclass accepted by `Encoder` fields."""
+class _Greeter(Protocol):
+    name: str
 
 
-APP = """\
-seed: 3
-data:
-  batch_size: "64"
-training:
-  epochs: 2
-  model:
-    $class: tests.schemas.Model
-    kind: B
-    depth: ${seed}
-    encoder:
-      $class: tests.schemas.Encoder
-      width: 8
-"""
+type _Mapping = dict[str, Any] | None
 
 
-def _model(**fields):
-    return {"$class": MODEL, "depth": 1, **fields}
+@dataclasses.dataclass
+class _Parts:
+    greeter: _Greeter | None = None
+    alias: _Mapping = None
+    factory: Callable[..., Any] | None = None
+    kind: type[int] | None = None
+    plain: list | None = None
+    options: dict[str, dict[str, int]] | None = None
 
 
-def test_validate_accepts_a_loaded_config(write_yaml):
-    cfg = load_config(write_yaml("app.yaml", APP))
-    validate(cfg, schema=schemas.AppConfig)
+def _report(error: BaseException) -> str:
+    return "\n".join([str(error), *getattr(error, "__notes__", [])])
 
 
-def test_validate_returns_nothing_and_leaves_the_config_unchanged(write_yaml):
-    cfg = load_config(write_yaml("app.yaml", APP))
-    before = OmegaConf.to_container(cfg)
-    assert validate(cfg, schema=schemas.AppConfig) is None
-    assert OmegaConf.to_container(cfg) == before
-
-
-def test_validate_builds_nothing():
-    validate({"child": {"$class": FAILING}})
-
-
-HOOK_CALLS: list[int] = []
-
-
-@dataclass
-class Hooked:
-    x: int
-
-    def __post_init__(self) -> None:
-        HOOK_CALLS.append(self.x)
-
-
-@dataclass
-class HookedConfig:
-    hooked: Hooked
-    items: list[Hooked]
-
-
-class WithHooked(Configurable):
-    schema = HookedConfig
-
-    def __init__(self, **fields: Any) -> None:
-        self.fields = fields
-
-
-def test_validate_constructs_no_schema_dataclasses():
-    HOOK_CALLS.clear()
-    values = {"hooked": {"x": 1}, "items": [{"x": 2}]}
-    validate({"$class": f"{__name__}.WithHooked", **values})
-    validate(values, schema=HookedConfig)
-    assert HOOK_CALLS == []
-    instantiate({"$class": f"{__name__}.WithHooked", **values})
-    assert HOOK_CALLS == [1, 2]
-
-
-def test_validate_checks_root_values_against_the_schema(write_yaml):
-    cfg = load_config(write_yaml("app.yaml", APP.replace('"64"', "many")))
-    with pytest.raises(ConfigValidationError, match=r"`data\.batch_size`"):
-        validate(cfg, schema=schemas.AppConfig)
-
-
-@pytest.mark.parametrize("key", ["sed", "data.batch", "training.epoch"])
-def test_validate_rejects_unknown_keys(key):
-    config = {"training": {"model": _model()}}
-    OmegaConf.update(config := OmegaConf.create(config), key, 1, force_add=True)
-    with pytest.raises(ConfigValidationError, match=key.split(".")[-1]):
-        validate(config, schema=schemas.AppConfig)
-
-
-def test_validate_rejects_missing_required_fields():
-    with pytest.raises(ConfigValidationError, match="Missing mandatory value: model"):
-        validate({"training": {}}, schema=schemas.AppConfig)
-
-
-def test_validate_checks_class_nodes_without_a_root_schema():
-    with pytest.raises(ConfigValidationError, match=r"`model\.depth` \(ModelConfig\)"):
-        validate({"model": _model(depth="deep")})
-    with pytest.raises(ConfigValidationError, match="Key 'dpth' not in"):
-        validate({"items": [{"$class": MODEL, "dpth": 1}]})
-
-
-def test_validate_checks_nested_class_nodes_bottom_up():
-    encoder = {"$class": "tests.schemas.TypedEncoder", "width": "wide"}
-    with pytest.raises(ConfigValidationError, match=r"`model\.encoder\.width`"):
-        validate({"model": _model(encoder=encoder)})
-
-
-def test_validate_rejects_unresolved_values():
-    with pytest.raises(ConfigValidationError, match="Cannot resolve"):
-        validate({"model": _model(depth="???")})
-    with pytest.raises(ConfigValidationError, match="Cannot resolve"):
-        validate({"model": _model(depth="${nowhere}")})
-
-
-def test_validate_accepts_subclasses_for_object_fields():
-    validate(
-        {
-            "$class": MODEL,
-            "depth": 1,
-            "encoder": {"$class": f"{__name__}.WideEncoder"},
-        }
-    )
-    config = {"training": {"model": _model()}}
-    validate(config, schema=schemas.AppConfig)
-
-
-def test_validate_rejects_other_classes_for_object_fields():
-    config = {
-        "$class": "tests.helpers.Recorder",
-        "model": _model(encoder={"$class": "tests.schemas.Decoder"}),
+def test_accepts_a_valid_config_and_calls_nothing(targets: ModuleType):
+    content = {
+        "width": 3,
+        "model": {
+            "$class": "config_targets.Item",
+            "$meta": {"description": "The model"},
+            "width": "${width}",
+            "layers": [{"$class": "config_targets.Item", "$partial": True}],
+            "loss": {"$symbol": "math.sqrt"},
+        },
+        "copy": "${model}",
+        "stages": ({"epochs": 1}, {"epochs": 2}),
     }
-    for check in (validate, instantiate):
-        with pytest.raises(
-            ConfigValidationError, match=r"`model\.encoder` expects Encoder.*Decoder"
-        ):
-            check(config)
+    config = OmegaConf.create(content)
+    validate(config)
+    assert targets.CALLS == []
+    assert config == content
 
 
-def test_validate_skips_the_class_check_for_functions_and_partials():
-    validate(_model(encoder={"$class": "tests.schemas.make_encoder", "width": 2}))
-    validate(_model(encoder={"$class": "tests.schemas.Decoder", "$partial": True}))
+def test_list_config():
+    validate(OmegaConf.create([{"$class": "fractions.Fraction"}, 1]))
+    with pytest.raises(TargetNotFoundError):
+        validate(OmegaConf.create([{"$class": "fractions.NoSuchName"}]))
 
 
-def test_validate_checks_refs_by_instance():
-    validate(
+def test_part_of_a_config():
+    config = OmegaConf.create(
         {
-            "$class": "tests.schemas.Fields",
-            "factory": {"$ref": "tests.schemas.make_encoder"},
+            "width": 3,
+            "model": {"$class": "builtins.dict", "width": "${width}"},
+            "other": {"$class": "fractions.NoSuchName"},
         }
     )
-    with pytest.raises(ConfigValidationError, match="`encoder` expects Encoder"):
-        validate(_model(encoder={"$ref": "tests.schemas.Encoder"}))
-    with pytest.raises(ConfigValidationError, match="cannot contain any other keys"):
-        validate(_model(encoder={"$ref": "tests.schemas.Encoder", "width": 1}))
+    validate(config.model)
+    with pytest.raises(TargetNotFoundError):
+        validate(config.other)
 
 
-def test_validate_object_fields_need_a_class_node():
-    with pytest.raises(ConfigValidationError, match="mapping without `\\$class`"):
-        validate(_model(encoder={"width": 1}))
-    with pytest.raises(ConfigValidationError, match="gives `3`"):
-        validate(_model(encoder=3))
-
-
-def test_validate_none_needs_an_optional_field():
-    validate(_model(encoder=None))
-    with pytest.raises(ConfigValidationError, match="gives `None`"):
-        validate({"$class": "tests.schemas.RequiredObject", "encoder": None})
-
-
-def test_validate_walks_any_fields_and_classes_without_schema():
-    bad = [_model(depth="deep")]
-    with pytest.raises(ConfigValidationError, match=r"`callbacks\.0\.depth`"):
-        validate(
-            {"training": {"model": _model()}, "callbacks": bad},
-            schema=schemas.AppConfig,
-        )
-    with pytest.raises(ConfigValidationError, match=r"`fields\.0\.depth`"):
-        validate({"$class": "tests.schemas.Untyped", "fields": bad})
-
-
-def test_validate_ignores_meta():
-    validate({"$meta": {"note": 1}, "model": _model(**{"$meta": {"note": 2}})})
-
-
-def test_validate_ignores_meta_in_data_fields():
-    validate(
-        {
-            "$class": "tests.schemas.Fields",
-            "sub": {"$meta": "note", "value": 1},
-            "by_name": {"$meta": "note", "a": {"value": 2}},
-        }
+def test_read_only_config_is_accepted():
+    config = OmegaConf.create(
+        {"model": {"$class": "builtins.dict", "n": "${k}"}, "k": 3}
     )
+    OmegaConf.set_readonly(config, True)
+    validate(config)
 
 
-def test_validate_rejects_reserved_keys():
-    with pytest.raises(ConfigValidationError, match="`\\$base`"):
-        validate({"model": _model(**{"$base": {}})})
-    with pytest.raises(ConfigValidationError, match="`\\$other`"):
-        validate({"section": {"$other": 1}})
-    with pytest.raises(ConfigValidationError, match="must be `true` or `false`"):
-        validate({"model": _model(**{"$partial": "yes"})})
-
-
-def test_validate_rejects_unimportable_classes():
-    with pytest.raises(ConfigValidationError, match="Cannot import `Nope`"):
-        validate({"thing": {"$ref": "Nope"}})
-    with pytest.raises(
-        ConfigValidationError, match=r"Cannot import `tests\.schemas\.Nope`"
+@pytest.mark.parametrize(
+    ("value", "error_type"),
+    [
+        ("???", ValidationMissingValueError),
+        ("${nowhere}", ValidationInterpolationError),
+    ],
+)
+def test_value_that_cannot_be_read_is_rejected(value: str, error_type: type[Exception]):
+    for content, full_key in (
+        ({"lr": value}, "lr"),
+        ({"model": {"layers": [{"width": value}]}}, "model.layers[0].width"),
+        ({"model": {"$class": "builtins.dict", "lr": value}}, "model.lr"),
+        ({"stages": [1, value]}, "stages[1]"),
     ):
-        validate({"model": {"$class": "tests.schemas.Nope"}})
-    with pytest.raises(ConfigValidationError, match="Cannot import `Nope`"):
-        validate({"model": {"$class": "Nope"}})
+        config = OmegaConf.create(content)
+        with pytest.raises(error_type) as error_info:
+            validate(config)
+        assert f"`{full_key}`" in _report(error_info.value)
 
 
-@pytest.mark.parametrize("key", ["$class", "$ref"])
-@pytest.mark.parametrize("value", [123, None, ["math.pi"]])
-def test_validate_rejects_import_paths_that_are_not_strings(key, value):
-    with pytest.raises(ConfigValidationError, match=rf"`\{key}` in `thing`"):
-        validate({"thing": {key: value}})
-    with pytest.raises(ConfigValidationError, match=rf"`\{key}` in `thing`"):
-        instantiate({"$class": "tests.helpers.Recorder", "thing": {key: value}})
-
-
-class Runner(Protocol):
-    def run(self) -> None: ...
-
-
-@dataclass
-class UntypedFieldsConfig:
-    function: Callable[..., Any] | None = None
-    runner: Runner | None = None
-
-
-class WithUntypedFields(Configurable):
-    schema = UntypedFieldsConfig
-
-    def __init__(self, **fields: Any) -> None:
-        self.fields = fields
+def test_missing_root_is_rejected():
+    with pytest.raises(ValidationMissingValueError):
+        validate(DictConfig("???"))
 
 
 @pytest.mark.parametrize(
-    ("values", "match"),
+    ("node", "error_type"),
     [
-        ({"function": {"$foo": 1}}, r"`\$foo` in `function`"),
-        ({"function": {"$partial": "yes"}}, r"`\$partial` in `function`"),
-        ({"function": [{"$ref": "math.sqrt", "a": 1}]}, r"`function\.0` has"),
-        ({"function": [{"$class": "tests.no_such_module.X"}]}, r"in `function\.0`"),
-        ({"runner": {"$foo": 1}}, r"`\$foo` in `runner`"),
-        ({"runner": {"a": {"$class": "tests.no_such_module.X"}}}, r"`runner\.a`"),
+        ({"$class": "config_targets.NoSuchName"}, TargetNotFoundError),
+        ({"$class": "???"}, ClassMissingValueError),
+        ({"$class": "builtins.dict", "$partial": "yes"}, ClassTypeError),
+        ({"$class": "builtins.dict", "$foo": 1}, ClassSyntaxError),
+        ({"$symbol": "config_targets.NoSuchName"}, TargetNotFoundError),
+        ({"$symbol": "math.sqrt", "reduction": "mean"}, SymbolSyntaxError),
     ],
 )
-def test_validate_checks_reserved_keys_under_untyped_object_fields(values, match):
-    config = {"$class": f"{__name__}.WithUntypedFields", **values}
-    with pytest.raises(ConfigValidationError, match=match):
+def test_error_of_a_class_or_symbol_names_its_node(
+    targets: ModuleType, node: dict[str, Any], error_type: type[Exception]
+):
+    config = OmegaConf.create({"models": [{"$class": "config_targets.Item"}, node]})
+    with pytest.raises(error_type) as error_info:
         validate(config)
-    with pytest.raises(ConfigValidationError, match=match):
-        instantiate(config)
+    assert error_info.value.__notes__ == ["  at `models[1]`"]
+    assert targets.CALLS == []
+
+
+@pytest.mark.parametrize("key", ["$partial", "$base", "$clas"])
+def test_reserved_key_in_a_plain_mapping_is_rejected(key: str):
+    config = OmegaConf.create({"model": {key: True, "width": 3}})
+    with pytest.raises(ValidationSyntaxError, match=rf"\{key}") as error_info:
+        validate(config)
+    assert error_info.value.__notes__ == ["  at `model`"]
+
+
+@pytest.mark.parametrize("meta", ["???", "${nowhere}", {"$foo": 1}])
+def test_meta_is_not_read(meta: Any):
+    validate(OmegaConf.create({"$meta": meta, "model": {"$meta": meta, "width": 3}}))
 
 
 @pytest.mark.parametrize(
-    ("config", "described"),
+    ("content", "cycle"),
     [
         (
-            {"$class": f"{__name__}.WithUntypedFields", "$partial": {"token": "abc"}},
-            "a mapping with keys `token`",
+            {
+                "a": {"$class": "builtins.dict", "other": "${b}"},
+                "b": {"$class": "builtins.dict", "other": "${a}"},
+            },
+            "`a` -> `b` -> `a`",
         ),
-        ({"thing": {"$class": ["abc", "def"]}}, "a list of 2 items"),
         (
-            {"$class": "tests.schemas.ObjectContainers", "encoders": {"token": "abc"}},
-            "a mapping with keys `token`",
+            {"model": {"parts": "${parts}"}, "parts": [{"model": "${model}"}]},
+            "`model` -> `parts` -> `parts[0]` -> `model`",
         ),
     ],
 )
-def test_validate_errors_describe_containers_without_their_values(config, described):
-    with pytest.raises(ConfigValidationError, match=described) as info:
+def test_config_that_contains_itself_is_rejected(content: dict[str, Any], cycle: str):
+    config = OmegaConf.create(content)
+    with pytest.raises(ValidationCycleError) as error_info:
         validate(config)
-    assert "abc" not in str(info.value)
+    assert cycle in str(error_info.value)
 
 
-def test_validate_rejects_a_missing_target_module():
-    with pytest.raises(ConfigValidationError, match="Cannot import") as info:
-        validate({"thing": {"$class": "tests.no_such_module.Thing"}})
-    assert isinstance(info.value.__cause__, ModuleNotFoundError)
+def test_node_that_is_read_several_times_is_no_cycle():
+    config = OmegaConf.create(
+        {
+            "encoder": {"$class": "builtins.dict", "width": 3},
+            "first": {"encoder": "${encoder}", "inner": {"encoder": "${encoder}"}},
+            "second": ["${encoder}", "${first}"],
+        }
+    )
+    validate(config)
+
+
+def _make_experiment(**values: Any) -> DictConfig:
+    model = {"$class": "config_targets.Model", "depth": 2}
+    return OmegaConf.create({"experiment": {"model": model, **values}}).experiment
+
+
+def test_accepts_a_config_that_matches_its_schemas(targets: ModuleType):
+    content = {
+        "width": "3",
+        "experiment": {
+            "$class": "config_targets.Experiment",
+            "$meta": {"description": "The baseline"},
+            "seed": "${width}",
+            "model": {
+                "$class": "config_targets.Model",
+                "depth": "${width}",
+                "encoder": {"$class": "config_targets.SmallItem"},
+            },
+            "optimizer": {"$meta": {"note": "tuned"}, "lr": "1e-3", "mode": "SLOW"},
+            "items": [
+                {"$class": "config_targets.Item"},
+                {"$symbol": "config_targets.ITEM"},
+            ],
+            "named_items": {"first": {"$class": "config_targets.make_item"}},
+            "stages": [{"lr": 0.1}, "${experiment.optimizer}"],
+            "schedule": {"$class": "config_targets.Item", "$partial": True},
+            "extra": {"anything": [{"$class": "config_targets.Item"}]},
+        },
+    }
+    config = OmegaConf.create(content)
+    OmegaConf.set_readonly(config, True)
+    validate(config)
+    validate(config.experiment, targets.Experiment)
+    assert targets.CALLS == []
+    assert config == content
 
 
 @pytest.mark.parametrize(
-    ("source", "error"),
+    ("values", "error_type", "full_key"),
     [
-        ("import no_such_dependency\n", ModuleNotFoundError),
-        ("from os import no_such_name\n", ImportError),
+        ({"sed": 1}, SchemaKeyError, "experiment"),
+        ({"seed": "many"}, SchemaValueError, "experiment"),
+        ({"seed": "???"}, ValidationMissingValueError, "experiment.seed"),
+        ({"optimizer": {}}, SchemaMissingValueError, "experiment.optimizer"),
+        ({"optimizer": {"lr": 1, "total": 2}}, SchemaKeyError, "experiment.optimizer"),
+        (
+            {"optimizer": {"lr": 1, "betas": [1]}},
+            SchemaValueError,
+            "experiment.optimizer",
+        ),
+        (
+            {"optimizer": {"lr": "???"}},
+            ValidationMissingValueError,
+            "experiment.optimizer.lr",
+        ),
+        (
+            {"optimizer": {"lr": 1, "betas": [1, "???"]}},
+            ValidationMissingValueError,
+            "experiment.optimizer.betas[1]",
+        ),
+        (
+            {"stages": [{"lr": 1}, {"lr": "x"}]},
+            SchemaValueError,
+            "experiment.stages[1]",
+        ),
     ],
 )
-def test_validate_propagates_import_errors_from_the_target_module(
-    tmp_path, monkeypatch, source, error
+def test_value_that_does_not_match_its_schema_is_rejected(
+    targets: ModuleType,
+    values: dict[str, Any],
+    error_type: type[Exception],
+    full_key: str,
 ):
-    (tmp_path / "broken_target.py").write_text(source + "class Thing: ...\n")
-    monkeypatch.syspath_prepend(tmp_path)
-    monkeypatch.delitem(sys.modules, "broken_target", raising=False)
-    with pytest.raises(error) as info:
-        validate({"thing": {"$class": "broken_target.Thing"}})
-    assert not isinstance(info.value, ConfigValidationError)
+    with pytest.raises(error_type) as error_info:
+        validate(_make_experiment(**values), targets.Experiment)
+    assert f"`{full_key}`" in _report(error_info.value)
+    assert targets.CALLS == []
 
 
-@pytest.mark.parametrize("import_path", ["nodots", ".Foo", "..mod.X", "mod.", "a..b"])
-def test_validate_rejects_malformed_import_paths(import_path):
-    with pytest.raises(ConfigValidationError, match="is not an import path"):
-        validate({"thing": {"$class": import_path}})
+def test_interpolated_value_is_checked_as_its_field(targets: ModuleType):
+    config = OmegaConf.create({"seed": "many", "experiment": {"seed": "${seed}"}})
+    config.experiment.model = {"$class": "config_targets.Model", "depth": 1}
+    with pytest.raises(SchemaValueError, match="seed"):
+        validate(config.experiment, targets.Experiment)
 
 
-def test_validate_rejects_class_targets_that_cannot_be_built():
-    with pytest.raises(ConfigValidationError, match=r"math\.pi` in `thing`"):
-        validate({"thing": {"$class": "math.pi"}})
-    with pytest.raises(ConfigValidationError, match=r"math\.pi` in `thing`"):
-        instantiate(
-            {"$class": "tests.helpers.Recorder", "thing": {"$class": "math.pi"}}
-        )
-    validate({"thing": {"$ref": "math.pi"}})
-
-
-def test_validate_root_class_must_match_the_schema():
-    with pytest.raises(ConfigValidationError, match="expects AppConfig"):
-        validate(_model(), schema=schemas.AppConfig)
-
-
-def test_validate_rejects_schemas_that_are_not_classes():
-    with pytest.raises(TypeError, match="not a class"):
-        validate({}, schema=schemas.make_encoder)  # pyright: ignore[reportArgumentType]
-
-
-def test_validate_class_without_schema_needs_a_root_class():
-    with pytest.raises(ConfigValidationError, match="no dataclass schema"):
-        validate({}, schema=schemas.Encoder)
-
-
-LIBRARY = """\
-connection:
-  host: ???
-  port: 5432
-  url: postgres://${.host}:${.port}/${database}
-"""
-
-
-def test_validate_allow_missing_accepts_open_slots_and_their_interpolations(
-    write_yaml,
+@pytest.mark.parametrize(
+    ("values", "full_key"),
+    [
+        ({"model": {"$class": "config_targets.Item"}}, "experiment.model"),
+        ({"model": None}, "experiment.model"),
+        ({"model": {"depth": 2}}, "experiment.model"),
+        ({"model": {"$symbol": "config_targets.SETTINGS"}}, "experiment.model"),
+        (
+            {"items": [{"$class": "config_targets.Model", "depth": 1}]},
+            "experiment.items[0]",
+        ),
+        ({"items": {"first": {"$class": "config_targets.Item"}}}, "experiment.items"),
+        ({"named_items": {"first": 3}}, "experiment.named_items.first"),
+        ({"optimizer": {"$class": "config_targets.Item"}}, "experiment.optimizer"),
+        ({"optimizer": None}, "experiment.optimizer"),
+        ({"optimizer": [1, 2]}, "experiment.optimizer"),
+    ],
+)
+def test_object_of_another_class_is_rejected(
+    targets: ModuleType, values: dict[str, Any], full_key: str
 ):
-    cfg = load_config(write_yaml("library.yaml", LIBRARY))
-    with pytest.raises(ConfigValidationError):
-        validate(cfg)
-    validate(cfg, allow_missing=True)
+    with pytest.raises(SchemaTypeError) as error_info:
+        validate(_make_experiment(**values), targets.Experiment)
+    assert error_info.value.__notes__ == [f"  at `{full_key}`"]
+    assert targets.CALLS == []
 
 
-def test_validate_allow_missing_accepts_missing_schema_fields():
-    validate({"model": {"$class": MODEL, "depth": "???"}}, allow_missing=True)
-    validate({"model": {"$class": MODEL}}, allow_missing=True)
-    validate({"$class": "tests.schemas.RequiredObject"}, allow_missing=True)
-    with pytest.raises(ConfigValidationError, match="Missing"):
-        validate({"model": {"$class": MODEL}})
+@pytest.mark.parametrize(
+    "optimizer",
+    [
+        {"$class": "config_targets.Optimizer", "lr": 1},
+        {"$class": "config_targets.FastOptimizer", "lr": 1},
+    ],
+)
+def test_class_in_a_dataclass_field_names_the_dataclass_or_a_subclass(
+    targets: ModuleType, optimizer: dict[str, Any]
+):
+    validate(_make_experiment(optimizer=optimizer), targets.Experiment)
 
 
-def test_validate_allow_missing_still_checks_given_values():
-    with pytest.raises(ConfigValidationError, match=r"`model\.depth`"):
-        validate({"model": _model(depth="deep")}, allow_missing=True)
-    with pytest.raises(ConfigValidationError, match="`mode`"):
-        validate(
-            {"mode": "test", "level": "???"},
-            schema=schemas.LiteralConfig,
-            allow_missing=True,
-        )
+def test_class_in_a_dataclass_field_may_use_the_dataclass_as_its_schema(
+    targets: ModuleType,
+):
+    backbone = {"$class": "config_targets.Model", "depth": "2"}
+    validate(_make_experiment(backbone=backbone), targets.Experiment)
+    validate(OmegaConf.create(backbone), targets.ModelConfig)
+    for values, error_type in (
+        ({"$class": "config_targets.Model", "depth": "deep"}, SchemaValueError),
+        ({"$class": "config_targets.Model", "width": 2}, SchemaKeyError),
+        ({"$class": "config_targets.Optimizer", "lr": 1}, SchemaTypeError),
+        ({"$class": "config_targets.Item", "depth": 2}, SchemaTypeError),
+    ):
+        with pytest.raises(error_type) as error_info:
+            validate(_make_experiment(backbone=values), targets.Experiment)
+        assert error_info.value.__notes__ == ["  at `experiment.backbone`"]
+    # `Settings` is a parent of the schema, but the class does not build one
+    with pytest.raises(SchemaTypeError):
+        validate(_make_experiment(settings=backbone), targets.Experiment)
+    assert targets.CALLS == []
 
 
-@dataclass
-class Required:
-    x: int
+def test_schema_says_what_the_root_builds(targets: ModuleType):
+    validate(OmegaConf.create({"lr": 1}), targets.Optimizer)
+    fast_optimizer = {"$class": "config_targets.FastOptimizer", "lr": 1}
+    validate(OmegaConf.create(fast_optimizer), targets.Optimizer)
+    validate(OmegaConf.create({"$class": "config_targets.SmallItem"}), targets.Item)
+    for content, schema in (
+        ({"$class": "config_targets.Item"}, targets.Optimizer),
+        ({"depth": 1}, targets.Model),
+        ([{"lr": 1}], targets.Optimizer),
+    ):
+        with pytest.raises(SchemaTypeError) as error_info:
+            validate(OmegaConf.create(content), schema)
+        assert error_info.value.__notes__ == ["  at the root"]
 
 
-@dataclass
-class Fragment:
-    pair: tuple[int, int] = (0, 0)
-    inner: Required | int = 0
+def test_annotation_that_cannot_be_checked_takes_any_object():
+    validate(OmegaConf.create({"greeter": {"$class": "fractions.Fraction"}}), _Parts)
+    validate(OmegaConf.create({"greeter": {"$symbol": "math.pi"}}), _Parts)
 
 
-def test_validate_allow_missing_inside_union_members_but_not_tuples():
-    validate({"inner": {}}, schema=Fragment, allow_missing=True)
-    with pytest.raises(ConfigValidationError, match=r"`inner\.x`"):
-        validate({"inner": {"x": "y"}}, schema=Fragment, allow_missing=True)
-    with pytest.raises(ConfigValidationError, match="cannot be missing"):
-        validate({"pair": ["???", 2]}, schema=Fragment, allow_missing=True)
+@pytest.mark.parametrize(
+    ("values", "is_valid"),
+    [
+        ({"alias": {"$class": "builtins.dict"}}, True),
+        ({"alias": {"$class": "builtins.list"}}, False),
+        ({"factory": {"$class": "fractions.Fraction", "$partial": True}}, True),
+        ({"factory": {"$symbol": "math.sqrt"}}, True),
+        ({"factory": {"$class": "fractions.Fraction"}}, False),
+        ({"alias": {"$class": "builtins.dict", "$partial": True}}, False),
+        ({"plain": {"$class": "builtins.list", "$partial": True}}, False),
+        ({"kind": {"$symbol": "builtins.bool"}}, True),
+        ({"kind": {"$class": "builtins.bool"}}, False),
+        ({"plain": [{"$class": "fractions.Fraction"}]}, True),
+        ({"plain": {"first": 1}}, False),
+        ({"plain": (1, 2)}, False),
+    ],
+)
+def test_annotation_is_checked_as_its_class(values: dict[str, Any], is_valid: bool):
+    config = OmegaConf.create(values)
+    if is_valid:
+        validate(config, _Parts)
+        return
+    with pytest.raises(SchemaTypeError) as error_info:
+        validate(config, _Parts)
+    assert error_info.value.__notes__ == [f"  at `{next(iter(values))}`"]
 
 
-def test_validate_allow_missing_keeps_defaults_for_missing_values():
-    validate({"level": "???"}, schema=schemas.LiteralConfig, allow_missing=True)
+def test_mapping_for_a_list_of_objects_names_the_field(targets: ModuleType):
+    for values in ({"items": {"first": 1}}, {"stages": {"lr": 1}}):
+        with pytest.raises(SchemaTypeError, match="a mapping") as error_info:
+            validate(_make_experiment(**values), targets.Experiment)
+        assert error_info.value.__notes__ == [f"  at `experiment.{next(iter(values))}`"]
 
 
-def test_validate_class_schema_checks_a_fragment_without_root_class():
-    validate({"depth": 1}, schema=schemas.Model)
-    with pytest.raises(ConfigValidationError, match="Key 'dpth' not in"):
-        validate({"dpth": 1}, schema=schemas.Model)
+def test_data_that_contains_itself_is_rejected():
+    config = OmegaConf.create(
+        {
+            "first": {"other": "${second}"},
+            "second": {"other": "${first}"},
+            "parts": {"options": "${first}"},
+        }
+    )
+    with pytest.raises(ValidationCycleError, match="`first` -> `second` -> `first`"):
+        validate(config.parts, _Parts)
 
 
-def test_validate_class_schema_checks_the_root_class():
-    validate(_model(), schema=schemas.Model)
-    with pytest.raises(ConfigValidationError, match="expects Encoder"):
-        validate(_model(), schema=schemas.Encoder)
+@pytest.mark.parametrize(
+    ("options", "error_type"),
+    [
+        ({"$meta": {"note": "tuned"}, "first": {"a": "1"}}, None),
+        ({"first": {"$meta": "???", "a": 1}}, None),
+        ({"first": {"a": {"$symbol": "math.inf"}}}, SchemaValueError),
+        ({"first": {"$foo": 1}}, ValidationSyntaxError),
+        ({"first": {"$class": "builtins.dict"}}, SchemaTypeError),
+        ({"first": {"a": {"$class": "builtins.int"}}}, SchemaTypeError),
+    ],
+)
+def test_reserved_keys_keep_their_meaning_in_plain_values(
+    options: dict[str, Any], error_type: type[Exception] | None
+):
+    config = OmegaConf.create({"options": options})
+    if error_type is None:
+        validate(config, _Parts)
+        return
+    with pytest.raises(error_type):
+        validate(config, _Parts)
+
+
+@pytest.mark.parametrize("schema", ["builtins.dict", _Parts()])
+def test_schema_that_is_not_a_class_is_rejected(schema: Any):
+    with pytest.raises(SchemaDefinitionError, match="must be a class"):
+        validate(OmegaConf.create({}), schema)
+
+
+def test_class_without_schema_takes_any_arguments(targets: ModuleType):
+    validate(OmegaConf.create({"$class": "config_targets.Item", "seed": "many"}))
+
+
+def test_schema_that_cannot_be_read_names_the_node(targets: ModuleType):
+    config = OmegaConf.create({"model": {"$class": "config_targets.BrokenModel"}})
+    with pytest.raises(SchemaDefinitionError) as error_info:
+        validate(config)
+    assert error_info.value.__notes__ == ["  at `model`"]
+
+
+@pytest.mark.parametrize(
+    ("error_type", "parent_type"),
+    [
+        (ValidationSyntaxError, ValueError),
+        (ValidationInterpolationError, InterpolationResolutionError),
+        (ValidationMissingValueError, MissingMandatoryValue),
+        (ValidationCycleError, OmegaKitBaseException),
+    ],
+)
+def test_errors_are_also_builtin_or_omegaconf_errors(
+    error_type: type[Exception], parent_type: type[Exception]
+):
+    assert issubclass(error_type, ConfigValidationError)
+    assert issubclass(error_type, OmegaKitBaseException)
+    assert issubclass(error_type, parent_type)

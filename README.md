@@ -12,7 +12,7 @@ release candidate until it is out, so uv needs `uv add omegakit --prerelease=all
 seed: 0
 epochs: 100
 loss:
-  $ref: torch.nn.functional.mse_loss
+  $symbol: torch.nn.functional.mse_loss
 optimizer:
   $class: torch.optim.SGD
   $partial: true
@@ -52,7 +52,7 @@ optimizer = experiment.optimizer(experiment.model.parameters())
 ```
 
 `linear.yaml` took the seed, the epochs, the loss and the optimizer from
-`base.yaml`, and added a model. `$class` names a class to build, `$ref` passes a
+`base.yaml`, and added a model. `$class` names a class to build, `$symbol` passes a
 function as it is, and `$partial` builds the optimizer later, once the model's
 parameters exist. The dataclass checks the config before anything is built:
 `epochs: many` raises an error that names the key. The

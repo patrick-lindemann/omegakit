@@ -21,6 +21,9 @@ All notable changes to this project are documented here. The format follows
 - **Breaking:** `~import` is now `~include`, and `IMPORT_KEY` is `INCLUDE_PREFIX`.
   Replace `~import base.yaml` with `~include base.yaml`. The old spelling has no
   alias: an `~import` value stays the text it is.
+- **Breaking:** `$ref` is now `$symbol`, and `REF_KEY` is `SYMBOL_KEY`. Replace
+  `$ref: math.sqrt` with `$symbol: math.sqrt`. The old spelling has no alias: a
+  `$ref` key is rejected as a reserved key.
 - **Breaking:** `~include file#node` and `omegakit show --node` select the node with
   `OmegaConf.select`. The path also takes `a[0]`, and it follows interpolations
   instead of rejecting a path through one. A node that holds `???` counts as
@@ -55,7 +58,7 @@ All notable changes to this project are documented here. The format follows
   values inside a field as `items[0].model`.
 - **Breaking:** Error messages share one style: keys and names in backticks,
   "mapping" rather than "dictionary", and "Cannot …". This changes the messages for
-  a `$ref` node with other keys, a `$base` or `$defaults` that is
+  a `$symbol` node with other keys, a `$base` or `$defaults` that is
   not a mapping, a missing attribute (``Module `m` has no attribute `x`.``), an
   include cycle, a `$partial` that is not a boolean, an `overrides` argument of the
   wrong type, and a missing PyTorch.

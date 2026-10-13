@@ -77,7 +77,7 @@ def test_assembled_config_is_instantiated(tmp_path: Path):
         "$meta: {title: Timeouts}\n"
         "hours: 1\n"
         "limits: ~include limits.yaml\n"
-        "clock: {$ref: datetime.datetime}\n"
+        "clock: {$symbol: datetime.datetime}\n"
     )
     config = load_yaml(experiment_path)
     assert isinstance(config, DictConfig)

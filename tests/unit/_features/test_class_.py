@@ -50,7 +50,7 @@ def test_class_that_is_not_a_string_is_rejected(value: Any):
 
 def test_target_that_cannot_be_called_is_rejected():
     config = OmegaConf.create({"half": {"$class": "math.pi"}})
-    with pytest.raises(ClassTypeError, match=r"\$ref"):
+    with pytest.raises(ClassTypeError, match=r"\$symbol"):
         import_class(config.half)
 
 
@@ -118,7 +118,7 @@ def test_partial_that_is_not_a_boolean_is_rejected(value: Any):
         read_arguments(config)
 
 
-@pytest.mark.parametrize("key", ["$ref", "$base", "$foo"])
+@pytest.mark.parametrize("key", ["$symbol", "$base", "$foo"])
 def test_other_dollar_key_is_rejected(key: str):
     config = OmegaConf.create({"$class": "builtins.dict", key: "math.pi", "n": 1})
     with pytest.raises(ClassSyntaxError, match=rf"\{key}"):

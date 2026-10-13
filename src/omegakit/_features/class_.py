@@ -10,7 +10,7 @@ from omegakit._core.target import import_target
 from omegakit._utils.describe import describe_error
 
 from .meta import META_KEY
-from .ref import REF_KEY
+from .symbol import SYMBOL_KEY
 
 CLASS_KEY = "$class"
 PARTIAL_KEY = "$partial"
@@ -55,7 +55,7 @@ def import_class(node: DictConfig) -> Any:
     if not (callable(target) or hasattr(target, "from_config")):
         raise ClassTypeError(
             f"`{import_path}` is neither callable nor has `from_config`. Use "
-            f"`{REF_KEY}` for an object that is used as it is."
+            f"`{SYMBOL_KEY}` for an object that is used as it is."
         )
     return target
 

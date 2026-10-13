@@ -8,7 +8,7 @@ from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
 from ._core.error import OmegaKitBaseException
 from ._features.class_ import CLASS_KEY, import_class, read_arguments
 from ._features.meta import META_KEY
-from ._features.ref import REF_KEY, import_ref
+from ._features.symbol import SYMBOL_KEY, import_symbol
 from ._utils.describe import describe_error, describe_node
 from .schema import (
     SchemaDefinitionError,
@@ -106,8 +106,8 @@ def _check_node(
     if CLASS_KEY in node.keys():  # noqa: SIM118
         return _check_call(node, active_nodes)
     try:
-        if REF_KEY in node.keys():  # noqa: SIM118
-            return import_ref(node)
+        if SYMBOL_KEY in node.keys():  # noqa: SIM118
+            return import_symbol(node)
         keys = [key for key in node.keys() if key != META_KEY]  # noqa: SIM118
         reserved_keys = [key for key in keys if str(key).startswith("$")]
         if reserved_keys:
