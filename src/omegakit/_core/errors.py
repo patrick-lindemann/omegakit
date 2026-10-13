@@ -54,18 +54,6 @@ class ConfigOverrideError(ConfigLoadError):
     pass
 
 
-class OverrideSyntaxError(ConfigOverrideError, ValueError):
-    pass
-
-
-class OverrideTypeError(ConfigOverrideError, TypeError):
-    pass
-
-
-class OverrideMergeError(ConfigOverrideError):
-    pass
-
-
 class ValidationSyntaxError(ConfigValidationError, ValueError):
     pass
 

@@ -4,9 +4,7 @@ from omegaconf import DictConfig, ListConfig, OmegaConf
 from omegaconf.errors import OmegaConfBaseException
 
 from omegakit._core.errors import (
-    OverrideMergeError,
-    OverrideSyntaxError,
-    OverrideTypeError,
+    ConfigOverrideError,
 )
 from omegakit._core.utils.copy import copy_with_root
 from omegakit._core.utils.describe import describe_error
@@ -42,7 +40,7 @@ def apply_overrides(
         return config
     expected_types = (DictConfig, dict) if is_dict else (ListConfig, list)
     if not isinstance(overrides, expected_types):
-        raise OverrideTypeError(
+        raise ConfigOverrideError(
             f"Cannot override a `{type(config).__name__}` with a "
             f"`{type(overrides).__name__}`."
         )
@@ -51,7 +49,7 @@ def apply_overrides(
     except (OmegaConfBaseException, ValueError) as error:
         full_key = getattr(error, "full_key", None)
         key = f" at `{full_key}`" if full_key else ""
-        raise OverrideMergeError(
+        raise ConfigOverrideError(
             f"Cannot apply the overrides{key}: {describe_error(error)}"
         ) from error
     return config
@@ -59,13 +57,13 @@ def apply_overrides(
 
 def _parse_dotlist_item(item: Any) -> DictConfig:
     if not isinstance(item, str):
-        raise OverrideTypeError(
+        raise ConfigOverrideError(
             f"An override in a list must be a `key=value` string, not `{item!r}`."
         )
     try:
         return OmegaConf.from_dotlist([item])
     # PyYAML and OmegaConf raise assorted builtin errors for an invalid item
     except Exception as error:
-        raise OverrideSyntaxError(
+        raise ConfigOverrideError(
             f"Cannot parse `{item}`: {describe_error(error)}"
         ) from error

@@ -6,9 +6,7 @@ import pytest
 from omegaconf import OmegaConf
 
 from omegakit._core.errors import (
-    OverrideMergeError,
-    OverrideSyntaxError,
-    OverrideTypeError,
+    ConfigOverrideError,
 )
 from omegakit._core.features.overrides import apply_overrides
 
@@ -98,14 +96,14 @@ def test_without_a_copy_the_config_itself_is_changed(overrides: Any):
 )
 def test_rejects_a_string_that_does_not_parse(item: str):
     config = OmegaConf.create({"a": 1})
-    with pytest.raises(OverrideSyntaxError) as error_info:
+    with pytest.raises(ConfigOverrideError) as error_info:
         apply_overrides(config, [item])
     assert item in str(error_info.value)
 
 
 def test_rejects_a_list_item_that_is_not_a_string():
     config = OmegaConf.create({"a": 1})
-    with pytest.raises(OverrideTypeError):
+    with pytest.raises(ConfigOverrideError):
         apply_overrides(config, [1])  # pyright: ignore[reportCallIssue, reportArgumentType]
 
 
@@ -120,20 +118,20 @@ def test_rejects_a_list_item_that_is_not_a_string():
 )
 def test_rejects_overrides_of_the_wrong_type(overrides: Any):
     config = OmegaConf.create({"a": 1})
-    with pytest.raises(OverrideTypeError):
+    with pytest.raises(ConfigOverrideError):
         apply_overrides(config, overrides)
 
 
 def test_rejects_a_mapping_for_a_list_config():
     config = OmegaConf.create([1, 2])
-    with pytest.raises(OverrideTypeError):
+    with pytest.raises(ConfigOverrideError):
         apply_overrides(config, {"a": 1})  # pyright: ignore[reportCallIssue, reportArgumentType]
 
 
 def test_rejects_a_new_key_on_a_struct_config():
     config = OmegaConf.create({"model": {"hidden": 32}})
     OmegaConf.set_struct(config, True)
-    with pytest.raises(OverrideMergeError, match=r"model\.width"):
+    with pytest.raises(ConfigOverrideError, match=r"model\.width"):
         apply_overrides(config, ["model.width=8"])
 
 
@@ -146,13 +144,13 @@ def test_rejects_a_new_key_on_a_struct_config():
 )
 def test_rejects_overrides_omegaconf_does_not_support(overrides: dict[str, Any]):
     config = OmegaConf.create({"a": 1})
-    with pytest.raises(OverrideMergeError):
+    with pytest.raises(ConfigOverrideError):
         apply_overrides(config, overrides)
 
 
 def test_rejects_a_value_of_the_wrong_type_for_a_typed_config():
     config = OmegaConf.structured(_Training)
-    with pytest.raises(OverrideMergeError, match="epochs"):
+    with pytest.raises(ConfigOverrideError, match="epochs"):
         apply_overrides(config, ["epochs=many"])
 
 
@@ -166,6 +164,6 @@ def test_rejects_a_value_of_the_wrong_type_for_a_typed_config():
 def test_a_failure_leaves_the_config_unchanged(overrides: Any):
     config = OmegaConf.create({"model": {"hidden": 32}})
     OmegaConf.set_struct(config, True)
-    with pytest.raises((OverrideSyntaxError, OverrideMergeError)):
+    with pytest.raises((ConfigOverrideError, ConfigOverrideError)):
         apply_overrides(config, overrides)
     assert config == {"model": {"hidden": 32}}
