@@ -87,6 +87,12 @@ All notable changes to this project are documented here. The format follows
   tuple that is annotated with a class raised `SchemaDefinitionError`, and a mapping
   in a tuple of schemas was not checked. A wrong number of items raises
   `SchemaValueError`, as in ``Expected 2 items, but the config gives 1.``
+- **Breaking:** The keys of every dictionary follow its key annotation, also where
+  the items are mappings or objects: the key `1` raises `SchemaKeyError` in
+  `models: dict[str, Model]`. A field that is annotated `type[X]` takes a subclass
+  of `X` and no other class. A `$symbol` to a `dict` in a field that is annotated
+  with a `TypedDict` is checked against it like a mapping of the config, and the
+  field holds a checked copy. It raised `SchemaTypeError`.
 - **Breaking:** A `Configurable` names its schema in the class attribute `schema`
   instead of a type argument: replace `class Model(Configurable[ModelConfig])` with
   `class Model(Configurable)` and `schema = ModelConfig` in its body. `from_config`

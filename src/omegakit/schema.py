@@ -102,6 +102,15 @@ def find_item_annotation(
     return item_annotations[-1] if item_annotations else Any
 
 
+def find_key_annotation(annotation: Any) -> Any:
+    members = [
+        member for member in split_union(annotation) if member is not types.NoneType
+    ]
+    if len(members) != 1 or get_origin(members[0]) is not dict:
+        return Any
+    return get_args(members[0])[0]
+
+
 def find_tuple_annotations(annotation: Any, length: int) -> list[Any] | None:
     members = [
         member for member in split_union(annotation) if member is not types.NoneType

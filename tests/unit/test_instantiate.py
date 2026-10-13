@@ -364,6 +364,19 @@ def test_every_position_of_a_tuple_follows_its_annotation(targets: ModuleType):
     assert experiment.phases == ({"depth": 1}, {"depth": 2, "activation": "tanh"})
 
 
+def test_dict_of_a_symbol_is_checked_against_the_schema(targets: ModuleType):
+    config = OmegaConf.create(
+        {
+            "$target": "config_targets.Experiment",
+            "model": {"$target": "config_targets.Model", "depth": 2},
+            "backbone": {"$symbol": "config_targets.BACKBONE"},
+        }
+    )
+    experiment = instantiate(config)
+    assert experiment.backbone == {"depth": 3}
+    assert targets.BACKBONE == {"depth": "3"}
+
+
 def test_target_that_names_a_schema_is_rejected(targets: ModuleType):
     config = OmegaConf.create({"$target": "config_targets.ModelConfig", "depth": 3})
     with pytest.raises(SchemaTypeError, match="ModelConfig"):

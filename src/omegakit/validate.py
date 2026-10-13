@@ -1,8 +1,8 @@
 import dataclasses
 import functools
-from typing import Any, get_origin, is_typeddict
+from typing import Any, get_args, get_origin, is_typeddict
 
-from omegaconf import DictConfig, ListConfig, TupleConfig
+from omegaconf import DictConfig, ListConfig, OmegaConf, TupleConfig
 from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
 
 from ._core.error import OmegaKitBaseException
@@ -19,6 +19,7 @@ from .schema import (
     convert_data,
     convert_item,
     find_item_annotation,
+    find_key_annotation,
     find_schema,
     find_section,
     find_tuple_annotations,
@@ -111,7 +112,17 @@ def _check_node(
         return _check_call(node, active_nodes, is_deferred)
     try:
         if SYMBOL_KEY in node.keys():  # noqa: SIM118
-            return import_symbol(node)
+            value = import_symbol(node)
+            symbol_section = find_section(annotation)
+            if symbol_section is None or not isinstance(value, dict):
+                return value
+            # An existing `dict` is checked like a mapping that the config gives
+            mapping = OmegaConf.create(value, flags={"allow_objects": True})
+            symbol_keys = list(mapping.keys())
+            symbol_arguments = _check_schema(
+                mapping, symbol_section, symbol_keys, active_nodes, False
+            )
+            return Items(symbol_arguments)
         keys = [key for key in node.keys() if key != META_KEY]  # noqa: SIM118
         reserved_keys = [key for key in keys if str(key).startswith("$")]
         if reserved_keys:
@@ -120,6 +131,18 @@ def _check_node(
                 "here: keys that start with `$` are reserved."
             )
         section = find_section(annotation)
+        # The keys of a dictionary of mappings or objects, which OmegaConf does not see
+        key_annotation = find_key_annotation(annotation)
+        wrong_keys = [
+            key
+            for key in keys
+            if key_annotation is not Any and not isinstance(key, key_annotation)
+        ]
+        if wrong_keys:
+            raise SchemaKeyError(
+                f"{', '.join(f'`{key!r}`' for key in wrong_keys)} is not a "
+                f"`{key_annotation.__name__}`, as the keys of `{annotation}` are."
+            )
     except OmegaKitBaseException as error:
         error.add_note(f"  at {describe_node(node)}")
         raise
@@ -294,12 +317,20 @@ def _check_type(value: Any, annotation: Any) -> Any:
         members = tuple(member for member in members if not is_typeddict(member))
     # A parametrized class, such as `list[X]`, is checked as the class alone
     classes = tuple(get_origin(member) or member for member in members)
+    # `type[X]` takes a subclass of `X`
+    bounds = tuple(
+        get_args(member)[0]
+        for member in members
+        if get_origin(member) is type and get_args(member)[0] is not Any
+    )
     try:
         if not classes:
             is_valid = False
         elif not isinstance(value, Call):
             given_value = value.items if isinstance(value, Items) else value
             is_valid = isinstance(given_value, classes)
+            if is_valid and bounds and isinstance(given_value, type):
+                is_valid = issubclass(given_value, bounds)
         elif value.is_partial:
             is_valid = issubclass(functools.partial, classes)
         elif not isinstance(value.target, type):

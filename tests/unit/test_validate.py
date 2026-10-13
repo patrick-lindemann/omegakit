@@ -291,6 +291,16 @@ def test_accepts_a_config_that_matches_its_schemas(targets: ModuleType):
             SchemaKeyError,
             "experiment.phases[1]",
         ),
+        (
+            {"named_items": {1: {"$target": "config_targets.Item"}}},
+            SchemaKeyError,
+            "experiment.named_items",
+        ),
+        (
+            {"backbone": {"$symbol": "config_targets.SETTINGS"}},
+            SchemaKeyError,
+            "experiment.backbone",
+        ),
     ],
 )
 def test_value_that_does_not_match_its_schema_is_rejected(
@@ -372,6 +382,7 @@ def test_field_that_is_annotated_with_a_schema_takes_a_mapping(targets: ModuleTy
         ({"activation": "tanh"}, SchemaMissingValueError),
         ({"$target": "config_targets.Model", "depth": 2}, SchemaTypeError),
         ({"$target": "config_targets.ModelConfig", "depth": 2}, SchemaTypeError),
+        ({"$symbol": "config_targets.ITEM"}, SchemaTypeError),
         ([1, 2], SchemaTypeError),
     ):
         with pytest.raises(error_type) as error_info:
@@ -432,6 +443,7 @@ def test_annotation_that_cannot_be_checked_takes_any_object():
         ({"alias": {"$target": "builtins.dict", "$partial": True}}, False),
         ({"plain": {"$target": "builtins.list", "$partial": True}}, False),
         ({"kind": {"$symbol": "builtins.bool"}}, True),
+        ({"kind": {"$symbol": "builtins.str"}}, False),
         ({"kind": {"$target": "builtins.bool"}}, False),
         ({"plain": [{"$target": "fractions.Fraction"}]}, True),
         ({"plain": {"first": 1}}, False),

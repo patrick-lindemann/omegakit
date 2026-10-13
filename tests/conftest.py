@@ -15,6 +15,7 @@ from omegakit.configurable import Configurable
 
 CALLS = []
 SETTINGS = {"seed": 0}
+BACKBONE = {"depth": "3"}
 
 
 class Item:
