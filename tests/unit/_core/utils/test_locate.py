@@ -18,6 +18,21 @@ def test_imports_an_attribute_of_a_module():
     assert locate("os.path.join") is os.path.join
 
 
+def test_imports_a_submodule_that_is_not_imported_yet(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    (tmp_path / "locate_package").mkdir()
+    (tmp_path / "locate_package/__init__.py").write_text("")
+    (tmp_path / "locate_package/part.py").write_text("NAME = 3\n")
+    monkeypatch.syspath_prepend(tmp_path)
+    for name in ("locate_package", "locate_package.part"):
+        monkeypatch.delitem(sys.modules, name, raising=False)
+    part = locate("locate_package.part")
+    assert part.NAME == 3
+    with pytest.raises(QualifiedNameNotFoundError):
+        locate("locate_package.no_such_part")
+
+
 @pytest.mark.parametrize("qualified_name", ["", "sqrt", ".sqrt", "math.", "math..sqrt"])
 def test_malformed_name_is_rejected(qualified_name: str):
     with pytest.raises(QualifiedNameSyntaxError):

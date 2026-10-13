@@ -184,6 +184,9 @@ All notable changes to this project are documented here. The format follows
 
 ### Fixed
 
+- A `$symbol` or `$target` may name a submodule that is not imported yet, such as
+  `concurrent.futures`. It raised ``Module `concurrent` has no attribute
+  `futures`.``
 - `${paths:name}` raises for a name that was not registered. It resolved to
   `None`.
 - `register_torch_device_resolver` no longer warns that the resolver cannot be

@@ -27,8 +27,14 @@ def locate(qualified_name: str) -> Any:
             f"There is no module `{error.name}`."
         ) from error
     target = getattr(module, attr_name, _NOT_FOUND)
-    if target is _NOT_FOUND:
+    if target is not _NOT_FOUND:
+        return target
+    try:
+        # A submodule is no attribute of its package before it is imported
+        return importlib.import_module(qualified_name)
+    except ModuleNotFoundError as error:
+        if error.name != qualified_name:
+            raise
         raise QualifiedNameNotFoundError(
             f"Module `{module_path}` has no attribute `{attr_name}`."
-        )
-    return target
+        ) from error
