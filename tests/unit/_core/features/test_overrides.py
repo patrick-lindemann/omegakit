@@ -164,6 +164,6 @@ def test_rejects_a_value_of_the_wrong_type_for_a_typed_config():
 def test_a_failure_leaves_the_config_unchanged(overrides: Any):
     config = OmegaConf.create({"model": {"hidden": 32}})
     OmegaConf.set_struct(config, True)
-    with pytest.raises((ConfigOverrideError, ConfigOverrideError)):
+    with pytest.raises(ConfigOverrideError):
         apply_overrides(config, overrides)
     assert config == {"model": {"hidden": 32}}
