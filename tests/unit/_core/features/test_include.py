@@ -353,6 +353,16 @@ def test_finds_a_cycle_for_a_relative_config_path(
         resolve_includes(config, "main.yaml")
 
 
+def test_rejects_a_link_that_leaves_the_include_root(tmp_path: Path):
+    (tmp_path / "secrets.yaml").write_text("token: abc")
+    (tmp_path / "configs").mkdir()
+    (tmp_path / "configs/link.yaml").symlink_to(tmp_path / "secrets.yaml")
+    path = tmp_path / "configs/main.yaml"
+    path.write_text("value: ~include link.yaml")
+    with pytest.raises(IncludeRootError):
+        resolve_includes(load_yaml(path), path, include_root=tmp_path / "configs")
+
+
 def test_rejects_a_file_outside_the_include_root(tmp_path: Path):
     (tmp_path / "configs").mkdir()
     (tmp_path / "configs/model.yaml").write_text("optimizer: ~include ../sgd.yaml")
