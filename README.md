@@ -2,7 +2,7 @@
 
 omegakit is a small library on top of OmegaConf for experiment configs. Every
 experiment is a YAML file in git that names its base and its includes by path. You
-load it from your own `main()`, check it against a dataclass, and build your objects
+load it from your own `main()`, check it against a schema, and build your objects
 from it. The same file and seed give the same run. Install it with
 `pip install omegakit`, on Python 3.12 or newer. It needs OmegaConf 2.4.0, which is a
 release candidate until it is out, so uv needs `uv add omegakit --prerelease=allow`.
@@ -30,14 +30,13 @@ model:
 
 ```python
 from collections.abc import Callable
-from dataclasses import dataclass
+from typing import TypedDict
 
 import torch
-from omegakit import instantiate, load_config
+from omegakit import instantiate, load_config, validate
 
 
-@dataclass
-class Experiment:
+class ExperimentConfig(TypedDict):
     seed: int
     epochs: int
     loss: Callable[..., torch.Tensor]
@@ -46,16 +45,17 @@ class Experiment:
 
 
 config = load_config("linear.yaml")
+validate(config, ExperimentConfig)
 torch.manual_seed(config.seed)
-experiment = instantiate(config, schema=Experiment)
-optimizer = experiment.optimizer(experiment.model.parameters())
+model = instantiate(config.model)
+optimizer = instantiate(config.optimizer)(model.parameters())
 ```
 
 `linear.yaml` took the seed, the epochs, the loss and the optimizer from
 `base.yaml`, and added a model. `$target` names a class or function to call,
 `$symbol` passes a function as it is, and `$partial` builds the optimizer later, once
-the model's parameters exist. The dataclass checks the config before anything is built:
-`epochs: many` raises an error that names the key. The
+the model's parameters exist. `validate` checks the config against the schema before
+anything is built: `epochs: many` raises an error that names the key. The
 [documentation](https://omegakit.readthedocs.io) trains a small PyTorch model in
 every example.
 

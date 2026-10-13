@@ -106,6 +106,7 @@ class Experiment:
     items: list[Item] = dataclasses.field(default_factory=list)
     named_items: dict[str, Item] = dataclasses.field(default_factory=dict)
     stages: list[Optimizer] = dataclasses.field(default_factory=list)
+    schedules: dict[str, Optimizer] = dataclasses.field(default_factory=dict)
     schedule: Callable[..., Any] | None = None
     extra: Any = None
     backbone: ModelConfig | None = None

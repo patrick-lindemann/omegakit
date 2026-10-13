@@ -55,6 +55,11 @@ All notable changes to this project are documented here. The format follows
   config gives, no longer an instance of the schema. A field that is annotated with
   a `TypedDict` holds a mapping without `$target`, which stays a `dict`, and a
   `$target` that names a `TypedDict` raises `SchemaTypeError`.
+- **Breaking:** A dataclass is a class that `$target` builds, never a schema. A
+  field that is annotated with a dataclass holds an object, so it takes a `$target`
+  or a `$symbol`. A mapping without `$target` raises ``Expected `Data`, but the
+  config gives a mapping.`` there, also as an item of a list or a dictionary and
+  for `validate(config, Data)`. It used to be built as the dataclass.
 - **Breaking:** A `Configurable` names its schema in the class attribute `schema`
   instead of a type argument: replace `class Model(Configurable[ModelConfig])` with
   `class Model(Configurable)` and `schema = ModelConfig` in its body. `from_config`

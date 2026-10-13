@@ -116,21 +116,17 @@ def _check_node(
                 "here: keys that start with `$` are reserved."
             )
         section = find_section(annotation)
-        schema = section if is_typeddict(section) else find_schema(section)
     except OmegaKitBaseException as error:
         error.add_note(f"  at {describe_node(node)}")
         raise
-    if section is None or schema is None:
+    if section is None:
         items = {
             key: _check_value(node, key, active_nodes, item_annotation) for key in keys
         }
         return Items(items)
-    arguments = _check_schema(node, schema, keys, active_nodes)
-    if is_typeddict(section):
-        # A mapping that is checked against a schema stays a mapping
-        return Items(arguments)
-    name = f"{section.__module__}.{section.__qualname__}"
-    return Call(node, name, section, schema, False, arguments)
+    # A mapping that is checked against a schema stays a mapping
+    arguments = _check_schema(node, section, keys, active_nodes)
+    return Items(arguments)
 
 
 def _check_call(

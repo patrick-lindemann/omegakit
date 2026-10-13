@@ -85,9 +85,7 @@ def split_union(annotation: Any) -> tuple[Any, ...]:
 
 def find_section(annotation: Any) -> type | None:
     for member in split_union(annotation):
-        if is_typeddict(member) or (
-            isinstance(member, type) and dataclasses.is_dataclass(member)
-        ):
+        if is_typeddict(member):
             return member
     return None
 
@@ -172,7 +170,12 @@ def _is_data(annotation: Any) -> bool:
 
 @functools.cache
 def _is_data_cached(annotation: Any) -> bool:
-    if annotation is Any or find_section(annotation) is not None:
+    # A dataclass is an object, although OmegaConf reads it as a structured config
+    is_object = any(
+        is_typeddict(member) or dataclasses.is_dataclass(member)
+        for member in split_union(annotation)
+    )
+    if annotation is Any or is_object:
         return False
     item_annotation = find_item_annotation(annotation)
     if item_annotation is not None and not _is_data(item_annotation):
