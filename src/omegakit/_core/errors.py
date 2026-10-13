@@ -26,7 +26,7 @@ class ConfigFilePermissionError(ConfigLoadError, PermissionError):
     pass
 
 
-class ConfigSyntaxError(ConfigLoadError, ValueError):
+class ConfigFileSyntaxError(ConfigLoadError, ValueError):
     pass
 
 
@@ -47,10 +47,6 @@ class MergeReferenceError(ConfigMergeError, InterpolationResolutionError):
 
 
 class MergeCycleError(ConfigMergeError):
-    pass
-
-
-class LoadTypeError(ConfigLoadError, TypeError):
     pass
 
 

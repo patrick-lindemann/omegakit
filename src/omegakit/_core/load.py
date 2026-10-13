@@ -2,7 +2,7 @@ from typing import Any
 
 from omegaconf import DictConfig
 
-from .errors import LoadTypeError
+from .errors import ConfigFileSyntaxError
 from .features.base import merge_bases
 from .features.each import apply_each
 from .features.include import resolve_includes
@@ -32,12 +32,12 @@ def load_config(
         The assembled config.
 
     Raises:
-        LoadTypeError: If the root of the file is a list.
+        ConfigFileSyntaxError: If the root of the file is a list.
     """
     file_path = resolve_path(file_path)
     config = load_yaml(file_path)
     if not isinstance(config, DictConfig):
-        raise LoadTypeError(
+        raise ConfigFileSyntaxError(
             f"Cannot load `{file_path}`: its root is a list, but the root of a config "
             "must be a mapping."
         )

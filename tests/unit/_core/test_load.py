@@ -4,8 +4,8 @@ import pytest
 
 from omegakit._core.errors import (
     ConfigFileNotFoundError,
+    ConfigFileSyntaxError,
     IncludeRootError,
-    LoadTypeError,
 )
 from omegakit._core.load import load_config
 
@@ -79,5 +79,5 @@ def test_missing_file_is_rejected(tmp_path: Path):
 def test_list_at_the_root_is_rejected(tmp_path: Path):
     path = tmp_path / "config.yaml"
     path.write_text("- a\n- b\n")
-    with pytest.raises(LoadTypeError, match="root is a list"):
+    with pytest.raises(ConfigFileSyntaxError, match="root is a list"):
         load_config(path)

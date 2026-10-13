@@ -6,7 +6,7 @@ from omegaconf import DictConfig, ListConfig, OmegaConf
 from omegakit._core.errors import (
     ConfigFileNotFoundError,
     ConfigFilePermissionError,
-    ConfigSyntaxError,
+    ConfigFileSyntaxError,
 )
 
 from .describe import describe_error
@@ -21,6 +21,6 @@ def load_yaml(file_path: Path) -> DictConfig | ListConfig:
         raise ConfigFilePermissionError(f"Cannot read `{file_path}`.") from error
     # PyYAML and OmegaConf raise assorted builtin errors for invalid content
     except Exception as error:
-        raise ConfigSyntaxError(
+        raise ConfigFileSyntaxError(
             f"Cannot parse `{file_path}`: {describe_error(error)}"
         ) from error

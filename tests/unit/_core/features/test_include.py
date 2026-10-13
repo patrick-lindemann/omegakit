@@ -6,7 +6,7 @@ from omegaconf import OmegaConf
 
 from omegakit._core.errors import (
     ConfigFileNotFoundError,
-    ConfigSyntaxError,
+    ConfigFileSyntaxError,
     IncludeCycleError,
     IncludeInterpolationError,
     IncludeMissingValueError,
@@ -254,7 +254,7 @@ def test_rejects_an_included_file_with_invalid_yaml(tmp_path: Path):
     (tmp_path / "model.yaml").write_text("hidden: [1")
     path = tmp_path / "main.yaml"
     path.write_text("model: ~include model.yaml")
-    with pytest.raises(ConfigSyntaxError, match=r"model\.yaml"):
+    with pytest.raises(ConfigFileSyntaxError, match=r"model\.yaml"):
         _load(path)
 
 

@@ -49,8 +49,8 @@ All notable changes to this project are documented here. The format follows
   a file outside it raises the new `IncludeRootError`.
 - **Breaking:** `load_config` no longer takes `keep_targets`, and its arguments may
   be given by position. It raises the error of the step that failed, such as
-  `ConfigSyntaxError` or `IncludeCycleError`, instead of wrapping it in
-  `ConfigLoadError`, and `LoadTypeError` for a file whose root is a list.
+  `ConfigFileSyntaxError` or `IncludeCycleError`, instead of wrapping it in
+  `ConfigLoadError`, and `ConfigFileSyntaxError` for a file whose root is a list.
 - `ConfigLoadError` is the parent of every error that `load_config` raises, and
   `ConfigValidationError` of every error that `validate`, `instantiate` and
   `prepare` raise about the config. `SchemaDefinitionError` belongs to neither,
