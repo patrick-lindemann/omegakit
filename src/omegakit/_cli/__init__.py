@@ -3,7 +3,7 @@ from ._routine import Routine
 from .check import CheckArguments, CheckRoutine
 from .show import ShowArguments, ShowRoutine
 
-ROUTINES: frozenset[Routine] = frozenset({CheckRoutine(), ShowRoutine()})
+ROUTINES: tuple[Routine, ...] = (CheckRoutine(), ShowRoutine())
 
 __all__ = [
     "ROUTINES",
