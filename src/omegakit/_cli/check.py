@@ -1,3 +1,4 @@
+import sys
 from argparse import ArgumentError, ArgumentParser
 from pathlib import Path
 from typing import override
@@ -80,6 +81,6 @@ class CheckRoutine(Routine[CheckArguments]):
             except (Exception, SystemExit) as error:
                 invalid += 1
                 message = str(error).splitlines()[0] if str(error) else ""
-                print(f"{path}: {type(error).__name__}: {message}")
+                print(f"{path}: {type(error).__name__}: {message}", file=sys.stderr)
         if invalid:
             raise SystemExit(1)

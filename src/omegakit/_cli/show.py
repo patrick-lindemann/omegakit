@@ -1,3 +1,4 @@
+import sys
 from argparse import ArgumentError, ArgumentParser
 from pathlib import Path
 from typing import Any, NoReturn, override
@@ -107,7 +108,7 @@ class ShowRoutine(Routine[ShowArguments]):
             if args.node is not None:
                 node = OmegaConf.select(config, args.node, default=_NOT_FOUND)
             if node is _NOT_FOUND:
-                print(f"{args.config}: no node `{args.node}`")
+                print(f"{args.config}: no node `{args.node}`", file=sys.stderr)
                 raise SystemExit(1)
             if isinstance(node, (DictConfig, ListConfig)):
                 text = OmegaConf.to_yaml(node, resolve=args.resolve)
@@ -120,7 +121,7 @@ class ShowRoutine(Routine[ShowArguments]):
 
 def _fail(path: Path, error: Exception) -> NoReturn:
     message = str(error).splitlines()[0] if str(error) else ""
-    print(f"{path}: {type(error).__name__}: {message}")
+    print(f"{path}: {type(error).__name__}: {message}", file=sys.stderr)
     raise SystemExit(1) from error
 
 

@@ -84,7 +84,7 @@ def test_node_that_is_missing_is_no_node(
     path = tmp_path / "app.yaml"
     path.write_text(_NODES)
     assert _exit_code(["show", str(path), "--node", node]) == 1
-    assert capsys.readouterr().out == f"{path}: no node `{node}`\n"
+    assert capsys.readouterr().err == f"{path}: no node `{node}`\n"
 
 
 @pytest.mark.parametrize(
@@ -97,7 +97,7 @@ def test_reports_a_value_that_cannot_be_resolved(
     path = tmp_path / "app.yaml"
     path.write_text("x: ${nope:1}\ny: {z: '${nope:2}'}\n")
     assert _exit_code(["show", str(path), *arguments]) == 1
-    assert capsys.readouterr().out.startswith(f"{path}: ")
+    assert capsys.readouterr().err.startswith(f"{path}: ")
 
 
 def test_reports_a_file_that_cannot_be_loaded(
@@ -105,7 +105,7 @@ def test_reports_a_file_that_cannot_be_loaded(
 ):
     path = tmp_path / "missing.yaml"
     assert _exit_code(["show", str(path)]) == 1
-    assert capsys.readouterr().out.startswith(f"{path}: ConfigFileNotFoundError: ")
+    assert capsys.readouterr().err.startswith(f"{path}: ConfigFileNotFoundError: ")
 
 
 @pytest.mark.parametrize(
@@ -146,6 +146,6 @@ def test_include_root_limits_the_includes(
     capsys.readouterr()
     root = str(tmp_path / "configs")
     assert _exit_code(["show", str(path), "--include-root", root]) == 1
-    assert "outside the include root" in capsys.readouterr().out
+    assert "outside the include root" in capsys.readouterr().err
     missing = str(tmp_path / "missing")
     assert _exit_code(["show", str(path), "--include-root", missing]) == 2

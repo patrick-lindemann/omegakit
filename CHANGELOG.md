@@ -184,6 +184,8 @@ All notable changes to this project are documented here. The format follows
 
 ### Fixed
 
+- `omegakit check` and `omegakit show` print failures to stderr. They went to
+  stdout, so `omegakit show app.yaml > out.yaml` wrote the error into the file.
 - A schema field annotated with a bare `tuple` holds a `tuple`, as the Dataclass
   schemas page says, instead of a `list`.
 - A list of overrides with an item that is not a string raises `ConfigOverrideError`, as

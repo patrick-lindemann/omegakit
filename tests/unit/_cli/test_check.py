@@ -34,7 +34,7 @@ def test_reports_every_invalid_file(
     broken = tmp_path / "broken.yaml"
     broken.write_text("a: ~include missing.yaml\n")
     assert _exit_code(["check", str(bad), str(good), str(broken)]) == 1
-    lines = capsys.readouterr().out.splitlines()
+    lines = capsys.readouterr().err.splitlines()
     assert lines[0].startswith(f"{bad}: ConfigSchemaError: ")
     assert lines[1].startswith(f"{broken}: ConfigFileNotFoundError: ")
     assert len(lines) == 2
@@ -51,7 +51,7 @@ def test_counts_a_module_that_exits_as_invalid(
     path = tmp_path / "a.yaml"
     path.write_text("x:\n  $target: exiting_module.Main\n")
     assert _exit_code(["check", str(path)]) == 1
-    assert capsys.readouterr().out.startswith(f"{path}: SystemExit")
+    assert capsys.readouterr().err.startswith(f"{path}: SystemExit")
 
 
 def test_applies_overrides(tmp_path: Path, targets: ModuleType):
@@ -111,6 +111,6 @@ def test_include_root_limits_the_includes(
     capsys.readouterr()
     root = str(tmp_path / "configs")
     assert _exit_code(["check", str(path), "--include-root", root]) == 1
-    assert "outside the include root" in capsys.readouterr().out
+    assert "outside the include root" in capsys.readouterr().err
     missing = str(tmp_path / "missing")
     assert _exit_code(["check", str(path), "--include-root", missing]) == 2
