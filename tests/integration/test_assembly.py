@@ -6,13 +6,13 @@ from omegaconf import DictConfig
 from omegakit._core.file import load_yaml
 from omegakit._features.base import merge_bases
 from omegakit._features.defaults import apply_defaults
-from omegakit._features.import_ import resolve_imports
+from omegakit._features.include import resolve_includes
 from omegakit._features.meta import remove_meta
 from omegakit._features.overrides import apply_overrides
 from omegakit.instantiate import instantiate
 
 
-def test_overrides_win_over_imported_values(tmp_path: Path):
+def test_overrides_win_over_included_values(tmp_path: Path):
     (tmp_path / "configs").mkdir()
     (tmp_path / "configs/optimizer.yaml").write_text(
         "sgd: {$meta: {description: Plain SGD}, lr: '${lr}', momentum: 0.9}"
@@ -20,15 +20,15 @@ def test_overrides_win_over_imported_values(tmp_path: Path):
     (tmp_path / "configs/model.yaml").write_text(
         "$meta: {description: The baseline MLP}\n"
         "hidden: 32\n"
-        'optimizer: "~import optimizer.yaml#sgd"\n'
+        'optimizer: "~include optimizer.yaml#sgd"\n'
     )
     experiment_path = tmp_path / "experiment.yaml"
     experiment_path.write_text(
-        "$meta: {title: Wide MLP}\nlr: 0.1\nmodel: ~import configs/model.yaml\n"
+        "$meta: {title: Wide MLP}\nlr: 0.1\nmodel: ~include configs/model.yaml\n"
     )
     config = load_yaml(experiment_path)
     assert isinstance(config, DictConfig)
-    config = resolve_imports(config, experiment_path)
+    config = resolve_includes(config, experiment_path)
     config = apply_overrides(config, ["model.hidden=256", "lr=0.01"])
     config = remove_meta(config)
     assert config == {
@@ -37,7 +37,7 @@ def test_overrides_win_over_imported_values(tmp_path: Path):
     }
 
 
-def test_imported_base_and_defaults_are_assembled_before_overrides(tmp_path: Path):
+def test_included_base_and_defaults_are_assembled_before_overrides(tmp_path: Path):
     (tmp_path / "base.yaml").write_text(
         "epochs: 200\n"
         "data:\n"
@@ -47,11 +47,11 @@ def test_imported_base_and_defaults_are_assembled_before_overrides(tmp_path: Pat
     )
     experiment_path = tmp_path / "experiment.yaml"
     experiment_path.write_text(
-        "$base: ~import base.yaml\ndata:\n  validation: {n: 64}\n"
+        "$base: ~include base.yaml\ndata:\n  validation: {n: 64}\n"
     )
     config = load_yaml(experiment_path)
     assert isinstance(config, DictConfig)
-    config = resolve_imports(config, experiment_path)
+    config = resolve_includes(config, experiment_path)
     config = merge_bases(config)
     config = apply_defaults(config)
     config = apply_overrides(config, ["data.train.seed=7", "epochs=1"])
@@ -76,12 +76,12 @@ def test_assembled_config_is_instantiated(tmp_path: Path):
         "$class: builtins.dict\n"
         "$meta: {title: Timeouts}\n"
         "hours: 1\n"
-        "limits: ~import limits.yaml\n"
+        "limits: ~include limits.yaml\n"
         "clock: {$ref: datetime.datetime}\n"
     )
     config = load_yaml(experiment_path)
     assert isinstance(config, DictConfig)
-    config = resolve_imports(config, experiment_path)
+    config = resolve_includes(config, experiment_path)
     config = merge_bases(config)
     config = apply_defaults(config)
     config = apply_overrides(config, ["hours=2"])

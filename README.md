@@ -1,7 +1,7 @@
 # omegakit
 
 omegakit is a small library on top of OmegaConf for experiment configs. Every
-experiment is a YAML file in git that names its base and its imports by path. You
+experiment is a YAML file in git that names its base and its includes by path. You
 load it from your own `main()`, check it against a dataclass, and build your objects
 from it. The same file and seed give the same run. Install it with
 `pip install omegakit`, on Python 3.12 or newer. It needs OmegaConf 2.4.0, which is a
@@ -21,7 +21,7 @@ optimizer:
 
 ```yaml
 # linear.yaml
-$base: ~import base.yaml
+$base: ~include base.yaml
 model:
   $class: torch.nn.Linear
   in_features: 16

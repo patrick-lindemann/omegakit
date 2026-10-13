@@ -18,11 +18,14 @@ All notable changes to this project are documented here. The format follows
 - **Breaking:** omegakit requires OmegaConf 2.4.0, and no other version. Until
   2.4.0 is released, only its release candidate exists; uv installs it with
   `uv add omegakit --prerelease=allow`.
-- **Breaking:** `~import file#node` and `omegakit show --node` select the node with
+- **Breaking:** `~import` is now `~include`, and `IMPORT_KEY` is `INCLUDE_PREFIX`.
+  Replace `~import base.yaml` with `~include base.yaml`. The old spelling has no
+  alias: an `~import` value stays the text it is.
+- **Breaking:** `~include file#node` and `omegakit show --node` select the node with
   `OmegaConf.select`. The path also takes `a[0]`, and it follows interpolations
   instead of rejecting a path through one. A node that holds `???` counts as
-  missing. A selected single value arrives resolved: an import resolves it in the
-  imported file, and `show` prints it resolved, with `${secret:...}` as `***`.
+  missing. A selected single value arrives resolved: an include resolves it in the
+  included file, and `show` prints it resolved, with `${secret:...}` as `***`.
 - **Breaking:** Config files load as `OmegaConf.load` gives them. A file that holds
   a single string, such as `hello`, is the mapping `{hello: null}` instead of an
   error; a single number or boolean still raises `ConfigLoadError`, now with
@@ -54,7 +57,7 @@ All notable changes to this project are documented here. The format follows
   "mapping" rather than "dictionary", and "Cannot …". This changes the messages for
   a `$ref` node with other keys, a `$base` or `$defaults` that is
   not a mapping, a missing attribute (``Module `m` has no attribute `x`.``), an
-  import cycle, a `$partial` that is not a boolean, an `overrides` argument of the
+  include cycle, a `$partial` that is not a boolean, an `overrides` argument of the
   wrong type, and a missing PyTorch.
 - **Breaking:** `omegakit check` and `omegakit show` take overrides as
   `--overrides KEY=VALUE ...`, and every other argument is a config file.
