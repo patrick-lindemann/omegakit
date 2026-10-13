@@ -1,3 +1,4 @@
+import fractions
 from collections.abc import Callable
 from types import ModuleType
 from typing import Any, Protocol, TypedDict
@@ -45,6 +46,7 @@ class _Parts(TypedDict, total=False):
     kind: type[int] | None
     plain: list | None
     options: dict[str, dict[str, int]] | None
+    scale: float | fractions.Fraction
 
 
 def _report(error: BaseException) -> str:
@@ -361,6 +363,11 @@ def test_field_that_is_annotated_with_a_schema_takes_a_mapping(targets: ModuleTy
     assert targets.CALLS == []
 
 
+def test_result_of_a_function_is_not_known_before_it_is_called(targets: ModuleType):
+    validate(_make_experiment(model={"$target": "config_targets.make_item"}))
+    assert targets.CALLS == []
+
+
 def test_partial_may_leave_required_keys_open(targets: ModuleType):
     model = {"$target": "config_targets.Model", "$partial": True}
     validate(OmegaConf.create({"models": [model, {**model, "activation": "tanh"}]}))
@@ -409,6 +416,10 @@ def test_annotation_that_cannot_be_checked_takes_any_object():
         ({"plain": [{"$target": "fractions.Fraction"}]}, True),
         ({"plain": {"first": 1}}, False),
         ({"plain": (1, 2)}, False),
+        ({"scale": 0.5}, True),
+        ({"scale": {"$target": "fractions.Fraction"}}, True),
+        ({"scale": 1}, False),
+        ({"scale": "3e-4"}, False),
     ],
 )
 def test_annotation_is_checked_as_its_class(values: dict[str, Any], is_valid: bool):

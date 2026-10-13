@@ -80,11 +80,11 @@ def check(
     annotation = Any if schema is None else schema
     checked_config = _check_node(config, [], annotation, is_deferred)
     try:
-        _check_type(checked_config, annotation)
+        typed_config = _check_type(checked_config, annotation)
     except SchemaTypeError as error:
         error.add_note(f"  at {describe_node(config)}")
         raise
-    return checked_config
+    return typed_config
 
 
 def _check_node(
@@ -230,11 +230,11 @@ def _check_value(
     if isinstance(value, (DictConfig, ListConfig, TupleConfig)):
         value = _check_node(value, active_nodes, annotation)
     try:
-        _check_type(value, annotation)
+        typed_value = _check_type(value, annotation)
     except SchemaTypeError as error:
         error.add_note(f"  at `{parent._get_full_key(key)}`")
         raise
-    return value
+    return typed_value
 
 
 def _unwrap_data(value: Any) -> Any:
@@ -250,14 +250,14 @@ def _unwrap_data(value: Any) -> Any:
     return type(value.items)(_unwrap_data(item) for item in value.items)
 
 
-def _check_type(value: Any, annotation: Any) -> None:
+def _check_type(value: Any, annotation: Any) -> Any:
     if annotation is Any:
-        return
+        return value
     members = split_union(annotation)
     # A field that is annotated with a schema takes a mapping of the config
     if any(is_typeddict(member) for member in members):
         if isinstance(value, Items) and isinstance(value.items, dict):
-            return
+            return value
         members = tuple(member for member in members if not is_typeddict(member))
     # A parametrized class, such as `list[X]`, is checked as the class alone
     classes = tuple(get_origin(member) or member for member in members)
@@ -269,14 +269,17 @@ def _check_type(value: Any, annotation: Any) -> None:
             is_valid = isinstance(given_value, classes)
         elif value.is_partial:
             is_valid = issubclass(functools.partial, classes)
+        elif not isinstance(value.target, type):
+            # The result of a function is known only when it returns
+            return dataclasses.replace(value, result_annotation=annotation)
         else:
             is_valid = issubclass(value.target, classes)
-    # Not every annotation and target can be checked, such as a `Literal`, a
-    # `Protocol` that is not runtime-checkable, and a function as the target
+    # Not every annotation can be checked, such as a `Literal` or a `Protocol` that
+    # is not runtime-checkable
     except TypeError:
-        return
+        return value
     if is_valid:
-        return
+        return value
     if isinstance(value, Call) and value.is_partial:
         given = f"a partial of `{value.name}`"
     elif isinstance(value, Call):

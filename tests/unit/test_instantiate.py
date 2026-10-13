@@ -500,6 +500,27 @@ def test_result_is_checked_against_the_class(targets: ModuleType):
         assert error_info.value.__notes__ == ["  at the root"]
 
 
+def test_result_of_a_function_is_checked_in_a_field(targets: ModuleType):
+    experiment = {
+        "$target": "config_targets.Experiment",
+        "model": {"$target": "config_targets.Model", "depth": 2},
+    }
+    made_item = {"$target": "config_targets.make_item", "name": "made"}
+    config = OmegaConf.create({**experiment, "items": [made_item]})
+    assert type(instantiate(config).items[0]) is targets.Item
+    config = OmegaConf.create({**experiment, "optimizer": made_item})
+    with pytest.raises(SchemaTypeError, match="returned") as error_info:
+        instantiate(config)
+    assert error_info.value.__notes__ == ["  at `optimizer`"]
+
+
+def test_prepare_cannot_check_the_result_of_a_function(targets: ModuleType):
+    config = OmegaConf.create({"$target": "config_targets.make_item"})
+    assert type(prepare(config)()) is targets.Item
+    with pytest.raises(SchemaTypeError, match="make_item"):
+        prepare(config, targets.Item)
+
+
 def test_schema_is_not_the_class_of_a_result(targets: ModuleType):
     model = OmegaConf.create({"$target": "config_targets.Model", "depth": 1})
     with pytest.raises(SchemaTypeError, match="ModelConfig"):

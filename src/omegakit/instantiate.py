@@ -43,6 +43,11 @@ def _instantiate(config: DictConfig, schema: type | None, is_partial: bool) -> A
             f"`{TARGET_KEY}`."
         )
     if is_partial:
+        if schema is not None and not isinstance(call.target, type):
+            raise SchemaTypeError(
+                f"`{call.name}` is a function, and the result of a partial cannot be "
+                f"checked to be a `{schema.__qualname__}`."
+            )
         return _build(dataclasses.replace(call, is_partial=True))
     # Also for a class, whose `from_config` may return anything
     typed_call = (

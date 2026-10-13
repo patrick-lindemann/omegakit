@@ -73,6 +73,13 @@ All notable changes to this project are documented here. The format follows
   other argument still arrives as `**kwargs`. A required key that is still open
   raises `SchemaMissingValueError` at the call. Such a partial wraps a function of
   omegakit instead of `from_config` and takes keyword arguments only.
+- **Breaking:** A field takes at most one `TypedDict`: a union of two, such as
+  `section: OptimizerConfig | SchedulerConfig`, raises `SchemaDefinitionError`.
+- **Breaking:** The result of a function that `$target` names is checked with
+  `isinstance` when the function returns, in a field that is annotated with a
+  class. It used to pass unchecked. `prepare(config, Class)` raises
+  `SchemaTypeError` for a root whose `$target` is a function, since the result of a
+  partial cannot be checked.
 - **Breaking:** A `Configurable` names its schema in the class attribute `schema`
   instead of a type argument: replace `class Model(Configurable[ModelConfig])` with
   `class Model(Configurable)` and `schema = ModelConfig` in its body. `from_config`

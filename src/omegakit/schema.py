@@ -128,10 +128,14 @@ def read_fields(schema: type) -> dict[str, SchemaField]:
     fields = {}
     for name, is_required in required_keys.items():
         annotation = annotations[name]
+        sections = [
+            member for member in split_union(annotation) if is_typeddict(member)
+        ]
         is_data = _is_data(annotation)
         if (
             not name.isidentifier()
             or keyword.iskeyword(name)
+            or len(sections) > 1
             or (not is_data and not _is_object(annotation))
         ):
             raise SchemaDefinitionError(

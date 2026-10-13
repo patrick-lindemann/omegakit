@@ -180,6 +180,12 @@ def test_field_that_holds_a_typed_dict_is_not_data():
     assert not fields["layers"].is_data
 
 
+def test_union_of_two_typed_dicts_is_rejected():
+    with pytest.raises(SchemaDefinitionError, match=r"Schema\.value"):
+        read_fields(_make_schema(_LayerConfig | _NetworkConfig | None))
+    assert not read_fields(_make_schema(_LayerConfig | _Encoder))["value"].is_data
+
+
 @pytest.mark.parametrize("key", ["learning-rate", "class", "2nd"])
 def test_key_that_is_no_identifier_is_rejected(key: str):
     schema = TypedDict("schema", {key: int})  # pyright: ignore[reportGeneralTypeIssues]
