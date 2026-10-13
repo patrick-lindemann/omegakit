@@ -4,9 +4,7 @@ from typing import Any
 
 from omegaconf import DictConfig
 
-from omegakit._core.errors import (
-    ConfigTargetError,
-)
+from omegakit._core.errors import ConfigTargetError, ConfigValidationError
 from omegakit._core.utils.locate import locate
 from omegakit._core.utils.read import read_value
 
