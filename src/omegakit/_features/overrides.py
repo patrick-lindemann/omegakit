@@ -3,8 +3,8 @@ from typing import Any, overload
 from omegaconf import DictConfig, ListConfig, OmegaConf
 from omegaconf.errors import OmegaConfBaseException
 
+from omegakit._core.copy import copy_with_root
 from omegakit._core.error import OmegaKitBaseException
-from omegakit._core.merge import copy_with_root
 from omegakit._utils.describe import describe_error
 
 

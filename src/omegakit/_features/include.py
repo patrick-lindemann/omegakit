@@ -10,9 +10,9 @@ from omegaconf.errors import (
 )
 
 from omegakit._core.assignment import Assignment
+from omegakit._core.copy import copy_with_root
 from omegakit._core.error import OmegaKitBaseException
 from omegakit._core.file import load_yaml
-from omegakit._core.merge import copy_with_root
 from omegakit._core.walk import walk
 from omegakit._utils.describe import describe_error
 from omegakit._utils.path import PathLike, resolve_path

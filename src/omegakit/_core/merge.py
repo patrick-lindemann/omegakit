@@ -1,4 +1,3 @@
-import copy
 from collections.abc import Iterator
 from typing import Any, cast
 
@@ -105,14 +104,3 @@ def merge_under(node: DictConfig, *others: DictConfig) -> None:
         del node[key]
     for key in merged_config.keys():  # noqa: SIM118
         node[key] = merged_config._get_node(key)
-
-
-def copy_with_root[ConfigT: DictConfig | ListConfig | TupleConfig](
-    config: ConfigT,
-) -> ConfigT:
-    # A copy of `config` alone would still resolve its interpolations in the
-    # original root
-    root = config._get_root()
-    root_copy = copy.deepcopy(root)
-    index = [node is config for node in walk(root)].index(True)
-    return cast(ConfigT, list(walk(root_copy))[index])
