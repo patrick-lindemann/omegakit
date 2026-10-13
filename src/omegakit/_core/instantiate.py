@@ -4,9 +4,9 @@ from typing import Any, get_origin, is_typeddict, overload
 
 from omegaconf import DictConfig
 
-from ._core.features.target import TARGET_KEY, TargetSyntaxError
-from ._core.utils.describe import describe_node
+from .features.target import TARGET_KEY, TargetSyntaxError
 from .schema import SchemaMissingValueError, SchemaTypeError, read_fields, split_union
+from .utils.describe import describe_node
 from .validate import Call, Items, check
 
 

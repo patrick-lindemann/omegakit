@@ -6,10 +6,10 @@ from typing import Any, get_args, get_origin, is_typeddict
 from omegaconf import DictConfig, ListConfig, OmegaConf, TupleConfig
 from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
 
-from ._core.error import OmegaKitBaseException
-from ._core.features.meta import META_KEY
-from ._core.features.symbol import SYMBOL_KEY, import_symbol
-from ._core.features.target import (
+from .error import OmegaKitBaseException
+from .features.meta import META_KEY
+from .features.symbol import SYMBOL_KEY, import_symbol
+from .features.target import (
     ARGS_KEY,
     TARGET_KEY,
     TargetSyntaxError,
@@ -17,7 +17,6 @@ from ._core.features.target import (
     import_target,
     read_arguments,
 )
-from ._core.utils.describe import describe_error, describe_node
 from .schema import (
     SchemaDefinitionError,
     SchemaKeyError,
@@ -36,6 +35,7 @@ from .schema import (
     read_positions,
     split_union,
 )
+from .utils.describe import describe_error, describe_node
 
 
 class ConfigValidationError(OmegaKitBaseException):

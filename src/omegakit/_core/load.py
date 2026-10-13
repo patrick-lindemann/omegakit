@@ -2,14 +2,14 @@ from typing import Any
 
 from omegaconf import DictConfig
 
-from ._core.error import OmegaKitBaseException
-from ._core.features.base import merge_bases
-from ._core.features.each import apply_each
-from ._core.features.include import resolve_includes
-from ._core.features.meta import remove_meta
-from ._core.features.overrides import apply_overrides
-from ._core.utils.file import load_yaml
-from ._core.utils.path import PathLike, resolve_path
+from .error import OmegaKitBaseException
+from .features.base import merge_bases
+from .features.each import apply_each
+from .features.include import resolve_includes
+from .features.meta import remove_meta
+from .features.overrides import apply_overrides
+from .utils.file import load_yaml
+from .utils.path import PathLike, resolve_path
 
 
 class ConfigLoadError(OmegaKitBaseException):

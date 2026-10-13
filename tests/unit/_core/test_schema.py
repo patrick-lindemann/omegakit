@@ -12,9 +12,9 @@ import pytest
 from omegaconf import MISSING
 from omegaconf.errors import ConfigKeyError, MissingMandatoryValue, ValidationError
 
+from omegakit._core.configurable import Configurable
 from omegakit._core.error import OmegaKitBaseException
-from omegakit.configurable import Configurable
-from omegakit.schema import (
+from omegakit._core.schema import (
     ConfigSchemaError,
     SchemaDefinitionError,
     SchemaKeyError,

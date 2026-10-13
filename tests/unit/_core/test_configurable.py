@@ -1,4 +1,4 @@
-from omegakit.configurable import Configurable
+from omegakit._core.configurable import Configurable
 
 
 class _Layer(Configurable):

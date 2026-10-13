@@ -14,15 +14,15 @@ from omegakit._core.features.target import (
     TargetSyntaxError,
     TargetTypeError,
 )
-from omegakit._core.utils.locate import QualifiedNameNotFoundError
-from omegakit.schema import (
+from omegakit._core.schema import (
     SchemaDefinitionError,
     SchemaKeyError,
     SchemaMissingValueError,
     SchemaTypeError,
     SchemaValueError,
 )
-from omegakit.validate import (
+from omegakit._core.utils.locate import QualifiedNameNotFoundError
+from omegakit._core.validate import (
     ConfigValidationError,
     ValidationCycleError,
     ValidationInterpolationError,

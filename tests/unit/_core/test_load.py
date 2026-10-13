@@ -3,8 +3,8 @@ from pathlib import Path
 import pytest
 
 from omegakit._core.features.include import IncludeRootError
+from omegakit._core.load import LoadTypeError, load_config
 from omegakit._core.utils.file import ConfigFileNotFoundError
-from omegakit.load import LoadTypeError, load_config
 
 
 def test_loads_the_values_of_a_file(tmp_path: Path):

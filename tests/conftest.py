@@ -11,7 +11,7 @@ import pathlib
 from collections.abc import Callable
 from typing import Any, Literal, NotRequired, TypedDict, override
 
-from omegakit.configurable import Configurable
+from omegakit._core.configurable import Configurable
 
 CALLS = []
 SETTINGS = {"seed": 0}

@@ -26,9 +26,9 @@ from omegaconf.errors import (
     ValidationError,
 )
 
-from ._core.error import OmegaKitBaseException
-from ._core.utils.describe import describe_error
 from .configurable import Configurable
+from .error import OmegaKitBaseException
+from .utils.describe import describe_error
 
 
 class ConfigSchemaError(OmegaKitBaseException):

@@ -8,15 +8,15 @@ import pytest
 from omegaconf import OmegaConf
 
 from omegakit._core.features.target import TargetSyntaxError, make_node
-from omegakit._core.utils.locate import QualifiedNameNotFoundError
-from omegakit.instantiate import instantiate, prepare
-from omegakit.schema import (
+from omegakit._core.instantiate import instantiate, prepare
+from omegakit._core.schema import (
     SchemaKeyError,
     SchemaMissingValueError,
     SchemaTypeError,
     SchemaValueError,
 )
-from omegakit.validate import (
+from omegakit._core.utils.locate import QualifiedNameNotFoundError
+from omegakit._core.validate import (
     ValidationCycleError,
     ValidationInterpolationError,
     ValidationMissingValueError,

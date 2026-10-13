@@ -8,8 +8,8 @@ from omegakit._core.features.each import apply_each
 from omegakit._core.features.include import resolve_includes
 from omegakit._core.features.meta import remove_meta
 from omegakit._core.features.overrides import apply_overrides
+from omegakit._core.instantiate import instantiate
 from omegakit._core.utils.file import load_yaml
-from omegakit.instantiate import instantiate
 
 
 def test_overrides_win_over_included_values(tmp_path: Path):

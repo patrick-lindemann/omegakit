@@ -4,7 +4,7 @@ from typing import Any, NoReturn, override
 
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
-from omegakit.load import load_config
+from omegakit._core.load import load_config
 
 from ._args import Arguments
 from ._routine import Routine
