@@ -6,6 +6,7 @@ from typing import Any, get_args, get_origin, is_typeddict
 from omegaconf import DictConfig, ListConfig, OmegaConf, TupleConfig
 from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
 
+from .config import Config, cast_config
 from .errors import (
     ConfigSchemaError,
     ConfigTargetError,
@@ -53,13 +54,14 @@ class Items:
 
 
 def validate(
-    config: DictConfig | ListConfig | TupleConfig, schema: type | None = None
+    config: Config | dict[Any, Any] | list[Any] | tuple[Any, ...],
+    schema: type | None = None,
 ) -> None:
-    check(config, schema)
+    check(cast_config(config), schema)
 
 
 def check(
-    config: DictConfig | ListConfig | TupleConfig,
+    config: Config,
     schema: type | None = None,
     is_deferred: bool = False,
 ) -> Any:
@@ -80,8 +82,8 @@ def check(
 
 
 def _check_node(
-    node: DictConfig | ListConfig | TupleConfig,
-    active_nodes: list[DictConfig | ListConfig | TupleConfig],
+    node: Config,
+    active_nodes: list[Config],
     annotation: Any,
     is_deferred: bool = False,
 ) -> Any:
@@ -150,7 +152,7 @@ def _check_node(
 
 def _check_items(
     node: ListConfig | TupleConfig,
-    active_nodes: list[DictConfig | ListConfig | TupleConfig],
+    active_nodes: list[Config],
     annotation: Any,
     item_annotation: Any,
 ) -> Items:
@@ -184,7 +186,7 @@ def _check_items(
 
 def _check_call(
     node: DictConfig,
-    active_nodes: list[DictConfig | ListConfig | TupleConfig],
+    active_nodes: list[Config],
     is_deferred: bool,
 ) -> Call:
     try:
@@ -264,7 +266,7 @@ def _check_schema(
     node: DictConfig,
     schema: type,
     keys: list[Any],
-    active_nodes: list[DictConfig | ListConfig | TupleConfig],
+    active_nodes: list[Config],
     is_open: bool,
     positional_keys: list[str] | tuple[str, ...] = (),
 ) -> dict[Any, Any]:
@@ -315,9 +317,9 @@ def _check_schema(
 
 
 def _check_value(
-    parent: DictConfig | ListConfig | TupleConfig,
+    parent: Config,
     key: Any,
-    active_nodes: list[DictConfig | ListConfig | TupleConfig],
+    active_nodes: list[Config],
     annotation: Any,
 ) -> Any:
     value = _read_value(parent, key)
@@ -332,7 +334,7 @@ def _check_value(
     return typed_value
 
 
-def _read_value(parent: DictConfig | ListConfig | TupleConfig, key: Any) -> Any:
+def _read_value(parent: Config, key: Any) -> Any:
     try:
         return parent[key]
     except MissingMandatoryValue as error:

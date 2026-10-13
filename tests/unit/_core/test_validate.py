@@ -568,3 +568,10 @@ def test_error_of_an_import_keeps_its_type_and_names_the_node(
     with pytest.raises(RuntimeError, match="no GPU") as error_info:
         validate(config)
     error_info.match(re.escape("`models[0]`"))
+
+
+def test_plain_dict_is_checked_like_a_config(targets: ModuleType):
+    validate({"model": {"$target": "config_targets.Item", "name": "plain"}})
+    with pytest.raises(ValidationMissingValueError) as error_info:
+        validate({"model": {"depth": "???"}})
+    error_info.match(re.escape("`model.depth`"))

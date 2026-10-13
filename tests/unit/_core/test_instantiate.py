@@ -698,3 +698,12 @@ def test_symbol_and_resolver_give_values_and_objects_of_typed_fields(
     assert experiment.optimizer.lr == pytest.approx(3.14159, abs=1e-5)
     assert type(experiment.items[0]) is targets.SmallItem
     assert experiment.items[1] is targets.ITEM
+
+
+def test_plain_dict_is_built_like_a_config(targets: ModuleType):
+    node = {"$target": "config_targets.Item", "name": "plain"}
+    item = instantiate(node)
+    assert type(item) is targets.Item
+    assert item.kwargs == {"name": "plain"}
+    make_item = prepare(node)
+    assert make_item().kwargs == {"name": "plain"}

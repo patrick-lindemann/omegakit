@@ -4,6 +4,7 @@ from typing import Any, get_origin, is_typeddict, overload
 
 from omegaconf import DictConfig
 
+from .config import cast_config
 from .errors import ConfigSchemaError, ConfigTargetError
 from .features.target import TARGET_KEY
 from .schema import read_fields, split_union
@@ -12,30 +13,39 @@ from .validate import Call, Items, check
 
 
 @overload
-def instantiate[T](config: DictConfig, schema: type[T]) -> T: ...
+def instantiate[T](config: DictConfig | dict[str, Any], schema: type[T]) -> T: ...
 
 
 @overload
-def instantiate(config: DictConfig, schema: None = None) -> Any: ...
+def instantiate(config: DictConfig | dict[str, Any], schema: None = None) -> Any: ...
 
 
-def instantiate(config: DictConfig, schema: type | None = None) -> Any:
+def instantiate(config: DictConfig | dict[str, Any], schema: type | None = None) -> Any:
     return _instantiate(config, schema, is_partial=False)
 
 
 @overload
-def prepare[T](config: DictConfig, schema: type[T]) -> functools.partial[T]: ...
+def prepare[T](
+    config: DictConfig | dict[str, Any], schema: type[T]
+) -> functools.partial[T]: ...
 
 
 @overload
-def prepare(config: DictConfig, schema: None = None) -> functools.partial[Any]: ...
+def prepare(
+    config: DictConfig | dict[str, Any], schema: None = None
+) -> functools.partial[Any]: ...
 
 
-def prepare(config: DictConfig, schema: type | None = None) -> functools.partial[Any]:
+def prepare(
+    config: DictConfig | dict[str, Any], schema: type | None = None
+) -> functools.partial[Any]:
     return _instantiate(config, schema, is_partial=True)
 
 
-def _instantiate(config: DictConfig, schema: type | None, is_partial: bool) -> Any:
+def _instantiate(
+    config: DictConfig | dict[str, Any], schema: type | None, is_partial: bool
+) -> Any:
+    config = cast_config(config)
     # Checked before the first call, so that nothing is called for an invalid config
     call = check(config, schema, is_partial)
     if not isinstance(call, Call):
