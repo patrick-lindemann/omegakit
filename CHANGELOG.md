@@ -66,6 +66,13 @@ All notable changes to this project are documented here. The format follows
   accepted only by `validate`. Only a mapping with `$target` is instantiated: a root
   without one raises, with a class as in ``Expected `Training`, but the config gives
   a mapping.``, and so does a root that is a `$symbol`.
+- **Breaking:** A node with `$partial: true`, and the root of `prepare`, may leave
+  required keys of its schema open. They are given when the partial is called: an
+  argument of the call that is a key of the schema goes into the `dict` that
+  `from_config` receives, as written, and replaces a value of the config. Every
+  other argument still arrives as `**kwargs`. A required key that is still open
+  raises `SchemaMissingValueError` at the call. Such a partial wraps a function of
+  omegakit instead of `from_config` and takes keyword arguments only.
 - **Breaking:** A `Configurable` names its schema in the class attribute `schema`
   instead of a type argument: replace `class Model(Configurable[ModelConfig])` with
   `class Model(Configurable)` and `schema = ModelConfig` in its body. `from_config`

@@ -361,6 +361,17 @@ def test_field_that_is_annotated_with_a_schema_takes_a_mapping(targets: ModuleTy
     assert targets.CALLS == []
 
 
+def test_partial_may_leave_required_keys_open(targets: ModuleType):
+    model = {"$target": "config_targets.Model", "$partial": True}
+    validate(OmegaConf.create({"models": [model, {**model, "activation": "tanh"}]}))
+    with pytest.raises(SchemaMissingValueError):
+        validate(OmegaConf.create({**model, "$partial": False}))
+    with pytest.raises(SchemaKeyError):
+        validate(OmegaConf.create({**model, "width": 3}))
+    with pytest.raises(SchemaValueError):
+        validate(OmegaConf.create({**model, "depth": "deep"}))
+
+
 def test_schema_says_what_the_root_builds(targets: ModuleType):
     optimizer = {"$target": "config_targets.Optimizer", "lr": 1}
     validate(OmegaConf.create(optimizer), targets.Optimizer)

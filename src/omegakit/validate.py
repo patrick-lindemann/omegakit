@@ -68,7 +68,9 @@ def validate(
 
 
 def check(
-    config: DictConfig | ListConfig | TupleConfig, schema: type | None = None
+    config: DictConfig | ListConfig | TupleConfig,
+    schema: type | None = None,
+    is_deferred: bool = False,
 ) -> Any:
     # The root is not read through a parent, which is where a `???` raises
     if config._is_missing():
@@ -76,7 +78,7 @@ def check(
     if schema is not None and not isinstance(schema, type):
         raise SchemaDefinitionError(f"`schema` must be a class, not `{schema!r}`.")
     annotation = Any if schema is None else schema
-    checked_config = _check_node(config, [], annotation)
+    checked_config = _check_node(config, [], annotation, is_deferred)
     try:
         _check_type(checked_config, annotation)
     except SchemaTypeError as error:
@@ -89,6 +91,7 @@ def _check_node(
     node: DictConfig | ListConfig | TupleConfig,
     active_nodes: list[DictConfig | ListConfig | TupleConfig],
     annotation: Any,
+    is_deferred: bool = False,
 ) -> Any:
     is_active = [active_node is node for active_node in active_nodes]
     if any(is_active):
@@ -105,7 +108,7 @@ def _check_node(
         ]
         return Items(items if isinstance(node, ListConfig) else tuple(items))
     if TARGET_KEY in node.keys():  # noqa: SIM118
-        return _check_call(node, active_nodes)
+        return _check_call(node, active_nodes, is_deferred)
     try:
         if SYMBOL_KEY in node.keys():  # noqa: SIM118
             return import_symbol(node)
@@ -126,12 +129,14 @@ def _check_node(
         }
         return Items(items)
     # A mapping that is checked against a schema stays a mapping
-    arguments = _check_schema(node, section, keys, active_nodes)
+    arguments = _check_schema(node, section, keys, active_nodes, False)
     return Items(arguments)
 
 
 def _check_call(
-    node: DictConfig, active_nodes: list[DictConfig | ListConfig | TupleConfig]
+    node: DictConfig,
+    active_nodes: list[DictConfig | ListConfig | TupleConfig],
+    is_deferred: bool,
 ) -> Call:
     try:
         target_arguments = read_arguments(node)
@@ -151,7 +156,11 @@ def _check_call(
             for key in target_arguments.keys
         }
     else:
-        arguments = _check_schema(node, schema, target_arguments.keys, active_nodes)
+        # A partial may leave required keys open until it is called
+        is_open = target_arguments.is_partial or is_deferred
+        arguments = _check_schema(
+            node, schema, target_arguments.keys, active_nodes, is_open
+        )
     return Call(node, name, target, schema, target_arguments.is_partial, arguments)
 
 
@@ -160,6 +169,7 @@ def _check_schema(
     schema: type,
     keys: list[Any],
     active_nodes: list[DictConfig | ListConfig | TupleConfig],
+    is_open: bool,
 ) -> dict[Any, Any]:
     try:
         fields = read_fields(schema)
@@ -174,7 +184,7 @@ def _check_schema(
             for key, field in fields.items()
             if field.is_required and key not in keys
         ]
-        if missing_keys:
+        if missing_keys and not is_open:
             raise SchemaMissingValueError(
                 f"`{schema.__qualname__}` requires "
                 f"{', '.join(f'`{key}`' for key in missing_keys)}."

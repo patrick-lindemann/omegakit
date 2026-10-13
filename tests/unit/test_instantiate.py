@@ -9,7 +9,11 @@ from omegaconf import OmegaConf
 from omegakit._core.path import PathNotFoundError
 from omegakit._features.target import TargetSyntaxError, make_node
 from omegakit.instantiate import instantiate, prepare
-from omegakit.schema import SchemaTypeError, SchemaValueError
+from omegakit.schema import (
+    SchemaMissingValueError,
+    SchemaTypeError,
+    SchemaValueError,
+)
 from omegakit.validate import (
     ValidationCycleError,
     ValidationInterpolationError,
@@ -411,6 +415,31 @@ def test_prepare_defers_a_node_with_a_schema(targets: ModuleType):
     make_optimizer = prepare(OmegaConf.create(optimizer), targets.Optimizer)
     assert targets.CALLS == []
     assert make_optimizer(steps=3) == targets.Optimizer(lr=1.0, steps=3)
+
+
+def test_partial_is_completed_when_it_is_called(targets: ModuleType):
+    content = {"$target": "config_targets.Model", "activation": "tanh"}
+    config = OmegaConf.create({"model": {**content, "$partial": True}, "root": content})
+    make_models = {"model": instantiate(config.model), "root": prepare(config.root)}
+    for key, make_model in make_models.items():
+        model = make_model(depth=3, name="called")
+        assert model.config == {"activation": "tanh", "depth": 3}
+        assert model.kwargs == {"name": "called"}
+        assert make_model(depth=3, activation="relu").config["activation"] == "relu"
+        with pytest.raises(SchemaMissingValueError, match="depth") as error_info:
+            make_model()
+        assert error_info.value.__notes__ == [f"  at `{key}`"]
+    with pytest.raises(SchemaMissingValueError):
+        instantiate(config.root)
+
+
+def test_partial_of_a_dataclass_is_a_partial_of_the_class(targets: ModuleType):
+    config = OmegaConf.create({"$target": "config_targets.Optimizer", "steps": "3"})
+    make_optimizer = prepare(config)
+    assert make_optimizer.func is targets.Optimizer
+    assert make_optimizer(lr=0.5) == targets.Optimizer(lr=0.5, steps=3)
+    with pytest.raises(TypeError):
+        make_optimizer()
 
 
 @pytest.mark.parametrize(

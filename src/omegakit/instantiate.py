@@ -6,7 +6,7 @@ from omegaconf import DictConfig
 
 from ._features.target import TARGET_KEY, TargetSyntaxError
 from ._utils.describe import describe_node
-from .schema import SchemaTypeError, split_union
+from .schema import SchemaMissingValueError, SchemaTypeError, read_fields, split_union
 from .validate import Call, Items, check
 
 
@@ -36,7 +36,7 @@ def prepare(config: DictConfig, schema: type | None = None) -> functools.partial
 
 def _instantiate(config: DictConfig, schema: type | None, is_partial: bool) -> Any:
     # Checked before the first call, so that nothing is called for an invalid config
-    call = check(config, schema)
+    call = check(config, schema, is_partial)
     if not isinstance(call, Call):
         raise TargetSyntaxError(
             f"There is nothing to instantiate: {describe_node(config)} has no "
@@ -60,14 +60,16 @@ def _build(value: Any) -> Any:
         return value
     arguments = {key: _build(argument) for key, argument in value.arguments.items()}
     try:
-        if hasattr(value.target, "from_config"):
+        if not hasattr(value.target, "from_config"):
             if value.is_partial:
-                return functools.partial(value.target.from_config, arguments)
-            instance = value.target.from_config(arguments)
-        elif value.is_partial:
-            return functools.partial(value.target, **arguments)
-        else:
+                return functools.partial(value.target, **arguments)
             instance = value.target(**arguments)
+        elif not value.is_partial:
+            instance = value.target.from_config(arguments)
+        elif value.schema is None or value.schema is value.target:
+            return functools.partial(value.target.from_config, arguments)
+        else:
+            return functools.partial(_call_from_config, value, value.schema, arguments)
     except Exception as error:
         error.add_note(f"  while calling `{value.name}` at {describe_node(value.node)}")
         raise
@@ -91,3 +93,23 @@ def _build(value: Any) -> Any:
         type_error.add_note(f"  at {describe_node(value.node)}")
         raise type_error
     return instance
+
+
+def _call_from_config(
+    call: Call, schema: type, arguments: dict[Any, Any], **kwargs: Any
+) -> Any:
+    fields = read_fields(schema)
+    # What the call gives for a key of the schema completes the checked values
+    values = arguments | {key: kwargs[key] for key in kwargs if key in fields}
+    other_kwargs = {key: kwargs[key] for key in kwargs if key not in fields}
+    missing_keys = [
+        key for key, field in fields.items() if field.is_required and key not in values
+    ]
+    if missing_keys:
+        error = SchemaMissingValueError(
+            f"`{schema.__qualname__}` requires "
+            f"{', '.join(f'`{key}`' for key in missing_keys)}."
+        )
+        error.add_note(f"  at {describe_node(call.node)}")
+        raise error
+    return call.target.from_config(values, **other_kwargs)
