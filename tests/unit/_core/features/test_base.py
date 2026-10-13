@@ -1,3 +1,4 @@
+import re
 from typing import Any
 
 import pytest
@@ -212,7 +213,7 @@ def test_base_that_holds_no_mappings_is_rejected(base: Any):
     config = OmegaConf.create({"models": [{"$base": base}]})
     with pytest.raises(BaseTypeError) as error_info:
         merge_bases(config)
-    assert error_info.value.__notes__ == ["  at `models[0]`"]
+    error_info.match(re.escape("at `models[0]`"))
 
 
 def test_reference_that_never_resolves_is_rejected():

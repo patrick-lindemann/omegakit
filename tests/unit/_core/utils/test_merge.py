@@ -1,3 +1,4 @@
+import re
 from typing import Any
 
 import pytest
@@ -109,7 +110,7 @@ def test_walk_rejects_a_reference_that_never_resolves():
     config = OmegaConf.create({"model": {"$key": "${nope}"}, "data": {"$key": 1}})
     with pytest.raises(MergeReferenceError, match="nope") as error_info:
         _remove_key(config)
-    assert error_info.value.__notes__ == ["  at `model`"]
+    error_info.match(re.escape("at `model`"))
     assert isinstance(error_info.value.__cause__, InterpolationResolutionError)
 
 

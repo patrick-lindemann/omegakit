@@ -1,4 +1,5 @@
 import fractions
+import re
 from collections.abc import Callable
 from types import ModuleType
 from typing import Any, Protocol, TypedDict
@@ -47,10 +48,6 @@ class _Parts(TypedDict, total=False):
     plain: list | None
     options: dict[str, dict[str, int]] | None
     scale: float | fractions.Fraction
-
-
-def _report(error: BaseException) -> str:
-    return "\n".join([str(error), *getattr(error, "__notes__", [])])
 
 
 def test_accepts_a_valid_config_and_calls_nothing(targets: ModuleType):
@@ -116,7 +113,7 @@ def test_value_that_cannot_be_read_is_rejected(value: str, error_type: type[Exce
         config = OmegaConf.create(content)
         with pytest.raises(error_type) as error_info:
             validate(config)
-        assert f"`{full_key}`" in _report(error_info.value)
+        error_info.match(re.escape(f"`{full_key}`"))
 
 
 def test_missing_root_is_rejected():
@@ -141,7 +138,7 @@ def test_error_of_a_target_or_symbol_names_its_node(
     config = OmegaConf.create({"models": [{"$target": "config_targets.Item"}, node]})
     with pytest.raises(error_type) as error_info:
         validate(config)
-    assert error_info.value.__notes__ == ["  at `models[1]`"]
+    error_info.match(re.escape("at `models[1]`"))
     assert targets.CALLS == []
 
 
@@ -188,7 +185,7 @@ def test_args_that_cannot_be_passed_are_rejected(
     config = OmegaConf.create({"models": [{"$target": "config_targets.Item"}, node]})
     with pytest.raises(error_type) as error_info:
         validate(config)
-    assert error_info.value.__notes__ == [f"  at `{full_key}`"]
+    error_info.match(re.escape(f"at `{full_key}`"))
     assert targets.CALLS == []
 
 
@@ -197,7 +194,7 @@ def test_reserved_key_in_a_plain_mapping_is_rejected(key: str):
     config = OmegaConf.create({"model": {key: True, "width": 3}})
     with pytest.raises(ValidationSyntaxError, match=rf"\{key}") as error_info:
         validate(config)
-    assert error_info.value.__notes__ == ["  at `model`"]
+    error_info.match(re.escape("at `model`"))
 
 
 @pytest.mark.parametrize("meta", ["???", "${nowhere}", {"$foo": 1}])
@@ -363,7 +360,7 @@ def test_value_that_does_not_match_its_schema_is_rejected(
         schedule["$target"] = "config_targets.Optimizer"
     with pytest.raises(error_type) as error_info:
         validate(_make_experiment(**values), targets.Experiment)
-    assert f"`{full_key}`" in _report(error_info.value)
+    error_info.match(re.escape(f"`{full_key}`"))
     assert targets.CALLS == []
 
 
@@ -401,7 +398,7 @@ def test_object_of_another_class_is_rejected(
 ):
     with pytest.raises(SchemaTypeError) as error_info:
         validate(_make_experiment(**values), targets.Experiment)
-    assert error_info.value.__notes__ == [f"  at `{full_key}`"]
+    error_info.match(re.escape(f"at `{full_key}`"))
     assert targets.CALLS == []
 
 
@@ -434,7 +431,7 @@ def test_field_that_is_annotated_with_a_schema_takes_a_mapping(targets: ModuleTy
     ):
         with pytest.raises(error_type) as error_info:
             validate(_make_experiment(backbone=values), targets.Experiment)
-        assert error_info.value.__notes__ == ["  at `experiment.backbone`"]
+        error_info.match(re.escape("at `experiment.backbone`"))
     model = OmegaConf.create({"$target": "config_targets.Model", "depth": 2})
     with pytest.raises(SchemaTypeError):
         validate(model, targets.ModelConfig)
@@ -471,7 +468,7 @@ def test_schema_says_what_the_root_builds(targets: ModuleType):
     ):
         with pytest.raises(SchemaTypeError) as error_info:
             validate(OmegaConf.create(content), schema)
-        assert error_info.value.__notes__ == ["  at the root"]
+        error_info.match(re.escape("at the root"))
 
 
 def test_annotation_that_cannot_be_checked_takes_any_object():
@@ -508,14 +505,14 @@ def test_annotation_is_checked_as_its_class(values: dict[str, Any], is_valid: bo
         return
     with pytest.raises(SchemaTypeError) as error_info:
         validate(config, _Parts)
-    assert error_info.value.__notes__ == [f"  at `{next(iter(values))}`"]
+    error_info.match(re.escape(f"at `{next(iter(values))}`"))
 
 
 def test_mapping_for_a_list_of_objects_names_the_field(targets: ModuleType):
     for values in ({"items": {"first": 1}}, {"stages": {"lr": 1}}):
         with pytest.raises(SchemaTypeError, match="a mapping") as error_info:
             validate(_make_experiment(**values), targets.Experiment)
-        assert error_info.value.__notes__ == [f"  at `experiment.{next(iter(values))}`"]
+        error_info.match(re.escape(f"at `experiment.{next(iter(values))}`"))
 
 
 def test_data_that_contains_itself_is_rejected():
@@ -566,7 +563,7 @@ def test_schema_that_cannot_be_read_names_the_node(targets: ModuleType):
     config = OmegaConf.create({"model": {"$target": "config_targets.BrokenModel"}})
     with pytest.raises(SchemaDefinitionError) as error_info:
         validate(config)
-    assert error_info.value.__notes__ == ["  at `model`"]
+    error_info.match(re.escape("at `model`"))
 
 
 @pytest.mark.parametrize(

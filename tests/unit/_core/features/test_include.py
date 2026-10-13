@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 import pytest
@@ -378,9 +379,8 @@ def test_an_error_names_every_include_that_led_to_it(tmp_path: Path):
     path.write_text("model: ~include configs/model.yaml")
     with pytest.raises(ConfigFileNotFoundError) as error_info:
         _load(path)
-    report = "\n".join([str(error_info.value), *error_info.value.__notes__])
     for text in ["nope.yaml", "~include nope.yaml", "model.yaml", "main.yaml"]:
-        assert text in report
+        error_info.match(re.escape(text))
 
 
 @pytest.mark.parametrize(

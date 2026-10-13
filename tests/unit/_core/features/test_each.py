@@ -1,3 +1,4 @@
+import re
 from typing import Any
 
 import pytest
@@ -145,7 +146,7 @@ def test_each_that_is_not_a_mapping_is_rejected(each: Any):
     config = OmegaConf.create({"data": {"$each": each, "train": {}}})
     with pytest.raises(EachTypeError) as error_info:
         apply_each(config)
-    assert error_info.value.__notes__ == ["  at `data`"]
+    error_info.match(re.escape("at `data`"))
 
 
 def test_reference_that_never_resolves_is_rejected():

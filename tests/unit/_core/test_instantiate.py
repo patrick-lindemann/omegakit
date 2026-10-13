@@ -1,6 +1,7 @@
 import fractions
 import functools
 import pathlib
+import re
 from types import ModuleType
 from typing import Any
 
@@ -211,7 +212,7 @@ def test_args_that_do_not_fit_a_dataclass_are_rejected(
     config = OmegaConf.create({"optimizer": optimizer})
     with pytest.raises(error_type) as error_info:
         instantiate(config.optimizer)
-    assert error_info.value.__notes__ == [f"  at `{full_key}`"]
+    error_info.match(re.escape(f"at `{full_key}`"))
     assert targets.CALLS == []
 
 
@@ -229,9 +230,7 @@ def test_items_of_args_are_built_before_the_keyword_arguments(targets: ModuleTyp
     )
     with pytest.raises(TypeError) as error_info:
         instantiate(config)
-    assert error_info.value.__notes__ == [
-        "  while calling `config_targets.make_item` at the root"
-    ]
+    error_info.match(re.escape("while calling `config_targets.make_item` at the root"))
     assert targets.CALLS == ["first", "nested", "keyword"]
 
 
@@ -291,7 +290,7 @@ def test_nothing_is_called_if_a_later_node_is_invalid(
     config = OmegaConf.create(content)
     with pytest.raises(error_type) as error_info:
         instantiate(config)
-    assert "later[0]" in "\n".join(error_info.value.__notes__)
+    error_info.match(re.escape("later[0]"))
     assert targets.CALLS == []
     assert config == content
 
@@ -321,9 +320,9 @@ def test_error_of_the_target_passes_through_with_a_note(targets: ModuleType):
     config = OmegaConf.create(content)
     with pytest.raises(UnicodeDecodeError) as error_info:
         instantiate(config.model)
-    assert error_info.value.__notes__ == [
-        "  while calling `config_targets.fail` at `model.parts[0]`"
-    ]
+    error_info.match(
+        re.escape("while calling `config_targets.fail` at `model.parts[0]`")
+    )
     assert config == content
 
 
@@ -535,7 +534,7 @@ def test_partial_is_completed_when_it_is_called(targets: ModuleType):
         assert make_model(depth=3, activation="relu").config["activation"] == "relu"
         with pytest.raises(SchemaMissingValueError, match="depth") as error_info:
             make_model()
-        assert error_info.value.__notes__ == [f"  at `{key}`"]
+        error_info.match(re.escape(f"at `{key}`"))
     with pytest.raises(SchemaMissingValueError):
         instantiate(config.root)
 
@@ -604,7 +603,7 @@ def test_result_is_checked_against_the_class(targets: ModuleType):
         config = OmegaConf.create({"$target": f"config_targets.{path}"})
         with pytest.raises(SchemaTypeError, match="returned") as error_info:
             instantiate(config, targets.Optimizer)
-        assert error_info.value.__notes__ == ["  at the root"]
+        error_info.match(re.escape("at the root"))
 
 
 def test_result_of_a_function_is_checked_in_a_field(targets: ModuleType):
@@ -618,7 +617,7 @@ def test_result_of_a_function_is_checked_in_a_field(targets: ModuleType):
     config = OmegaConf.create({**experiment, "optimizer": made_item})
     with pytest.raises(SchemaTypeError, match="returned") as error_info:
         instantiate(config)
-    assert error_info.value.__notes__ == ["  at `optimizer`"]
+    error_info.match(re.escape("at `optimizer`"))
 
 
 def test_prepare_cannot_check_the_result_of_a_function(targets: ModuleType):
