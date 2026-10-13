@@ -10,5 +10,5 @@ def register_paths_resolver(
     """__summary__"""
     values = {key: str(value) for key, value in paths.items()}
     OmegaConf.register_resolver(
-        "paths", values.get, replace=replace, use_cache=use_cache
+        "paths", values.__getitem__, replace=replace, use_cache=use_cache
     )

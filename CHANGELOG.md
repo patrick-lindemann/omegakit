@@ -184,6 +184,8 @@ All notable changes to this project are documented here. The format follows
 
 ### Fixed
 
+- `${paths:name}` raises for a name that was not registered. It resolved to
+  `None`.
 - `register_torch_device_resolver` no longer warns that the resolver cannot be
   inspected.
 - An override that is no `key=value` raises `ConfigOverrideError`. `seed` used to
