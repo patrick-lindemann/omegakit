@@ -10,16 +10,15 @@ from omegaconf import DictConfig, OmegaConf
 from omegakit._core.errors import (
     ConfigSymbolError,
     ConfigTargetError,
+    ConfigValidationError,
     QualifiedNameNotFoundError,
     SchemaDefinitionError,
     SchemaKeyError,
     SchemaMissingValueError,
     SchemaTypeError,
     SchemaValueError,
-    ValidationCycleError,
     ValidationInterpolationError,
     ValidationMissingValueError,
-    ValidationSyntaxError,
 )
 from omegakit._core.validate import validate
 
@@ -163,7 +162,7 @@ def test_error_of_a_target_or_symbol_names_its_node(
             ConfigTargetError,
             "models[1]",
         ),
-        ({"$args": [1]}, ValidationSyntaxError, "models[1]"),
+        ({"$args": [1]}, ConfigValidationError, "models[1]"),
         ({"$symbol": "math.pi", "$args": [1]}, ConfigSymbolError, "models[1]"),
     ],
 )
@@ -183,7 +182,7 @@ def test_args_that_cannot_be_passed_are_rejected(
 @pytest.mark.parametrize("key", ["$partial", "$base", "$clas"])
 def test_reserved_key_in_a_plain_mapping_is_rejected(key: str):
     config = OmegaConf.create({"model": {key: True, "width": 3}})
-    with pytest.raises(ValidationSyntaxError, match=rf"\{key}") as error_info:
+    with pytest.raises(ConfigValidationError, match=rf"\{key}") as error_info:
         validate(config)
     error_info.match(re.escape("at `model`"))
 
@@ -211,7 +210,7 @@ def test_meta_is_not_read(meta: Any):
 )
 def test_config_that_contains_itself_is_rejected(content: dict[str, Any], cycle: str):
     config = OmegaConf.create(content)
-    with pytest.raises(ValidationCycleError) as error_info:
+    with pytest.raises(ConfigValidationError) as error_info:
         validate(config)
     assert cycle in str(error_info.value)
 
@@ -514,7 +513,7 @@ def test_data_that_contains_itself_is_rejected():
             "parts": {"options": "${first}"},
         }
     )
-    with pytest.raises(ValidationCycleError, match="`first` -> `second` -> `first`"):
+    with pytest.raises(ConfigValidationError, match="`first` -> `second` -> `first`"):
         validate(config.parts, _Parts)
 
 
@@ -524,7 +523,7 @@ def test_data_that_contains_itself_is_rejected():
         ({"$meta": {"note": "tuned"}, "first": {"a": "1"}}, None),
         ({"first": {"$meta": "???", "a": 1}}, None),
         ({"first": {"a": {"$symbol": "math.inf"}}}, SchemaValueError),
-        ({"first": {"$foo": 1}}, ValidationSyntaxError),
+        ({"first": {"$foo": 1}}, ConfigValidationError),
         ({"first": {"$target": "builtins.dict"}}, SchemaTypeError),
         ({"first": {"a": {"$target": "builtins.int"}}}, SchemaTypeError),
     ],

@@ -21,10 +21,8 @@ from .errors import (
     SchemaMissingValueError,
     SchemaTypeError,
     SchemaValueError,
-    ValidationCycleError,
     ValidationInterpolationError,
     ValidationMissingValueError,
-    ValidationSyntaxError,
 )
 from .features.base import BASE_KEY
 from .features.each import EACH_KEY
@@ -68,10 +66,8 @@ __all__ = [
     "SchemaMissingValueError",
     "SchemaTypeError",
     "SchemaValueError",
-    "ValidationCycleError",
     "ValidationInterpolationError",
     "ValidationMissingValueError",
-    "ValidationSyntaxError",
     "instantiate",
     "load_config",
     "make_node",

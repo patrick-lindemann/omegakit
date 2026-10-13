@@ -10,12 +10,12 @@ from omegaconf import OmegaConf
 
 from omegakit._core.errors import (
     ConfigTargetError,
+    ConfigValidationError,
     QualifiedNameNotFoundError,
     SchemaKeyError,
     SchemaMissingValueError,
     SchemaTypeError,
     SchemaValueError,
-    ValidationCycleError,
     ValidationInterpolationError,
     ValidationMissingValueError,
 )
@@ -302,7 +302,7 @@ def test_config_that_contains_itself_is_rejected(targets: ModuleType):
             "b": {"$target": "config_targets.Item", "others": [{"other": "${a}"}]},
         }
     )
-    with pytest.raises(ValidationCycleError, match="`a` -> `b`"):
+    with pytest.raises(ConfigValidationError, match="`a` -> `b`"):
         instantiate(config)
     assert targets.CALLS == []
 

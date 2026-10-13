@@ -8,16 +8,15 @@ from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
 
 from .errors import (
     ConfigTargetError,
+    ConfigValidationError,
     OmegaKitBaseException,
     SchemaDefinitionError,
     SchemaKeyError,
     SchemaMissingValueError,
     SchemaTypeError,
     SchemaValueError,
-    ValidationCycleError,
     ValidationInterpolationError,
     ValidationMissingValueError,
-    ValidationSyntaxError,
 )
 from .features.meta import META_KEY
 from .features.symbol import SYMBOL_KEY, import_symbol
@@ -92,7 +91,7 @@ def _check_node(
     if any(is_active):
         cycle_nodes = [*active_nodes[is_active.index(True) :], node]
         cycle = " -> ".join(describe_node(item) for item in cycle_nodes)
-        raise ValidationCycleError(f"The config contains itself: {cycle}.")
+        raise ConfigValidationError(f"The config contains itself: {cycle}.")
     active_nodes = [*active_nodes, node]
     containers = (dict,) if isinstance(node, DictConfig) else (list,)
     item_annotation = find_item_annotation(annotation, containers) or Any
@@ -116,7 +115,7 @@ def _check_node(
         keys = [key for key in node.keys() if key != META_KEY]  # noqa: SIM118
         reserved_keys = [key for key in keys if str(key).startswith("$")]
         if reserved_keys:
-            raise ValidationSyntaxError(
+            raise ConfigValidationError(
                 f"{', '.join(f'`{key}`' for key in reserved_keys)} cannot stand "
                 "here: keys that start with `$` are reserved."
             )

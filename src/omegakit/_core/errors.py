@@ -54,19 +54,11 @@ class ConfigOverrideError(ConfigLoadError):
     pass
 
 
-class ValidationSyntaxError(ConfigValidationError, ValueError):
-    pass
-
-
 class ValidationInterpolationError(ConfigValidationError, InterpolationResolutionError):
     pass
 
 
 class ValidationMissingValueError(ConfigValidationError, MissingMandatoryValue):
-    pass
-
-
-class ValidationCycleError(ConfigValidationError):
     pass
 
 
