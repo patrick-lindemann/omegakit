@@ -1,7 +1,7 @@
 import sys
 from argparse import ArgumentError, ArgumentParser
 from pathlib import Path
-from typing import Any, NoReturn, override
+from typing import Any, override
 
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
@@ -96,7 +96,8 @@ class ShowRoutine(Routine[ShowArguments]):
                 include_root=args.include_root,
             )
         except Exception as error:
-            _fail(args.config, error)
+            self.report_failure(args.config, error)
+            raise SystemExit(1) from error
         if not args.show_secrets:
             # Every value built from a secret then holds `***`, also a single value
             # that --node selects, which OmegaConf resolves. Loading resolved with the
@@ -115,14 +116,9 @@ class ShowRoutine(Routine[ShowArguments]):
             else:
                 text = "null\n" if node is None else f"{node}\n"
         except Exception as error:
-            _fail(args.config, error)
+            self.report_failure(args.config, error)
+            raise SystemExit(1) from error
         print(text, end="")
-
-
-def _fail(path: Path, error: Exception) -> NoReturn:
-    message = str(error).splitlines()[0] if str(error) else ""
-    print(f"{path}: {type(error).__name__}: {message}", file=sys.stderr)
-    raise SystemExit(1) from error
 
 
 def _mask_secret(_: Any) -> str:

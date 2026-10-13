@@ -1,4 +1,3 @@
-import sys
 from argparse import ArgumentError, ArgumentParser
 from pathlib import Path
 from typing import override
@@ -80,7 +79,6 @@ class CheckRoutine(Routine[CheckArguments]):
             # A module that exits while it is imported must not pass the check.
             except (Exception, SystemExit) as error:
                 invalid += 1
-                message = str(error).splitlines()[0] if str(error) else ""
-                print(f"{path}: {type(error).__name__}: {message}", file=sys.stderr)
+                self.report_failure(path, error)
         if invalid:
             raise SystemExit(1)

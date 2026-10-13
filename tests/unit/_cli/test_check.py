@@ -114,3 +114,15 @@ def test_include_root_limits_the_includes(
     assert "outside the include root" in capsys.readouterr().err
     missing = str(tmp_path / "missing")
     assert _exit_code(["check", str(path), "--include-root", missing]) == 2
+
+
+def test_names_the_includes_that_led_to_a_failure(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+):
+    (tmp_path / "model.yaml").write_text("optimizer: ~include missing.yaml\n")
+    path = tmp_path / "main.yaml"
+    path.write_text("model: ~include model.yaml\n")
+    assert _exit_code(["check", str(path)]) == 1
+    lines = capsys.readouterr().err.splitlines()
+    assert "`optimizer`" in lines[0]
+    assert "main.yaml" in lines[1]
