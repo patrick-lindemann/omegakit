@@ -2,8 +2,8 @@ from pathlib import Path
 
 import pytest
 
+from omegakit._core.utils.file import ConfigFileNotFoundError
 from omegakit._features.include import IncludeRootError
-from omegakit._utils.file import ConfigFileNotFoundError
 from omegakit.load import LoadTypeError, load_config
 
 

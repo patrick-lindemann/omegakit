@@ -4,8 +4,8 @@ from omegaconf import DictConfig, OmegaConf
 from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
 
 from omegakit._core.error import OmegaKitBaseException
-from omegakit._utils.describe import describe_error
-from omegakit._utils.locate import locate
+from omegakit._core.utils.describe import describe_error
+from omegakit._core.utils.locate import locate
 
 from .meta import META_KEY
 

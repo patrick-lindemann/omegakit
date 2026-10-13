@@ -27,7 +27,7 @@ from omegaconf.errors import (
 )
 
 from ._core.error import OmegaKitBaseException
-from ._utils.describe import describe_error
+from ._core.utils.describe import describe_error
 from .configurable import Configurable
 
 

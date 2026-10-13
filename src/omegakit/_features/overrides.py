@@ -4,8 +4,8 @@ from omegaconf import DictConfig, ListConfig, OmegaConf
 from omegaconf.errors import OmegaConfBaseException
 
 from omegakit._core.error import OmegaKitBaseException
-from omegakit._utils.copy import copy_with_root
-from omegakit._utils.describe import describe_error
+from omegakit._core.utils.copy import copy_with_root
+from omegakit._core.utils.describe import describe_error
 
 
 class ConfigOverrideError(OmegaKitBaseException):

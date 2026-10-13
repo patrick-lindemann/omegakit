@@ -7,6 +7,7 @@ from omegaconf import DictConfig, ListConfig, OmegaConf, TupleConfig
 from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
 
 from ._core.error import OmegaKitBaseException
+from ._core.utils.describe import describe_error, describe_node
 from ._features.meta import META_KEY
 from ._features.symbol import SYMBOL_KEY, import_symbol
 from ._features.target import (
@@ -17,7 +18,6 @@ from ._features.target import (
     import_target,
     read_arguments,
 )
-from ._utils.describe import describe_error, describe_node
 from .schema import (
     SchemaDefinitionError,
     SchemaKeyError,

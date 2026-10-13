@@ -1,6 +1,14 @@
 from importlib.metadata import version
 
 from ._core.error import OmegaKitBaseException
+from ._core.utils.file import (
+    ConfigFileNotFoundError,
+    ConfigFilePermissionError,
+    ConfigSyntaxError,
+)
+from ._core.utils.locate import QualifiedNameNotFoundError, QualifiedNameSyntaxError
+from ._core.utils.merge import ConfigMergeError, MergeCycleError, MergeReferenceError
+from ._core.utils.walk import walk
 from ._features.base import BASE_KEY, BaseTypeError, ConfigInheritanceError
 from ._features.each import EACH_KEY, ConfigEachError, EachTypeError
 from ._features.include import (
@@ -40,14 +48,6 @@ from ._features.target import (
     TargetTypeError,
     make_node,
 )
-from ._utils.file import (
-    ConfigFileNotFoundError,
-    ConfigFilePermissionError,
-    ConfigSyntaxError,
-)
-from ._utils.locate import QualifiedNameNotFoundError, QualifiedNameSyntaxError
-from ._utils.merge import ConfigMergeError, MergeCycleError, MergeReferenceError
-from ._utils.walk import walk
 from .config import Config
 from .configurable import Configurable
 from .instantiate import instantiate, prepare

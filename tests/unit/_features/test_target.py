@@ -7,6 +7,10 @@ from omegaconf import OmegaConf
 from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
 
 from omegakit._core.error import OmegaKitBaseException
+from omegakit._core.utils.locate import (
+    QualifiedNameNotFoundError,
+    QualifiedNameSyntaxError,
+)
 from omegakit._features.target import (
     ConfigTargetError,
     TargetArguments,
@@ -18,7 +22,6 @@ from omegakit._features.target import (
     make_node,
     read_arguments,
 )
-from omegakit._utils.locate import QualifiedNameNotFoundError, QualifiedNameSyntaxError
 
 
 def test_gives_the_target_of_a_node():

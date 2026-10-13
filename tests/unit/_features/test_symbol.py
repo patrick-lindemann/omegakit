@@ -6,6 +6,10 @@ from omegaconf import OmegaConf
 from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
 
 from omegakit._core.error import OmegaKitBaseException
+from omegakit._core.utils.locate import (
+    QualifiedNameNotFoundError,
+    QualifiedNameSyntaxError,
+)
 from omegakit._features.symbol import (
     ConfigSymbolError,
     SymbolInterpolationError,
@@ -14,7 +18,6 @@ from omegakit._features.symbol import (
     SymbolTypeError,
     import_symbol,
 )
-from omegakit._utils.locate import QualifiedNameNotFoundError, QualifiedNameSyntaxError
 
 
 def test_gives_the_object_of_a_node():
