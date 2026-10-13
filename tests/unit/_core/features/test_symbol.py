@@ -6,17 +6,17 @@ from omegaconf import OmegaConf
 from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
 
 from omegakit._core.error import OmegaKitBaseException
-from omegakit._core.utils.locate import (
-    QualifiedNameNotFoundError,
-    QualifiedNameSyntaxError,
-)
-from omegakit._features.symbol import (
+from omegakit._core.features.symbol import (
     ConfigSymbolError,
     SymbolInterpolationError,
     SymbolMissingValueError,
     SymbolSyntaxError,
     SymbolTypeError,
     import_symbol,
+)
+from omegakit._core.utils.locate import (
+    QualifiedNameNotFoundError,
+    QualifiedNameSyntaxError,
 )
 
 

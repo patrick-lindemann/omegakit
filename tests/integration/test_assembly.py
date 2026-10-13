@@ -3,12 +3,12 @@ from pathlib import Path
 
 from omegaconf import DictConfig
 
+from omegakit._core.features.base import merge_bases
+from omegakit._core.features.each import apply_each
+from omegakit._core.features.include import resolve_includes
+from omegakit._core.features.meta import remove_meta
+from omegakit._core.features.overrides import apply_overrides
 from omegakit._core.utils.file import load_yaml
-from omegakit._features.base import merge_bases
-from omegakit._features.each import apply_each
-from omegakit._features.include import resolve_includes
-from omegakit._features.meta import remove_meta
-from omegakit._features.overrides import apply_overrides
 from omegakit.instantiate import instantiate
 
 

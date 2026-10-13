@@ -5,7 +5,7 @@ from typing import Any
 import pytest
 from omegaconf import OmegaConf
 
-from omegakit._features.overrides import (
+from omegakit._core.features.overrides import (
     OverrideMergeError,
     OverrideSyntaxError,
     OverrideTypeError,

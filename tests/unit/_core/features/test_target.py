@@ -7,11 +7,7 @@ from omegaconf import OmegaConf
 from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
 
 from omegakit._core.error import OmegaKitBaseException
-from omegakit._core.utils.locate import (
-    QualifiedNameNotFoundError,
-    QualifiedNameSyntaxError,
-)
-from omegakit._features.target import (
+from omegakit._core.features.target import (
     ConfigTargetError,
     TargetArguments,
     TargetInterpolationError,
@@ -21,6 +17,10 @@ from omegakit._features.target import (
     import_target,
     make_node,
     read_arguments,
+)
+from omegakit._core.utils.locate import (
+    QualifiedNameNotFoundError,
+    QualifiedNameSyntaxError,
 )
 
 

@@ -4,7 +4,7 @@ import pytest
 from omegaconf import OmegaConf
 from omegaconf.errors import ConfigTypeError, ReadonlyConfigError
 
-from omegakit._features.meta import remove_meta
+from omegakit._core.features.meta import remove_meta
 
 
 def test_removes_meta_from_every_mapping():

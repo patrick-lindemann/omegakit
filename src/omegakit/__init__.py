@@ -1,17 +1,9 @@
 from importlib.metadata import version
 
 from ._core.error import OmegaKitBaseException
-from ._core.utils.file import (
-    ConfigFileNotFoundError,
-    ConfigFilePermissionError,
-    ConfigSyntaxError,
-)
-from ._core.utils.locate import QualifiedNameNotFoundError, QualifiedNameSyntaxError
-from ._core.utils.merge import ConfigMergeError, MergeCycleError, MergeReferenceError
-from ._core.utils.walk import walk
-from ._features.base import BASE_KEY, BaseTypeError, ConfigInheritanceError
-from ._features.each import EACH_KEY, ConfigEachError, EachTypeError
-from ._features.include import (
+from ._core.features.base import BASE_KEY, BaseTypeError, ConfigInheritanceError
+from ._core.features.each import EACH_KEY, ConfigEachError, EachTypeError
+from ._core.features.include import (
     INCLUDE_PREFIX,
     ConfigIncludeError,
     IncludeCycleError,
@@ -22,14 +14,14 @@ from ._features.include import (
     IncludeSyntaxError,
     IncludeTypeError,
 )
-from ._features.meta import META_KEY
-from ._features.overrides import (
+from ._core.features.meta import META_KEY
+from ._core.features.overrides import (
     ConfigOverrideError,
     OverrideMergeError,
     OverrideSyntaxError,
     OverrideTypeError,
 )
-from ._features.symbol import (
+from ._core.features.symbol import (
     SYMBOL_KEY,
     ConfigSymbolError,
     SymbolInterpolationError,
@@ -37,7 +29,7 @@ from ._features.symbol import (
     SymbolSyntaxError,
     SymbolTypeError,
 )
-from ._features.target import (
+from ._core.features.target import (
     ARGS_KEY,
     PARTIAL_KEY,
     TARGET_KEY,
@@ -48,6 +40,14 @@ from ._features.target import (
     TargetTypeError,
     make_node,
 )
+from ._core.utils.file import (
+    ConfigFileNotFoundError,
+    ConfigFilePermissionError,
+    ConfigSyntaxError,
+)
+from ._core.utils.locate import QualifiedNameNotFoundError, QualifiedNameSyntaxError
+from ._core.utils.merge import ConfigMergeError, MergeCycleError, MergeReferenceError
+from ._core.utils.walk import walk
 from .config import Config
 from .configurable import Configurable
 from .instantiate import instantiate, prepare

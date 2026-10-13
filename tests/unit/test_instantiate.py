@@ -7,8 +7,8 @@ from typing import Any
 import pytest
 from omegaconf import OmegaConf
 
+from omegakit._core.features.target import TargetSyntaxError, make_node
 from omegakit._core.utils.locate import QualifiedNameNotFoundError
-from omegakit._features.target import TargetSyntaxError, make_node
 from omegakit.instantiate import instantiate, prepare
 from omegakit.schema import (
     SchemaKeyError,
