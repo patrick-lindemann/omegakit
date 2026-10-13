@@ -1,9 +1,10 @@
+import enum
 import fractions
 import re
 from collections.abc import Callable
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Protocol, TypedDict
+from typing import Any, Literal, Protocol, TypedDict
 
 import pytest
 from omegaconf import DictConfig, OmegaConf
@@ -36,6 +37,18 @@ class _Parts(TypedDict, total=False):
     plain: list | None
     options: dict[str, dict[str, int]] | None
     scale: float | fractions.Fraction
+
+
+class _Mode(enum.Enum):
+    FAST = 1
+    EXACT = 2
+
+
+class _Keyed(TypedDict, total=False):
+    by_mode: dict[_Mode, fractions.Fraction]
+    by_number: dict[int, fractions.Fraction]
+    by_literal: dict[Literal["a", "b"], fractions.Fraction]
+    by_union: dict[str | int, fractions.Fraction]
 
 
 def test_accepts_a_valid_config_and_calls_nothing(targets: ModuleType):
@@ -575,3 +588,32 @@ def test_plain_dict_is_checked_like_a_config(targets: ModuleType):
     with pytest.raises(ValidationMissingValueError) as error_info:
         validate({"model": {"depth": "???"}})
     error_info.match(re.escape("`model.depth`"))
+
+
+@pytest.mark.parametrize(
+    ("field", "key", "is_valid"),
+    [
+        ("by_mode", "FAST", True),
+        ("by_mode", "SLOW", False),
+        ("by_number", 3, True),
+        ("by_number", "three", False),
+    ],
+)
+def test_key_of_a_dictionary_of_objects_follows_its_annotation(
+    field: str, key: Any, is_valid: bool
+):
+    config = OmegaConf.create({field: {key: {"$target": "fractions.Fraction"}}})
+    if is_valid:
+        validate(config, _Keyed)
+        return
+    with pytest.raises(ConfigSchemaError) as error_info:
+        validate(config, _Keyed)
+    error_info.match(re.escape(f"`{field}`"))
+
+
+@pytest.mark.parametrize("field", ["by_literal", "by_union"])
+def test_key_annotation_that_omegaconf_does_not_support_is_rejected(field: str):
+    config = OmegaConf.create({field: {"a": {"$target": "fractions.Fraction"}}})
+    with pytest.raises(SchemaDefinitionError) as error_info:
+        validate(config, _Keyed)
+    assert not isinstance(error_info.value, ConfigValidationError)

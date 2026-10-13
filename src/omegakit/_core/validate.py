@@ -22,8 +22,8 @@ from .features.target import ARGS_KEY, TARGET_KEY, import_target, read_arguments
 from .schema import (
     convert_data,
     convert_item,
+    convert_keys,
     find_item_annotation,
-    find_key_annotation,
     find_schema,
     find_section,
     find_tuple_annotations,
@@ -121,17 +121,7 @@ def _check_node(
             )
         section = find_section(annotation)
         # The keys of a dictionary of mappings or objects, which OmegaConf does not see
-        key_annotation = find_key_annotation(annotation)
-        wrong_keys = [
-            key
-            for key in keys
-            if key_annotation is not Any and not isinstance(key, key_annotation)
-        ]
-        if wrong_keys:
-            raise ConfigSchemaError(
-                f"{', '.join(f'`{key!r}`' for key in wrong_keys)} is not a "
-                f"`{key_annotation.__name__}`, as the keys of `{annotation}` are."
-            )
+        converted_keys = convert_keys(annotation, keys)
     except OmegaKitBaseException as error:
         # A mapping behind `$symbol` is not part of the config, so its keys name nothing
         error.full_key = get_full_key(node)
@@ -142,7 +132,8 @@ def _check_node(
         raise
     if section is None:
         items = {
-            key: _check_value(node, key, active_nodes, item_annotation) for key in keys
+            converted_key: _check_value(node, key, active_nodes, item_annotation)
+            for key, converted_key in zip(keys, converted_keys, strict=True)
         }
         return Items(items)
     # A mapping that is checked against a schema stays a mapping

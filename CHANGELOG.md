@@ -185,6 +185,12 @@ All notable changes to this project are documented here. The format follows
 
 ### Fixed
 
+- The keys of a dictionary of objects or mappings are checked and converted as
+  OmegaConf does it for a dictionary of plain values, so the key `FAST` of
+  `models: dict[Mode, Model]` arrives as `Mode.FAST`. A key annotation that
+  OmegaConf does not support, such as a `Literal` or a union, raises
+  `SchemaDefinitionError`. Such annotations crashed with a `TypeError` or an
+  `AttributeError`, and an `Enum` key was rejected.
 - An `OSError` while a config file is read, such as an input/output error, passes
   through. It was reported as `ConfigFileSyntaxError`, as if the content were
   wrong.

@@ -187,6 +187,27 @@ def convert_item(annotation: Any, value: Any) -> Any:
     return converted_item["item"]
 
 
+def convert_keys(annotation: Any, keys: list[Any]) -> list[Any]:
+    key_annotation = find_key_annotation(annotation)
+    if key_annotation is Any:
+        return keys
+    try:
+        structure = _make_item_structure(dict[key_annotation, Any])
+        typed_item = OmegaConf.structured(structure(item=dict.fromkeys(keys)))
+        converted_item: Any = OmegaConf.to_container(typed_item)
+    # OmegaConf asserts that the type of a key is a class
+    except (AssertionError, TypeError) as error:
+        raise SchemaDefinitionError(
+            f"`{annotation}` has keys that OmegaConf does not support. A key is a "
+            "`str`, a number, a `bool` or an `Enum`."
+        ) from error
+    except OmegaConfBaseException as error:
+        raise ConfigSchemaError(
+            f"The keys do not match `{annotation}`: {describe_error(error)}"
+        ) from error
+    return list(converted_item["item"])
+
+
 def is_data(annotation: Any) -> bool:
     try:
         return _is_data_cached(annotation)
@@ -215,7 +236,8 @@ def _is_data_cached(annotation: Any) -> bool:
     probe = dataclasses.make_dataclass("Probe", [("value", annotation)])
     try:
         OmegaConf.structured(probe)
-    except OmegaConfBaseException:
+    # OmegaConf asserts that the type of a key is a class
+    except (OmegaConfBaseException, AssertionError):
         return False
     return True
 
