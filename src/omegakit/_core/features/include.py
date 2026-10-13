@@ -65,9 +65,15 @@ def _resolve_includes(
                 node, config_path, include_root, active_paths, cache
             )
         except OmegaKitBaseException as error:
-            error.add_note(
-                f"  from `{value}` at `{node._get_full_key(None)}` in `{config_path}`"
-            )
+            # The error carries the include that failed, and notes name the ones before
+            if error.file_path is None:
+                error.full_key = node._get_full_key(None)
+                error.file_path = config_path
+            else:
+                error.add_note(
+                    f"  from `{value}` at `{node._get_full_key(None)}` in "
+                    f"`{config_path}`"
+                )
             raise
         included_values.append(Assignment(parent, node._key(), included_value))
     for assignment in included_values:

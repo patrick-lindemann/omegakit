@@ -31,7 +31,7 @@ from .schema import (
     read_positions,
     split_union,
 )
-from .utils.describe import describe_error, describe_node
+from .utils.describe import describe_error, describe_node, get_full_key
 
 
 @dataclasses.dataclass(frozen=True)
@@ -73,7 +73,8 @@ def check(
     try:
         typed_config = _check_type(checked_config, annotation)
     except ConfigSchemaError as error:
-        error.add_note(f"  at {describe_node(config)}")
+        if error.full_key is None:
+            error.full_key = get_full_key(config)
         raise
     return typed_config
 
@@ -130,7 +131,8 @@ def _check_node(
                 f"`{key_annotation.__name__}`, as the keys of `{annotation}` are."
             )
     except OmegaKitBaseException as error:
-        error.add_note(f"  at {describe_node(node)}")
+        # A mapping behind `$symbol` is not part of the config, so its keys name nothing
+        error.full_key = get_full_key(node)
         raise
     if section is None:
         items = {
@@ -153,11 +155,11 @@ def _check_items(
     if item_annotations is None:
         item_annotations = [item_annotation] * len(node)
     if len(item_annotations) != len(node):
-        length_error = ConfigSchemaError(
-            f"Expected {len(item_annotations)} items, but the config gives {len(node)}."
+        raise ConfigSchemaError(
+            f"Expected {len(item_annotations)} items, but the config gives "
+            f"{len(node)}.",
+            get_full_key(node),
         )
-        length_error.add_note(f"  at {describe_node(node)}")
-        raise length_error
     items = []
     for index, position_annotation in enumerate(item_annotations):
         if not (is_tuple and is_data(position_annotation)):
@@ -169,7 +171,8 @@ def _check_items(
         try:
             converted_item = convert_item(position_annotation, _unwrap_data(item))
         except OmegaKitBaseException as error:
-            error.add_note(f"  at `{node._get_full_key(index)}`")
+            if error.full_key is None:
+                error.full_key = node._get_full_key(index)
             raise
         items.append(converted_item)
     return Items(tuple(items) if is_tuple else items)
@@ -194,7 +197,8 @@ def _check_call(
                 f"`{name}` takes its arguments by name, so it cannot take `{ARGS_KEY}`."
             )
     except OmegaKitBaseException as error:
-        error.add_note(f"  at {describe_node(node)}")
+        if error.full_key is None:
+            error.full_key = get_full_key(node)
         raise
     positional_arguments: list[Any] | tuple[Any, ...] = ()
     positional_keys: list[str] = []
@@ -221,7 +225,8 @@ def _check_call(
                 )
                 args_annotation = types.GenericAlias(tuple, item_annotations)
         except OmegaKitBaseException as error:
-            error.add_note(f"  at {describe_node(node)}")
+            if error.full_key is None:
+                error.full_key = get_full_key(node)
             raise
         checked_args = _check_node(args, active_nodes, args_annotation)
         positional_arguments = checked_args.items
@@ -280,7 +285,8 @@ def _check_schema(
                 f"{', '.join(f'`{key}`' for key in missing_keys)}."
             )
     except OmegaKitBaseException as error:
-        error.add_note(f"  at {describe_node(node)}")
+        if error.full_key is None:
+            error.full_key = get_full_key(node)
         raise
     arguments = {}
     for key in keys:
@@ -294,7 +300,8 @@ def _check_schema(
         }
         converted_values = convert_data(schema, data_values)
     except OmegaKitBaseException as error:
-        error.add_note(f"  at {describe_node(node)}")
+        if error.full_key is None:
+            error.full_key = get_full_key(node)
         raise
     return arguments | converted_values
 
@@ -311,7 +318,8 @@ def _check_value(
     try:
         typed_value = _check_type(value, annotation)
     except ConfigSchemaError as error:
-        error.add_note(f"  at `{parent._get_full_key(key)}`")
+        if error.full_key is None:
+            error.full_key = parent._get_full_key(key)
         raise
     return typed_value
 
@@ -320,15 +328,14 @@ def _read_value(parent: DictConfig | ListConfig | TupleConfig, key: Any) -> Any:
     try:
         return parent[key]
     except MissingMandatoryValue as error:
-        missing_error = ValidationMissingValueError("The value is `???`.")
-        missing_error.add_note(f"  at `{parent._get_full_key(key)}`")
-        raise missing_error from error
+        raise ValidationMissingValueError(
+            "The value is `???`.", parent._get_full_key(key)
+        ) from error
     except InterpolationResolutionError as error:
-        interpolation_error = ValidationInterpolationError(
-            f"Cannot resolve the value: {describe_error(error)}"
-        )
-        interpolation_error.add_note(f"  at `{parent._get_full_key(key)}`")
-        raise interpolation_error from error
+        raise ValidationInterpolationError(
+            f"Cannot resolve the value: {describe_error(error)}",
+            parent._get_full_key(key),
+        ) from error
 
 
 def _unwrap_data(value: Any) -> Any:

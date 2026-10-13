@@ -371,5 +371,5 @@ def test_an_error_names_every_include_that_led_to_it(tmp_path: Path):
     path.write_text("model: ~include configs/model.yaml")
     with pytest.raises(ConfigFileNotFoundError) as error_info:
         _load(path)
-    for text in ["nope.yaml", "~include nope.yaml", "model.yaml", "main.yaml"]:
+    for text in ["nope.yaml", "`optimizer`", "model.yaml", "main.yaml"]:
         error_info.match(re.escape(text))

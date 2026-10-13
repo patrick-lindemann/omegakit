@@ -8,7 +8,7 @@ from omegakit._core.errors import (
     ConfigMergeError,
 )
 
-from .describe import describe_error, describe_node
+from .describe import describe_error, describe_node, get_full_key
 from .walk import walk
 
 
@@ -71,9 +71,9 @@ def walk_mergeable(
             continue
         if unresolved is not None:
             node, cause = unresolved
-            error = ConfigMergeError(f"Cannot resolve `{key}`: {describe_error(cause)}")
-            error.add_note(f"  at {describe_node(node)}")
-            raise error from cause
+            raise ConfigMergeError(
+                f"Cannot resolve `{key}`: {describe_error(cause)}", get_full_key(node)
+            ) from cause
         # Every holder is blocked, so following the blockers ends in a cycle
         chain = [holders[0]]
         while sum(node is chain[-1] for node in chain) == 1:

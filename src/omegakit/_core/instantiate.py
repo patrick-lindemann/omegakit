@@ -7,7 +7,7 @@ from omegaconf import DictConfig
 from .errors import ConfigSchemaError, ConfigTargetError
 from .features.target import TARGET_KEY
 from .schema import read_fields, split_union
-from .utils.describe import describe_node
+from .utils.describe import describe_node, get_full_key
 from .validate import Call, Items, check
 
 
@@ -96,11 +96,10 @@ def _build(value: Any) -> Any:
         expected = (
             annotation.__qualname__ if isinstance(annotation, type) else annotation
         )
-        type_error = ConfigSchemaError(
-            f"Expected `{expected}`, but `{value.name}` returned `{instance!r}`."
+        raise ConfigSchemaError(
+            f"Expected `{expected}`, but `{value.name}` returned `{instance!r}`.",
+            get_full_key(value.node),
         )
-        type_error.add_note(f"  at {describe_node(value.node)}")
-        raise type_error
     return instance
 
 
@@ -115,10 +114,9 @@ def _call_from_config(
         key for key, field in fields.items() if field.is_required and key not in values
     ]
     if missing_keys:
-        error = ConfigSchemaError(
+        raise ConfigSchemaError(
             f"`{schema.__qualname__}` requires "
-            f"{', '.join(f'`{key}`' for key in missing_keys)}."
+            f"{', '.join(f'`{key}`' for key in missing_keys)}.",
+            get_full_key(call.node),
         )
-        error.add_note(f"  at {describe_node(call.node)}")
-        raise error
     return call.target.from_config(values, **other_kwargs)

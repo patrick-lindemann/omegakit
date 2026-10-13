@@ -1,5 +1,30 @@
+from pathlib import Path
+from typing import override
+
+
 class OmegaKitBaseException(Exception):
-    pass
+    message: str
+    full_key: str | None
+    file_path: Path | None
+
+    def __init__(
+        self, message: str, full_key: str | None = None, file_path: Path | None = None
+    ) -> None:
+        super().__init__(message)
+        self.message = message
+        self.full_key = full_key
+        self.file_path = file_path
+
+    @override
+    def __str__(self) -> str:
+        places = []
+        if self.full_key is not None:
+            places.append(f"at `{self.full_key}`" if self.full_key else "at the root")
+        if self.file_path is not None:
+            places.append(f"in `{self.file_path}`")
+        if not places:
+            return self.message
+        return f"{self.message} ({' '.join(places)})"
 
 
 class ConfigLoadError(OmegaKitBaseException):

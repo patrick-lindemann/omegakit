@@ -2,12 +2,17 @@ from omegaconf import Node
 from yaml import MarkedYAMLError
 
 
-def describe_node(node: Node) -> str:
+def get_full_key(node: Node) -> str:
     parent = node._get_parent()
     if parent is None:
-        return "the root"
+        return ""
     # The node's own `_get_full_key` drops the brackets of a list index
-    return f"`{parent._get_full_key(node._key())}`"
+    return parent._get_full_key(node._key())
+
+
+def describe_node(node: Node) -> str:
+    full_key = get_full_key(node)
+    return f"`{full_key}`" if full_key else "the root"
 
 
 def describe_error(error: Exception) -> str:

@@ -4,7 +4,7 @@ from omegakit._core.errors import (
     ConfigMergeError,
 )
 from omegakit._core.utils.copy import copy_with_root
-from omegakit._core.utils.describe import describe_node
+from omegakit._core.utils.describe import get_full_key
 from omegakit._core.utils.merge import merge_under, walk_mergeable
 
 BASE_KEY = "$base"
@@ -18,11 +18,11 @@ def merge_bases[TConfig: DictConfig | ListConfig | TupleConfig](
     for node, base in walk_mergeable(config, BASE_KEY):
         bases = list(base) if isinstance(base, ListConfig) else [base]
         if not all(isinstance(item, DictConfig) for item in bases):
-            error = ConfigMergeError(
-                f"`{BASE_KEY}` must be a mapping or a list of mappings, not `{base!r}`."
+            raise ConfigMergeError(
+                f"`{BASE_KEY}` must be a mapping or a list of mappings, not "
+                f"`{base!r}`.",
+                get_full_key(node),
             )
-            error.add_note(f"  at {describe_node(node)}")
-            raise error
         del node[BASE_KEY]
         merge_under(node, *bases)
     return config

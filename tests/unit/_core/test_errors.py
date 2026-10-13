@@ -1,3 +1,7 @@
+import copy
+import pickle
+from pathlib import Path
+
 import pytest
 
 from omegakit._core.errors import (
@@ -80,3 +84,31 @@ def test_error_is_also_its_builtin_error(
 )
 def test_error_is_no_builtin_type_error(error_type: type[Exception]):
     assert not issubclass(error_type, TypeError)
+
+
+def test_error_without_a_place_shows_its_message():
+    assert str(ConfigValidationError("The value is wrong.")) == "The value is wrong."
+
+
+def test_error_shows_the_key_and_the_file():
+    error = ConfigIncludeError("The include names no file.", "model.optimizer")
+    assert "`model.optimizer`" in str(error)
+    assert error.full_key == "model.optimizer"
+    error.file_path = Path("configs/model.yaml")
+    assert "configs/model.yaml" in str(error)
+
+
+def test_error_at_the_root_says_so():
+    assert "the root" in str(ConfigSchemaError("The value is wrong.", ""))
+
+
+@pytest.mark.parametrize(
+    "error_type",
+    [ConfigSchemaError, ConfigFileNotFoundError, QualifiedNameNotFoundError],
+)
+def test_error_keeps_its_place_when_copied(error_type: type[OmegaKitBaseException]):
+    error = error_type("The value is wrong.", "model", Path("model.yaml"))
+    for copied_error in (copy.deepcopy(error), pickle.loads(pickle.dumps(error))):
+        assert type(copied_error) is error_type
+        assert str(copied_error) == str(error)
+        assert copied_error.full_key == "model"

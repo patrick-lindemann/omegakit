@@ -62,6 +62,10 @@ All notable changes to this project are documented here. The format follows
   `QualifiedNameSyntaxError`, `QualifiedNameNotFoundError`, `ConfigTargetError`,
   `ConfigSymbolError` and `ConfigSchemaError`. `SchemaDefinitionError` belongs to
   neither, since it reports a wrong schema.
+- **Breaking:** An error names its place in its text, as in ``The value is `???`.
+  (at `model.depth`)``, and holds it in `full_key` and `file_path`. The place used
+  to be a note, which `str(error)` and logging dropped. An error from an included
+  file names the include that failed, and notes name the includes that led to it.
 - **Breaking:** `OmegaKitBaseException` is no longer an `OmegaConfBaseException`,
   and no error is an OmegaConf error, a `TypeError` or a `ValueError`. Catch
   `OmegaKitBaseException` or one of its classes instead. `ConfigFileNotFoundError`
