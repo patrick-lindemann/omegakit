@@ -15,14 +15,11 @@ class DefaultsTypeError(ConfigDefaultsError, TypeError):
     pass
 
 
-def apply_defaults(config: DictConfig | ListConfig | TupleConfig) -> None:
-    # Applied to a copy first, so that a failure leaves `config` unchanged
-    config_copy = copy_with_root(config)
-    _apply_defaults(config_copy)
-    _apply_defaults(config)
-
-
-def _apply_defaults(config: DictConfig | ListConfig | TupleConfig) -> None:
+def apply_defaults[ConfigT: DictConfig | ListConfig | TupleConfig](
+    config: ConfigT, copy: bool = True
+) -> ConfigT:
+    if copy:
+        config = copy_with_root(config)
     for node, defaults in walk_mergeable(config, DEFAULTS_KEY):
         if not isinstance(defaults, DictConfig):
             error = DefaultsTypeError(
@@ -40,3 +37,4 @@ def _apply_defaults(config: DictConfig | ListConfig | TupleConfig) -> None:
                 and not str(key).startswith("$")
             ):
                 merge_under(child, defaults)
+    return config

@@ -1,10 +1,10 @@
-import copy
 from typing import Any, overload
 
 from omegaconf import DictConfig, ListConfig, OmegaConf
 from omegaconf.errors import OmegaConfBaseException
 
 from omegakit._core.error import OmegaKitBaseException
+from omegakit._core.merge import copy_with_root
 from omegakit._utils.describe import describe_error
 
 
@@ -26,35 +26,32 @@ class OverrideMergeError(ConfigOverrideError):
 
 @overload
 def apply_overrides(
-    config: DictConfig, overrides: DictConfig | dict[str, Any] | list[str]
-) -> None: ...
+    config: DictConfig,
+    overrides: DictConfig | dict[str, Any] | list[str],
+    copy: bool = True,
+) -> DictConfig: ...
 
 
 @overload
-def apply_overrides(config: ListConfig, overrides: ListConfig | list[Any]) -> None: ...
+def apply_overrides(
+    config: ListConfig, overrides: ListConfig | list[Any], copy: bool = True
+) -> ListConfig: ...
 
 
 def apply_overrides(
     config: DictConfig | ListConfig,
     overrides: DictConfig | ListConfig | dict[str, Any] | list[Any],
-) -> None:
-    # Applied to a copy first, so that a failure leaves `config` unchanged
-    config_copy = copy.deepcopy(config)
-    _apply_overrides(config_copy, overrides)
-    _apply_overrides(config, overrides)
-
-
-def _apply_overrides(
-    config: DictConfig | ListConfig,
-    overrides: DictConfig | ListConfig | dict[str, Any] | list[Any],
-) -> None:
+    copy: bool = True,
+) -> DictConfig | ListConfig:
+    if copy:
+        config = copy_with_root(config)
     is_dict = isinstance(config, DictConfig)
     if is_dict and isinstance(overrides, list):
         # One at a time, so that a later `key=value` wins over an earlier one
         for item in overrides:
             parsed_item = _parse_dotlist_item(item)
-            _apply_overrides(config, parsed_item)
-        return
+            apply_overrides(config, parsed_item, copy=False)
+        return config
     expected_types = (DictConfig, dict) if is_dict else (ListConfig, list)
     if not isinstance(overrides, expected_types):
         raise OverrideTypeError(
@@ -69,6 +66,7 @@ def _apply_overrides(
         raise OverrideMergeError(
             f"Cannot apply the overrides{key}: {describe_error(error)}"
         ) from error
+    return config
 
 
 def _parse_dotlist_item(item: Any) -> DictConfig:

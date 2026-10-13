@@ -12,6 +12,7 @@ from omegaconf.errors import (
 from omegakit._core.assignment import Assignment
 from omegakit._core.error import OmegaKitBaseException
 from omegakit._core.file import load_yaml
+from omegakit._core.merge import copy_with_root
 from omegakit._core.walk import walk
 from omegakit._utils.describe import describe_error
 from omegakit._utils.path import PathLike, resolve_path
@@ -50,11 +51,14 @@ class ImportMissingValueError(ConfigImportError, MissingMandatoryValue):
     pass
 
 
-def resolve_imports(
-    config: DictConfig | ListConfig | TupleConfig, config_path: PathLike
-) -> None:
+def resolve_imports[ConfigT: DictConfig | ListConfig | TupleConfig](
+    config: ConfigT, config_path: PathLike, copy: bool = True
+) -> ConfigT:
+    if copy:
+        config = copy_with_root(config)
     config_path = resolve_path(config_path)
     _resolve_imports(config, config_path, active_paths={config_path}, cache={})
+    return config
 
 
 def _resolve_imports(
