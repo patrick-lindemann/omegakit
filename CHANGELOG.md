@@ -195,6 +195,10 @@ All notable changes to this project are documented here. The format follows
 
 ### Fixed
 
+- `omegakit check` and `omegakit show` print the notes of an error under it, such
+  as the includes that led to a failure. They printed only its first line.
+- `make_node` raises `ConfigTargetError` for a callable without a name, such as a
+  `functools.partial`. It raised an `AttributeError`.
 - The keys of a dictionary of objects or mappings are checked and converted as
   OmegaConf does it for a dictionary of plain values, so the key `FAST` of
   `models: dict[Mode, Model]` arrives as `Mode.FAST`. A key annotation that

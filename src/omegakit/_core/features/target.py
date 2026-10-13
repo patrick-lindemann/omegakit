@@ -67,11 +67,12 @@ def read_arguments(node: DictConfig) -> TargetArguments:
 def make_node(
     target: Callable[..., Any], /, *args: Any, **kwargs: Any
 ) -> dict[str, Any]:
-    qualname = target.__qualname__
-    if "." in qualname:
+    # A callable object, such as a `functools.partial`, has no name of its own
+    qualname = getattr(target, "__qualname__", None)
+    if qualname is None or "." in qualname:
         raise ConfigTargetError(
-            f"Cannot create a node for `{qualname}`: only objects defined at module "
-            "level can be imported by their path."
+            f"Cannot create a node for `{qualname or target!r}`: only objects "
+            "defined at module level can be imported by their path."
         )
     node = {TARGET_KEY: f"{target.__module__}.{qualname}", **kwargs}
     if args:

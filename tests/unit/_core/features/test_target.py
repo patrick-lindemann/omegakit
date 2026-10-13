@@ -1,4 +1,5 @@
 import fractions
+import functools
 from types import ModuleType
 from typing import Any
 
@@ -154,3 +155,8 @@ def test_make_node_writes_positional_arguments_to_args():
 def test_make_node_rejects_a_target_that_is_not_at_module_level():
     with pytest.raises(ConfigTargetError):
         make_node(fractions.Fraction.from_float)
+
+
+def test_make_node_rejects_a_callable_without_a_name():
+    with pytest.raises(ConfigTargetError):
+        make_node(functools.partial(int, base=16))
