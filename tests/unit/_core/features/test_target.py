@@ -7,6 +7,7 @@ from omegaconf import OmegaConf
 
 from omegakit._core.errors import (
     ConfigTargetError,
+    ConfigValidationError,
     QualifiedNameNotFoundError,
     QualifiedNameSyntaxError,
     ValidationInterpolationError,
@@ -133,8 +134,9 @@ def test_partial_that_is_not_a_boolean_is_rejected(value: Any):
 @pytest.mark.parametrize("key", ["$symbol", "$base", "$foo"])
 def test_other_dollar_key_is_rejected(key: str):
     config = OmegaConf.create({"$target": "builtins.dict", key: "math.pi", "n": 1})
-    with pytest.raises(ConfigTargetError, match=rf"\{key}"):
+    with pytest.raises(ConfigValidationError, match=rf"\{key}") as error_info:
         read_arguments(config)
+    assert not isinstance(error_info.value, ConfigTargetError)
 
 
 def test_make_node_names_the_target():

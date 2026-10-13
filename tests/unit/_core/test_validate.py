@@ -128,7 +128,7 @@ def test_missing_root_is_rejected():
         ({"$target": "config_targets.NoSuchName"}, QualifiedNameNotFoundError),
         ({"$target": "???"}, ValidationMissingValueError),
         ({"$target": "builtins.dict", "$partial": "yes"}, ConfigTargetError),
-        ({"$target": "builtins.dict", "$foo": 1}, ConfigTargetError),
+        ({"$target": "builtins.dict", "$foo": 1}, ConfigValidationError),
         ({"$symbol": "config_targets.NoSuchName"}, QualifiedNameNotFoundError),
         ({"$symbol": "math.sqrt", "reduction": "mean"}, ConfigSymbolError),
     ],

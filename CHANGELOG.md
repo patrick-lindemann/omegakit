@@ -160,6 +160,8 @@ All notable changes to this project are documented here. The format follows
   not a mapping, a missing attribute (``Module `m` has no attribute `x`.``), an
   include cycle, a `$partial` that is not a boolean, an `overrides` argument of the
   wrong type, and a missing PyTorch.
+- A reserved `$` key raises `ConfigValidationError` wherever it stands. Next to a
+  `$target` it raised `ConfigTargetError`.
 - A `???` or a failing interpolation in `$target`, `$partial` or `$symbol` is
   located at that key, as in ``(at `model.$target`)``.
 - Error messages say more about the fix: a `???` says to set the value in the

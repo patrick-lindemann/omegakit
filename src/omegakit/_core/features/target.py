@@ -52,7 +52,7 @@ def read_arguments(node: DictConfig) -> TargetArguments:
     ]
     reserved_keys = [key for key in keys if str(key).startswith("$")]
     if reserved_keys:
-        raise ConfigTargetError(
+        raise ConfigValidationError(
             f"{', '.join(f'`{key}`' for key in reserved_keys)} cannot be an argument "
             f"of a `{TARGET_KEY}`: keys that start with `$` are reserved."
         )

@@ -275,7 +275,7 @@ def test_node_without_a_target_is_rejected(content: dict[str, Any]):
             ValidationInterpolationError,
         ),
         ({"$target": "config_targets.NoSuchName"}, QualifiedNameNotFoundError),
-        ({"$target": "config_targets.Item", "$foo": 1}, ConfigTargetError),
+        ({"$target": "config_targets.Item", "$foo": 1}, ConfigValidationError),
         ({"$symbol": "config_targets.NoSuchName"}, QualifiedNameNotFoundError),
     ],
 )
