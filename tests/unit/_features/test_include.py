@@ -14,6 +14,7 @@ from omegakit._features.include import (
     IncludeInterpolationError,
     IncludeMissingValueError,
     IncludeNodeNotFoundError,
+    IncludeRootError,
     IncludeSyntaxError,
     IncludeTypeError,
     resolve_includes,
@@ -349,6 +350,19 @@ def test_finds_a_cycle_for_a_relative_config_path(
     config = load_yaml(Path("main.yaml"))
     with pytest.raises(IncludeCycleError):
         resolve_includes(config, "main.yaml")
+
+
+def test_rejects_a_file_outside_the_include_root(tmp_path: Path):
+    (tmp_path / "configs").mkdir()
+    (tmp_path / "configs/model.yaml").write_text("optimizer: ~include ../sgd.yaml")
+    (tmp_path / "sgd.yaml").write_text("lr: 0.1")
+    path = tmp_path / "configs/main.yaml"
+    config = OmegaConf.create({"model": "~include model.yaml"})
+    assert resolve_includes(config, path, include_root=tmp_path) == {
+        "model": {"optimizer": {"lr": 0.1}}
+    }
+    with pytest.raises(IncludeRootError, match="outside the include root"):
+        resolve_includes(config, path, include_root=tmp_path / "configs")
 
 
 def test_rejects_an_include_in_a_tuple():

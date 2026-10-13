@@ -47,23 +47,35 @@ class IncludeNodeNotFoundError(ConfigIncludeError):
     pass
 
 
+class IncludeRootError(ConfigIncludeError):
+    pass
+
+
 class IncludeMissingValueError(ConfigIncludeError, MissingMandatoryValue):
     pass
 
 
 def resolve_includes[TConfig: DictConfig | ListConfig | TupleConfig](
-    config: TConfig, config_path: PathLike, copy: bool = True
+    config: TConfig,
+    config_path: PathLike,
+    include_root: PathLike | None = None,
+    copy: bool = True,
 ) -> TConfig:
     if copy:
         config = copy_with_root(config)
     config_path = resolve_path(config_path)
-    _resolve_includes(config, config_path, active_paths={config_path}, cache={})
+    if include_root is not None:
+        include_root = resolve_path(include_root)
+    _resolve_includes(
+        config, config_path, include_root, active_paths={config_path}, cache={}
+    )
     return config
 
 
 def _resolve_includes(
     config: DictConfig | ListConfig | TupleConfig,
     config_path: Path,
+    include_root: Path | None,
     active_paths: set[Path],
     cache: dict[Path, DictConfig | ListConfig],
 ) -> None:
@@ -77,7 +89,9 @@ def _resolve_includes(
         try:
             if not isinstance(parent, (DictConfig, ListConfig)):
                 raise IncludeTypeError("An item of a tuple cannot include.")
-            included_value = _load_include(node, config_path, active_paths, cache)
+            included_value = _load_include(
+                node, config_path, include_root, active_paths, cache
+            )
         except OmegaKitBaseException as error:
             error.add_note(
                 f"  from `{value}` at `{node._get_full_key(None)}` in `{config_path}`"
@@ -91,6 +105,7 @@ def _resolve_includes(
 def _load_include(
     node: Node,
     current_path: Path,
+    include_root: Path | None,
     active_paths: set[Path],
     cache: dict[Path, DictConfig | ListConfig],
 ) -> Any:
@@ -106,11 +121,17 @@ def _load_include(
         file_path = resolve_path(file_path, relative_to=current_path.parent)
     except (OSError, ValueError) as error:
         raise IncludeSyntaxError(f"`{file_path}` is not a valid path.") from error
+    if include_root is not None and not file_path.is_relative_to(include_root):
+        raise IncludeRootError(
+            f"`{file_path}` is outside the include root `{include_root}`."
+        )
     if file_path in active_paths:
         raise IncludeCycleError(f"`{file_path}` is already being loaded.")
     if file_path not in cache:
         loaded_config = load_yaml(file_path)
-        _resolve_includes(loaded_config, file_path, {*active_paths, file_path}, cache)
+        _resolve_includes(
+            loaded_config, file_path, include_root, {*active_paths, file_path}, cache
+        )
         cache[file_path] = loaded_config
     try:
         selected_value = OmegaConf.select(
