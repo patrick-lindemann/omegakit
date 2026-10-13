@@ -45,14 +45,14 @@ def import_symbol(node: DictConfig) -> Any:
         raise SymbolMissingValueError(f"`{SYMBOL_KEY}` holds `???`.")
     try:
         # Resolves an interpolation, as in `$symbol: ${loss}`
-        path = node[SYMBOL_KEY]
+        qualified_name = node[SYMBOL_KEY]
     except InterpolationResolutionError as error:
         raise SymbolInterpolationError(
             f"Cannot resolve `{SYMBOL_KEY}`: {describe_error(error)}"
         ) from error
-    if not isinstance(path, str):
+    if not isinstance(qualified_name, str):
         raise SymbolTypeError(
             f"`{SYMBOL_KEY}` must be an import path, such as `package.module.Name`, "
-            f"not `{path!r}`."
+            f"not `{qualified_name!r}`."
         )
-    return locate(path)
+    return locate(qualified_name)

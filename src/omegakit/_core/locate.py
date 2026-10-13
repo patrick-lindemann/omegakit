@@ -6,19 +6,20 @@ from .error import OmegaKitBaseException
 _NOT_FOUND = object()
 
 
-class PathSyntaxError(OmegaKitBaseException, ValueError):
+class QualifiedNameSyntaxError(OmegaKitBaseException, ValueError):
     pass
 
 
-class PathNotFoundError(OmegaKitBaseException, ImportError):
+class QualifiedNameNotFoundError(OmegaKitBaseException, ImportError):
     pass
 
 
-def locate(path: str) -> Any:
-    module_path, _, attr_name = path.rpartition(".")
-    if not all(path.split(".")) or not module_path:
-        raise PathSyntaxError(
-            f"`{path}` is not an import path of the form `package.module.Name`."
+def locate(qualified_name: str) -> Any:
+    module_path, _, attr_name = qualified_name.rpartition(".")
+    if not all(qualified_name.split(".")) or not module_path:
+        raise QualifiedNameSyntaxError(
+            f"`{qualified_name}` is not an import path of the form "
+            "`package.module.Name`."
         )
     try:
         module = importlib.import_module(module_path)
@@ -27,10 +28,12 @@ def locate(path: str) -> Any:
         # dependency, not a mistake in the config
         if error.name is None or not f"{module_path}.".startswith(f"{error.name}."):
             raise
-        raise PathNotFoundError(f"There is no module `{error.name}`.") from error
+        raise QualifiedNameNotFoundError(
+            f"There is no module `{error.name}`."
+        ) from error
     target = getattr(module, attr_name, _NOT_FOUND)
     if target is _NOT_FOUND:
-        raise PathNotFoundError(
+        raise QualifiedNameNotFoundError(
             f"Module `{module_path}` has no attribute `{attr_name}`."
         )
     return target

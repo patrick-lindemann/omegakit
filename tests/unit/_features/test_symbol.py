@@ -6,7 +6,7 @@ from omegaconf import OmegaConf
 from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
 
 from omegakit._core.error import OmegaKitBaseException
-from omegakit._core.locate import PathNotFoundError, PathSyntaxError
+from omegakit._core.locate import QualifiedNameNotFoundError, QualifiedNameSyntaxError
 from omegakit._features.symbol import (
     ConfigSymbolError,
     SymbolInterpolationError,
@@ -65,11 +65,14 @@ def test_failing_interpolation_is_rejected():
 
 
 @pytest.mark.parametrize(
-    ("path", "error_type"),
-    [("sqrt", PathSyntaxError), ("math.no_such_name", PathNotFoundError)],
+    ("qualified_name", "error_type"),
+    [
+        ("sqrt", QualifiedNameSyntaxError),
+        ("math.no_such_name", QualifiedNameNotFoundError),
+    ],
 )
-def test_path_errors_pass_through(path: str, error_type: type[Exception]):
-    config = OmegaConf.create({"loss": {"$symbol": path}})
+def test_locate_errors_pass_through(qualified_name: str, error_type: type[Exception]):
+    config = OmegaConf.create({"loss": {"$symbol": qualified_name}})
     with pytest.raises(error_type):
         import_symbol(config.loss)
 

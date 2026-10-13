@@ -7,7 +7,7 @@ from omegaconf import OmegaConf
 from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
 
 from omegakit._core.error import OmegaKitBaseException
-from omegakit._core.locate import PathNotFoundError, PathSyntaxError
+from omegakit._core.locate import QualifiedNameNotFoundError, QualifiedNameSyntaxError
 from omegakit._features.target import (
     ConfigTargetError,
     TargetArguments,
@@ -60,11 +60,14 @@ def test_target_with_from_config_need_not_be_callable(targets: ModuleType):
 
 
 @pytest.mark.parametrize(
-    ("path", "error_type"),
-    [("Fraction", PathSyntaxError), ("fractions.NoSuchName", PathNotFoundError)],
+    ("qualified_name", "error_type"),
+    [
+        ("Fraction", QualifiedNameSyntaxError),
+        ("fractions.NoSuchName", QualifiedNameNotFoundError),
+    ],
 )
-def test_path_errors_pass_through(path: str, error_type: type[Exception]):
-    config = OmegaConf.create({"half": {"$target": path}})
+def test_locate_errors_pass_through(qualified_name: str, error_type: type[Exception]):
+    config = OmegaConf.create({"half": {"$target": qualified_name}})
     with pytest.raises(error_type):
         import_target(config.half)
 

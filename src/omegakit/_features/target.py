@@ -47,16 +47,16 @@ class TargetArguments:
 def import_target(node: DictConfig) -> Any:
     if TARGET_KEY not in node.keys():  # noqa: SIM118
         raise TargetSyntaxError(f"The node has no `{TARGET_KEY}`.")
-    path = _read_key(node, TARGET_KEY)
-    if not isinstance(path, str):
+    qualified_name = _read_key(node, TARGET_KEY)
+    if not isinstance(qualified_name, str):
         raise TargetTypeError(
             f"`{TARGET_KEY}` must be an import path, such as `package.module.Name`, "
-            f"not `{path!r}`."
+            f"not `{qualified_name!r}`."
         )
-    target = locate(path)
+    target = locate(qualified_name)
     if not (callable(target) or hasattr(target, "from_config")):
         raise TargetTypeError(
-            f"`{path}` is neither callable nor has `from_config`. Use "
+            f"`{qualified_name}` is neither callable nor has `from_config`. Use "
             f"`{SYMBOL_KEY}` for an object that is used as it is."
         )
     return target

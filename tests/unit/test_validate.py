@@ -8,7 +8,7 @@ from omegaconf import DictConfig, OmegaConf
 from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
 
 from omegakit._core.error import OmegaKitBaseException
-from omegakit._core.locate import PathNotFoundError
+from omegakit._core.locate import QualifiedNameNotFoundError
 from omegakit._features.symbol import SymbolSyntaxError
 from omegakit._features.target import (
     TargetMissingValueError,
@@ -74,7 +74,7 @@ def test_accepts_a_valid_config_and_calls_nothing(targets: ModuleType):
 
 def test_list_config():
     validate(OmegaConf.create([{"$target": "fractions.Fraction"}, 1]))
-    with pytest.raises(PathNotFoundError):
+    with pytest.raises(QualifiedNameNotFoundError):
         validate(OmegaConf.create([{"$target": "fractions.NoSuchName"}]))
 
 
@@ -87,7 +87,7 @@ def test_part_of_a_config():
         }
     )
     validate(config.model)
-    with pytest.raises(PathNotFoundError):
+    with pytest.raises(QualifiedNameNotFoundError):
         validate(config.other)
 
 
@@ -127,11 +127,11 @@ def test_missing_root_is_rejected():
 @pytest.mark.parametrize(
     ("node", "error_type"),
     [
-        ({"$target": "config_targets.NoSuchName"}, PathNotFoundError),
+        ({"$target": "config_targets.NoSuchName"}, QualifiedNameNotFoundError),
         ({"$target": "???"}, TargetMissingValueError),
         ({"$target": "builtins.dict", "$partial": "yes"}, TargetTypeError),
         ({"$target": "builtins.dict", "$foo": 1}, TargetSyntaxError),
-        ({"$symbol": "config_targets.NoSuchName"}, PathNotFoundError),
+        ({"$symbol": "config_targets.NoSuchName"}, QualifiedNameNotFoundError),
         ({"$symbol": "math.sqrt", "reduction": "mean"}, SymbolSyntaxError),
     ],
 )
@@ -157,7 +157,7 @@ def test_error_of_a_target_or_symbol_names_its_node(
         ),
         (
             {"$target": "builtins.list", "$args": [[{"$target": "math.nope"}]]},
-            PathNotFoundError,
+            QualifiedNameNotFoundError,
             "models[1].$args[0][0]",
         ),
         (

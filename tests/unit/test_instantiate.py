@@ -7,7 +7,7 @@ from typing import Any
 import pytest
 from omegaconf import OmegaConf
 
-from omegakit._core.locate import PathNotFoundError
+from omegakit._core.locate import QualifiedNameNotFoundError
 from omegakit._features.target import TargetSyntaxError, make_node
 from omegakit.instantiate import instantiate, prepare
 from omegakit.schema import (
@@ -275,9 +275,9 @@ def test_node_without_a_target_is_rejected(content: dict[str, Any]):
             {"$target": "config_targets.Item", "lr": "${nowhere}"},
             ValidationInterpolationError,
         ),
-        ({"$target": "config_targets.NoSuchName"}, PathNotFoundError),
+        ({"$target": "config_targets.NoSuchName"}, QualifiedNameNotFoundError),
         ({"$target": "config_targets.Item", "$foo": 1}, TargetSyntaxError),
-        ({"$symbol": "config_targets.NoSuchName"}, PathNotFoundError),
+        ({"$symbol": "config_targets.NoSuchName"}, QualifiedNameNotFoundError),
     ],
 )
 def test_nothing_is_called_if_a_later_node_is_invalid(

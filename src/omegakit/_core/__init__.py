@@ -7,7 +7,7 @@ from .file import (
     ConfigSyntaxError,
     load_yaml,
 )
-from .locate import PathNotFoundError, PathSyntaxError, locate
+from .locate import QualifiedNameNotFoundError, QualifiedNameSyntaxError, locate
 from .merge import (
     ConfigMergeError,
     MergeCycleError,
@@ -26,8 +26,8 @@ __all__ = [
     "MergeCycleError",
     "MergeReferenceError",
     "OmegaKitBaseException",
-    "PathNotFoundError",
-    "PathSyntaxError",
+    "QualifiedNameNotFoundError",
+    "QualifiedNameSyntaxError",
     "WalkOrder",
     "copy_with_root",
     "load_yaml",
