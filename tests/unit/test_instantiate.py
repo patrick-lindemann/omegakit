@@ -11,6 +11,7 @@ from omegakit._core.path import PathNotFoundError
 from omegakit._features.target import TargetSyntaxError, make_node
 from omegakit.instantiate import instantiate, prepare
 from omegakit.schema import (
+    SchemaKeyError,
     SchemaMissingValueError,
     SchemaTypeError,
     SchemaValueError,
@@ -177,6 +178,41 @@ def test_args_are_the_positional_arguments_of_the_target():
     assert instantiate(config.empty) == []
     assert instantiate(config.steps) == range(3, 10)
     assert instantiate(config.power)(10) == 1024
+
+
+def test_dataclass_binds_args_to_its_fields(targets: ModuleType):
+    optimizer = {"$target": "config_targets.Optimizer", "$args": ["0.5", "3"]}
+    config = OmegaConf.create(optimizer)
+    assert instantiate(config) == targets.Optimizer(lr=0.5, steps=3)
+    config = OmegaConf.create({**optimizer, "$args": ["0.5"], "mode": "slow"})
+    assert instantiate(config) == targets.Optimizer(lr=0.5, mode=targets.Mode.SLOW)
+    make_optimizer = instantiate(OmegaConf.create({**optimizer, "$partial": True}))
+    assert make_optimizer(mode=targets.Mode.SLOW).steps == 3
+    scaled = OmegaConf.create({"$target": "config_targets.Scaled", "$args": ["2", 3]})
+    assert instantiate(scaled) == targets.Scaled(2, 3)
+
+
+@pytest.mark.parametrize(
+    ("node", "error_type", "full_key"),
+    [
+        ({"$args": [0.5], "lr": 1}, SchemaKeyError, "optimizer"),
+        ({"$args": [0.5, 3, "slow", [0, 1], "logs", 6]}, SchemaValueError, "optimizer"),
+        ({"$args": ["fast"]}, SchemaValueError, "optimizer.$args[0]"),
+        ({"$args": [], "steps": 3}, SchemaMissingValueError, "optimizer"),
+    ],
+)
+def test_args_that_do_not_fit_a_dataclass_are_rejected(
+    targets: ModuleType,
+    node: dict[str, Any],
+    error_type: type[Exception],
+    full_key: str,
+):
+    optimizer = {"$target": "config_targets.Optimizer", **node}
+    config = OmegaConf.create({"optimizer": optimizer})
+    with pytest.raises(error_type) as error_info:
+        instantiate(config.optimizer)
+    assert error_info.value.__notes__ == [f"  at `{full_key}`"]
+    assert targets.CALLS == []
 
 
 def test_items_of_args_are_built_before_the_keyword_arguments(targets: ModuleType):

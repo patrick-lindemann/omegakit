@@ -170,6 +170,11 @@ def test_error_of_a_target_or_symbol_names_its_node(
             TargetSyntaxError,
             "models[1]",
         ),
+        (
+            {"$target": "config_targets.Layer", "$args": [1]},
+            TargetSyntaxError,
+            "models[1]",
+        ),
         ({"$args": [1]}, ValidationSyntaxError, "models[1]"),
         ({"$symbol": "math.pi", "$args": [1]}, SymbolSyntaxError, "models[1]"),
     ],

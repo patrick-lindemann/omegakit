@@ -1,5 +1,6 @@
 import dataclasses
 import functools
+import inspect
 import itertools
 import keyword
 import re
@@ -168,6 +169,13 @@ def read_fields(schema: type) -> dict[str, SchemaField]:
             )
         fields[name] = SchemaField(annotation, is_plain, is_required)
     return fields
+
+
+@functools.cache
+def read_positions(schema: type) -> list[str]:
+    parameters = inspect.signature(schema).parameters.values()
+    kinds = (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD)
+    return [parameter.name for parameter in parameters if parameter.kind in kinds]
 
 
 def convert_data(schema: type, values: dict[str, Any]) -> dict[str, Any]:

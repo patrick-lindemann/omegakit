@@ -1,5 +1,6 @@
 import dataclasses
 import functools
+import types
 from typing import Any, get_args, get_origin, is_typeddict
 
 from omegaconf import DictConfig, ListConfig, OmegaConf, TupleConfig
@@ -32,6 +33,7 @@ from .schema import (
     find_tuple_annotations,
     is_data,
     read_fields,
+    read_positions,
     split_union,
 )
 
@@ -211,9 +213,7 @@ def _check_call(
                 f"`{TARGET_KEY}: {name}` names a schema, and nothing is built from one."
             )
         schema = find_schema(target)
-        if target_arguments.has_args and (
-            schema is not None or hasattr(target, "from_config")
-        ):
+        if target_arguments.has_args and hasattr(target, "from_config"):
             raise TargetSyntaxError(
                 f"`{name}` takes its arguments by name, so it cannot take `{ARGS_KEY}`."
             )
@@ -221,14 +221,33 @@ def _check_call(
         error.add_note(f"  at {describe_node(node)}")
         raise
     positional_arguments: list[Any] | tuple[Any, ...] = ()
+    positional_keys: list[str] = []
     if target_arguments.has_args:
-        checked_args = _check_value(node, ARGS_KEY, active_nodes, Any)
-        if not isinstance(checked_args, Items) or isinstance(checked_args.items, dict):
-            type_error = TargetTypeError(
-                f"`{ARGS_KEY}` must be a list, not `{node[ARGS_KEY]!r}`."
-            )
-            type_error.add_note(f"  at {describe_node(node)}")
-            raise type_error
+        args = _read_value(node, ARGS_KEY)
+        args_annotation: Any = Any
+        try:
+            if not isinstance(args, (ListConfig, TupleConfig)):
+                raise TargetTypeError(f"`{ARGS_KEY}` must be a list, not `{args!r}`.")
+            if schema is not None:
+                # A dataclass binds the items to its fields, as its constructor does
+                fields = read_fields(schema)
+                positions = read_positions(schema)
+                if len(args) > len(positions):
+                    raise SchemaValueError(
+                        f"`{schema.__qualname__}` takes {len(positions)} positional "
+                        f"arguments, but `{ARGS_KEY}` gives {len(args)}."
+                    )
+                positional_keys = positions[: len(args)]
+                # A parameter that is no field, such as an `InitVar`, is not checked
+                item_annotations = tuple(
+                    fields[key].annotation if key in fields else Any
+                    for key in positional_keys
+                )
+                args_annotation = types.GenericAlias(tuple, item_annotations)
+        except OmegaKitBaseException as error:
+            error.add_note(f"  at {describe_node(node)}")
+            raise
+        checked_args = _check_node(args, active_nodes, args_annotation)
         positional_arguments = checked_args.items
     if schema is None:
         arguments = {
@@ -239,7 +258,7 @@ def _check_call(
         # A partial may leave required keys open until it is called
         is_open = target_arguments.is_partial or is_deferred
         arguments = _check_schema(
-            node, schema, target_arguments.keys, active_nodes, is_open
+            node, schema, target_arguments.keys, active_nodes, is_open, positional_keys
         )
     return Call(
         node,
@@ -258,6 +277,7 @@ def _check_schema(
     keys: list[Any],
     active_nodes: list[DictConfig | ListConfig | TupleConfig],
     is_open: bool,
+    positional_keys: list[str] | tuple[str, ...] = (),
 ) -> dict[Any, Any]:
     try:
         fields = read_fields(schema)
@@ -267,10 +287,16 @@ def _check_schema(
                 f"{', '.join(f'`{key}`' for key in unknown_keys)} is not a field of "
                 f"`{schema.__qualname__}`."
             )
+        repeated_keys = [key for key in keys if key in positional_keys]
+        if repeated_keys:
+            raise SchemaKeyError(
+                f"{', '.join(f'`{key}`' for key in repeated_keys)} is given twice, by "
+                f"`{ARGS_KEY}` and by name."
+            )
         missing_keys = [
             key
             for key, field in fields.items()
-            if field.is_required and key not in keys
+            if field.is_required and key not in keys and key not in positional_keys
         ]
         if missing_keys and not is_open:
             raise SchemaMissingValueError(
@@ -303,8 +329,20 @@ def _check_value(
     active_nodes: list[DictConfig | ListConfig | TupleConfig],
     annotation: Any,
 ) -> Any:
+    value = _read_value(parent, key)
+    if isinstance(value, (DictConfig, ListConfig, TupleConfig)):
+        value = _check_node(value, active_nodes, annotation)
     try:
-        value = parent[key]
+        typed_value = _check_type(value, annotation)
+    except SchemaTypeError as error:
+        error.add_note(f"  at `{parent._get_full_key(key)}`")
+        raise
+    return typed_value
+
+
+def _read_value(parent: DictConfig | ListConfig | TupleConfig, key: Any) -> Any:
+    try:
+        return parent[key]
     except MissingMandatoryValue as error:
         missing_error = ValidationMissingValueError("The value is `???`.")
         missing_error.add_note(f"  at `{parent._get_full_key(key)}`")
@@ -315,14 +353,6 @@ def _check_value(
         )
         interpolation_error.add_note(f"  at `{parent._get_full_key(key)}`")
         raise interpolation_error from error
-    if isinstance(value, (DictConfig, ListConfig, TupleConfig)):
-        value = _check_node(value, active_nodes, annotation)
-    try:
-        typed_value = _check_type(value, annotation)
-    except SchemaTypeError as error:
-        error.add_note(f"  at `{parent._get_full_key(key)}`")
-        raise
-    return typed_value
 
 
 def _unwrap_data(value: Any) -> Any:

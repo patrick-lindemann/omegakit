@@ -15,7 +15,10 @@ All notable changes to this project are documented here. The format follows
   `int("ff", base=16)`. It builds targets that take arguments only by position, such
   as `torch.nn.Sequential` and `math.sqrt`. With `$partial: true` the items go into
   the partial. A `$base` or an override replaces the list as a whole. A class with
-  `from_config` and a dataclass take their arguments by name and reject it.
+  `from_config` takes its arguments by name and rejects it. A dataclass binds the
+  items to its fields by position, as its constructor does: each is converted and
+  checked like the value of that key, a field that is also given by name raises
+  `SchemaKeyError`, and more items than positions raise `SchemaValueError`.
 - `make_node` takes positional arguments and writes them to `$args`, as in
   `make_node(torch.nn.Sequential, layer_a, layer_b)`.
 - A schema may contain itself, directly or through other schemas. It raised

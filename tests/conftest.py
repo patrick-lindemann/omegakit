@@ -74,6 +74,16 @@ class FastOptimizer(Optimizer):
     pass
 
 
+@dataclasses.dataclass
+class Scaled:
+    n: int
+    scale: dataclasses.InitVar[int]
+    noise: float = 0.1
+
+    def __post_init__(self, scale):
+        self.n *= scale
+
+
 class ModelConfig(TypedDict):
     depth: int
     activation: NotRequired[Literal["relu", "tanh"]]
