@@ -602,11 +602,14 @@ def test_partial_fits_where_a_callable_is_expected(targets: ModuleType):
 def test_result_is_checked_against_the_class(targets: ModuleType):
     item = OmegaConf.create({"$target": "config_targets.make_item", "name": "made"})
     assert type(instantiate(item, targets.Item)) is targets.Item
-    for path in ("make_item", "FACTORY"):
-        config = OmegaConf.create({"$target": f"config_targets.{path}"})
-        with pytest.raises(ConfigSchemaError, match="returned") as error_info:
-            instantiate(config, targets.Optimizer)
-        error_info.match(re.escape("at the root"))
+
+
+@pytest.mark.parametrize("path", ["make_item", "FACTORY"])
+def test_result_of_another_class_is_rejected(targets: ModuleType, path: str):
+    config = OmegaConf.create({"$target": f"config_targets.{path}"})
+    with pytest.raises(ConfigSchemaError, match="returned") as error_info:
+        instantiate(config, targets.Optimizer)
+    error_info.match(re.escape("at the root"))
 
 
 def test_result_of_a_function_is_checked_in_a_field(targets: ModuleType):

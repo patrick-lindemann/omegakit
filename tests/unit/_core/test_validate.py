@@ -39,6 +39,9 @@ class _Parts(TypedDict, total=False):
     scale: float | fractions.Fraction
 
 
+_OPTIMIZER = {"$target": "config_targets.Optimizer"}
+
+
 class _Mode(enum.Enum):
     FAST = 1
     EXACT = 2
@@ -104,17 +107,22 @@ def test_read_only_config_is_accepted():
         ("${nowhere}", ValidationInterpolationError),
     ],
 )
-def test_value_that_cannot_be_read_is_rejected(value: str, error_type: type[Exception]):
-    for content, full_key in (
-        ({"lr": value}, "lr"),
-        ({"model": {"layers": [{"width": value}]}}, "model.layers[0].width"),
-        ({"model": {"$target": "builtins.dict", "lr": value}}, "model.lr"),
-        ({"stages": [1, value]}, "stages[1]"),
-    ):
-        config = OmegaConf.create(content)
-        with pytest.raises(error_type) as error_info:
-            validate(config)
-        error_info.match(re.escape(f"`{full_key}`"))
+@pytest.mark.parametrize(
+    ("text", "full_key"),
+    [
+        ("lr: 'VALUE'", "lr"),
+        ("model: {layers: [{width: 'VALUE'}]}", "model.layers[0].width"),
+        ("model: {$target: builtins.dict, lr: 'VALUE'}", "model.lr"),
+        ("stages: [1, 'VALUE']", "stages[1]"),
+    ],
+)
+def test_value_that_cannot_be_read_is_rejected(
+    value: str, error_type: type[Exception], text: str, full_key: str
+):
+    config = OmegaConf.create(text.replace("VALUE", value))
+    with pytest.raises(error_type) as error_info:
+        validate(config)
+    error_info.match(re.escape(f"`{full_key}`"))
 
 
 def test_missing_root_is_rejected():
@@ -289,34 +297,34 @@ def test_accepts_a_config_that_matches_its_schemas(targets: ModuleType):
         ({"sed": 1}, ConfigSchemaError, "experiment"),
         ({"seed": "many"}, ConfigSchemaError, "experiment"),
         ({"seed": "???"}, ValidationMissingValueError, "experiment.seed"),
-        ({"optimizer": {}}, ConfigSchemaError, "experiment.optimizer"),
+        ({"optimizer": {**_OPTIMIZER}}, ConfigSchemaError, "experiment.optimizer"),
         (
-            {"optimizer": {"lr": 1, "total": 2}},
+            {"optimizer": {**_OPTIMIZER, "lr": 1, "total": 2}},
             ConfigSchemaError,
             "experiment.optimizer",
         ),
         (
-            {"optimizer": {"lr": 1, "betas": [1]}},
+            {"optimizer": {**_OPTIMIZER, "lr": 1, "betas": [1]}},
             ConfigSchemaError,
             "experiment.optimizer",
         ),
         (
-            {"optimizer": {"lr": "???"}},
+            {"optimizer": {**_OPTIMIZER, "lr": "???"}},
             ValidationMissingValueError,
             "experiment.optimizer.lr",
         ),
         (
-            {"optimizer": {"lr": 1, "betas": [1, "???"]}},
+            {"optimizer": {**_OPTIMIZER, "lr": 1, "betas": [1, "???"]}},
             ValidationMissingValueError,
             "experiment.optimizer.betas[1]",
         ),
         (
-            {"stages": [{"lr": 1}, {"lr": "x"}]},
+            {"stages": [{**_OPTIMIZER, "lr": 1}, {**_OPTIMIZER, "lr": "x"}]},
             ConfigSchemaError,
             "experiment.stages[1]",
         ),
         (
-            {"schedules": {"warmup": {"steps": 2}}},
+            {"schedules": {"warmup": {**_OPTIMIZER, "steps": 2}}},
             ConfigSchemaError,
             "experiment.schedules.warmup",
         ),
@@ -358,11 +366,6 @@ def test_value_that_does_not_match_its_schema_is_rejected(
     error_type: type[Exception],
     full_key: str,
 ):
-    for optimizers in (values.get("optimizer"), *values.get("stages", [])):
-        if optimizers is not None:
-            optimizers["$target"] = "config_targets.Optimizer"
-    for schedule in values.get("schedules", {}).values():
-        schedule["$target"] = "config_targets.Optimizer"
     with pytest.raises(error_type) as error_info:
         validate(_make_experiment(**values), targets.Experiment)
     error_info.match(re.escape(f"`{full_key}`"))
@@ -425,21 +428,30 @@ def test_field_that_is_annotated_with_a_schema_takes_a_mapping(targets: ModuleTy
     validate(_make_experiment(backbone=backbone), targets.Experiment)
     validate(_make_experiment(backbone=None), targets.Experiment)
     validate(OmegaConf.create(backbone), targets.ModelConfig)
-    for values, error_type in (
-        ({"depth": "deep"}, ConfigSchemaError),
-        ({"depth": 2, "width": 2}, ConfigSchemaError),
-        ({"activation": "tanh"}, ConfigSchemaError),
-        ({"$target": "config_targets.Model", "depth": 2}, ConfigSchemaError),
-        ({"$target": "config_targets.ModelConfig", "depth": 2}, ConfigSchemaError),
-        ({"$symbol": "config_targets.ITEM"}, ConfigSchemaError),
-        ([1, 2], ConfigSchemaError),
-    ):
-        with pytest.raises(error_type) as error_info:
-            validate(_make_experiment(backbone=values), targets.Experiment)
-        error_info.match(re.escape("at `experiment.backbone`"))
     model = OmegaConf.create({"$target": "config_targets.Model", "depth": 2})
     with pytest.raises(ConfigSchemaError):
         validate(model, targets.ModelConfig)
+    assert targets.CALLS == []
+
+
+@pytest.mark.parametrize(
+    "backbone",
+    [
+        {"depth": "deep"},
+        {"depth": 2, "width": 2},
+        {"activation": "tanh"},
+        {"$target": "config_targets.Model", "depth": 2},
+        {"$target": "config_targets.ModelConfig", "depth": 2},
+        {"$symbol": "config_targets.ITEM"},
+        [1, 2],
+    ],
+)
+def test_field_that_is_annotated_with_a_schema_rejects_what_is_no_such_mapping(
+    targets: ModuleType, backbone: Any
+):
+    with pytest.raises(ConfigSchemaError) as error_info:
+        validate(_make_experiment(backbone=backbone), targets.Experiment)
+    error_info.match(re.escape("at `experiment.backbone`"))
     assert targets.CALLS == []
 
 
@@ -465,15 +477,23 @@ def test_schema_says_what_the_root_builds(targets: ModuleType):
     fast_optimizer = {"$target": "config_targets.FastOptimizer", "lr": 1}
     validate(OmegaConf.create(fast_optimizer), targets.Optimizer)
     validate(OmegaConf.create({"$target": "config_targets.SmallItem"}), targets.Item)
-    for content, schema in (
-        ({"$target": "config_targets.Item"}, targets.Optimizer),
-        ({"depth": 1}, targets.Model),
-        ({"lr": 1}, targets.Optimizer),
-        ([{"lr": 1}], targets.Optimizer),
-    ):
-        with pytest.raises(ConfigSchemaError) as error_info:
-            validate(OmegaConf.create(content), schema)
-        error_info.match(re.escape("at the root"))
+
+
+@pytest.mark.parametrize(
+    ("content", "schema_name"),
+    [
+        ({"$target": "config_targets.Item"}, "Optimizer"),
+        ({"depth": 1}, "Model"),
+        ({"lr": 1}, "Optimizer"),
+        ([{"lr": 1}], "Optimizer"),
+    ],
+)
+def test_root_that_builds_something_else_is_rejected(
+    targets: ModuleType, content: Any, schema_name: str
+):
+    with pytest.raises(ConfigSchemaError) as error_info:
+        validate(OmegaConf.create(content), getattr(targets, schema_name))
+    error_info.match(re.escape("at the root"))
 
 
 def test_annotation_that_cannot_be_checked_takes_any_object():
@@ -513,11 +533,15 @@ def test_annotation_is_checked_as_its_class(values: dict[str, Any], is_valid: bo
     error_info.match(re.escape(f"at `{next(iter(values))}`"))
 
 
-def test_mapping_for_a_list_of_objects_names_the_field(targets: ModuleType):
-    for values in ({"items": {"first": 1}}, {"stages": {"lr": 1}}):
-        with pytest.raises(ConfigSchemaError, match="a mapping") as error_info:
-            validate(_make_experiment(**values), targets.Experiment)
-        error_info.match(re.escape(f"at `experiment.{next(iter(values))}`"))
+@pytest.mark.parametrize(
+    ("field", "value"), [("items", {"first": 1}), ("stages", {"lr": 1})]
+)
+def test_mapping_for_a_list_of_objects_names_the_field(
+    targets: ModuleType, field: str, value: dict[str, Any]
+):
+    with pytest.raises(ConfigSchemaError, match="a mapping") as error_info:
+        validate(_make_experiment(**{field: value}), targets.Experiment)
+    error_info.match(re.escape(f"at `experiment.{field}`"))
 
 
 def test_data_that_contains_itself_is_rejected():
