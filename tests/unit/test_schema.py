@@ -1,369 +1,228 @@
-import sys
-import types
-from dataclasses import dataclass, field, make_dataclass
-from decimal import Decimal
+import dataclasses
+import enum
+import typing
+from collections.abc import Callable, Sequence
 from pathlib import Path
-from typing import Any, ClassVar
+from types import ModuleType
+from typing import Any, Literal
 
 import pytest
-from omegaconf import OmegaConf
+from omegaconf import MISSING
+from omegaconf.errors import ConfigKeyError, MissingMandatoryValue, ValidationError
 
-from omegakit import (
-    Configurable,
-    ConfigValidationError,
+from omegakit._core.error import OmegaKitBaseException
+from omegakit.configurable import Configurable
+from omegakit.schema import (
+    ConfigSchemaError,
     SchemaDefinitionError,
-    instantiate,
-    prepare,
-    validate,
+    SchemaKeyError,
+    SchemaMissingValueError,
+    SchemaTypeError,
+    SchemaValueError,
+    convert_data,
+    find_schema,
+    read_fields,
 )
-from tests import schemas
-from tests.schemas import Encoder, SectionWithObject
 
 
-@dataclass
-class SetConfig:
-    values: set[int] = field(default_factory=set)
+class _Color(enum.Enum):
+    RED = "red"
+    BLUE = "blue"
 
 
-class WithSet(Configurable):
-    schema = SetConfig
+class _Encoder:
+    pass
 
-    def __init__(self, **fields: Any) -> None: ...
 
+@dataclasses.dataclass
+class _Section:
+    width: int = 1
 
-@dataclass
-class MixedUnionConfig:
-    value: int | Encoder = 0
 
+def _make_schema(annotation: Any) -> type:
+    return dataclasses.make_dataclass("Schema", [("value", annotation)])
 
-class WithMixedUnion(Configurable):
-    schema = MixedUnionConfig
 
-    def __init__(self, **fields: Any) -> None: ...
+def test_dataclass_is_its_own_schema(targets: ModuleType):
+    assert find_schema(targets.Optimizer) is targets.Optimizer
 
 
-@dataclass
-class UnresolvableConfig:
-    value: "Missing" = None  # type: ignore[name-defined]  # noqa: F821
+def test_configurable_names_its_schema(targets: ModuleType):
+    assert find_schema(targets.Model) is targets.ModelConfig
+    assert find_schema(Configurable) is None
 
 
-class WithUnresolvable(Configurable):
-    schema = UnresolvableConfig
+def test_configurable_that_is_a_dataclass_is_its_own_schema(targets: ModuleType):
+    assert find_schema(targets.Layer) is targets.Layer
 
-    def __init__(self, **fields: Any) -> None: ...
 
+@pytest.mark.parametrize("target", [_Encoder, len, "builtins.dict", None])
+def test_other_targets_have_no_schema(target: Any):
+    assert find_schema(target) is None
 
-@dataclass
-class HolderConfig:
-    section: SectionWithObject | None = None
 
-
-class Holder(Configurable):
-    schema = HolderConfig
-
-    def __init__(self, section: SectionWithObject | None) -> None:
-        self.section = section
-
-
-FIELDS = "tests.schemas.Fields"
-ENCODER = "tests.schemas.Encoder"
-
-
-def test_schema_data_values_are_coerced():
-    obj = instantiate({"$class": FIELDS, "count": "3", "path": "a/b"})
-    assert obj.fields["count"] == 3
-    assert obj.fields["path"] == Path("a/b")
-
-
-def test_schema_defaults_fill_absent_fields():
-    obj = instantiate({"$class": FIELDS})
-    assert obj.fields["count"] == 0
-    assert obj.fields["encoder"] is None
-
-
-def test_schema_enum_given_by_member_name():
-    assert instantiate({"$class": FIELDS, "kind": "B"}).fields["kind"] is schemas.Kind.B
-
-
-def test_schema_enum_value_is_accepted():
-    assert (
-        instantiate({"$class": FIELDS, "kind": "alpha"}).fields["kind"]
-        is schemas.Kind.A
-    )
-
-
-def test_schema_union_of_primitives_is_not_coerced():
-    assert instantiate({"$class": FIELDS, "number": "x"}).fields["number"] == "x"
-    with pytest.raises(ConfigValidationError):
-        instantiate({"$class": FIELDS, "number": 1.5})
-
-
-def test_schema_nested_dataclasses_are_rebuilt_as_user_classes():
-    obj = instantiate(
-        {
-            "$class": FIELDS,
-            "sub": {"value": 1},
-            "subs": [{"value": 2}],
-            "by_name": {"a": {"value": 3}},
-        }
-    )
-    assert obj.fields["sub"] == schemas.Sub(1, 2)
-    assert obj.fields["subs"] == [schemas.Sub(2, 4)]
-    assert obj.fields["by_name"] == {"a": schemas.Sub(3, 6)}
-
-
-def test_schema_object_field_is_built():
-    obj = instantiate({"$class": FIELDS, "encoder": {"$class": ENCODER, "width": 4}})
-    assert isinstance(obj.fields["encoder"], schemas.Encoder)
-    assert obj.fields["encoder"].width == 4
-
-
-def test_schema_object_field_rejects_plain_mapping():
-    with pytest.raises(ConfigValidationError, match="mapping without `\\$class`"):
-        instantiate({"$class": FIELDS, "encoder": {"width": 4}})
-
-
-def test_schema_isinstance_check_unwraps_aliases():
-    with pytest.raises(ConfigValidationError, match="Decoder"):
-        instantiate({"$class": FIELDS, "aliased": {"$class": "tests.schemas.Decoder"}})
-
-
-def test_schema_isinstance_check_skipped_for_partials():
-    obj = instantiate(
-        {"$class": FIELDS, "encoder": {"$class": ENCODER, "$partial": True}}
-    )
-    assert obj.fields["encoder"](width=2).width == 2
-
-
-def test_schema_isinstance_check_skipped_for_generic_annotations():
-    obj = instantiate({"$class": FIELDS, "factory": {"$ref": ENCODER}})
-    assert obj.fields["factory"] is schemas.Encoder
-
-
-def test_schema_isinstance_check_skipped_for_non_runtime_protocols():
-    obj = instantiate({"$class": FIELDS, "greeter": {"$class": ENCODER}})
-    assert isinstance(obj.fields["greeter"], schemas.Encoder)
-
-
-def test_schema_any_field_accepts_resolver_objects():
-    OmegaConf.register_resolver("obj", lambda: schemas.Encoder(5))
-    obj = instantiate(OmegaConf.create({"$class": FIELDS, "anything": "${obj:}"}))
-    assert obj.fields["anything"].width == 5
-
-
-def test_schema_any_field_builds_nested_classes():
-    obj = instantiate(
-        {"$class": FIELDS, "anything": {"inner": {"$class": ENCODER, "width": 2}}}
-    )
-    assert obj.fields["anything"]["inner"].width == 2
-
-
-@dataclass
-class ObjectDefaultConfig:
-    encoder: schemas.Encoder = field(default_factory=lambda: schemas.Encoder(width=3))
-
-
-class WithObjectDefault(Configurable):
-    schema = ObjectDefaultConfig
-
-    def __init__(self, encoder: schemas.Encoder) -> None:
-        self.encoder = encoder
-
-
-def test_schema_object_default_never_enters_omegaconf():
-    config = {"$class": f"{__name__}.WithObjectDefault"}
-    validate(config)
-    assert instantiate(config).encoder.width == 3
-
-
-def test_schema_unknown_field_raises():
-    with pytest.raises(ConfigValidationError, match="colour"):
-        instantiate({"$class": FIELDS, "colour": "red"})
-
-
-def test_schema_missing_required_data_field_raises():
-    with pytest.raises(ConfigValidationError) as info:
-        instantiate({"$class": "tests.schemas.Model"})
-    assert str(info.value) == (
-        "Invalid config in `depth` (ModelConfig): Missing mandatory value: depth"
-    )
-
-
-@dataclass
-class RequiredValue:
-    value: int
-
-
-@dataclass
-class NestedRequired:
-    inner: RequiredValue | None = None
-    either: RequiredValue | list[int] | None = None
-
-
-def test_schema_missing_field_of_a_nested_dataclass_names_its_path():
-    with pytest.raises(ConfigValidationError) as info:
-        validate({"inner": {}}, schema=NestedRequired)
-    assert str(info.value) == (
-        "Invalid config in `inner.value` (NestedRequired): Missing mandatory value: "
-        "value"
-    )
-
-
-def test_schema_missing_field_of_a_union_member_names_its_path():
-    with pytest.raises(ConfigValidationError) as info:
-        validate({"either": {}}, schema=NestedRequired)
-    assert str(info.value) == (
-        "Invalid config in `either.value` (NestedRequired): Missing mandatory value: "
-        "value"
-    )
-
-
-def test_schema_missing_required_object_field_raises():
-    with pytest.raises(ConfigValidationError, match="Missing mandatory value: encoder"):
-        instantiate({"$class": "tests.schemas.RequiredObject"})
-
-
-def test_schema_wrong_data_type_raises_with_path_and_schema_name():
-    with pytest.raises(ConfigValidationError, match=r"`point\.count`.*FieldsConfig"):
-        instantiate(
-            {
-                "$class": "tests.helpers.Container",
-                "name": "c",
-                "point": {"$class": FIELDS, "count": "many"},
-            }
-        )
-
-
-def test_schema_class_node_in_data_field_raises():
-    with pytest.raises(ConfigValidationError, match=r"\$class"):
-        instantiate({"$class": FIELDS, "sub": {"$class": ENCODER}})
-
-
-def test_schema_validation_happens_at_prepare():
-    with pytest.raises(ConfigValidationError):
-        prepare({"$class": FIELDS, "count": "many"})
+@pytest.mark.parametrize("schema", [dict, _Section()])
+def test_schema_of_a_configurable_must_be_a_dataclass(schema: Any):
+    broken = type("Broken", (Configurable,), {"schema": schema})
+    with pytest.raises(SchemaDefinitionError, match="Broken"):
+        find_schema(broken)
 
 
 @pytest.mark.parametrize(
-    ("cls", "match"),
+    "annotation",
     [
-        (WithSet, "OmegaConf does not support"),
-        (WithMixedUnion, "OmegaConf does not support"),
-        (WithUnresolvable, "Cannot resolve the annotations"),
+        int,
+        str,
+        Path,
+        _Color,
+        Literal["a", "b"],
+        int | None,
+        int | str,
+        list[int],
+        dict[str, float],
+        tuple[int, str],
+        list[int] | None,
+        Literal[[1, 2]],
     ],
 )
-def test_schema_outside_supported_subset_raises(cls, match):
-    with pytest.raises(SchemaDefinitionError, match=match):
-        validate({}, schema=cls)
-
-
-def test_schema_plain_mapping_in_dataclass_field_is_built_as_a_section():
-    holder = instantiate(
-        {
-            "$class": f"{__name__}.Holder",
-            "section": {"encoder": {"$class": "tests.schemas.Encoder", "width": 3}},
-        },
-        schema=Holder,
-    )
-    assert isinstance(holder.section, schemas.SectionWithObject)
-    assert isinstance(holder.section.encoder, schemas.Encoder)
-    assert (holder.section.encoder.width, holder.section.size) == (3, 1)
-
-
-@dataclass
-class InheritedBase:
-    amount: "Decimal" = Decimal(0)
-
-
-SUBCLASS_MODULE = """
-from dataclasses import dataclass
-
-@dataclass
-class Subclass(InheritedBase):
-    other: "Missing" = 0
-"""
-
-
-def test_schema_unresolvable_annotation_blames_its_own_field(monkeypatch):
-    module = types.ModuleType("inherited_schema")
-    module.InheritedBase = InheritedBase  # pyright: ignore[reportAttributeAccessIssue]
-    monkeypatch.setitem(sys.modules, module.__name__, module)
-    exec(SUBCLASS_MODULE, vars(module))
-    with pytest.raises(SchemaDefinitionError, match="'Missing' is not defined"):
-        validate({}, schema=module.Subclass)
-
-
-@dataclass
-class Tree:
-    child: "Tree | None" = None
-
-
-@dataclass
-class Outer:
-    inner: "list[Inner]"
-
-
-@dataclass
-class Inner:
-    outer: Outer | None = None
-
-
-class WithTree(Configurable):
-    schema = Tree
-
-    def __init__(self, child: Tree | None = None) -> None: ...
-
-
-def test_schema_recursive_dataclasses_are_supported():
-    tree = instantiate({"child": {"child": {}}}, schema=Tree)
-    assert tree == Tree(child=Tree(child=Tree()))
-    validate({"inner": [{"outer": {"inner": []}}]}, schema=Outer)
-    instantiate({"child": {}}, schema=WithTree)
-
-
-@dataclass
-class Later:
-    value: int = 0
-
-
-@dataclass
-class ForwardReferences:
-    count: int = 0
-    later: "Later" = field(default_factory=Later)
-    missing: "Missing" = 0  # noqa: F821  # pyright: ignore[reportUndefinedVariable]
-
-
-@dataclass
-class UnresolvableClassVar:
-    registry: ClassVar["Missing"]  # noqa: F821  # pyright: ignore[reportUndefinedVariable]
-    count: int = 0
-
-
-def test_schema_forward_reference_that_does_not_resolve_raises():
-    with pytest.raises(
-        SchemaDefinitionError, match="Cannot resolve the annotations of schema"
-    ):
-        validate({}, schema=ForwardReferences)
-
-
-# Built at runtime, because linters reject these annotations.
-INVALID_UNION = make_dataclass("InvalidUnion", [("count", "int | 1")])
-INVALID_SYNTAX = make_dataclass("InvalidSyntax", [("counts", "list[int")])
+def test_field_that_omegaconf_supports_is_data(annotation: Any):
+    assert read_fields(_make_schema(annotation))["value"].is_data
 
 
 @pytest.mark.parametrize(
-    ("schema", "cause"), [(INVALID_UNION, TypeError), (INVALID_SYNTAX, SyntaxError)]
+    "annotation",
+    [
+        Any,
+        _Encoder,
+        _Encoder | None,
+        _Encoder | _Color,
+        list[_Encoder],
+        dict[str, _Encoder],
+        list[Any],
+        list,
+        typing.Dict,  # noqa: UP006
+        typing.List | None,  # noqa: UP006
+        Callable[..., _Encoder],
+        type[_Encoder],
+        _Section,
+        _Section | None,
+        list[_Section],
+        dict[str, list[_Section]],
+    ],
 )
-def test_schema_annotation_that_fails_to_evaluate_raises_a_definition_error(
-    schema, cause
+def test_field_that_holds_objects_is_not_data(annotation: Any):
+    field = read_fields(_make_schema(annotation))["value"]
+    assert not field.is_data
+    assert field.annotation == annotation
+
+
+@pytest.mark.parametrize(
+    "annotation",
+    [
+        set[int],
+        frozenset,
+        Sequence[int],
+        tuple[_Encoder, ...],
+        list[set[int]],
+        _Encoder | Literal["auto"],
+    ],
+)
+def test_annotation_that_is_neither_data_nor_a_class_is_rejected(annotation: Any):
+    with pytest.raises(SchemaDefinitionError, match=r"Schema\.value"):
+        read_fields(_make_schema(annotation))
+
+
+def test_annotation_that_does_not_resolve_is_rejected():
+    with pytest.raises(SchemaDefinitionError, match="NoSuchName") as error_info:
+        read_fields(_make_schema("NoSuchName"))
+    assert isinstance(error_info.value.__cause__, NameError)
+
+
+def test_fields_are_the_arguments_of_the_constructor(targets: ModuleType):
+    fields = read_fields(targets.Optimizer)
+    assert "total" not in fields
+    assert fields["lr"].is_required
+    assert not fields["steps"].is_required
+    assert not read_fields(targets.Experiment)["optimizer"].is_required
+
+
+def test_default_that_is_missing_marks_a_required_field():
+    schema = dataclasses.make_dataclass("Schema", [("value", int, MISSING)])
+    assert read_fields(schema)["value"].is_required
+
+
+def test_data_is_converted_as_omegaconf_converts_it(targets: ModuleType):
+    values = {
+        "lr": "1e-3",
+        "mode": "slow",
+        "betas": [0.5, "0.75"],
+        "log_dir": "runs/first",
+    }
+    converted = convert_data(targets.Optimizer, values)
+    assert converted == {
+        "lr": 0.001,
+        "mode": targets.Mode.SLOW,
+        "betas": (0.5, 0.75),
+        "log_dir": Path("runs/first"),
+    }
+    assert type(converted["betas"]) is tuple
+    assert targets.CALLS == []
+
+
+@pytest.mark.parametrize(
+    ("values", "key"),
+    [
+        ({"lr": "fast"}, "lr"),
+        ({"mode": "medium"}, "mode"),
+        ({"betas": [0.5, 0.75, 0.9]}, "betas"),
+        ({"betas": [0.5, "high"]}, "betas"),
+    ],
+)
+def test_data_that_does_not_match_is_rejected(
+    targets: ModuleType, values: dict[str, Any], key: str
 ):
-    with pytest.raises(
-        SchemaDefinitionError, match="Cannot resolve the annotations"
-    ) as info:
-        validate({}, schema=schema)
-    assert isinstance(info.value.__cause__, cause)
+    with pytest.raises(SchemaValueError, match="Optimizer") as error_info:
+        convert_data(targets.Optimizer, values)
+    assert key in str(error_info.value)
 
 
-def test_schema_annotation_outside_the_fields_that_does_not_resolve_raises():
-    with pytest.raises(SchemaDefinitionError, match="Cannot resolve the annotations"):
-        validate({}, schema=UnresolvableClassVar)
+@pytest.mark.parametrize(
+    "text", ["${lr}", "a\\${lr}", "\\\\${lr} and ${steps}", "${open", "???", "\\???"]
+)
+def test_text_is_not_read_as_an_interpolation_or_a_missing_value(
+    targets: ModuleType, text: str
+):
+    schema = dataclasses.make_dataclass(
+        "Schema", [("name", str), ("names", dict[str, list[str]]), ("lr", float)]
+    )
+    values = {"name": text, "names": {"first": [text, "plain"]}, "lr": 1}
+    converted = convert_data(schema, values)
+    assert converted["name"] == text
+    assert converted["names"] == {"first": [text, "plain"]}
+    with pytest.raises(SchemaValueError):
+        convert_data(targets.Optimizer, {"lr": text})
+    with pytest.raises(SchemaValueError):
+        convert_data(targets.Optimizer, {"betas": [0.5, text]})
+
+
+def test_number_that_is_too_large_is_rejected(targets: ModuleType):
+    with pytest.raises(SchemaValueError, match="Optimizer"):
+        convert_data(targets.Optimizer, {"lr": 10**400})
+
+
+@pytest.mark.parametrize(
+    ("error_type", "parent_type"),
+    [
+        (SchemaDefinitionError, TypeError),
+        (SchemaKeyError, ConfigKeyError),
+        (SchemaMissingValueError, MissingMandatoryValue),
+        (SchemaValueError, ValidationError),
+        (SchemaTypeError, ValidationError),
+    ],
+)
+def test_errors_are_also_builtin_or_omegaconf_errors(
+    error_type: type[Exception], parent_type: type[Exception]
+):
+    assert issubclass(error_type, ConfigSchemaError)
+    assert issubclass(error_type, OmegaKitBaseException)
+    assert issubclass(error_type, parent_type)

@@ -150,6 +150,15 @@ def convert_data(schema: type, values: dict[str, Any]) -> dict[str, Any]:
 
 
 def _is_data(annotation: Any) -> bool:
+    try:
+        return _is_data_cached(annotation)
+    # An annotation that cannot be hashed, such as `Literal[[1, 2]]`, is probed anew
+    except TypeError:
+        return _is_data_cached.__wrapped__(annotation)
+
+
+@functools.cache
+def _is_data_cached(annotation: Any) -> bool:
     if annotation is Any or find_section(annotation) is not None:
         return False
     item_annotation = find_item_annotation(annotation)
