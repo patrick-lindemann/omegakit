@@ -461,9 +461,30 @@ def test_partial_fits_where_a_callable_is_expected(targets: ModuleType):
     assert targets.CALLS == []
 
 
+def test_result_is_checked_against_the_class(targets: ModuleType):
+    item = OmegaConf.create({"$target": "config_targets.make_item", "name": "made"})
+    assert type(instantiate(item, targets.Item)) is targets.Item
+    for path in ("make_item", "FACTORY"):
+        config = OmegaConf.create({"$target": f"config_targets.{path}"})
+        with pytest.raises(SchemaTypeError, match="returned") as error_info:
+            instantiate(config, targets.Optimizer)
+        assert error_info.value.__notes__ == ["  at the root"]
+
+
+def test_schema_is_not_the_class_of_a_result(targets: ModuleType):
+    model = OmegaConf.create({"$target": "config_targets.Model", "depth": 1})
+    with pytest.raises(SchemaTypeError, match="ModelConfig"):
+        instantiate(model, targets.ModelConfig)
+    with pytest.raises(TargetSyntaxError, match="the root"):
+        instantiate(OmegaConf.create({"depth": 1}), targets.ModelConfig)
+    assert targets.CALLS == []
+
+
 def test_schema_without_anything_to_build_is_rejected(targets: ModuleType):
     with pytest.raises(SchemaTypeError):
         instantiate(OmegaConf.create({"depth": 1}), targets.Model)
+    with pytest.raises(SchemaTypeError, match="a mapping"):
+        instantiate(OmegaConf.create({"lr": 1}), targets.Optimizer)
     with pytest.raises(TargetSyntaxError, match="the root"):
         prepare(OmegaConf.create({"$symbol": "config_targets.SETTINGS"}), dict)
 

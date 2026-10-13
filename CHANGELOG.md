@@ -60,6 +60,12 @@ All notable changes to this project are documented here. The format follows
   or a `$symbol`. A mapping without `$target` raises ``Expected `Data`, but the
   config gives a mapping.`` there, also as an item of a list or a dictionary and
   for `validate(config, Data)`. It used to be built as the dataclass.
+- **Breaking:** The second argument of `instantiate` and `prepare` is the class of
+  the result, and `instantiate` checks what was built against it with `isinstance`:
+  a target that returns something else raises `SchemaTypeError`. A schema is
+  accepted only by `validate`. Only a mapping with `$target` is instantiated: a root
+  without one raises, with a class as in ``Expected `Training`, but the config gives
+  a mapping.``, and so does a root that is a `$symbol`.
 - **Breaking:** A `Configurable` names its schema in the class attribute `schema`
   instead of a type argument: replace `class Model(Configurable[ModelConfig])` with
   `class Model(Configurable)` and `schema = ModelConfig` in its body. `from_config`

@@ -1,11 +1,12 @@
 import dataclasses
 import functools
-from typing import Any, overload
+from typing import Any, get_origin, is_typeddict, overload
 
 from omegaconf import DictConfig
 
 from ._features.target import TARGET_KEY, TargetSyntaxError
 from ._utils.describe import describe_node
+from .schema import SchemaTypeError, split_union
 from .validate import Call, Items, check
 
 
@@ -42,8 +43,12 @@ def _instantiate(config: DictConfig, schema: type | None, is_partial: bool) -> A
             f"`{TARGET_KEY}`."
         )
     if is_partial:
-        call = dataclasses.replace(call, is_partial=True)
-    return _build(call)
+        return _build(dataclasses.replace(call, is_partial=True))
+    # Also for a class, whose `from_config` may return anything
+    typed_call = (
+        call if schema is None else dataclasses.replace(call, result_annotation=schema)
+    )
+    return _build(typed_call)
 
 
 def _build(value: Any) -> Any:
@@ -57,14 +62,32 @@ def _build(value: Any) -> Any:
     try:
         if hasattr(value.target, "from_config"):
             if value.is_partial:
-                instance = functools.partial(value.target.from_config, arguments)
-            else:
-                instance = value.target.from_config(arguments)
+                return functools.partial(value.target.from_config, arguments)
+            instance = value.target.from_config(arguments)
         elif value.is_partial:
-            instance = functools.partial(value.target, **arguments)
+            return functools.partial(value.target, **arguments)
         else:
             instance = value.target(**arguments)
     except Exception as error:
         error.add_note(f"  while calling `{value.name}` at {describe_node(value.node)}")
         raise
+    members = split_union(value.result_annotation)
+    classes = tuple(
+        get_origin(member) or member for member in members if not is_typeddict(member)
+    )
+    try:
+        is_valid = value.result_annotation is Any or isinstance(instance, classes)
+    # Not every annotation can be checked, as where the config is checked
+    except TypeError:
+        return instance
+    if not is_valid:
+        annotation = value.result_annotation
+        expected = (
+            annotation.__qualname__ if isinstance(annotation, type) else annotation
+        )
+        type_error = SchemaTypeError(
+            f"Expected `{expected}`, but `{value.name}` returned `{instance!r}`."
+        )
+        type_error.add_note(f"  at {describe_node(value.node)}")
+        raise type_error
     return instance

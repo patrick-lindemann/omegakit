@@ -52,6 +52,7 @@ class Call:
     schema: type | None
     is_partial: bool
     arguments: dict[Any, Any]
+    result_annotation: Any = Any
 
 
 # A mapping, list or tuple of the config, unlike a `dict` or `list` that is a value
