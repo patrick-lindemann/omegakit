@@ -132,16 +132,21 @@ def read_fields(schema: type) -> dict[str, SchemaField]:
             member for member in split_union(annotation) if is_typeddict(member)
         ]
         is_plain = is_data(annotation)
-        if (
-            not name.isidentifier()
-            or keyword.iskeyword(name)
-            or len(sections) > 1
-            or (not is_plain and not _is_object(annotation))
-        ):
+        if not name.isidentifier() or keyword.iskeyword(name):
             raise SchemaDefinitionError(
-                f"`{schema.__qualname__}.{name}` is annotated with `{annotation}`. A "
-                "key is a Python identifier, and its annotation is what OmegaConf "
-                "supports, one `TypedDict` or a class."
+                f"`{name}` of `{schema.__qualname__}` cannot be a key: a key is a "
+                "Python identifier."
+            )
+        if len(sections) > 1:
+            raise SchemaDefinitionError(
+                f"`{schema.__qualname__}.{name}` is annotated with `{annotation}`, "
+                "which names several `TypedDict`s. A field takes at most one."
+            )
+        if not is_plain and not _is_object(annotation):
+            raise SchemaDefinitionError(
+                f"`{schema.__qualname__}.{name}` is annotated with `{annotation}`, "
+                "which is neither a type that OmegaConf supports nor a `TypedDict` or "
+                "a class."
             )
         fields[name] = SchemaField(annotation, is_plain, is_required)
     return fields

@@ -39,7 +39,7 @@ def resolve_includes[TConfig: DictConfig | ListConfig | TupleConfig](
     if include_root is not None:
         include_root = resolve_path(include_root)
     _resolve_includes(
-        config, config_path, include_root, active_paths={config_path}, cache={}
+        config, config_path, include_root, active_paths=[config_path], cache={}
     )
     return config
 
@@ -48,7 +48,7 @@ def _resolve_includes(
     config: DictConfig | ListConfig | TupleConfig,
     config_path: Path,
     include_root: Path | None,
-    active_paths: set[Path],
+    active_paths: list[Path],
     cache: dict[Path, DictConfig | ListConfig],
 ) -> None:
     # Assigned after the walk, so that no include sees the result of another
@@ -84,7 +84,7 @@ def _load_include(
     node: Node,
     current_path: Path,
     include_root: Path | None,
-    active_paths: set[Path],
+    active_paths: list[Path],
     cache: dict[Path, DictConfig | ListConfig],
 ) -> Any:
     try:
@@ -104,11 +104,13 @@ def _load_include(
             f"`{file_path}` is outside the include root `{include_root}`."
         )
     if file_path in active_paths:
-        raise ConfigIncludeError(f"`{file_path}` is already being loaded.")
+        cycle_paths = [*active_paths[active_paths.index(file_path) :], file_path]
+        cycle = " -> ".join(f"`{path}`" for path in cycle_paths)
+        raise ConfigIncludeError(f"The includes form a cycle: {cycle}.")
     if file_path not in cache:
         loaded_config = load_yaml(file_path)
         _resolve_includes(
-            loaded_config, file_path, include_root, {*active_paths, file_path}, cache
+            loaded_config, file_path, include_root, [*active_paths, file_path], cache
         )
         cache[file_path] = loaded_config
     try:

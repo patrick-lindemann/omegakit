@@ -617,3 +617,10 @@ def test_key_annotation_that_omegaconf_does_not_support_is_rejected(field: str):
     with pytest.raises(SchemaDefinitionError) as error_info:
         validate(config, _Keyed)
     assert not isinstance(error_info.value, ConfigValidationError)
+
+
+def test_unknown_key_names_the_fields_of_its_schema():
+    config = OmegaConf.create({"scael": 0.5})
+    with pytest.raises(ConfigSchemaError, match="scael") as error_info:
+        validate(config, _Parts)
+    error_info.match("`scale`")

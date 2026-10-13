@@ -327,8 +327,9 @@ def test_rejects_a_cycle_between_files(tmp_path: Path):
     (tmp_path / "b.yaml").write_text("a: ~include a.yaml")
     path = tmp_path / "main.yaml"
     path.write_text("a: ~include a.yaml")
-    with pytest.raises(ConfigIncludeError, match=r"a\.yaml"):
+    with pytest.raises(ConfigIncludeError, match=r"a\.yaml") as error_info:
         _load(path)
+    error_info.match(r"b\.yaml")
 
 
 def test_finds_a_cycle_through_another_spelling_of_a_path(tmp_path: Path):

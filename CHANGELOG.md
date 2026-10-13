@@ -160,6 +160,12 @@ All notable changes to this project are documented here. The format follows
   not a mapping, a missing attribute (``Module `m` has no attribute `x`.``), an
   include cycle, a `$partial` that is not a boolean, an `overrides` argument of the
   wrong type, and a missing PyTorch.
+- Error messages say more about the fix: a `???` says to set the value in the
+  config or with an override, an unknown key lists the fields of its schema, a
+  module that is not found asks to check its spelling and `sys.path`, an include
+  cycle lists its files, and a field that a schema cannot have says which of the
+  three reasons applies. The traceback of a `???` no longer starts with
+  OmegaConf's own error.
 - **Breaking:** `omegakit check` and `omegakit show` take overrides as
   `--overrides KEY=VALUE ...`, and every other argument is a config file.
   They used to guess whether an argument was a file or an override. Replace

@@ -24,7 +24,8 @@ def locate(qualified_name: str) -> Any:
         if error.name is None or not f"{module_path}.".startswith(f"{error.name}."):
             raise
         raise QualifiedNameNotFoundError(
-            f"There is no module `{error.name}`."
+            f"There is no module `{error.name}`. Check its spelling, and that it is "
+            "installed or on `sys.path`."
         ) from error
     target = getattr(module, attr_name, _NOT_FOUND)
     if target is not _NOT_FOUND:

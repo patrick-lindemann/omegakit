@@ -267,7 +267,8 @@ def _check_schema(
         if unknown_keys:
             raise ConfigSchemaError(
                 f"{', '.join(f'`{key}`' for key in unknown_keys)} is not a field of "
-                f"`{schema.__qualname__}`."
+                f"`{schema.__qualname__}`. Its fields are "
+                f"{', '.join(f'`{key}`' for key in fields)}."
             )
         repeated_keys = [key for key in keys if key in positional_keys]
         if repeated_keys:
@@ -328,10 +329,12 @@ def _check_value(
 def _read_value(parent: Config, key: Any) -> Any:
     try:
         return parent[key]
-    except MissingMandatoryValue as error:
+    except MissingMandatoryValue:
+        # The error of OmegaConf says the same and would only lengthen the traceback
         raise ValidationMissingValueError(
-            "The value is `???`.", parent._get_full_key(key)
-        ) from error
+            "The value is `???`. Set it in the config or with an override.",
+            parent._get_full_key(key),
+        ) from None
     except InterpolationResolutionError as error:
         raise ValidationInterpolationError(
             f"Cannot resolve the value: {describe_error(error)}",
