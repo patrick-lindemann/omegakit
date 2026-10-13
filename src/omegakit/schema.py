@@ -102,6 +102,20 @@ def find_item_annotation(
     return item_annotations[-1] if item_annotations else Any
 
 
+def find_tuple_annotations(annotation: Any, length: int) -> list[Any] | None:
+    members = [
+        member for member in split_union(annotation) if member is not types.NoneType
+    ]
+    if len(members) != 1 or (get_origin(members[0]) or members[0]) is not tuple:
+        return None
+    item_annotations = get_args(members[0])
+    if not item_annotations:
+        return [Any] * length
+    if item_annotations[-1] is Ellipsis:
+        return [item_annotations[0]] * length
+    return list(item_annotations)
+
+
 @functools.cache
 def read_fields(schema: type) -> dict[str, SchemaField]:
     try:
@@ -131,19 +145,19 @@ def read_fields(schema: type) -> dict[str, SchemaField]:
         sections = [
             member for member in split_union(annotation) if is_typeddict(member)
         ]
-        is_data = _is_data(annotation)
+        is_plain = is_data(annotation)
         if (
             not name.isidentifier()
             or keyword.iskeyword(name)
             or len(sections) > 1
-            or (not is_data and not _is_object(annotation))
+            or (not is_plain and not _is_object(annotation))
         ):
             raise SchemaDefinitionError(
                 f"`{schema.__qualname__}.{name}` is annotated with `{annotation}`. A "
                 "key is a Python identifier, and its annotation is what OmegaConf "
                 "supports, one `TypedDict` or a class."
             )
-        fields[name] = SchemaField(annotation, is_data, is_required)
+        fields[name] = SchemaField(annotation, is_plain, is_required)
     return fields
 
 
@@ -164,7 +178,23 @@ def convert_data(schema: type, values: dict[str, Any]) -> dict[str, Any]:
     return {key: converted_values[key] for key in values}
 
 
-def _is_data(annotation: Any) -> bool:
+def convert_item(annotation: Any, value: Any) -> Any:
+    try:
+        structure = _make_item_structure(annotation)
+    # An annotation that cannot be hashed, such as `Literal[[1, 2]]`
+    except TypeError:
+        structure = _make_item_structure.__wrapped__(annotation)
+    try:
+        typed_item = OmegaConf.structured(structure(item=_escape_texts(value)))
+        converted_item: Any = OmegaConf.to_container(typed_item, resolve=True)
+    except (OmegaConfBaseException, OverflowError) as error:
+        raise SchemaValueError(
+            f"The item does not match `{annotation}`: {describe_error(error)}"
+        ) from error
+    return converted_item["item"]
+
+
+def is_data(annotation: Any) -> bool:
     try:
         return _is_data_cached(annotation)
     # An annotation that cannot be hashed, such as `Literal[[1, 2]]`, is probed anew
@@ -182,7 +212,12 @@ def _is_data_cached(annotation: Any) -> bool:
     if annotation is Any or is_object:
         return False
     item_annotation = find_item_annotation(annotation)
-    if item_annotation is not None and not _is_data(item_annotation):
+    if item_annotation is not None and not is_data(item_annotation):
+        return False
+    tuple_annotations = find_tuple_annotations(annotation, 1)
+    if tuple_annotations is not None and not all(
+        is_data(item) for item in tuple_annotations
+    ):
         return False
     probe = dataclasses.make_dataclass("Probe", [("value", annotation)])
     try:
@@ -215,10 +250,15 @@ def _is_object(annotation: Any) -> bool:
             if not _is_object(item_annotation):
                 return False
             continue
+        tuple_annotations = find_tuple_annotations(member, 1)
+        if tuple_annotations is not None:
+            if not all(_is_object(item) for item in tuple_annotations):
+                return False
+            continue
         cls = get_origin(member) or member
         if (
             not isinstance(cls, type)
-            or cls in (tuple, set, frozenset)
+            or cls in (set, frozenset)
             or (cls.__module__ == "collections.abc" and cls is not Callable)
         ):
             return False
@@ -237,6 +277,11 @@ def _escape_texts(value: Any) -> Any:
     if re.fullmatch(r"\\*\?\?\?", escaped_value):
         return f"\\{escaped_value}"
     return escaped_value
+
+
+@functools.cache
+def _make_item_structure(annotation: Any) -> type:
+    return dataclasses.make_dataclass("Item", [("item", annotation)])
 
 
 @functools.cache

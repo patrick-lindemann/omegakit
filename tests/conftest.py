@@ -110,6 +110,8 @@ class Experiment:
     schedule: Callable[..., Any] | None = None
     extra: Any = None
     backbone: ModelConfig | None = None
+    pair: tuple[Item, float] | None = None
+    phases: tuple[ModelConfig, ...] = ()
 
 
 class BrokenModel(Model):

@@ -271,6 +271,26 @@ def test_accepts_a_config_that_matches_its_schemas(targets: ModuleType):
             SchemaMissingValueError,
             "experiment.schedules.warmup",
         ),
+        (
+            {"pair": [{"$target": "config_targets.Item"}, "x"]},
+            SchemaValueError,
+            "experiment.pair[1]",
+        ),
+        (
+            {"pair": [{"$target": "config_targets.Item"}]},
+            SchemaValueError,
+            "experiment.pair",
+        ),
+        (
+            {"pair": [{"$target": "config_targets.Model", "depth": 1}, 0.5]},
+            SchemaTypeError,
+            "experiment.pair[0]",
+        ),
+        (
+            {"phases": [{"depth": 1}, {"depht": 2}]},
+            SchemaKeyError,
+            "experiment.phases[1]",
+        ),
     ],
 )
 def test_value_that_does_not_match_its_schema_is_rejected(

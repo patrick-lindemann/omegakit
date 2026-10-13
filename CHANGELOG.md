@@ -80,6 +80,13 @@ All notable changes to this project are documented here. The format follows
   class. It used to pass unchecked. `prepare(config, Class)` raises
   `SchemaTypeError` for a root whose `$target` is a function, since the result of a
   partial cannot be checked.
+- **Breaking:** A tuple may hold objects and mappings, and every position follows
+  its annotation: in `pair: tuple[nn.Module, float]` the first item is checked by
+  its class and the second is converted, and the items of
+  `phases: tuple[OptimizerConfig, ...]` are checked against the `TypedDict`. A
+  tuple that is annotated with a class raised `SchemaDefinitionError`, and a mapping
+  in a tuple of schemas was not checked. A wrong number of items raises
+  `SchemaValueError`, as in ``Expected 2 items, but the config gives 1.``
 - **Breaking:** A `Configurable` names its schema in the class attribute `schema`
   instead of a type argument: replace `class Model(Configurable[ModelConfig])` with
   `class Model(Configurable)` and `schema = ModelConfig` in its body. `from_config`

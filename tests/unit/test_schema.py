@@ -22,6 +22,7 @@ from omegakit.schema import (
     SchemaTypeError,
     SchemaValueError,
     convert_data,
+    convert_item,
     find_schema,
     read_fields,
 )
@@ -126,6 +127,9 @@ def test_field_that_omegaconf_supports_is_data(annotation: Any):
         _Section | None,
         list[_Section],
         dict[str, list[_Section]],
+        tuple[_Encoder, ...],
+        tuple[_Encoder, float],
+        tuple[_LayerConfig, ...] | None,
     ],
 )
 def test_field_that_holds_objects_is_not_data(annotation: Any):
@@ -140,7 +144,7 @@ def test_field_that_holds_objects_is_not_data(annotation: Any):
         set[int],
         frozenset,
         Sequence[int],
-        tuple[_Encoder, ...],
+        tuple[_Encoder, set[int]],
         list[set[int]],
         _Encoder | Literal["auto"],
     ],
@@ -250,6 +254,13 @@ def test_text_is_not_read_as_an_interpolation_or_a_missing_value(
         convert_data(targets.Optimizer, {"lr": text})
     with pytest.raises(SchemaValueError):
         convert_data(targets.Optimizer, {"betas": [0.5, text]})
+
+
+def test_item_is_converted_as_its_annotation():
+    assert convert_item(float, "0.5") == 0.5
+    assert convert_item(_Color, "RED") is _Color.RED
+    with pytest.raises(SchemaValueError):
+        convert_item(float, "high")
 
 
 def test_number_that_is_too_large_is_rejected(targets: ModuleType):

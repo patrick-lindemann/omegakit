@@ -15,10 +15,14 @@ from .schema import (
     SchemaKeyError,
     SchemaMissingValueError,
     SchemaTypeError,
+    SchemaValueError,
     convert_data,
+    convert_item,
     find_item_annotation,
     find_schema,
     find_section,
+    find_tuple_annotations,
+    is_data,
     read_fields,
     split_union,
 )
@@ -102,11 +106,7 @@ def _check_node(
     containers = (dict,) if isinstance(node, DictConfig) else (list,)
     item_annotation = find_item_annotation(annotation, containers) or Any
     if not isinstance(node, DictConfig):
-        items = [
-            _check_value(node, index, active_nodes, item_annotation)
-            for index in range(len(node))
-        ]
-        return Items(items if isinstance(node, ListConfig) else tuple(items))
+        return _check_items(node, active_nodes, annotation, item_annotation)
     if TARGET_KEY in node.keys():  # noqa: SIM118
         return _check_call(node, active_nodes, is_deferred)
     try:
@@ -131,6 +131,39 @@ def _check_node(
     # A mapping that is checked against a schema stays a mapping
     arguments = _check_schema(node, section, keys, active_nodes, False)
     return Items(arguments)
+
+
+def _check_items(
+    node: ListConfig | TupleConfig,
+    active_nodes: list[DictConfig | ListConfig | TupleConfig],
+    annotation: Any,
+    item_annotation: Any,
+) -> Items:
+    item_annotations = find_tuple_annotations(annotation, len(node))
+    is_tuple = item_annotations is not None or not isinstance(node, ListConfig)
+    if item_annotations is None:
+        item_annotations = [item_annotation] * len(node)
+    if len(item_annotations) != len(node):
+        length_error = SchemaValueError(
+            f"Expected {len(item_annotations)} items, but the config gives {len(node)}."
+        )
+        length_error.add_note(f"  at {describe_node(node)}")
+        raise length_error
+    items = []
+    for index, position_annotation in enumerate(item_annotations):
+        if not (is_tuple and is_data(position_annotation)):
+            item = _check_value(node, index, active_nodes, position_annotation)
+            items.append(item)
+            continue
+        # A plain position of a tuple is converted like a plain field
+        item = _check_value(node, index, active_nodes, Any)
+        try:
+            converted_item = convert_item(position_annotation, _unwrap_data(item))
+        except OmegaKitBaseException as error:
+            error.add_note(f"  at `{node._get_full_key(index)}`")
+            raise
+        items.append(converted_item)
+    return Items(tuple(items) if is_tuple else items)
 
 
 def _check_call(

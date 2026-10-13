@@ -348,6 +348,22 @@ def test_field_that_is_annotated_with_a_schema_holds_a_dict(targets: ModuleType)
         instantiate(config, targets.Experiment)
 
 
+def test_every_position_of_a_tuple_follows_its_annotation(targets: ModuleType):
+    config = OmegaConf.create(
+        {
+            "$target": "config_targets.Experiment",
+            "model": {"$target": "config_targets.Model", "depth": 2},
+            "pair": [{"$target": "config_targets.SmallItem"}, "0.5"],
+            "phases": [{"depth": "1"}, {"depth": 2, "activation": "tanh"}],
+        }
+    )
+    experiment = instantiate(config)
+    assert type(experiment.pair) is tuple
+    assert type(experiment.pair[0]) is targets.SmallItem
+    assert experiment.pair[1] == 0.5
+    assert experiment.phases == ({"depth": 1}, {"depth": 2, "activation": "tanh"})
+
+
 def test_target_that_names_a_schema_is_rejected(targets: ModuleType):
     config = OmegaConf.create({"$target": "config_targets.ModelConfig", "depth": 3})
     with pytest.raises(SchemaTypeError, match="ModelConfig"):
