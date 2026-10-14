@@ -6,7 +6,7 @@ from omegaconf import DictConfig
 
 from .config import cast_config
 from .errors import ConfigSchemaError, ConfigTargetError
-from .features.target import TARGET_KEY
+from .features import TARGET_KEY
 from .schema import read_fields, union_members
 from .utils.describe import describe_node, get_full_key
 from .validate import Call, Items, check

@@ -16,7 +16,7 @@ from omegakit._core.errors import (
     ValidationInterpolationError,
     ValidationMissingValueError,
 )
-from omegakit._core.features.target import make_node
+from omegakit._core.features import make_node
 from omegakit._core.instantiate import instantiate, prepare
 
 

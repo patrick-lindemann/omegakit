@@ -3,11 +3,13 @@ from typing import Any
 from omegaconf import DictConfig
 
 from .errors import ConfigFileSyntaxError
-from .features.base import merge_bases
-from .features.each import apply_each
-from .features.include import resolve_includes
-from .features.meta import remove_meta
-from .features.overrides import apply_overrides
+from .features import (
+    apply_each,
+    apply_overrides,
+    merge_bases,
+    remove_meta,
+    resolve_includes,
+)
 from .utils.file import load_yaml
 from .utils.path import PathLike, resolve_path
 
