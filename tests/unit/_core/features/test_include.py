@@ -11,7 +11,7 @@ from omegakit._core.errors import (
     IncludeRootError,
 )
 from omegakit._core.features.include import resolve_includes
-from omegakit._core.utils.file import load_yaml
+from omegakit._core.utils.yaml import load_yaml
 
 
 def _load(path: Path):

@@ -10,8 +10,8 @@ from .features import (
     remove_meta,
     resolve_includes,
 )
-from .utils.file import load_yaml
 from .utils.path import PathLike, resolve_path
+from .utils.yaml import load_yaml
 
 
 def load_config(

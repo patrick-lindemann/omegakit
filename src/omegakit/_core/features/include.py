@@ -17,9 +17,9 @@ from omegakit._core.errors import (
 )
 from omegakit._core.utils.copy import copy_with_root
 from omegakit._core.utils.describe import describe_error
-from omegakit._core.utils.file import load_yaml
 from omegakit._core.utils.path import PathLike, resolve_path
 from omegakit._core.utils.walk import walk
+from omegakit._core.utils.yaml import load_yaml
 
 INCLUDE_PREFIX = "~include"
 
