@@ -13,7 +13,9 @@ from .annotations import find_key_annotation
 from .fields import read_fields
 
 
-def convert_plain_values(schema: type, values: dict[str, Any]) -> dict[str, Any]:
+def convert_plain_values(
+    schema: type, values: dict[str, Any], full_key: str
+) -> dict[str, Any]:
     structure = _make_plain_values_dataclass(schema)
     escaped_values = {
         key: _escape_omegaconf_syntax(value) for key, value in values.items()
@@ -24,10 +26,14 @@ def convert_plain_values(schema: type, values: dict[str, Any]) -> dict[str, Any]
         converted_values: Any = OmegaConf.to_container(typed_values, resolve=True)
     # A number that is too large for a `float` raises an `OverflowError`
     except (OmegaConfBaseException, OverflowError) as error:
-        full_key = getattr(error, "full_key", None)
-        key = f"`{full_key}`" if full_key else "A value"
+        # The key of the value within the mapping, such as `betas[1]`
+        value_key = getattr(error, "full_key", None)
+        if value_key:
+            full_key = f"{full_key}.{value_key}" if full_key else value_key
         raise ConfigSchemaError(
-            f"{key} does not match `{schema.__qualname__}`: {describe_error(error)}"
+            f"The value does not match `{schema.__qualname__}`: "
+            f"{describe_error(error)}",
+            full_key,
         ) from error
     return {key: converted_values[key] for key in values}
 

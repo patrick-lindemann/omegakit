@@ -26,7 +26,7 @@ def test_plain_values_are_converted_as_omegaconf_converts_them(targets: ModuleTy
         "betas": [0.5, "0.75"],
         "log_dir": "runs/first",
     }
-    converted = convert_plain_values(targets.Optimizer, values)
+    converted = convert_plain_values(targets.Optimizer, values, "")
     assert converted == {
         "lr": 0.001,
         "mode": targets.Mode.SLOW,
@@ -50,8 +50,14 @@ def test_plain_value_that_does_not_match_is_rejected(
     targets: ModuleType, values: dict[str, Any], key: str
 ):
     with pytest.raises(ConfigSchemaError, match="Optimizer") as error_info:
-        convert_plain_values(targets.Optimizer, values)
-    assert key in str(error_info.value)
+        convert_plain_values(targets.Optimizer, values, "optimizer")
+    assert error_info.value.full_key == f"optimizer.{key}"
+
+
+def test_plain_value_of_the_root_is_named_by_its_own_key(targets: ModuleType):
+    with pytest.raises(ConfigSchemaError) as error_info:
+        convert_plain_values(targets.Optimizer, {"lr": "fast"}, "")
+    assert error_info.value.full_key == "lr"
 
 
 @pytest.mark.parametrize(
@@ -64,13 +70,13 @@ def test_text_is_not_read_as_an_interpolation_or_a_missing_value(
         "Schema", [("name", str), ("names", dict[str, list[str]]), ("lr", float)]
     )
     values = {"name": text, "names": {"first": [text, "plain"]}, "lr": 1}
-    converted = convert_plain_values(schema, values)
+    converted = convert_plain_values(schema, values, "")
     assert converted["name"] == text
     assert converted["names"] == {"first": [text, "plain"]}
     with pytest.raises(ConfigSchemaError):
-        convert_plain_values(targets.Optimizer, {"lr": text})
+        convert_plain_values(targets.Optimizer, {"lr": text}, "")
     with pytest.raises(ConfigSchemaError):
-        convert_plain_values(targets.Optimizer, {"betas": [0.5, text]})
+        convert_plain_values(targets.Optimizer, {"betas": [0.5, text]}, "")
 
 
 def test_item_is_converted_as_its_annotation():
@@ -82,4 +88,4 @@ def test_item_is_converted_as_its_annotation():
 
 def test_number_that_is_too_large_is_rejected(targets: ModuleType):
     with pytest.raises(ConfigSchemaError, match="Optimizer"):
-        convert_plain_values(targets.Optimizer, {"lr": 10**400})
+        convert_plain_values(targets.Optimizer, {"lr": 10**400}, "")

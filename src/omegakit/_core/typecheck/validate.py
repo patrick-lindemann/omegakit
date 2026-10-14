@@ -305,7 +305,9 @@ def _check_schema(
             for key, value in arguments.items()
             if fields[key].is_plain_value
         }
-        converted_values = convert_plain_values(schema, plain_values)
+        converted_values = convert_plain_values(
+            schema, plain_values, get_full_key(node)
+        )
     except OmegaKitBaseException as error:
         if error.full_key is None:
             error.full_key = get_full_key(node)

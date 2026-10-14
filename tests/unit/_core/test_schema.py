@@ -295,7 +295,7 @@ def test_accepts_a_config_that_matches_its_schemas(targets: ModuleType):
     ("values", "error_type", "full_key"),
     [
         ({"sed": 1}, ConfigSchemaError, "experiment"),
-        ({"seed": "many"}, ConfigSchemaError, "experiment"),
+        ({"seed": "many"}, ConfigSchemaError, "experiment.seed"),
         ({"seed": "???"}, ValidationMissingValueError, "experiment.seed"),
         ({"optimizer": {**_OPTIMIZER}}, ConfigSchemaError, "experiment.optimizer"),
         (
@@ -306,7 +306,7 @@ def test_accepts_a_config_that_matches_its_schemas(targets: ModuleType):
         (
             {"optimizer": {**_OPTIMIZER, "lr": 1, "betas": [1]}},
             ConfigSchemaError,
-            "experiment.optimizer",
+            "experiment.optimizer.betas",
         ),
         (
             {"optimizer": {**_OPTIMIZER, "lr": "???"}},
@@ -321,7 +321,7 @@ def test_accepts_a_config_that_matches_its_schemas(targets: ModuleType):
         (
             {"stages": [{**_OPTIMIZER, "lr": 1}, {**_OPTIMIZER, "lr": "x"}]},
             ConfigSchemaError,
-            "experiment.stages[1]",
+            "experiment.stages[1].lr",
         ),
         (
             {"schedules": {"warmup": {**_OPTIMIZER, "steps": 2}}},
@@ -435,23 +435,23 @@ def test_field_that_is_annotated_with_a_schema_takes_a_mapping(targets: ModuleTy
 
 
 @pytest.mark.parametrize(
-    "backbone",
+    ("backbone", "full_key"),
     [
-        {"depth": "deep"},
-        {"depth": 2, "width": 2},
-        {"activation": "tanh"},
-        {"$target": "tests.targets.Model", "depth": 2},
-        {"$target": "tests.targets.ModelConfig", "depth": 2},
-        {"$symbol": "tests.targets.ITEM"},
-        [1, 2],
+        ({"depth": "deep"}, "experiment.backbone.depth"),
+        ({"depth": 2, "width": 2}, "experiment.backbone"),
+        ({"activation": "tanh"}, "experiment.backbone"),
+        ({"$target": "tests.targets.Model", "depth": 2}, "experiment.backbone"),
+        ({"$target": "tests.targets.ModelConfig", "depth": 2}, "experiment.backbone"),
+        ({"$symbol": "tests.targets.ITEM"}, "experiment.backbone"),
+        ([1, 2], "experiment.backbone"),
     ],
 )
 def test_field_that_is_annotated_with_a_schema_rejects_what_is_no_such_mapping(
-    targets: ModuleType, backbone: Any
+    targets: ModuleType, backbone: Any, full_key: str
 ):
     with pytest.raises(ConfigSchemaError) as error_info:
         validate(_make_experiment(backbone=backbone), targets.Experiment)
-    error_info.match(re.escape("at `experiment.backbone`"))
+    error_info.match(re.escape(f"at `{full_key}`"))
     assert targets.CALLS == []
 
 
