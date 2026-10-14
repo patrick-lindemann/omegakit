@@ -1,4 +1,5 @@
 import re
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -14,7 +15,6 @@ from omegakit._core.errors import (
     IncludeRootError,
     OmegaKitBaseException,
 )
-from omegakit._core.utils.assignment import Assignment
 from omegakit._core.utils.copy import copy_with_root
 from omegakit._core.utils.describe import describe_error
 from omegakit._core.utils.file import load_yaml
@@ -25,6 +25,13 @@ INCLUDE_PREFIX = "~include"
 
 _INCLUDE_PATTERN = re.compile(rf"{INCLUDE_PREFIX}(\s|$)")
 _NOT_FOUND = object()
+
+
+@dataclass(frozen=True)
+class _Assignment:
+    parent: DictConfig | ListConfig
+    key: Any
+    value: Any
 
 
 def resolve_includes[TConfig: DictConfig | ListConfig | TupleConfig](
@@ -52,7 +59,7 @@ def _resolve_includes(
     cache: dict[Path, DictConfig | ListConfig],
 ) -> None:
     # Assigned after the walk, so that no include sees the result of another
-    included_values: list[Assignment] = []
+    included_values: list[_Assignment] = []
     for node in walk(config):
         value = node._value()
         if not isinstance(value, str) or not _INCLUDE_PATTERN.match(value):
@@ -75,7 +82,7 @@ def _resolve_includes(
                     f"`{config_path}`"
                 )
             raise
-        included_values.append(Assignment(parent, node._key(), included_value))
+        included_values.append(_Assignment(parent, node._key(), included_value))
     for assignment in included_values:
         assignment.parent[assignment.key] = assignment.value
 
