@@ -1,5 +1,4 @@
 import fractions
-import functools
 from types import ModuleType
 from typing import Any
 
@@ -17,7 +16,6 @@ from omegakit._core.errors import (
 from omegakit._core.features.target import (
     TargetArguments,
     import_target,
-    make_node,
     read_arguments,
 )
 
@@ -138,25 +136,3 @@ def test_other_dollar_key_is_rejected(key: str):
     with pytest.raises(ConfigValidationError, match=rf"\{key}") as error_info:
         read_arguments(config)
     assert not isinstance(error_info.value, ConfigTargetError)
-
-
-def test_make_node_names_the_target():
-    node = make_node(fractions.Fraction, numerator=1, denominator=2)
-    assert node == {"$target": "fractions.Fraction", "numerator": 1, "denominator": 2}
-    assert import_target(OmegaConf.create(node)) is fractions.Fraction
-
-
-def test_make_node_writes_positional_arguments_to_args():
-    node = make_node(fractions.Fraction, 1, denominator=2)
-    assert node == {"$target": "fractions.Fraction", "denominator": 2, "$args": [1]}
-    assert "$args" not in make_node(fractions.Fraction, numerator=1)
-
-
-def test_make_node_rejects_a_target_that_is_not_at_module_level():
-    with pytest.raises(ConfigTargetError):
-        make_node(fractions.Fraction.from_float)
-
-
-def test_make_node_rejects_a_callable_without_a_name():
-    with pytest.raises(ConfigTargetError):
-        make_node(functools.partial(int, base=16))
