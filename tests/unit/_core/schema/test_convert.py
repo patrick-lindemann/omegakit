@@ -4,7 +4,7 @@ import dataclasses
 import enum
 from pathlib import Path
 from types import ModuleType
-from typing import Any, NotRequired, Required, TypedDict
+from typing import Any
 
 import pytest
 
@@ -17,35 +17,6 @@ from omegakit._core.schema.convert import convert_data, convert_item
 class _Color(enum.Enum):
     RED = "red"
     BLUE = "blue"
-
-
-class _Encoder:
-    pass
-
-
-@dataclasses.dataclass
-class _Section:
-    width: int = 1
-
-
-class _LayerConfig(TypedDict):
-    width: int
-    bias: NotRequired[bool]
-    encoder: NotRequired[_Encoder | None]
-
-
-class _WideLayerConfig(_LayerConfig, total=False):
-    scale: float
-    name: Required[str]
-
-
-class _NetworkConfig(TypedDict):
-    layer: _LayerConfig
-    layers: list[_LayerConfig]
-
-
-def _make_schema(annotation: Any) -> type:
-    return dataclasses.make_dataclass("Schema", [("value", annotation)])
 
 
 def test_data_is_converted_as_omegaconf_converts_it(targets: ModuleType):
