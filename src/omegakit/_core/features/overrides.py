@@ -10,7 +10,7 @@ from omegakit._core.utils.copy import copy_with_root
 from omegakit._core.utils.describe import describe_error
 from omegakit._core.utils.walk import walk
 
-from .include import INCLUDE_PREFIX
+from .include import INCLUDE_KEY
 
 
 @overload
@@ -87,7 +87,7 @@ def _parse_dotlist_item(item: Any) -> DictConfig:
         ) from error
     for node in walk(parsed_item):
         value = node._value()
-        if isinstance(value, str) and value.split(maxsplit=1)[:1] == [INCLUDE_PREFIX]:
+        if isinstance(value, str) and value.split(maxsplit=1)[:1] == [INCLUDE_KEY]:
             raise ConfigOverrideError(
                 f"`{item}` cannot include a file: the includes are resolved before "
                 "the overrides are applied."

@@ -1,6 +1,6 @@
 from .base import BASE_KEY, merge_bases
 from .each import EACH_KEY, apply_each
-from .include import INCLUDE_PREFIX, resolve_includes
+from .include import INCLUDE_KEY, resolve_includes
 from .meta import META_KEY, remove_meta
 from .overrides import apply_overrides
 from .symbol import SYMBOL_KEY, import_symbol
@@ -18,7 +18,7 @@ __all__ = [
     "ARGS_KEY",
     "BASE_KEY",
     "EACH_KEY",
-    "INCLUDE_PREFIX",
+    "INCLUDE_KEY",
     "META_KEY",
     "PARTIAL_KEY",
     "SYMBOL_KEY",

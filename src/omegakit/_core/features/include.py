@@ -21,9 +21,9 @@ from omegakit._core.utils.path import PathLike, resolve_path
 from omegakit._core.utils.walk import walk
 from omegakit._core.utils.yaml import load_yaml
 
-INCLUDE_PREFIX = "~include"
+INCLUDE_KEY = "~include"
 
-_INCLUDE_PATTERN = re.compile(rf"{INCLUDE_PREFIX}(\s|$)")
+_INCLUDE_PATTERN = re.compile(rf"{INCLUDE_KEY}(\s|$)")
 _NOT_FOUND = object()
 
 
@@ -143,7 +143,7 @@ def _load_include(
 
 
 def _parse_statement(statement: str) -> tuple[Path, str]:
-    include_arg = statement[len(INCLUDE_PREFIX) :]
+    include_arg = statement[len(INCLUDE_KEY) :]
     file_path, _, node_path = include_arg.partition("#")
     file_path = file_path.strip()
     node_path = node_path.strip()
