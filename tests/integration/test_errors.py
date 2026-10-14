@@ -64,12 +64,12 @@ def test_missing_file_is_a_load_error(tmp_path: Path):
     [
         ({"lr": "???"}, ValidationMissingValueError, "model.lr"),
         ({"lr": "${nope}"}, ValidationInterpolationError, "model.lr"),
-        ({"$target": "config_targets.Nope"}, QualifiedNameNotFoundError, "model"),
+        ({"$target": "tests.targets.Nope"}, QualifiedNameNotFoundError, "model"),
         ({"$target": "nomodule"}, QualifiedNameSyntaxError, "model"),
         ({"$target": "math.pi"}, ConfigTargetError, "model"),
         ({"$symbol": "math.pi", "digits": 2}, ConfigSymbolError, "model"),
         (
-            {"$target": "config_targets.Model", "dpeth": 1},
+            {"$target": "tests.targets.Model", "dpeth": 1},
             ConfigSchemaError,
             "model",
         ),

@@ -31,10 +31,10 @@ def test_builds_the_object_of_a_class():
 def test_nested_classes_are_built_as_arguments(targets: ModuleType):
     config = OmegaConf.create(
         {
-            "$target": "config_targets.Item",
-            "inner": {"$target": "config_targets.Item", "name": "inner"},
-            "items": [{"$target": "config_targets.Item", "name": "listed"}],
-            "pair": ({"$target": "config_targets.Item", "name": "paired"}, 2),
+            "$target": "tests.targets.Item",
+            "inner": {"$target": "tests.targets.Item", "name": "inner"},
+            "items": [{"$target": "tests.targets.Item", "name": "listed"}],
+            "pair": ({"$target": "tests.targets.Item", "name": "paired"}, 2),
             "plain": {"depth": {"width": 3}},
             "name": "outer",
         }
@@ -55,8 +55,8 @@ def test_every_read_of_a_class_builds_its_own_object(
     targets: ModuleType, is_reversed: bool
 ):
     content = {
-        "model": {"$target": "config_targets.Item", "name": "model"},
-        "trainer": {"$target": "config_targets.Item", "model": "${model}"},
+        "model": {"$target": "tests.targets.Item", "name": "model"},
+        "trainer": {"$target": "tests.targets.Item", "model": "${model}"},
         "tester": {"models": [{"model": "${model}"}]},
         "same": "${model}",
     }
@@ -78,10 +78,10 @@ def test_every_read_of_a_class_builds_its_own_object(
 def test_symbol_gives_the_same_object_everywhere(targets: ModuleType):
     config = OmegaConf.create(
         {
-            "$target": "config_targets.Item",
-            "settings": {"$symbol": "config_targets.SETTINGS"},
+            "$target": "tests.targets.Item",
+            "settings": {"$symbol": "tests.targets.SETTINGS"},
             "again": "${settings}",
-            "pair": ({"$symbol": "config_targets.SETTINGS"}, 1),
+            "pair": ({"$symbol": "tests.targets.SETTINGS"}, 1),
         }
     )
     kwargs = instantiate(config).kwargs
@@ -95,12 +95,12 @@ def test_partial_gives_a_partial_of_the_target(targets: ModuleType):
         {
             "$target": "builtins.dict",
             "make": {
-                "$target": "config_targets.Item",
+                "$target": "tests.targets.Item",
                 "$partial": True,
                 "name": "made",
-                "inner": {"$target": "config_targets.Item", "name": "inner"},
+                "inner": {"$target": "tests.targets.Item", "name": "inner"},
             },
-            "built": {"$target": "config_targets.Item", "$partial": False},
+            "built": {"$target": "tests.targets.Item", "$partial": False},
         }
     )
     experiment = instantiate(config)
@@ -117,9 +117,9 @@ def test_partial_gives_a_partial_of_the_target(targets: ModuleType):
 def test_prepare_defers_the_node_itself(targets: ModuleType):
     config = OmegaConf.create(
         {
-            "$target": "config_targets.Item",
-            "inner": {"$target": "config_targets.Item", "name": "inner"},
-            "later": {"$target": "config_targets.Item", "$partial": True},
+            "$target": "tests.targets.Item",
+            "inner": {"$target": "tests.targets.Item", "name": "inner"},
+            "later": {"$target": "tests.targets.Item", "$partial": True},
         }
     )
     make_item = prepare(config)
@@ -137,12 +137,12 @@ def test_target_with_from_config_receives_the_arguments(targets: ModuleType, pat
         {
             "$target": "builtins.dict",
             "now": {
-                "$target": f"config_targets.{path}",
+                "$target": f"tests.targets.{path}",
                 "width": 3,
-                "inner": {"$target": "config_targets.Item"},
+                "inner": {"$target": "tests.targets.Item"},
             },
             "later": {
-                "$target": f"config_targets.{path}",
+                "$target": f"tests.targets.{path}",
                 "$partial": True,
                 "a": 1,
             },
@@ -178,14 +178,14 @@ def test_args_are_the_positional_arguments_of_the_target():
 
 
 def test_dataclass_binds_args_to_its_fields(targets: ModuleType):
-    optimizer = {"$target": "config_targets.Optimizer", "$args": ["0.5", "3"]}
+    optimizer = {"$target": "tests.targets.Optimizer", "$args": ["0.5", "3"]}
     config = OmegaConf.create(optimizer)
     assert instantiate(config) == targets.Optimizer(lr=0.5, steps=3)
     config = OmegaConf.create({**optimizer, "$args": ["0.5"], "mode": "slow"})
     assert instantiate(config) == targets.Optimizer(lr=0.5, mode=targets.Mode.SLOW)
     make_optimizer = instantiate(OmegaConf.create({**optimizer, "$partial": True}))
     assert make_optimizer(mode=targets.Mode.SLOW).steps == 3
-    scaled = OmegaConf.create({"$target": "config_targets.Scaled", "$args": ["2", 3]})
+    scaled = OmegaConf.create({"$target": "tests.targets.Scaled", "$args": ["2", 3]})
     assert instantiate(scaled) == targets.Scaled(2, 3)
 
 
@@ -208,7 +208,7 @@ def test_args_that_do_not_fit_a_dataclass_are_rejected(
     error_type: type[Exception],
     full_key: str,
 ):
-    optimizer = {"$target": "config_targets.Optimizer", **node}
+    optimizer = {"$target": "tests.targets.Optimizer", **node}
     config = OmegaConf.create({"optimizer": optimizer})
     with pytest.raises(error_type) as error_info:
         instantiate(config.optimizer)
@@ -219,18 +219,18 @@ def test_args_that_do_not_fit_a_dataclass_are_rejected(
 def test_items_of_args_are_built_before_the_keyword_arguments(targets: ModuleType):
     config = OmegaConf.create(
         {
-            "$target": "config_targets.make_item",
-            "last": {"$target": "config_targets.Item", "name": "keyword"},
+            "$target": "tests.targets.make_item",
+            "last": {"$target": "tests.targets.Item", "name": "keyword"},
             "$args": [
-                {"$target": "config_targets.Item", "name": "first"},
-                {"layers": [{"$target": "config_targets.Item", "name": "nested"}]},
-                {"$symbol": "config_targets.ITEM"},
+                {"$target": "tests.targets.Item", "name": "first"},
+                {"layers": [{"$target": "tests.targets.Item", "name": "nested"}]},
+                {"$symbol": "tests.targets.ITEM"},
             ],
         }
     )
     with pytest.raises(TypeError) as error_info:
         instantiate(config)
-    error_info.match(re.escape("while calling `config_targets.make_item` at the root"))
+    error_info.match(re.escape("while calling `tests.targets.make_item` at the root"))
     assert targets.CALLS == ["first", "nested", "keyword"]
 
 
@@ -269,22 +269,22 @@ def test_node_without_a_target_is_rejected(content: dict[str, Any]):
 @pytest.mark.parametrize(
     ("node", "error_type"),
     [
-        ({"$target": "config_targets.Item", "lr": "???"}, ValidationMissingValueError),
+        ({"$target": "tests.targets.Item", "lr": "???"}, ValidationMissingValueError),
         (
-            {"$target": "config_targets.Item", "lr": "${nowhere}"},
+            {"$target": "tests.targets.Item", "lr": "${nowhere}"},
             ValidationInterpolationError,
         ),
-        ({"$target": "config_targets.NoSuchName"}, QualifiedNameNotFoundError),
-        ({"$target": "config_targets.Item", "$foo": 1}, ConfigValidationError),
-        ({"$symbol": "config_targets.NoSuchName"}, QualifiedNameNotFoundError),
+        ({"$target": "tests.targets.NoSuchName"}, QualifiedNameNotFoundError),
+        ({"$target": "tests.targets.Item", "$foo": 1}, ConfigValidationError),
+        ({"$symbol": "tests.targets.NoSuchName"}, QualifiedNameNotFoundError),
     ],
 )
 def test_nothing_is_called_if_a_later_node_is_invalid(
     targets: ModuleType, node: dict[str, Any], error_type: type[Exception]
 ):
     content = {
-        "$target": "config_targets.Item",
-        "first": {"$target": "config_targets.Item"},
+        "$target": "tests.targets.Item",
+        "first": {"$target": "tests.targets.Item"},
         "later": [node],
     }
     config = OmegaConf.create(content)
@@ -298,9 +298,9 @@ def test_nothing_is_called_if_a_later_node_is_invalid(
 def test_config_that_contains_itself_is_rejected(targets: ModuleType):
     config = OmegaConf.create(
         {
-            "$target": "config_targets.Item",
-            "a": {"$target": "config_targets.Item", "other": "${b}"},
-            "b": {"$target": "config_targets.Item", "others": [{"other": "${a}"}]},
+            "$target": "tests.targets.Item",
+            "a": {"$target": "tests.targets.Item", "other": "${b}"},
+            "b": {"$target": "tests.targets.Item", "others": [{"other": "${a}"}]},
         }
     )
     with pytest.raises(ConfigValidationError, match="`a` -> `b`"):
@@ -313,15 +313,15 @@ def test_error_of_the_target_passes_through_with_a_note(targets: ModuleType):
         "name": "fail",
         "model": {
             "$target": "builtins.dict",
-            "first": {"$target": "config_targets.Item"},
-            "parts": [{"$target": "config_targets.${name}"}],
+            "first": {"$target": "tests.targets.Item"},
+            "parts": [{"$target": "tests.targets.${name}"}],
         },
     }
     config = OmegaConf.create(content)
     with pytest.raises(UnicodeDecodeError) as error_info:
         instantiate(config.model)
     error_info.match(
-        re.escape("while calling `config_targets.fail` at `model.parts[0]`")
+        re.escape("while calling `tests.targets.fail` at `model.parts[0]`")
     )
     assert config == content
 
@@ -335,7 +335,7 @@ def test_node_of_make_node_builds_the_target():
 
 def test_dataclass_is_built_from_converted_values(targets: ModuleType):
     content = {
-        "$target": "config_targets.Optimizer",
+        "$target": "tests.targets.Optimizer",
         "lr": "${rate}",
         "mode": "slow",
         "betas": [0.5, "0.75"],
@@ -355,9 +355,9 @@ def test_dataclass_is_built_from_converted_values(targets: ModuleType):
 def test_configurable_receives_the_checked_values_as_a_dict(targets: ModuleType):
     config = OmegaConf.create(
         {
-            "$target": "config_targets.Model",
+            "$target": "tests.targets.Model",
             "depth": "4",
-            "encoder": {"$target": "config_targets.SmallItem", "name": "encoder"},
+            "encoder": {"$target": "tests.targets.SmallItem", "name": "encoder"},
         }
     )
     model = instantiate(config)
@@ -371,22 +371,22 @@ def test_configurable_receives_the_checked_values_as_a_dict(targets: ModuleType)
 
 def test_dataclass_is_built_from_the_objects_of_its_fields(targets: ModuleType):
     content = {
-        "$target": "config_targets.Experiment",
-        "model": {"$target": "config_targets.Model", "depth": 2},
+        "$target": "tests.targets.Experiment",
+        "model": {"$target": "tests.targets.Model", "depth": 2},
         "optimizer": {
-            "$target": "config_targets.Optimizer",
+            "$target": "tests.targets.Optimizer",
             "lr": "0.5",
             "steps": "${seed}",
         },
         "seed": "3",
-        "items": [{"$target": "config_targets.Item", "name": "listed"}],
-        "named_items": {"first": {"$target": "config_targets.SmallItem"}},
+        "items": [{"$target": "tests.targets.Item", "name": "listed"}],
+        "named_items": {"first": {"$target": "tests.targets.SmallItem"}},
         "stages": [
-            {"$target": "config_targets.Optimizer", "lr": 1},
-            {"$target": "config_targets.FastOptimizer", "lr": 2},
+            {"$target": "tests.targets.Optimizer", "lr": 1},
+            {"$target": "tests.targets.FastOptimizer", "lr": 2},
         ],
-        "schedule": {"$target": "config_targets.Item", "$partial": True},
-        "extra": {"anything": [{"$target": "config_targets.Item", "name": "extra"}]},
+        "schedule": {"$target": "tests.targets.Item", "$partial": True},
+        "extra": {"anything": [{"$target": "tests.targets.Item", "name": "extra"}]},
     }
     config = OmegaConf.create(content)
     OmegaConf.set_readonly(config, True)
@@ -407,11 +407,11 @@ def test_dataclass_is_built_from_the_objects_of_its_fields(targets: ModuleType):
 
 
 def test_field_that_is_annotated_with_a_schema_holds_a_dict(targets: ModuleType):
-    model = {"$target": "config_targets.Model", "depth": 2}
-    encoder = {"$target": "config_targets.Item"}
+    model = {"$target": "tests.targets.Model", "depth": 2}
+    encoder = {"$target": "tests.targets.Item"}
     config = OmegaConf.create(
         {
-            "$target": "config_targets.Experiment",
+            "$target": "tests.targets.Experiment",
             "model": model,
             "backbone": {"depth": "3", "encoder": encoder},
         }
@@ -420,7 +420,7 @@ def test_field_that_is_annotated_with_a_schema_holds_a_dict(targets: ModuleType)
     assert type(backbone) is dict
     assert backbone["depth"] == 3
     assert type(backbone["encoder"]) is targets.Item
-    config.backbone = {"$target": "config_targets.Model", "depth": "3"}
+    config.backbone = {"$target": "tests.targets.Model", "depth": "3"}
     with pytest.raises(ConfigSchemaError):
         instantiate(config, targets.Experiment)
 
@@ -428,9 +428,9 @@ def test_field_that_is_annotated_with_a_schema_holds_a_dict(targets: ModuleType)
 def test_every_position_of_a_tuple_follows_its_annotation(targets: ModuleType):
     config = OmegaConf.create(
         {
-            "$target": "config_targets.Experiment",
-            "model": {"$target": "config_targets.Model", "depth": 2},
-            "pair": [{"$target": "config_targets.SmallItem"}, "0.5"],
+            "$target": "tests.targets.Experiment",
+            "model": {"$target": "tests.targets.Model", "depth": 2},
+            "pair": [{"$target": "tests.targets.SmallItem"}, "0.5"],
             "phases": [{"depth": "1"}, {"depth": 2, "activation": "tanh"}],
         }
     )
@@ -444,9 +444,9 @@ def test_every_position_of_a_tuple_follows_its_annotation(targets: ModuleType):
 def test_dict_of_a_symbol_is_checked_against_the_schema(targets: ModuleType):
     config = OmegaConf.create(
         {
-            "$target": "config_targets.Experiment",
-            "model": {"$target": "config_targets.Model", "depth": 2},
-            "backbone": {"$symbol": "config_targets.BACKBONE"},
+            "$target": "tests.targets.Experiment",
+            "model": {"$target": "tests.targets.Model", "depth": 2},
+            "backbone": {"$symbol": "tests.targets.BACKBONE"},
         }
     )
     experiment = instantiate(config)
@@ -455,7 +455,7 @@ def test_dict_of_a_symbol_is_checked_against_the_schema(targets: ModuleType):
 
 
 def test_target_that_names_a_schema_is_rejected(targets: ModuleType):
-    config = OmegaConf.create({"$target": "config_targets.ModelConfig", "depth": 3})
+    config = OmegaConf.create({"$target": "tests.targets.ModelConfig", "depth": 3})
     with pytest.raises(ConfigSchemaError, match="ModelConfig"):
         instantiate(config)
 
@@ -465,8 +465,8 @@ def test_field_that_is_not_given_keeps_the_default_of_its_dataclass(
 ):
     config = OmegaConf.create(
         {
-            "$target": "config_targets.Experiment",
-            "model": {"$target": "config_targets.Model", "depth": 2},
+            "$target": "tests.targets.Experiment",
+            "model": {"$target": "tests.targets.Model", "depth": 2},
         }
     )
     experiment = instantiate(config, targets.Experiment)
@@ -479,11 +479,11 @@ def test_field_that_is_not_given_keeps_the_default_of_its_dataclass(
 def test_every_read_of_a_dataclass_field_builds_its_own_object(targets: ModuleType):
     config = OmegaConf.create(
         {
-            "shared": {"$target": "config_targets.Optimizer", "lr": 1},
-            "item": {"$target": "config_targets.Item"},
+            "shared": {"$target": "tests.targets.Optimizer", "lr": 1},
+            "item": {"$target": "tests.targets.Item"},
             "experiment": {
-                "$target": "config_targets.Experiment",
-                "model": {"$target": "config_targets.Model", "depth": 2},
+                "$target": "tests.targets.Experiment",
+                "model": {"$target": "tests.targets.Model", "depth": 2},
                 "optimizer": "${shared}",
                 "stages": ["${shared}", "${shared}"],
                 "items": ["${item}", "${item}"],
@@ -500,9 +500,9 @@ def test_every_read_of_a_dataclass_field_builds_its_own_object(targets: ModuleTy
 def test_interpolation_reads_the_config_as_it_is_written(targets: ModuleType):
     config = OmegaConf.create(
         {
-            "$target": "config_targets.Model",
+            "$target": "tests.targets.Model",
             "depth": "4",
-            "encoder": {"$target": "config_targets.Item", "depth": "${..depth}"},
+            "encoder": {"$target": "tests.targets.Item", "depth": "${..depth}"},
         }
     )
     model = instantiate(config)
@@ -511,20 +511,20 @@ def test_interpolation_reads_the_config_as_it_is_written(targets: ModuleType):
 
 
 def test_prepare_defers_a_node_with_a_schema(targets: ModuleType):
-    config = OmegaConf.create({"$target": "config_targets.Model", "depth": "4"})
+    config = OmegaConf.create({"$target": "tests.targets.Model", "depth": "4"})
     make_model = prepare(config)
     assert isinstance(make_model, functools.partial)
     model = make_model(name="called")
     assert model.config == {"depth": 4}
     assert model.kwargs == {"name": "called"}
-    optimizer = {"$target": "config_targets.Optimizer", "lr": 1}
+    optimizer = {"$target": "tests.targets.Optimizer", "lr": 1}
     make_optimizer = prepare(OmegaConf.create(optimizer), targets.Optimizer)
     assert targets.CALLS == []
     assert make_optimizer(steps=3) == targets.Optimizer(lr=1.0, steps=3)
 
 
 def test_partial_is_completed_when_it_is_called(targets: ModuleType):
-    content = {"$target": "config_targets.Model", "activation": "tanh"}
+    content = {"$target": "tests.targets.Model", "activation": "tanh"}
     config = OmegaConf.create({"model": {**content, "$partial": True}, "root": content})
     make_models = {"model": instantiate(config.model), "root": prepare(config.root)}
     for key, make_model in make_models.items():
@@ -540,7 +540,7 @@ def test_partial_is_completed_when_it_is_called(targets: ModuleType):
 
 
 def test_partial_of_a_dataclass_is_a_partial_of_the_class(targets: ModuleType):
-    config = OmegaConf.create({"$target": "config_targets.Optimizer", "steps": "3"})
+    config = OmegaConf.create({"$target": "tests.targets.Optimizer", "steps": "3"})
     make_optimizer = prepare(config)
     assert make_optimizer.func is targets.Optimizer
     assert make_optimizer(lr=0.5) == targets.Optimizer(lr=0.5, steps=3)
@@ -553,11 +553,11 @@ def test_partial_of_a_dataclass_is_a_partial_of_the_class(targets: ModuleType):
     [
         ({"seed": "many"}, ConfigSchemaError),
         (
-            {"stages": [{"$target": "config_targets.Optimizer", "lr": "fast"}]},
+            {"stages": [{"$target": "tests.targets.Optimizer", "lr": "fast"}]},
             ConfigSchemaError,
         ),
         (
-            {"items": [{"$target": "config_targets.Model", "depth": 1}]},
+            {"items": [{"$target": "tests.targets.Model", "depth": 1}]},
             ConfigSchemaError,
         ),
         ({"optimizer": {"lr": 1}}, ConfigSchemaError),
@@ -567,10 +567,10 @@ def test_nothing_is_called_if_a_value_does_not_match_its_schema(
     targets: ModuleType, values: dict[str, Any], error_type: type[Exception]
 ):
     content = {
-        "$target": "config_targets.Experiment",
-        "model": {"$target": "config_targets.Model", "depth": 2},
-        "optimizer": {"$target": "config_targets.Optimizer", "lr": 1},
-        "extra": {"$target": "config_targets.Item"},
+        "$target": "tests.targets.Experiment",
+        "model": {"$target": "tests.targets.Model", "depth": 2},
+        "optimizer": {"$target": "tests.targets.Optimizer", "lr": 1},
+        "extra": {"$target": "tests.targets.Item"},
         **values,
     }
     config = OmegaConf.create(content)
@@ -581,9 +581,9 @@ def test_nothing_is_called_if_a_value_does_not_match_its_schema(
 
 
 def test_partial_fits_where_a_callable_is_expected(targets: ModuleType):
-    partial_item = {"$target": "config_targets.Item", "$partial": True}
-    model = {"$target": "config_targets.Model", "depth": 2}
-    experiment = {"$target": "config_targets.Experiment", "model": model}
+    partial_item = {"$target": "tests.targets.Item", "$partial": True}
+    model = {"$target": "tests.targets.Model", "depth": 2}
+    experiment = {"$target": "tests.targets.Experiment", "model": model}
     config = OmegaConf.create({**experiment, "schedule": partial_item})
     assert isinstance(
         instantiate(config, targets.Experiment).schedule, functools.partial
@@ -594,19 +594,19 @@ def test_partial_fits_where_a_callable_is_expected(targets: ModuleType):
             instantiate(OmegaConf.create({**experiment, **values}), targets.Experiment)
     with pytest.raises(ConfigSchemaError, match="a partial of"):
         instantiate(OmegaConf.create(partial_item), targets.Item)
-    item = OmegaConf.create({"$target": "config_targets.Item"})
+    item = OmegaConf.create({"$target": "tests.targets.Item"})
     assert isinstance(prepare(item, targets.Item), functools.partial)
     assert targets.CALLS == []
 
 
 def test_result_is_checked_against_the_class(targets: ModuleType):
-    item = OmegaConf.create({"$target": "config_targets.make_item", "name": "made"})
+    item = OmegaConf.create({"$target": "tests.targets.make_item", "name": "made"})
     assert type(instantiate(item, targets.Item)) is targets.Item
 
 
 @pytest.mark.parametrize("path", ["make_item", "FACTORY"])
 def test_result_of_another_class_is_rejected(targets: ModuleType, path: str):
-    config = OmegaConf.create({"$target": f"config_targets.{path}"})
+    config = OmegaConf.create({"$target": f"tests.targets.{path}"})
     with pytest.raises(ConfigSchemaError, match="returned") as error_info:
         instantiate(config, targets.Optimizer)
     error_info.match(re.escape("at the root"))
@@ -614,10 +614,10 @@ def test_result_of_another_class_is_rejected(targets: ModuleType, path: str):
 
 def test_result_of_a_function_is_checked_in_a_field(targets: ModuleType):
     experiment = {
-        "$target": "config_targets.Experiment",
-        "model": {"$target": "config_targets.Model", "depth": 2},
+        "$target": "tests.targets.Experiment",
+        "model": {"$target": "tests.targets.Model", "depth": 2},
     }
-    made_item = {"$target": "config_targets.make_item", "name": "made"}
+    made_item = {"$target": "tests.targets.make_item", "name": "made"}
     config = OmegaConf.create({**experiment, "items": [made_item]})
     assert type(instantiate(config).items[0]) is targets.Item
     config = OmegaConf.create({**experiment, "optimizer": made_item})
@@ -627,14 +627,14 @@ def test_result_of_a_function_is_checked_in_a_field(targets: ModuleType):
 
 
 def test_prepare_cannot_check_the_result_of_a_function(targets: ModuleType):
-    config = OmegaConf.create({"$target": "config_targets.make_item"})
+    config = OmegaConf.create({"$target": "tests.targets.make_item"})
     assert type(prepare(config)()) is targets.Item
     with pytest.raises(ConfigSchemaError, match="make_item"):
         prepare(config, targets.Item)
 
 
 def test_schema_is_not_the_class_of_a_result(targets: ModuleType):
-    model = OmegaConf.create({"$target": "config_targets.Model", "depth": 1})
+    model = OmegaConf.create({"$target": "tests.targets.Model", "depth": 1})
     with pytest.raises(ConfigSchemaError, match="ModelConfig"):
         instantiate(model, targets.ModelConfig)
     with pytest.raises(ConfigTargetError, match="the root"):
@@ -648,7 +648,7 @@ def test_schema_without_anything_to_build_is_rejected(targets: ModuleType):
     with pytest.raises(ConfigSchemaError, match="a mapping"):
         instantiate(OmegaConf.create({"lr": 1}), targets.Optimizer)
     with pytest.raises(ConfigTargetError, match="the root"):
-        prepare(OmegaConf.create({"$symbol": "config_targets.SETTINGS"}), dict)
+        prepare(OmegaConf.create({"$symbol": "tests.targets.SETTINGS"}), dict)
 
 
 @pytest.mark.parametrize("content", [[{"$target": "builtins.dict"}], (1, 2)])
@@ -658,7 +658,7 @@ def test_list_is_rejected(content: Any):
 
 
 def test_configurable_that_is_a_dataclass_is_checked_as_one(targets: ModuleType):
-    config = OmegaConf.create({"$target": "config_targets.Layer", "width": "3"})
+    config = OmegaConf.create({"$target": "tests.targets.Layer", "width": "3"})
     assert instantiate(config) == targets.Layer(width=3)
     config.width = "wide"
     with pytest.raises(ConfigSchemaError):
@@ -670,7 +670,7 @@ def test_text_is_not_read_as_an_interpolation_again(targets: ModuleType, text: s
     OmegaConf.register_resolver("test_text", lambda: text, replace=True)
     config = OmegaConf.create(
         {
-            "$target": "config_targets.Optimizer",
+            "$target": "tests.targets.Optimizer",
             "lr": 1,
             "log_dir": "${test_text:}",
             "steps": "${test_text:}",
@@ -688,13 +688,13 @@ def test_symbol_and_resolver_give_values_and_objects_of_typed_fields(
     OmegaConf.register_resolver("test_item", targets.SmallItem, replace=True)
     config = OmegaConf.create(
         {
-            "$target": "config_targets.Experiment",
-            "model": {"$target": "config_targets.Model", "depth": 2},
+            "$target": "tests.targets.Experiment",
+            "model": {"$target": "tests.targets.Model", "depth": 2},
             "optimizer": {
-                "$target": "config_targets.Optimizer",
+                "$target": "tests.targets.Optimizer",
                 "lr": {"$symbol": "math.pi"},
             },
-            "items": ["${test_item:}", {"$symbol": "config_targets.ITEM"}],
+            "items": ["${test_item:}", {"$symbol": "tests.targets.ITEM"}],
         }
     )
     experiment = instantiate(config, targets.Experiment)
@@ -704,7 +704,7 @@ def test_symbol_and_resolver_give_values_and_objects_of_typed_fields(
 
 
 def test_plain_dict_is_built_like_a_config(targets: ModuleType):
-    node = {"$target": "config_targets.Item", "name": "plain"}
+    node = {"$target": "tests.targets.Item", "name": "plain"}
     item = instantiate(node)
     assert type(item) is targets.Item
     assert item.kwargs == {"name": "plain"}

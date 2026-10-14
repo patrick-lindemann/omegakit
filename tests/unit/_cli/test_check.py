@@ -6,7 +6,7 @@ import pytest
 
 from omegakit.__main__ import main
 
-_MODEL = "model:\n  $target: config_targets.Model\n  depth: 2\n"
+_MODEL = "model:\n  $target: tests.targets.Model\n  depth: 2\n"
 
 
 def _exit_code(arguments: list[str]) -> int:
@@ -65,10 +65,10 @@ def test_applies_overrides(tmp_path: Path, targets: ModuleType):
 def test_checks_the_root_against_a_schema(tmp_path: Path, targets: ModuleType):
     path = tmp_path / "a.yaml"
     path.write_text("depth: 2\n")
-    main(["check", "--schema", "config_targets.ModelConfig", str(path)])
+    main(["check", "--schema", "tests.targets.ModelConfig", str(path)])
     path.write_text("depth: deep\n")
     assert (
-        _exit_code(["check", "--schema", "config_targets.ModelConfig", str(path)]) == 1
+        _exit_code(["check", "--schema", "tests.targets.ModelConfig", str(path)]) == 1
     )
 
 
@@ -76,7 +76,7 @@ def test_checks_the_root_against_a_schema(tmp_path: Path, targets: ModuleType):
     ("schema", "message"),
     [
         ("builtins.len", "--schema builtins.len is not a class"),
-        ("config_targets.Nope", "cannot import --schema"),
+        ("tests.targets.Nope", "cannot import --schema"),
         ("nodots", "cannot import --schema"),
     ],
 )

@@ -11,13 +11,13 @@ from omegakit._core.validate import validate
 
 def test_files_are_loaded_checked_and_built(tmp_path: Path, targets: ModuleType):
     (tmp_path / "model.yaml").write_text(
-        "$target: config_targets.Model\ndepth: '3'\nactivation: relu\n"
+        "$target: tests.targets.Model\ndepth: '3'\nactivation: relu\n"
     )
     path = tmp_path / "experiment.yaml"
     path.write_text(
-        "$target: config_targets.Experiment\n"
+        "$target: tests.targets.Experiment\n"
         "model: ~include model.yaml\n"
-        "optimizer: {$target: config_targets.Optimizer, lr: 0.5}\n"
+        "optimizer: {$target: tests.targets.Optimizer, lr: 0.5}\n"
     )
     config = load_config(path, ["seed=3"])
     validate(config, targets.Experiment)
@@ -30,7 +30,7 @@ def test_files_are_loaded_checked_and_built(tmp_path: Path, targets: ModuleType)
 
 def test_base_that_an_override_gives_is_rejected(tmp_path: Path, targets: ModuleType):
     path = tmp_path / "experiment.yaml"
-    path.write_text("model: {$target: config_targets.Model, depth: 2}\n")
+    path.write_text("model: {$target: tests.targets.Model, depth: 2}\n")
     config = load_config(path, ["model.$base={activation: tanh}"])
     with pytest.raises(ConfigValidationError, match=r"\$base") as error_info:
         validate(config)
@@ -41,7 +41,7 @@ def test_target_of_each_is_checked_in_every_child(tmp_path: Path, targets: Modul
     path = tmp_path / "experiment.yaml"
     path.write_text(
         "models:\n"
-        "  $each: {$target: config_targets.Model, depth: 2}\n"
+        "  $each: {$target: tests.targets.Model, depth: 2}\n"
         "  small: {}\n"
         "  wide: {dpeth: 4}\n"
     )
@@ -58,7 +58,7 @@ def test_kept_meta_is_no_argument(tmp_path: Path, targets: ModuleType):
     path = tmp_path / "experiment.yaml"
     path.write_text(
         "$meta: {title: Baseline}\n"
-        "model: {$target: config_targets.Model, $meta: {note: small}, depth: 2}\n"
+        "model: {$target: tests.targets.Model, $meta: {note: small}, depth: 2}\n"
     )
     config = load_config(path, keep_meta=True)
     validate(config)

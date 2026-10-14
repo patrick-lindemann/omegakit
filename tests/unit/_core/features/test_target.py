@@ -56,7 +56,7 @@ def test_target_that_cannot_be_called_is_rejected():
 
 
 def test_target_with_from_config_need_not_be_callable(targets: ModuleType):
-    config = OmegaConf.create({"item": {"$target": "config_targets.FACTORY"}})
+    config = OmegaConf.create({"item": {"$target": "tests.targets.FACTORY"}})
     assert import_target(config.item) is targets.FACTORY
 
 

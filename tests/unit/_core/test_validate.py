@@ -39,7 +39,7 @@ class _Parts(TypedDict, total=False):
     scale: float | fractions.Fraction
 
 
-_OPTIMIZER = {"$target": "config_targets.Optimizer"}
+_OPTIMIZER = {"$target": "tests.targets.Optimizer"}
 
 
 class _Mode(enum.Enum):
@@ -58,10 +58,10 @@ def test_accepts_a_valid_config_and_calls_nothing(targets: ModuleType):
     content = {
         "width": 3,
         "model": {
-            "$target": "config_targets.Item",
+            "$target": "tests.targets.Item",
             "$meta": {"description": "The model"},
             "width": "${width}",
-            "layers": [{"$target": "config_targets.Item", "$partial": True}],
+            "layers": [{"$target": "tests.targets.Item", "$partial": True}],
             "loss": {"$symbol": "math.sqrt"},
         },
         "copy": "${model}",
@@ -133,18 +133,18 @@ def test_missing_root_is_rejected():
 @pytest.mark.parametrize(
     ("node", "error_type"),
     [
-        ({"$target": "config_targets.NoSuchName"}, QualifiedNameNotFoundError),
+        ({"$target": "tests.targets.NoSuchName"}, QualifiedNameNotFoundError),
         ({"$target": "???"}, ValidationMissingValueError),
         ({"$target": "builtins.dict", "$partial": "yes"}, ConfigTargetError),
         ({"$target": "builtins.dict", "$foo": 1}, ConfigValidationError),
-        ({"$symbol": "config_targets.NoSuchName"}, QualifiedNameNotFoundError),
+        ({"$symbol": "tests.targets.NoSuchName"}, QualifiedNameNotFoundError),
         ({"$symbol": "math.sqrt", "reduction": "mean"}, ConfigSymbolError),
     ],
 )
 def test_error_of_a_target_or_symbol_names_its_node(
     targets: ModuleType, node: dict[str, Any], error_type: type[Exception]
 ):
-    config = OmegaConf.create({"models": [{"$target": "config_targets.Item"}, node]})
+    config = OmegaConf.create({"models": [{"$target": "tests.targets.Item"}, node]})
     with pytest.raises(error_type) as error_info:
         validate(config)
     error_info.match(re.escape("at `models[1]"))
@@ -167,17 +167,17 @@ def test_error_of_a_target_or_symbol_names_its_node(
             "models[1].$args[0][0]",
         ),
         (
-            {"$target": "config_targets.Configured", "$args": [1]},
+            {"$target": "tests.targets.Configured", "$args": [1]},
             ConfigTargetError,
             "models[1]",
         ),
         (
-            {"$target": "config_targets.Model", "$args": [1]},
+            {"$target": "tests.targets.Model", "$args": [1]},
             ConfigTargetError,
             "models[1]",
         ),
         (
-            {"$target": "config_targets.Layer", "$args": [1]},
+            {"$target": "tests.targets.Layer", "$args": [1]},
             ConfigTargetError,
             "models[1]",
         ),
@@ -191,7 +191,7 @@ def test_args_that_cannot_be_passed_are_rejected(
     error_type: type[Exception],
     full_key: str,
 ):
-    config = OmegaConf.create({"models": [{"$target": "config_targets.Item"}, node]})
+    config = OmegaConf.create({"models": [{"$target": "tests.targets.Item"}, node]})
     with pytest.raises(error_type) as error_info:
         validate(config)
     error_info.match(re.escape(f"at `{full_key}`"))
@@ -246,8 +246,8 @@ def test_node_that_is_read_several_times_is_no_cycle():
 
 
 def _make_experiment(**values: Any) -> DictConfig:
-    model = {"$target": "config_targets.Model", "depth": 2}
-    experiment = {"$target": "config_targets.Experiment", "model": model, **values}
+    model = {"$target": "tests.targets.Model", "depth": 2}
+    experiment = {"$target": "tests.targets.Experiment", "model": model, **values}
     return OmegaConf.create({"experiment": experiment}).experiment
 
 
@@ -255,32 +255,32 @@ def test_accepts_a_config_that_matches_its_schemas(targets: ModuleType):
     content = {
         "width": "3",
         "experiment": {
-            "$target": "config_targets.Experiment",
+            "$target": "tests.targets.Experiment",
             "$meta": {"description": "The baseline"},
             "seed": "${width}",
             "model": {
-                "$target": "config_targets.Model",
+                "$target": "tests.targets.Model",
                 "depth": "${width}",
-                "encoder": {"$target": "config_targets.SmallItem"},
+                "encoder": {"$target": "tests.targets.SmallItem"},
             },
             "optimizer": {
-                "$target": "config_targets.Optimizer",
+                "$target": "tests.targets.Optimizer",
                 "$meta": {"note": "tuned"},
                 "lr": "1e-3",
                 "mode": "SLOW",
             },
             "items": [
-                {"$target": "config_targets.Item"},
-                {"$symbol": "config_targets.ITEM"},
+                {"$target": "tests.targets.Item"},
+                {"$symbol": "tests.targets.ITEM"},
             ],
-            "named_items": {"first": {"$target": "config_targets.make_item"}},
+            "named_items": {"first": {"$target": "tests.targets.make_item"}},
             "stages": [
-                {"$target": "config_targets.FastOptimizer", "lr": 0.1},
+                {"$target": "tests.targets.FastOptimizer", "lr": 0.1},
                 "${experiment.optimizer}",
             ],
             "schedules": {"warmup": "${experiment.optimizer}"},
-            "schedule": {"$target": "config_targets.Item", "$partial": True},
-            "extra": {"anything": [{"$target": "config_targets.Item"}]},
+            "schedule": {"$target": "tests.targets.Item", "$partial": True},
+            "extra": {"anything": [{"$target": "tests.targets.Item"}]},
         },
     }
     config = OmegaConf.create(content)
@@ -329,17 +329,17 @@ def test_accepts_a_config_that_matches_its_schemas(targets: ModuleType):
             "experiment.schedules.warmup",
         ),
         (
-            {"pair": [{"$target": "config_targets.Item"}, "x"]},
+            {"pair": [{"$target": "tests.targets.Item"}, "x"]},
             ConfigSchemaError,
             "experiment.pair[1]",
         ),
         (
-            {"pair": [{"$target": "config_targets.Item"}]},
+            {"pair": [{"$target": "tests.targets.Item"}]},
             ConfigSchemaError,
             "experiment.pair",
         ),
         (
-            {"pair": [{"$target": "config_targets.Model", "depth": 1}, 0.5]},
+            {"pair": [{"$target": "tests.targets.Model", "depth": 1}, 0.5]},
             ConfigSchemaError,
             "experiment.pair[0]",
         ),
@@ -349,12 +349,12 @@ def test_accepts_a_config_that_matches_its_schemas(targets: ModuleType):
             "experiment.phases[1]",
         ),
         (
-            {"named_items": {1: {"$target": "config_targets.Item"}}},
+            {"named_items": {1: {"$target": "tests.targets.Item"}}},
             ConfigSchemaError,
             "experiment.named_items",
         ),
         (
-            {"backbone": {"$symbol": "config_targets.SETTINGS"}},
+            {"backbone": {"$symbol": "tests.targets.SETTINGS"}},
             ConfigSchemaError,
             "experiment.backbone",
         ),
@@ -373,9 +373,9 @@ def test_value_that_does_not_match_its_schema_is_rejected(
 
 
 def test_interpolated_value_is_checked_as_its_field(targets: ModuleType):
-    experiment = {"$target": "config_targets.Experiment", "seed": "${seed}"}
+    experiment = {"$target": "tests.targets.Experiment", "seed": "${seed}"}
     config = OmegaConf.create({"seed": "many", "experiment": experiment})
-    config.experiment.model = {"$target": "config_targets.Model", "depth": 1}
+    config.experiment.model = {"$target": "tests.targets.Model", "depth": 1}
     with pytest.raises(ConfigSchemaError, match="seed"):
         validate(config.experiment, targets.Experiment)
 
@@ -383,17 +383,17 @@ def test_interpolated_value_is_checked_as_its_field(targets: ModuleType):
 @pytest.mark.parametrize(
     ("values", "full_key"),
     [
-        ({"model": {"$target": "config_targets.Item"}}, "experiment.model"),
+        ({"model": {"$target": "tests.targets.Item"}}, "experiment.model"),
         ({"model": None}, "experiment.model"),
         ({"model": {"depth": 2}}, "experiment.model"),
-        ({"model": {"$symbol": "config_targets.SETTINGS"}}, "experiment.model"),
+        ({"model": {"$symbol": "tests.targets.SETTINGS"}}, "experiment.model"),
         (
-            {"items": [{"$target": "config_targets.Model", "depth": 1}]},
+            {"items": [{"$target": "tests.targets.Model", "depth": 1}]},
             "experiment.items[0]",
         ),
-        ({"items": {"first": {"$target": "config_targets.Item"}}}, "experiment.items"),
+        ({"items": {"first": {"$target": "tests.targets.Item"}}}, "experiment.items"),
         ({"named_items": {"first": 3}}, "experiment.named_items.first"),
-        ({"optimizer": {"$target": "config_targets.Item"}}, "experiment.optimizer"),
+        ({"optimizer": {"$target": "tests.targets.Item"}}, "experiment.optimizer"),
         ({"optimizer": None}, "experiment.optimizer"),
         ({"optimizer": [1, 2]}, "experiment.optimizer"),
         ({"optimizer": {"lr": 1}}, "experiment.optimizer"),
@@ -413,8 +413,8 @@ def test_object_of_another_class_is_rejected(
 @pytest.mark.parametrize(
     "optimizer",
     [
-        {"$target": "config_targets.Optimizer", "lr": 1},
-        {"$target": "config_targets.FastOptimizer", "lr": 1},
+        {"$target": "tests.targets.Optimizer", "lr": 1},
+        {"$target": "tests.targets.FastOptimizer", "lr": 1},
     ],
 )
 def test_class_in_a_dataclass_field_names_the_dataclass_or_a_subclass(
@@ -424,11 +424,11 @@ def test_class_in_a_dataclass_field_names_the_dataclass_or_a_subclass(
 
 
 def test_field_that_is_annotated_with_a_schema_takes_a_mapping(targets: ModuleType):
-    backbone = {"depth": "2", "encoder": {"$target": "config_targets.Item"}}
+    backbone = {"depth": "2", "encoder": {"$target": "tests.targets.Item"}}
     validate(_make_experiment(backbone=backbone), targets.Experiment)
     validate(_make_experiment(backbone=None), targets.Experiment)
     validate(OmegaConf.create(backbone), targets.ModelConfig)
-    model = OmegaConf.create({"$target": "config_targets.Model", "depth": 2})
+    model = OmegaConf.create({"$target": "tests.targets.Model", "depth": 2})
     with pytest.raises(ConfigSchemaError):
         validate(model, targets.ModelConfig)
     assert targets.CALLS == []
@@ -440,9 +440,9 @@ def test_field_that_is_annotated_with_a_schema_takes_a_mapping(targets: ModuleTy
         {"depth": "deep"},
         {"depth": 2, "width": 2},
         {"activation": "tanh"},
-        {"$target": "config_targets.Model", "depth": 2},
-        {"$target": "config_targets.ModelConfig", "depth": 2},
-        {"$symbol": "config_targets.ITEM"},
+        {"$target": "tests.targets.Model", "depth": 2},
+        {"$target": "tests.targets.ModelConfig", "depth": 2},
+        {"$symbol": "tests.targets.ITEM"},
         [1, 2],
     ],
 )
@@ -456,12 +456,12 @@ def test_field_that_is_annotated_with_a_schema_rejects_what_is_no_such_mapping(
 
 
 def test_result_of_a_function_is_not_known_before_it_is_called(targets: ModuleType):
-    validate(_make_experiment(model={"$target": "config_targets.make_item"}))
+    validate(_make_experiment(model={"$target": "tests.targets.make_item"}))
     assert targets.CALLS == []
 
 
 def test_partial_may_leave_required_keys_open(targets: ModuleType):
-    model = {"$target": "config_targets.Model", "$partial": True}
+    model = {"$target": "tests.targets.Model", "$partial": True}
     validate(OmegaConf.create({"models": [model, {**model, "activation": "tanh"}]}))
     with pytest.raises(ConfigSchemaError):
         validate(OmegaConf.create({**model, "$partial": False}))
@@ -472,17 +472,17 @@ def test_partial_may_leave_required_keys_open(targets: ModuleType):
 
 
 def test_schema_says_what_the_root_builds(targets: ModuleType):
-    optimizer = {"$target": "config_targets.Optimizer", "lr": 1}
+    optimizer = {"$target": "tests.targets.Optimizer", "lr": 1}
     validate(OmegaConf.create(optimizer), targets.Optimizer)
-    fast_optimizer = {"$target": "config_targets.FastOptimizer", "lr": 1}
+    fast_optimizer = {"$target": "tests.targets.FastOptimizer", "lr": 1}
     validate(OmegaConf.create(fast_optimizer), targets.Optimizer)
-    validate(OmegaConf.create({"$target": "config_targets.SmallItem"}), targets.Item)
+    validate(OmegaConf.create({"$target": "tests.targets.SmallItem"}), targets.Item)
 
 
 @pytest.mark.parametrize(
     ("content", "schema_name"),
     [
-        ({"$target": "config_targets.Item"}, "Optimizer"),
+        ({"$target": "tests.targets.Item"}, "Optimizer"),
         ({"depth": 1}, "Model"),
         ({"lr": 1}, "Optimizer"),
         ([{"lr": 1}], "Optimizer"),
@@ -585,11 +585,11 @@ def test_schema_that_is_not_a_class_is_rejected(schema: Any):
 
 
 def test_class_without_schema_takes_any_arguments(targets: ModuleType):
-    validate(OmegaConf.create({"$target": "config_targets.Item", "seed": "many"}))
+    validate(OmegaConf.create({"$target": "tests.targets.Item", "seed": "many"}))
 
 
 def test_schema_that_cannot_be_read_names_the_node(targets: ModuleType):
-    config = OmegaConf.create({"model": {"$target": "config_targets.BrokenModel"}})
+    config = OmegaConf.create({"model": {"$target": "tests.targets.BrokenModel"}})
     with pytest.raises(SchemaDefinitionError) as error_info:
         validate(config)
     error_info.match(re.escape("at `model`"))
@@ -608,7 +608,7 @@ def test_error_of_an_import_keeps_its_type_and_names_the_node(
 
 
 def test_plain_dict_is_checked_like_a_config(targets: ModuleType):
-    validate({"model": {"$target": "config_targets.Item", "name": "plain"}})
+    validate({"model": {"$target": "tests.targets.Item", "name": "plain"}})
     with pytest.raises(ValidationMissingValueError) as error_info:
         validate({"model": {"depth": "???"}})
     error_info.match(re.escape("`model.depth`"))
