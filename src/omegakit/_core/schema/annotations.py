@@ -28,31 +28,23 @@ def find_section(annotation: Any) -> type | None:
 def find_item_annotation(
     annotation: Any, containers: tuple[type, ...] = (list, dict)
 ) -> Any:
-    members = [
-        member for member in split_union(annotation) if member is not types.NoneType
-    ]
-    if len(members) != 1 or (get_origin(members[0]) or members[0]) not in containers:
+    member = _find_container(annotation, containers)
+    if member is None:
         return None
-    item_annotations = get_args(members[0])
+    item_annotations = get_args(member)
     return item_annotations[-1] if item_annotations else Any
 
 
 def find_key_annotation(annotation: Any) -> Any:
-    members = [
-        member for member in split_union(annotation) if member is not types.NoneType
-    ]
-    if len(members) != 1 or get_origin(members[0]) is not dict:
-        return Any
-    return get_args(members[0])[0]
+    key_annotations = get_args(_find_container(annotation, (dict,)))
+    return key_annotations[0] if key_annotations else Any
 
 
 def find_tuple_annotations(annotation: Any, length: int) -> list[Any] | None:
-    members = [
-        member for member in split_union(annotation) if member is not types.NoneType
-    ]
-    if len(members) != 1 or (get_origin(members[0]) or members[0]) is not tuple:
+    member = _find_container(annotation, (tuple,))
+    if member is None:
         return None
-    item_annotations = get_args(members[0])
+    item_annotations = get_args(member)
     if not item_annotations:
         return [Any] * length
     if item_annotations[-1] is Ellipsis:
@@ -114,3 +106,13 @@ def _is_data_cached(annotation: Any) -> bool:
     except (OmegaConfBaseException, AssertionError):
         return False
     return True
+
+
+# The one container of an annotation such as `list[int] | None`, if it has one
+def _find_container(annotation: Any, containers: tuple[type, ...]) -> Any:
+    members = [
+        member for member in split_union(annotation) if member is not types.NoneType
+    ]
+    if len(members) != 1 or (get_origin(members[0]) or members[0]) not in containers:
+        return None
+    return members[0]
