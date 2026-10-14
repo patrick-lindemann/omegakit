@@ -1,4 +1,4 @@
-from .config import Config
+from .config import Config, cast_config
 from .configurable import Configurable
 from .errors import (
     ConfigFileNotFoundError,
@@ -65,6 +65,7 @@ __all__ = [
     "SchemaDefinitionError",
     "ValidationInterpolationError",
     "ValidationMissingValueError",
+    "cast_config",
     "instantiate",
     "load_config",
     "make_node",

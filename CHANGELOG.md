@@ -24,7 +24,7 @@ All notable changes to this project are documented here. The format follows
 - `make_node` takes positional arguments and writes them to `$args`, as in
   `make_node(torch.nn.Sequential, layer_a, layer_b)`.
 - `omegakit` exports every error class, such as `ConfigSchemaError` and
-  `ConfigIncludeError`, the `Config` type and `ARGS_KEY`, next to `load_config`,
+  `ConfigIncludeError`, the `Config` type, `cast_config` and `ARGS_KEY`, next to `load_config`,
   `validate`, `instantiate`, `prepare`, `make_node`, `Configurable`, `walk` and the
   other key names.
 - A schema may contain itself, directly or through other schemas. It raised
