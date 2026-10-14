@@ -49,7 +49,7 @@ def read_fields(schema: type) -> dict[str, SchemaField]:
                 )
                 # `MISSING` as the default marks a required field, as in OmegaConf
                 or (isinstance(field.default, str) and field.default == MISSING)
-                for field in dataclasses.fields(schema)
+                for field in dataclasses.fields(schema)  # ty: ignore[invalid-argument-type]
                 if field.init
             }
     # Evaluating an annotation runs arbitrary code, which can raise anything
@@ -103,6 +103,6 @@ def _read_required_keys(schema: type) -> dict[str, bool]:
         if name not in required_keys:
             origin = get_origin(annotation)
             required_keys[name] = origin is Required or (
-                origin is not NotRequired and schema.__total__
+                origin is not NotRequired and schema.__total__  # ty: ignore[unresolved-attribute]
             )
     return required_keys

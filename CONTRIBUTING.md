@@ -8,7 +8,7 @@ uv run pytest
 uv run ruff check
 uv run ruff format --check
 uv run pydoclint src
-uv run pyright
+uv run ty check
 uv run sphinx-build -W docs docs/_build
 uv build
 ```

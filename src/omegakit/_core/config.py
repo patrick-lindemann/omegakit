@@ -21,5 +21,5 @@ def cast_config(
     config: Config | dict[Any, Any] | list[Any] | tuple[Any, ...],
 ) -> Config:
     if isinstance(config, Container):
-        return config
+        return config  # ty: ignore[invalid-return-type]
     return OmegaConf.create(config)

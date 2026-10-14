@@ -35,7 +35,7 @@ dev = [
     "pytest>=8.4,<10",
     "pytest-cov>=7.1,<8",
     "ruff>=0.14,<0.15",
-    "pyright>=1.1.414,<1.2",
+    "ty>=0.0.87,<0.1",
     "pydoclint>=0.9.1,<0.10",
 ]
 docs = [
@@ -108,11 +108,24 @@ arg-type-hints-in-docstring = false
 check-return-types = false
 check-yield-types = false
 
-[tool.pyright]
+[tool.ty.src]
 include = ["src", "tests", "docs"]
-pythonVersion = "3.12" # the floor; development runs on 3.13
-typeCheckingMode = "standard"
-reportImplicitOverride = "error"
-reportUnnecessaryTypeIgnoreComment = "error"
+
+[tool.ty.environment]
 # The page examples import the example project, as their tests do.
-executionEnvironments = [{ root = "docs", extraPaths = ["docs/example"] }]
+extra-paths = ["docs/example"]
+
+[tool.ty.rules]
+missing-override-decorator = "error"
+unused-ignore-comment = "error"
+unused-type-ignore-comment = "error"
+
+# PyTorch declares `nn.Module.forward` as a writable callable attribute.
+[[tool.ty.overrides]]
+include = ["docs/example/**"]
+rules = { invalid-mutable-override = "ignore" }
+
+# A `Callable` need not have a `__name__`; the page prints the loaded function's.
+[[tool.ty.overrides]]
+include = ["docs/objects/instantiation/main.py"]
+rules = { unresolved-attribute = "ignore" }

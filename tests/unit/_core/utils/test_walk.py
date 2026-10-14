@@ -31,4 +31,4 @@ def test_value_that_is_missing_or_an_interpolation_is_not_read():
 def test_unknown_order_is_rejected():
     config = OmegaConf.create({"seed": 0})
     with pytest.raises(ValueError, match="in-order"):
-        list(walk(config, "in-order"))  # pyright: ignore[reportArgumentType]
+        list(walk(config, "in-order"))  # ty: ignore[invalid-argument-type]

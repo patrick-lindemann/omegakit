@@ -129,7 +129,7 @@ def test_a_value_may_hold_an_equals_sign():
 def test_rejects_a_list_item_that_is_not_a_string():
     config = OmegaConf.create({"a": 1})
     with pytest.raises(ConfigOverrideError):
-        apply_overrides(config, [1])  # pyright: ignore[reportCallIssue, reportArgumentType]
+        apply_overrides(config, [1])  # ty: ignore[no-matching-overload]
 
 
 @pytest.mark.parametrize(
@@ -150,7 +150,7 @@ def test_rejects_overrides_of_the_wrong_type(overrides: Any):
 def test_rejects_a_mapping_for_a_list_config():
     config = OmegaConf.create([1, 2])
     with pytest.raises(ConfigOverrideError):
-        apply_overrides(config, {"a": 1})  # pyright: ignore[reportCallIssue, reportArgumentType]
+        apply_overrides(config, {"a": 1})  # ty: ignore[no-matching-overload]
 
 
 def test_rejects_a_new_key_on_a_struct_config():

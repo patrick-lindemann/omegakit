@@ -9,7 +9,7 @@ def validate(
     config: Config | dict[Any, Any] | list[Any] | tuple[Any, ...],
     schema: type | None = None,
 ) -> None:
-    check(cast_config(config), schema)
+    check(cast_config(config), schema)  # ty: ignore[no-matching-overload]
 
 
 def is_valid(

@@ -92,7 +92,7 @@ def test_schema_of_a_configurable_must_be_a_typed_dict(schema: Any):
         dict[str, float],
         tuple[int, str],
         list[int] | None,
-        Literal[[1, 2]],
+        Literal[[1, 2]],  # ty: ignore[invalid-type-form]
     ],
 )
 def test_field_that_omegaconf_supports_is_a_plain_value(annotation: Any):
@@ -187,7 +187,7 @@ def test_union_of_two_typed_dicts_is_rejected():
 
 @pytest.mark.parametrize("key", ["learning-rate", "class", "2nd"])
 def test_key_that_is_no_identifier_is_rejected(key: str):
-    schema = TypedDict("schema", {key: int})  # pyright: ignore[reportGeneralTypeIssues]
+    schema = TypedDict("schema", {key: int})  # ty: ignore[invalid-argument-type]
     with pytest.raises(SchemaDefinitionError, match=key):
         read_fields(schema)
 
