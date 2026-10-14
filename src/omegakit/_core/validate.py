@@ -55,7 +55,7 @@ class Call:
 
 # A mapping, list or tuple of the config, unlike a `dict` or `list` that is a value
 @dataclass(frozen=True)
-class Items:
+class Container:
     items: dict[Any, Any] | list[Any] | tuple[Any, ...]
 
 
@@ -127,10 +127,10 @@ def _check_node(
             converted_key: _check_value(node, key, active_nodes, item_annotation)
             for key, converted_key in zip(keys, converted_keys, strict=True)
         }
-        return Items(items)
+        return Container(items)
     # A mapping that is checked against a schema stays a mapping
     arguments = _check_schema(node, section, keys, active_nodes, False)
-    return Items(arguments)
+    return Container(arguments)
 
 
 def _check_items(
@@ -138,7 +138,7 @@ def _check_items(
     active_nodes: list[Config],
     annotation: Any,
     item_annotation: Any,
-) -> Items:
+) -> Container:
     item_annotations = find_position_annotations(annotation, len(node))
     is_tuple = item_annotations is not None or not isinstance(node, ListConfig)
     if item_annotations is None:
@@ -166,7 +166,7 @@ def _check_items(
                 error.full_key = node._get_full_key(index)
             raise
         items.append(converted_item)
-    return Items(tuple(items) if is_tuple else items)
+    return Container(tuple(items) if is_tuple else items)
 
 
 def _check_call(
@@ -265,7 +265,7 @@ def _check_symbol(node: DictConfig, active_nodes: list[Config], annotation: Any)
     except Exception as error:
         error.add_note(f"  at {describe_node(node)}")
         raise
-    return Items(arguments)
+    return Container(arguments)
 
 
 def _check_schema(
@@ -347,7 +347,7 @@ def _unwrap_plain_value(value: Any) -> Any:
             f"`{TARGET_KEY}: {value.name}` cannot stand in a field that holds plain "
             "values."
         )
-    if not isinstance(value, Items):
+    if not isinstance(value, Container):
         return value
     if isinstance(value.items, dict):
         return {key: _unwrap_plain_value(item) for key, item in value.items.items()}
@@ -360,7 +360,7 @@ def _check_type(value: Any, annotation: Any) -> Any:
     members = union_members(annotation)
     # A field that is annotated with a schema takes a mapping of the config
     if any(is_typeddict(member) for member in members):
-        if isinstance(value, Items) and isinstance(value.items, dict):
+        if isinstance(value, Container) and isinstance(value.items, dict):
             return value
         members = tuple(member for member in members if not is_typeddict(member))
     # A parametrized class, such as `list[X]`, is checked as the class alone
@@ -375,7 +375,7 @@ def _check_type(value: Any, annotation: Any) -> Any:
         if not classes:
             is_valid = False
         elif not isinstance(value, Call):
-            given_value = value.items if isinstance(value, Items) else value
+            given_value = value.items if isinstance(value, Container) else value
             is_valid = isinstance(given_value, classes)
             if is_valid and bounds and isinstance(given_value, type):
                 is_valid = issubclass(given_value, bounds)
@@ -396,9 +396,9 @@ def _check_type(value: Any, annotation: Any) -> Any:
         given = f"a partial of `{value.name}`"
     elif isinstance(value, Call):
         given = f"`{TARGET_KEY}: {value.name}`"
-    elif isinstance(value, Items) and isinstance(value.items, dict):
+    elif isinstance(value, Container) and isinstance(value.items, dict):
         given = "a mapping"
-    elif isinstance(value, Items):
+    elif isinstance(value, Container):
         given = f"a {type(value.items).__name__}"
     else:
         given = f"`{value!r}`"

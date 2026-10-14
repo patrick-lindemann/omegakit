@@ -9,7 +9,7 @@ from .errors import ConfigSchemaError, ConfigTargetError
 from .features import TARGET_KEY
 from .schema import read_fields, union_members
 from .utils.describe import describe_node, get_full_key
-from .validate import Call, Items, check
+from .validate import Call, Container, check
 
 
 @overload
@@ -68,7 +68,7 @@ def _instantiate(
 
 
 def _build(value: Any) -> Any:
-    if isinstance(value, Items):
+    if isinstance(value, Container):
         if isinstance(value.items, dict):
             return {key: _build(item) for key, item in value.items.items()}
         return type(value.items)(_build(item) for item in value.items)
