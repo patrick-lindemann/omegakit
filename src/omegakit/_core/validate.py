@@ -98,19 +98,9 @@ def _check_node(
         return _check_items(node, active_nodes, annotation, item_annotation)
     if TARGET_KEY in node.keys():  # noqa: SIM118
         return _check_call(node, active_nodes, is_deferred)
+    if SYMBOL_KEY in node.keys():  # noqa: SIM118
+        return _check_symbol(node, active_nodes, annotation)
     try:
-        if SYMBOL_KEY in node.keys():  # noqa: SIM118
-            value = import_symbol(node)
-            symbol_section = find_section(annotation)
-            if symbol_section is None or not isinstance(value, dict):
-                return value
-            # An existing `dict` is checked like a mapping that the config gives
-            mapping = OmegaConf.create(value, flags={"allow_objects": True})
-            symbol_keys = list(mapping.keys())
-            symbol_arguments = _check_schema(
-                mapping, symbol_section, symbol_keys, active_nodes, False
-            )
-            return Items(symbol_arguments)
         keys = [key for key in node.keys() if key != META_KEY]  # noqa: SIM118
         reserved_keys = [key for key in keys if str(key).startswith("$")]
         if reserved_keys:
@@ -122,12 +112,8 @@ def _check_node(
         # The keys of a dictionary of mappings or objects, which OmegaConf does not see
         converted_keys = convert_keys(annotation, keys)
     except OmegaKitBaseException as error:
-        # A mapping behind `$symbol` is not part of the config, so its keys name nothing
-        error.full_key = get_full_key(node)
-        raise
-    # A module can raise anything while it is imported
-    except Exception as error:
-        error.add_note(f"  at {describe_node(node)}")
+        if error.full_key is None:
+            error.full_key = get_full_key(node)
         raise
     if section is None:
         items = {
@@ -250,6 +236,27 @@ def _check_call(
         arguments,
         positional_arguments=positional_arguments,
     )
+
+
+def _check_symbol(node: DictConfig, active_nodes: list[Config], annotation: Any) -> Any:
+    try:
+        value = import_symbol(node)
+        section = find_section(annotation)
+        if section is None or not isinstance(value, dict):
+            return value
+        # An existing `dict` is checked like a mapping that the config gives
+        mapping = OmegaConf.create(value, flags={"allow_objects": True})
+        keys = list(mapping.keys())
+        arguments = _check_schema(mapping, section, keys, active_nodes, False)
+    except OmegaKitBaseException as error:
+        # A mapping behind `$symbol` is not part of the config, so its keys name nothing
+        error.full_key = get_full_key(node)
+        raise
+    # A module can raise anything while it is imported
+    except Exception as error:
+        error.add_note(f"  at {describe_node(node)}")
+        raise
+    return Items(arguments)
 
 
 def _check_schema(
