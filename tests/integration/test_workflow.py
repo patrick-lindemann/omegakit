@@ -6,7 +6,7 @@ import pytest
 from omegakit._core.errors import ConfigSchemaError, ConfigValidationError
 from omegakit._core.instantiate import instantiate, prepare
 from omegakit._core.load import load_config
-from omegakit._core.validate import validate
+from omegakit._core.schema import validate
 
 
 def test_files_are_loaded_checked_and_built(tmp_path: Path, targets: ModuleType):

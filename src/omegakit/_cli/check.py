@@ -4,8 +4,8 @@ from typing import override
 
 from omegakit._core.errors import QualifiedNameSyntaxError
 from omegakit._core.load import load_config
+from omegakit._core.schema import validate
 from omegakit._core.utils.locate import locate
-from omegakit._core.validate import validate
 
 from ._args import Arguments
 from ._routine import Routine

@@ -19,7 +19,7 @@ from omegakit._core.errors import (
     ValidationInterpolationError,
     ValidationMissingValueError,
 )
-from omegakit._core.validate import validate
+from omegakit._core.schema import validate
 
 
 class _Greeter(Protocol):

@@ -22,7 +22,7 @@ from omegakit._core.errors import (
     ValidationMissingValueError,
 )
 from omegakit._core.load import load_config
-from omegakit._core.validate import validate
+from omegakit._core.schema import validate
 
 
 @pytest.mark.parametrize(

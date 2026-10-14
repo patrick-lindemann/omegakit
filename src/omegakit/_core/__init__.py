@@ -32,8 +32,8 @@ from .features import (
 )
 from .instantiate import instantiate, make_node, prepare
 from .load import load_config
+from .schema import validate
 from .utils.walk import walk
-from .validate import validate
 
 __all__ = [
     "ARGS_KEY",
