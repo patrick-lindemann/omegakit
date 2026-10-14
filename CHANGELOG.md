@@ -26,12 +26,19 @@ All notable changes to this project are documented here. The format follows
   `ARGS_KEY`, next to the functions and key names it exported before.
 - `omegakit --version` prints the installed version, which is also
   `omegakit.__version__`.
+- `${torch.device:name}` gives `torch.device(name)`; `register_torch_device_resolver`
+  registers it, and so does `register_torch_resolvers`.
+- `omegakit.resolvers.numpy` adds `${numpy.dtype:name}`, which gives
+  `numpy.dtype(name)`; `register_numpy_resolvers` or `register_numpy_dtype_resolver`
+  registers it. Importing the module without NumPy raises `ImportError`.
+- Every `register_*` function of `omegakit.resolvers` takes `use_cache`, which
+  OmegaConf uses to cache each result by its arguments. It defaults to `True`;
+  results were always cached.
 
 ### Changed
 
-- **Breaking:** omegakit requires OmegaConf 2.4.0, and no other version. Until
-  2.4.0 is released, only its release candidate exists; uv installs it with
-  `uv add omegakit --prerelease=allow`.
+- **Breaking:** omegakit requires OmegaConf 2.4, from 2.4.0 up to but not including
+  2.5.0. It accepted 2.3 as well.
 - **Breaking:** Special keys and options are renamed, without aliases:
 
   | Old | New |
@@ -95,29 +102,47 @@ All notable changes to this project are documented here. The format follows
   `pair: tuple[nn.Module, float]` checks its first item by class. A wrong number of
   tuple items raises `ConfigSchemaError`. A field annotated `type[X]` takes only a
   subclass of `X`.
-- **Breaking:** The second argument of `instantiate` and `prepare` is the class of
-  the result, and what was built is checked against it with `isinstance`, as is the
-  result of a function that `$target` names in a field annotated with a class. A
-  schema is accepted only by `validate`. Only a mapping with `$target` is
-  instantiated, and `prepare` raises `ConfigSchemaError` for a root whose `$target`
-  is a function.
+- **Breaking:** The second argument of `instantiate` and `prepare`, given by position
+  or as `schema=` (it could be given only as `schema=`), is the class of the result,
+  and what was built is checked against it with `isinstance`, as is the result of a
+  function that `$target` names in a field annotated with a class. A schema is
+  accepted only by `validate`. Only a mapping with `$target` is instantiated, and
+  `prepare` raises `ConfigSchemaError` for a root whose `$target` is a function.
 - **Breaking:** A node with `$partial: true`, and the root of `prepare`, may leave
   required keys of its schema open, to be given as keyword arguments when the
   partial is called. Such an argument replaces the value of the config in the `dict`
   that `from_config` receives; a required key that is still open raises
   `ConfigSchemaError` at the call.
+- **Breaking:** `validate`, `instantiate` and `prepare` no longer take
+  `allowed_modules`, and `omegakit check` no longer has `--allow-module`: nothing
+  limits the modules that `$target` and `$symbol` import. `instantiate` and `prepare`
+  no longer take `overrides`; apply them with the `overrides` of `load_config`, or
+  with `OmegaConf.merge` for a config in memory.
+- **Breaking:** `walk(node, order="pre-order")` yields every node, value nodes, lists
+  and tuples included, and with `order="post-order"` the children before their
+  parent. `walk(config)` yielded only the mappings, parents first.
 - **Breaking:** `${secret:...}` wraps the interpolation that gives the secret, such
   as `${secret:${oc.env:TOKEN}}`; replace every `${secret:NAME}` with
   `${secret:${oc.env:NAME}}`. `omegakit show --resolve` prints `${secret:...}` and
   every value built from it as `***`, without reading the secret.
+- **Breaking:** The torch resolvers are `${torch.dtype:...}` and `${torch.has_cuda:}`,
+  and `register_cuda_available_resolver` is `register_torch_cuda_resolver`: replace
+  `${dtype:bfloat16}` with `${torch.dtype:bfloat16}` and `${cuda_available:}` with
+  `${torch.has_cuda:}`. `register_torch_resolvers` registers its resolvers one after
+  the other, so a taken name raises after the ones before it are registered; with
+  `replace=False` it registered none if a name was taken.
+- **Breaking:** Importing `omegakit.resolvers.torch` without PyTorch raises
+  `ImportError`. It was raised when a resolver was registered.
 - **Breaking:** `omegakit check` and `omegakit show` take overrides as
   `--overrides KEY=VALUE ...`, and every other argument is a config file: replace
   `omegakit show app.yaml seed=3` with `omegakit show app.yaml --overrides seed=3`.
-  `check` no longer has `--allow-module`, and exits with 2 once for a `--schema`
-  that is not a class. `show --resolve` reports an interpolation to
-  a missing or unknown key as an error instead of printing `???`; with the new
-  `--allow-missing` it prints `???` as before, and so does `--node` for a node that
-  holds `???`.
+  `check` exits with 2 for a `--schema` that is not a class, before it reads a file;
+  it reported the error for each file and exited with 1. `show --resolve` reports an
+  interpolation to a missing or unknown key as an error instead of printing `???`;
+  with the new `--allow-missing` it prints `???` as before, and so does `--node` for
+  a node that holds `???`.
+- `validate` takes `schema` as its second argument by position as well. It took it
+  only by keyword.
 - The API and Changelog pages of the documentation moved to `reference/api/` and
   `reference/changelog/`.
 
@@ -152,8 +177,6 @@ All notable changes to this project are documented here. The format follows
 - The error for a cycle of `$base` or `$each` references names only the nodes on the
   cycle.
 - `${paths:name}` raises for a name that was not registered. It resolved to `None`.
-- `register_torch_device_resolver` no longer warns that the resolver cannot be
-  inspected.
 
 ## [0.8.0] - 2026-09-28
 
