@@ -36,8 +36,9 @@ def test_loads_an_empty_file_as_an_empty_mapping(tmp_path: Path):
 
 
 def test_rejects_a_missing_file(tmp_path: Path):
-    with pytest.raises(ConfigFileNotFoundError, match=r"nope\.yaml"):
+    with pytest.raises(ConfigFileNotFoundError, match=r"nope\.yaml") as error_info:
         load_yaml(tmp_path / "nope.yaml")
+    assert error_info.value.filename == str(tmp_path / "nope.yaml")
 
 
 def test_rejects_a_directory(tmp_path: Path):
@@ -73,8 +74,9 @@ def test_rejects_an_unreadable_file(tmp_path: Path):
     path = tmp_path / "config.yaml"
     path.write_text("a: 1")
     path.chmod(0)
-    with pytest.raises(ConfigFilePermissionError, match=r"config\.yaml"):
+    with pytest.raises(ConfigFilePermissionError, match=r"config\.yaml") as error_info:
         load_yaml(path)
+    assert error_info.value.filename == str(path)
 
 
 def test_error_of_the_file_system_passes_through(
