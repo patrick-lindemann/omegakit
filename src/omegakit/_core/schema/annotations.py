@@ -111,7 +111,6 @@ def _is_plain_value_cached(annotation: Any) -> bool:
     return True
 
 
-# The one container of an annotation such as `list[int] | None`, if it has one
 def _find_single_container(annotation: Any, containers: tuple[type, ...]) -> Any:
     members = [
         member for member in union_members(annotation) if member is not types.NoneType
