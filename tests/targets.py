@@ -85,7 +85,7 @@ class ModelConfig(TypedDict):
 
 
 class Model(Configurable):
-    schema = ModelConfig  # ty: ignore[invalid-assignment]
+    schema = ModelConfig
 
     def __init__(self, config, kwargs):
         self.config = config
