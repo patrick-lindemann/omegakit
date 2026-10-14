@@ -115,7 +115,9 @@ All notable changes to this project are documented here. The format follows
   `omegakit show app.yaml seed=3` with `omegakit show app.yaml --overrides seed=3`.
   `check` no longer has `--allow-missing` and `--allow-module`, and exits with 2 once
   for a `--schema` that is not a class. `show --resolve` reports an interpolation to
-  a missing key as an error instead of printing `???`.
+  a missing or unknown key as an error instead of printing `???`; with the new
+  `--allow-missing` it prints `???` as before, and so does `--node` for a node that
+  holds `???`.
 - The API and Changelog pages of the documentation moved to `reference/api/` and
   `reference/changelog/`.
 

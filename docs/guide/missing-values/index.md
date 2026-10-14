@@ -37,3 +37,6 @@ is incomplete on purpose, see
 - `allow_missing=True` in `validate`, and `--allow-missing` in `omegakit check`,
   accept `???`, required fields that are not given, and interpolations to missing
   or unknown keys.
+- `omegakit show --allow-missing` prints a `???`, and an interpolation to a missing
+  or unknown key, as `???` instead of exiting with 1
+  ([show](../../command-line/show/index.md#rules)).

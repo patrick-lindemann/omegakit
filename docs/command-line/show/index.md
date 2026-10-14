@@ -82,6 +82,10 @@ noise: 0.1
 seed: 3
 ```
 
+In a file that is incomplete on purpose, such as a base that every experiment
+extends, `--allow-missing` prints `???` for what is missing instead of exiting
+with 1 ([Missing values](../../guide/missing-values/index.md)).
+
 The values of `${secret:...}` print as `***`
 ([Secrets](../../security/secrets/index.md)). `--keep-meta` keeps the `$meta` keys
 that `load_config` removes ([Metadata](../../guide/metadata/index.md)).
@@ -95,12 +99,15 @@ that `load_config` removes ([Metadata](../../guide/metadata/index.md)).
   ([check](../check/index.md#rules)).
 - `--node` selects a node with `OmegaConf.select`, as `~import file#node` does
   ([Imports](../../guide/imports/index.md#rules)): `items.0.name`,
-  `items[0].name`, `items.-1`. A node that does not exist or holds `???` exits
-  with 1.
+  `items[0].name`, `items.-1`. A node that does not exist exits with 1, and so
+  does a node that holds `???`, unless `--allow-missing` is given.
 - Without `--resolve`, a mapping or a list prints as written: `${…}`, `???`,
   `null`. A single value that `--node` selects prints resolved, as
   `OmegaConf.select` gives it. With `--resolve`, the selected node is resolved and
-  nothing else. Missing values print as `???`, and any other resolution error
-  exits with 1 with one line.
+  nothing else. A `???` prints as `???`, and an interpolation that cannot be
+  resolved exits with 1.
+- `--allow-missing` prints `???` for a node that holds `???` and for an
+  interpolation to a missing or unknown key, instead of exiting with 1. Any other
+  resolution error still exits with 1.
 - `${secret:...}` resolves to `***`, unless `--show-secrets` is given
   ([Secrets](../../security/secrets/index.md#rules)).

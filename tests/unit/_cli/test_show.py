@@ -87,6 +87,53 @@ def test_node_that_is_missing_is_no_node(
     assert capsys.readouterr().err == f"{path}: no node `{node}`\n"
 
 
+_MISSING = """\
+name: ???
+run: ${name}-1
+ref: ${nope}
+port: ${p}
+p: 80
+items:
+  - ${name}
+"""
+
+
+def test_allow_missing_prints_missing_values_as_missing(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+):
+    path = tmp_path / "app.yaml"
+    path.write_text(_MISSING)
+    assert _exit_code(["show", str(path), "--resolve"]) == 1
+    capsys.readouterr()
+    main(["show", str(path), "--resolve", "--allow-missing"])
+    assert capsys.readouterr().out == (
+        "name: ???\nrun: ???\nref: ???\nport: 80\np: 80\nitems:\n- ???\n"
+    )
+    main(["show", str(path), "--allow-missing"])
+    assert capsys.readouterr().out == _MISSING.replace("  - ", "- ")
+
+
+@pytest.mark.parametrize("node", ["name", "run", "ref", "items.0"])
+def test_allow_missing_prints_a_missing_node_as_missing(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], node: str
+):
+    path = tmp_path / "app.yaml"
+    path.write_text(_MISSING)
+    assert _exit_code(["show", str(path), "--node", node]) == 1
+    capsys.readouterr()
+    main(["show", str(path), "--node", node, "--allow-missing"])
+    assert capsys.readouterr().out == "???\n"
+
+
+def test_allow_missing_reports_other_resolution_errors(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+):
+    path = tmp_path / "app.yaml"
+    path.write_text("x: ${nope:1}\n")
+    assert _exit_code(["show", str(path), "--resolve", "--allow-missing"]) == 1
+    assert capsys.readouterr().err.startswith(f"{path}: ")
+
+
 @pytest.mark.parametrize(
     "arguments",
     [["--resolve"], ["--node", "x"], ["--node", "y", "--resolve"]],
@@ -113,6 +160,10 @@ def test_reports_a_file_that_cannot_be_loaded(
     [
         (
             ["--resolve"],
+            "db:\n  password: '***'\n  url: postgres://u:***@h/db\n  user: app\n",
+        ),
+        (
+            ["--resolve", "--allow-missing"],
             "db:\n  password: '***'\n  url: postgres://u:***@h/db\n  user: app\n",
         ),
         (["--node", "db.url"], "postgres://u:***@h/db\n"),
