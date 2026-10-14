@@ -1,13 +1,12 @@
 import dataclasses
 import functools
-from collections.abc import Callable
 from typing import Any, get_origin, is_typeddict, overload
 
 from omegaconf import DictConfig
 
 from .config import cast_config
 from .errors import ConfigSchemaError, ConfigTargetError
-from .features import ARGS_KEY, TARGET_KEY
+from .features import TARGET_KEY
 from .typecheck import Call, Container, check, read_fields, union_members
 from .utils.describe import describe_node, get_full_key
 
@@ -40,22 +39,6 @@ def prepare(
     config: DictConfig | dict[str, Any], schema: type | None = None
 ) -> functools.partial[Any]:
     return _instantiate(config, schema, is_partial=True)
-
-
-def make_node(
-    target: Callable[..., Any], /, *args: Any, **kwargs: Any
-) -> dict[str, Any]:
-    # A callable object, such as a `functools.partial`, has no name of its own
-    qualname = getattr(target, "__qualname__", None)
-    if qualname is None or "." in qualname:
-        raise ConfigTargetError(
-            f"Cannot create a node for `{qualname or target!r}`: only objects "
-            "defined at module level can be imported by their path."
-        )
-    node = {TARGET_KEY: f"{target.__module__}.{qualname}", **kwargs}
-    if args:
-        node[ARGS_KEY] = list(args)
-    return node
 
 
 def _instantiate(

@@ -29,8 +29,9 @@ from .features import (
     PARTIAL_KEY,
     SYMBOL_KEY,
     TARGET_KEY,
+    make_node,
 )
-from .instantiate import instantiate, make_node, prepare
+from .instantiate import instantiate, prepare
 from .load import load_config
 from .schema import is_valid, validate
 from .utils.walk import walk

@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
@@ -61,3 +62,19 @@ def read_arguments(node: DictConfig) -> TargetArguments:
                 f"`{PARTIAL_KEY}` must be `true` or `false`, not `{is_partial!r}`."
             )
     return TargetArguments(is_partial, keys, ARGS_KEY in node_keys)
+
+
+def make_node(
+    target: Callable[..., Any], /, *args: Any, **kwargs: Any
+) -> dict[str, Any]:
+    # A callable object, such as a `functools.partial`, has no name of its own
+    qualname = getattr(target, "__qualname__", None)
+    if qualname is None or "." in qualname:
+        raise ConfigTargetError(
+            f"Cannot create a node for `{qualname or target!r}`: only objects "
+            "defined at module level can be imported by their path."
+        )
+    node = {TARGET_KEY: f"{target.__module__}.{qualname}", **kwargs}
+    if args:
+        node[ARGS_KEY] = list(args)
+    return node

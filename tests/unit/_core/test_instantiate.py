@@ -16,7 +16,8 @@ from omegakit._core.errors import (
     ValidationInterpolationError,
     ValidationMissingValueError,
 )
-from omegakit._core.instantiate import instantiate, make_node, prepare
+from omegakit._core.features.target import make_node
+from omegakit._core.instantiate import instantiate, prepare
 
 
 def test_builds_the_object_of_a_class():
@@ -323,27 +324,6 @@ def test_error_of_the_target_passes_through_with_a_note(targets: ModuleType):
         re.escape("while calling `tests.targets.fail` at `model.parts[0]`")
     )
     assert config == content
-
-
-def test_make_node_names_the_target():
-    node = make_node(fractions.Fraction, numerator=1, denominator=2)
-    assert node == {"$target": "fractions.Fraction", "numerator": 1, "denominator": 2}
-
-
-def test_make_node_writes_positional_arguments_to_args():
-    node = make_node(fractions.Fraction, 1, denominator=2)
-    assert node == {"$target": "fractions.Fraction", "denominator": 2, "$args": [1]}
-    assert "$args" not in make_node(fractions.Fraction, numerator=1)
-
-
-def test_make_node_rejects_a_target_that_is_not_at_module_level():
-    with pytest.raises(ConfigTargetError):
-        make_node(fractions.Fraction.from_float)
-
-
-def test_make_node_rejects_a_callable_without_a_name():
-    with pytest.raises(ConfigTargetError):
-        make_node(functools.partial(int, base=16))
 
 
 def test_node_of_make_node_builds_the_target():

@@ -10,6 +10,7 @@ from .target import (
     TARGET_KEY,
     TargetArguments,
     import_target,
+    make_node,
     read_arguments,
 )
 
@@ -27,6 +28,7 @@ __all__ = [
     "apply_overrides",
     "import_symbol",
     "import_target",
+    "make_node",
     "merge_bases",
     "read_arguments",
     "remove_meta",
