@@ -62,6 +62,27 @@ def test_applies_overrides(tmp_path: Path, targets: ModuleType):
     main(["check", "--overrides", "model.depth=3", "--", str(path)])
 
 
+def test_allow_missing_accepts_what_is_missing(
+    tmp_path: Path, targets: ModuleType, capsys: pytest.CaptureFixture[str]
+):
+    path = tmp_path / "base.yaml"
+    path.write_text(
+        "name: ???\nrun: runs/${name}\nmodel: {$target: tests.targets.Model}\n"
+    )
+    schema = tmp_path / "schema.yaml"
+    schema.write_text("activation: relu\n")
+    for arguments in [
+        [str(path)],
+        ["--schema", "tests.targets.ModelConfig", str(schema)],
+    ]:
+        assert _exit_code(["check", *arguments]) == 1
+        main(["check", "--allow-missing", *arguments])
+    path.write_text("name: ???\nmodel: {$target: tests.targets.Model, depth: deep}\n")
+    capsys.readouterr()
+    assert _exit_code(["check", "--allow-missing", str(path)]) == 1
+    assert capsys.readouterr().err.startswith(f"{path}: ConfigSchemaError: ")
+
+
 def test_checks_the_root_against_a_schema(tmp_path: Path, targets: ModuleType):
     path = tmp_path / "a.yaml"
     path.write_text("depth: 2\n")

@@ -48,7 +48,7 @@ To check files from a terminal, a pre-commit hook or CI, use
 
 ## Rules
 
-`validate(config, *, schema=None, allow_missing=False, allowed_modules=None)`
+`validate(config, schema=None, *, allow_missing=False)`
 checks an assembled config, or any node of it, and raises `ConfigValidationError`
 at the first problem. `load_config` checks no schema. `instantiate` and `prepare`
 run this check, with their own `schema`, before building.

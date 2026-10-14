@@ -67,9 +67,9 @@ configs/experiments/mlp.yaml: ConfigValidationError: `$class: subprocess.Popen` 
 
 ## Rules
 
-- `check` runs `load_config` and `validate` on each file. `--schema`,
-  `--allow-missing`, `--allow-module` and `--import-root` are passed to them as
-  `schema`, `allow_missing`, `allowed_modules` and `import_root`
+- `check` runs `load_config` and `validate` on each file. `--include-root` is
+  passed to `load_config` as `include_root`, and `--schema` and `--allow-missing`
+  to `validate` as `schema` and `allow_missing`
   ([Validation](../../schemas/validation/index.md#rules)).
 - Every argument is a config file. `--overrides KEY=VALUE ...` applies to every
   file, in the order given, as the `overrides` of `load_config`. It takes the

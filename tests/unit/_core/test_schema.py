@@ -128,6 +128,87 @@ def test_value_that_cannot_be_read_is_rejected(
 def test_missing_root_is_rejected():
     with pytest.raises(ValidationMissingValueError):
         validate(DictConfig("???"))
+    validate(DictConfig("???"), allow_missing=True)
+
+
+@pytest.mark.parametrize("value", ["???", "${nowhere}", "${unset}", "x${unset}"])
+@pytest.mark.parametrize(
+    "text",
+    [
+        "lr: 'VALUE'",
+        "model: {layers: [{width: 'VALUE'}]}",
+        "model: {$target: builtins.dict, lr: 'VALUE'}",
+        "model: {$target: math.sqrt, $args: ['VALUE']}",
+        "stages: [1, 'VALUE']",
+    ],
+)
+def test_allow_missing_accepts_a_missing_value(value: str, text: str):
+    config = OmegaConf.create(f"unset: ???\n{text.replace('VALUE', value)}")
+    assert not is_valid(config)
+    validate(config, allow_missing=True)
+    assert is_valid(config, allow_missing=True)
+
+
+@pytest.mark.parametrize(
+    "values",
+    [
+        {"seed": "???"},
+        {"seed": "${unset}"},
+        {"model": "???"},
+        {"optimizer": _OPTIMIZER},
+        {"optimizer": {**_OPTIMIZER, "lr": "???", "steps": "${unset}"}},
+        {"optimizer": {**_OPTIMIZER, "lr": 1, "betas": [1, "???"]}},
+        {"pair": [{"$target": "tests.targets.Item"}, "???"]},
+        {"backbone": {"activation": "relu"}},
+    ],
+)
+def test_allow_missing_accepts_what_a_schema_requires(
+    targets: ModuleType, values: dict[str, Any]
+):
+    experiment = _make_experiment(**values)
+    with pytest.raises(ConfigValidationError):
+        validate(experiment, targets.Experiment)
+    validate(experiment, targets.Experiment, allow_missing=True)
+    assert targets.CALLS == []
+
+
+@pytest.mark.parametrize(
+    ("values", "error_type", "full_key"),
+    [
+        ({"seed": "many"}, ConfigSchemaError, "experiment.seed"),
+        (
+            {"optimizer": {**_OPTIMIZER, "lr": "???", "steps": "many"}},
+            ConfigSchemaError,
+            "experiment.optimizer.steps",
+        ),
+        (
+            {"optimizer": {**_OPTIMIZER, "lr": 1, "betas": [1, "x"], "steps": "???"}},
+            ConfigSchemaError,
+            "experiment.optimizer.betas",
+        ),
+        (
+            {"pair": [{"$target": "tests.targets.Item"}, "x"]},
+            ConfigSchemaError,
+            "experiment.pair[1]",
+        ),
+        ({"sed": "???"}, ConfigSchemaError, "experiment"),
+        ({"seed": "${nope:1}"}, ValidationInterpolationError, "experiment.seed"),
+        (
+            {"optimizer": {"$target": "???", "lr": 1}},
+            ValidationMissingValueError,
+            "experiment.optimizer.$target",
+        ),
+    ],
+)
+def test_allow_missing_still_checks_the_given_values(
+    targets: ModuleType,
+    values: dict[str, Any],
+    error_type: type[Exception],
+    full_key: str,
+):
+    with pytest.raises(error_type) as error_info:
+        validate(_make_experiment(**values), targets.Experiment, allow_missing=True)
+    error_info.match(re.escape(f"`{full_key}`"))
 
 
 @pytest.mark.parametrize(
@@ -248,7 +329,8 @@ def test_node_that_is_read_several_times_is_no_cycle():
 def _make_experiment(**values: Any) -> DictConfig:
     model = {"$target": "tests.targets.Model", "depth": 2}
     experiment = {"$target": "tests.targets.Experiment", "model": model, **values}
-    return OmegaConf.create({"experiment": experiment}).experiment
+    # `unset` is a missing value for interpolations to point to
+    return OmegaConf.create({"experiment": experiment, "unset": "???"}).experiment
 
 
 def test_accepts_a_config_that_matches_its_schemas(targets: ModuleType):

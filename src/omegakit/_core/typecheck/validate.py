@@ -25,7 +25,7 @@ from omegakit._core.features import (
     read_arguments,
 )
 from omegakit._core.utils.describe import describe_node, get_full_key
-from omegakit._core.utils.read import read_value
+from omegakit._core.utils.read import MISSING_VALUE, read_value
 
 from .annotations import (
     find_item_annotation,
@@ -60,14 +60,17 @@ def check(
     config: Config,
     schema: type | None = None,
     is_deferred: bool = False,
+    allow_missing: bool = False,
 ) -> Any:
     # The root is not read through a parent, which is where a `???` raises
     if config._is_missing():
+        if allow_missing:
+            return MISSING_VALUE
         raise ValidationMissingValueError("The config is `???`.")
     if schema is not None and not isinstance(schema, type):
         raise SchemaDefinitionError(f"`schema` must be a class, not `{schema!r}`.")
     annotation = Any if schema is None else schema
-    checked_config = _check_node(config, [], annotation, is_deferred)
+    checked_config = _check_node(config, [], allow_missing, annotation, is_deferred)
     try:
         typed_config = _check_type(checked_config, annotation)
     except ConfigSchemaError as error:
@@ -80,6 +83,7 @@ def check(
 def _check_node(
     node: Config,
     active_nodes: list[Config],
+    allow_missing: bool,
     annotation: Any,
     is_deferred: bool = False,
 ) -> Any:
@@ -92,11 +96,13 @@ def _check_node(
     containers = (dict,) if isinstance(node, DictConfig) else (list,)
     item_annotation = find_item_annotation(annotation, containers) or Any
     if not isinstance(node, DictConfig):
-        return _check_items(node, active_nodes, annotation, item_annotation)
+        return _check_items(
+            node, active_nodes, allow_missing, annotation, item_annotation
+        )
     if TARGET_KEY in node.keys():  # noqa: SIM118
-        return _check_call(node, active_nodes, is_deferred)
+        return _check_call(node, active_nodes, allow_missing, is_deferred)
     if SYMBOL_KEY in node.keys():  # noqa: SIM118
-        return _check_symbol(node, active_nodes, annotation)
+        return _check_symbol(node, active_nodes, allow_missing, annotation)
     try:
         keys = [key for key in node.keys() if key != META_KEY]  # noqa: SIM118
         reserved_keys = [key for key in keys if str(key).startswith("$")]
@@ -114,18 +120,21 @@ def _check_node(
         raise
     if section is None:
         items = {
-            converted_key: _check_value(node, key, active_nodes, item_annotation)
+            converted_key: _check_value(
+                node, key, active_nodes, allow_missing, item_annotation
+            )
             for key, converted_key in zip(keys, converted_keys, strict=True)
         }
         return Container(items)
     # A mapping that is checked against a schema stays a mapping
-    arguments = _check_schema(node, section, keys, active_nodes, False)
+    arguments = _check_schema(node, section, keys, active_nodes, allow_missing, False)
     return Container(arguments)
 
 
 def _check_items(
     node: ListConfig | TupleConfig,
     active_nodes: list[Config],
+    allow_missing: bool,
     annotation: Any,
     item_annotation: Any,
 ) -> Container:
@@ -142,15 +151,21 @@ def _check_items(
     items = []
     for index, position_annotation in enumerate(item_annotations):
         if not (is_tuple and is_plain_value(position_annotation)):
-            item = _check_value(node, index, active_nodes, position_annotation)
+            item = _check_value(
+                node, index, active_nodes, allow_missing, position_annotation
+            )
             items.append(item)
             continue
         # A plain position of a tuple is converted like a plain field
-        item = _check_value(node, index, active_nodes, Any)
+        item = _check_value(node, index, active_nodes, allow_missing, Any)
         try:
-            converted_item = convert_value(
-                position_annotation, _unwrap_plain_value(item)
-            )
+            plain_item = _unwrap_plain_value(item)
+            # OmegaConf converts no tuple that holds `???`, so a missing value or one
+            # that holds a missing item stays as it is
+            if allow_missing and _holds_missing_value(plain_item):
+                converted_item = plain_item
+            else:
+                converted_item = convert_value(position_annotation, plain_item)
         except OmegaKitBaseException as error:
             if error.full_key is None:
                 error.full_key = node._get_full_key(index)
@@ -162,6 +177,7 @@ def _check_items(
 def _check_call(
     node: DictConfig,
     active_nodes: list[Config],
+    allow_missing: bool,
     is_deferred: bool,
 ) -> Call:
     try:
@@ -213,18 +229,24 @@ def _check_call(
             if error.full_key is None:
                 error.full_key = get_full_key(node)
             raise
-        checked_args = _check_node(args, active_nodes, args_annotation)
+        checked_args = _check_node(args, active_nodes, allow_missing, args_annotation)
         positional_arguments = checked_args.items
     if schema is None:
         arguments = {
-            key: _check_value(node, key, active_nodes, Any)
+            key: _check_value(node, key, active_nodes, allow_missing, Any)
             for key in target_arguments.keys
         }
     else:
         # A partial may leave required keys open until it is called
         is_open = target_arguments.is_partial or is_deferred
         arguments = _check_schema(
-            node, schema, target_arguments.keys, active_nodes, is_open, positional_keys
+            node,
+            schema,
+            target_arguments.keys,
+            active_nodes,
+            allow_missing,
+            is_open,
+            positional_keys,
         )
     return Call(
         node,
@@ -237,7 +259,9 @@ def _check_call(
     )
 
 
-def _check_symbol(node: DictConfig, active_nodes: list[Config], annotation: Any) -> Any:
+def _check_symbol(
+    node: DictConfig, active_nodes: list[Config], allow_missing: bool, annotation: Any
+) -> Any:
     try:
         value = import_symbol(node)
         section = find_typed_dict(annotation)
@@ -246,7 +270,9 @@ def _check_symbol(node: DictConfig, active_nodes: list[Config], annotation: Any)
         # An existing `dict` is checked like a mapping that the config gives
         mapping = OmegaConf.create(value, flags={"allow_objects": True})
         keys = list(mapping.keys())
-        arguments = _check_schema(mapping, section, keys, active_nodes, False)
+        arguments = _check_schema(
+            mapping, section, keys, active_nodes, allow_missing, False
+        )
     except OmegaKitBaseException as error:
         # A mapping behind `$symbol` is not part of the config, so its keys name nothing
         error.full_key = get_full_key(node)
@@ -263,6 +289,7 @@ def _check_schema(
     schema: type,
     keys: list[Any],
     active_nodes: list[Config],
+    allow_missing: bool,
     is_open: bool,
     positional_keys: list[str] | tuple[str, ...] = (),
 ) -> dict[Any, Any]:
@@ -286,7 +313,7 @@ def _check_schema(
             for key, field in fields.items()
             if field.is_required and key not in keys and key not in positional_keys
         ]
-        if missing_keys and not is_open:
+        if missing_keys and not (is_open or allow_missing):
             raise ConfigSchemaError(
                 f"`{schema.__qualname__}` requires "
                 f"{', '.join(f'`{key}`' for key in missing_keys)}."
@@ -298,13 +325,22 @@ def _check_schema(
     arguments = {}
     for key in keys:
         annotation = Any if fields[key].is_plain_value else fields[key].annotation
-        arguments[key] = _check_value(node, key, active_nodes, annotation)
+        arguments[key] = _check_value(
+            node, key, active_nodes, allow_missing, annotation
+        )
     try:
         plain_values = {
             key: _unwrap_plain_value(value)
             for key, value in arguments.items()
             if fields[key].is_plain_value
         }
+        if allow_missing:
+            # As in a tuple, a value that is or holds a missing value is not converted
+            plain_values = {
+                key: value
+                for key, value in plain_values.items()
+                if not _holds_missing_value(value)
+            }
         converted_values = convert_plain_values(
             schema, plain_values, get_full_key(node)
         )
@@ -319,11 +355,12 @@ def _check_value(
     parent: Config,
     key: Any,
     active_nodes: list[Config],
+    allow_missing: bool,
     annotation: Any,
 ) -> Any:
-    value = read_value(parent, key)
+    value = read_value(parent, key, allow_missing)
     if isinstance(value, (DictConfig, ListConfig, TupleConfig)):
-        value = _check_node(value, active_nodes, annotation)
+        value = _check_node(value, active_nodes, allow_missing, annotation)
     try:
         typed_value = _check_type(value, annotation)
     except ConfigSchemaError as error:
@@ -346,8 +383,17 @@ def _unwrap_plain_value(value: Any) -> Any:
     return type(value.items)(_unwrap_plain_value(item) for item in value.items)
 
 
+def _holds_missing_value(value: Any) -> bool:
+    if isinstance(value, dict):
+        return any(_holds_missing_value(item) for item in value.values())
+    if isinstance(value, (list, tuple)):
+        return any(_holds_missing_value(item) for item in value)
+    return value is MISSING_VALUE
+
+
 def _check_type(value: Any, annotation: Any) -> Any:
-    if annotation is Any:
+    # A missing value that is allowed fits every annotation
+    if annotation is Any or value is MISSING_VALUE:
         return value
     members = union_members(annotation)
     # A field that is annotated with a schema takes a mapping of the config

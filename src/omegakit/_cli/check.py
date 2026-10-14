@@ -17,6 +17,7 @@ class CheckArguments(Arguments):
     configs: list[Path]
     overrides: list[str] | None
     schema: str | None
+    allow_missing: bool
     include_root: Path | None
 
 
@@ -49,6 +50,12 @@ class CheckRoutine(Routine[CheckArguments]):
             help="class the root of every file must match, such as myapp.AppConfig",
         )
         parser.add_argument(
+            "--allow-missing",
+            action="store_true",
+            help="accept ???, required fields that are not given and interpolations "
+            "to missing or unknown keys, as in a file that others complete",
+        )
+        parser.add_argument(
             "--include-root",
             type=Path,
             metavar="DIR",
@@ -75,7 +82,7 @@ class CheckRoutine(Routine[CheckArguments]):
                 config = load_config(
                     path, overrides=args.overrides, include_root=args.include_root
                 )
-                validate(config, schema)
+                validate(config, schema, allow_missing=args.allow_missing)
             # A module that exits while it is imported must not pass the check.
             except (Exception, SystemExit) as error:
                 invalid += 1

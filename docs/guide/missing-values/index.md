@@ -34,9 +34,11 @@ is incomplete on purpose, see
 - Reading a value that is still `???` raises OmegaConf's `MissingMandatoryValue`.
   Validating or building a node that contains one raises `ConfigValidationError`,
   caused by it. Both name the full key.
-- `allow_missing=True` in `validate`, and `--allow-missing` in `omegakit check`,
-  accept `???`, required fields that are not given, and interpolations to missing
-  or unknown keys.
+- `allow_missing=True` in `validate` and `is_valid`, and `--allow-missing` in
+  `omegakit check`, accept `???`, required fields that are not given, and
+  interpolations to missing or unknown keys. Every other value is still checked,
+  except a plain list, tuple or mapping that holds a missing item, such as
+  `betas: [0.9, ???]`. A special key, such as `$target`, still needs its value.
 - `omegakit show --allow-missing` prints a `???`, and an interpolation to a missing
   or unknown key, as `???` instead of exiting with 1
   ([show](../../command-line/show/index.md#rules)).

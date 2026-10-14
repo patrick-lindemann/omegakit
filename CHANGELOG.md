@@ -16,8 +16,8 @@ All notable changes to this project are documented here. The format follows
   its fields by position and checks each like the value of that key; a class with
   `from_config` rejects `$args`. `make_node(torch.nn.Sequential, layer_a, layer_b)`
   writes its positional arguments to `$args`.
-- `is_valid(config, schema)` checks a config like `validate`, but returns `False`
-  instead of raising a `ConfigValidationError`.
+- `is_valid(config, schema)` checks a config like `validate`, also with
+  `allow_missing`, but returns `False` instead of raising a `ConfigValidationError`.
 - `validate`, `instantiate` and `prepare` take a plain `dict` as well as a config,
   and `validate` also a `list` or a `tuple`. They raised an `AttributeError`.
 - A schema may contain itself, directly or through other schemas. It raised
@@ -113,8 +113,8 @@ All notable changes to this project are documented here. The format follows
 - **Breaking:** `omegakit check` and `omegakit show` take overrides as
   `--overrides KEY=VALUE ...`, and every other argument is a config file: replace
   `omegakit show app.yaml seed=3` with `omegakit show app.yaml --overrides seed=3`.
-  `check` no longer has `--allow-missing` and `--allow-module`, and exits with 2 once
-  for a `--schema` that is not a class. `show --resolve` reports an interpolation to
+  `check` no longer has `--allow-module`, and exits with 2 once for a `--schema`
+  that is not a class. `show --resolve` reports an interpolation to
   a missing or unknown key as an error instead of printing `???`; with the new
   `--allow-missing` it prints `???` as before, and so does `--node` for a node that
   holds `???`.
