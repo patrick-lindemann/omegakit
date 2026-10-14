@@ -7,6 +7,20 @@ type WalkOrder = Literal["pre-order", "post-order"]
 
 
 def walk(node: Node, order: WalkOrder = "pre-order") -> Iterator[Node]:
+    """Iterate over a node and every node below it.
+
+    In pre-order a node comes before its children, in post-order after them.
+
+    Args:
+        node: The node to start at.
+        order: `"pre-order"` or `"post-order"`. Defaults to `"pre-order"`.
+
+    Yields:
+        Each node, `node` included.
+
+    Raises:
+        ValueError: If `order` is neither `"pre-order"` nor `"post-order"`.
+    """
     match order:
         case "pre-order":
             yield from walk_pre_order(node)

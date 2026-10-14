@@ -12,8 +12,11 @@ from .meta import META_KEY
 from .symbol import SYMBOL_KEY
 
 TARGET_KEY = "$target"
+"""The key of the import path of the class or function that builds its node."""
 PARTIAL_KEY = "$partial"
+"""The key that, set to `true`, builds a partial of the `$target` instead."""
 ARGS_KEY = "$args"
+"""The key of the list of positional arguments of the `$target`."""
 
 
 @dataclass(frozen=True)
@@ -67,6 +70,23 @@ def read_arguments(node: DictConfig) -> TargetArguments:
 def make_node(
     target: Callable[..., Any], /, *args: Any, **kwargs: Any
 ) -> dict[str, Any]:
+    """Make a config node that calls a class or function.
+
+    The node holds the import path of `target` under `$target`, the positional
+    arguments under `$args` and the keyword arguments as keys.
+
+    Args:
+        target: A class or function defined at module level.
+        *args: The positional arguments.
+        **kwargs: The keyword arguments.
+
+    Returns:
+        The node as a `dict`.
+
+    Raises:
+        ConfigTargetError: If `target` cannot be imported by its path, such as a nested
+            class or a `functools.partial`.
+    """
     # A callable object, such as a `functools.partial`, has no name of its own
     qualname = getattr(target, "__qualname__", None)
     if qualname is None or "." in qualname:

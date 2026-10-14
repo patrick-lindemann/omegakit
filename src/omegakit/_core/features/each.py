@@ -6,6 +6,7 @@ from omegakit._core.utils.describe import get_full_key
 from omegakit._core.utils.merge import merge_under, walk_mergeable
 
 EACH_KEY = "$each"
+"""The key of a mapping merged under every mapping beside it."""
 
 
 def apply_each[TConfig: DictConfig | ListConfig | TupleConfig](

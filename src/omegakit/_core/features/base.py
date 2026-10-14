@@ -8,6 +8,7 @@ from omegakit._core.utils.describe import get_full_key
 from omegakit._core.utils.merge import merge_under, walk_mergeable
 
 BASE_KEY = "$base"
+"""The key of a mapping, or a list of mappings, merged under its node."""
 
 
 def merge_bases[TConfig: DictConfig | ListConfig | TupleConfig](

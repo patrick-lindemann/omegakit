@@ -11,6 +11,7 @@ from omegakit._core.utils.read import read_value
 from .meta import META_KEY
 
 SYMBOL_KEY = "$symbol"
+"""The key of the import path of an object that replaces its node as it is."""
 
 
 def import_symbol(node: DictConfig) -> Any:

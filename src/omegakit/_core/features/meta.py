@@ -4,6 +4,7 @@ from omegakit._core.utils.copy import copy_with_root
 from omegakit._core.utils.walk import walk
 
 META_KEY = "$meta"
+"""The key of data about a node, which `load_config` removes."""
 
 
 def remove_meta[TConfig: DictConfig | ListConfig | TupleConfig](

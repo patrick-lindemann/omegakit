@@ -19,7 +19,27 @@ def instantiate[T](config: DictConfig | dict[str, Any], schema: type[T]) -> T: .
 def instantiate(config: DictConfig | dict[str, Any], schema: None = None) -> Any: ...
 
 
-def instantiate(config: DictConfig | dict[str, Any], schema: type | None = None) -> Any:
+def instantiate(config: DictConfig | dict[str, Any], schema: type | None = None) -> Any:  # noqa: DOC502
+    """Build the object that a config describes.
+
+    The config is checked as by `validate` before anything is called. A nested
+    `$target` is built before the one that takes it.
+
+    Args:
+        config: A node with `$target`, or a `dict`.
+        schema: The class of the result. Defaults to `None`, in which case any result
+            is accepted.
+
+    Returns:
+        The result of the `$target`.
+
+    Raises:
+        ConfigTargetError: If `config` has no `$target`.
+        ConfigValidationError: If `config` fails `validate`.
+        ConfigSchemaError: If the result is not an instance of `schema`.
+        SchemaDefinitionError: If `schema` or the schema of a `$target` cannot check a
+            config.
+    """
     return _instantiate(config, schema, is_partial=False)
 
 
@@ -35,9 +55,30 @@ def prepare(
 ) -> functools.partial[Any]: ...
 
 
-def prepare(
+def prepare(  # noqa: DOC502
     config: DictConfig | dict[str, Any], schema: type | None = None
 ) -> functools.partial[Any]:
+    """Build a partial of the object that a config describes.
+
+    The config is checked as by `validate`, except that required arguments may be
+    left to the call of the partial. Nested `$target`s are built.
+
+    Args:
+        config: A node with `$target`, or a `dict`.
+        schema: The class that the partial makes. Defaults to `None`, in which case any
+            class is accepted.
+
+    Returns:
+        A partial of the `$target` with the arguments of the config.
+
+    Raises:
+        ConfigTargetError: If `config` has no `$target`.
+        ConfigValidationError: If `config` fails `validate` for another reason than a
+            missing required argument.
+        ConfigSchemaError: If `schema` is given but the `$target` is a function.
+        SchemaDefinitionError: If `schema` or the schema of a `$target` cannot check a
+            config.
+    """
     return _instantiate(config, schema, is_partial=True)
 
 

@@ -22,6 +22,7 @@ from omegakit._core.utils.walk import walk
 from omegakit._core.utils.yaml import load_yaml
 
 INCLUDE_KEY = "~include"
+"""The prefix of a value that is replaced by a config file or one of its nodes."""
 
 _INCLUDE_PATTERN = re.compile(rf"{INCLUDE_KEY}(\s|$)")
 _NOT_FOUND = object()
