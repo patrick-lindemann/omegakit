@@ -8,7 +8,7 @@ from omegaconf import DictConfig
 from .config import cast_config
 from .errors import ConfigSchemaError, ConfigTargetError
 from .features import ARGS_KEY, TARGET_KEY
-from .schema import Call, Container, check, read_fields, union_members
+from .typecheck import Call, Container, check, read_fields, union_members
 from .utils.describe import describe_node, get_full_key
 
 

@@ -16,7 +16,7 @@ from omegakit._core.configurable import Configurable
 from omegakit._core.errors import (
     SchemaDefinitionError,
 )
-from omegakit._core.schema.fields import find_schema, read_fields
+from omegakit._core.typecheck.fields import find_schema, read_fields
 
 
 class _Color(enum.Enum):

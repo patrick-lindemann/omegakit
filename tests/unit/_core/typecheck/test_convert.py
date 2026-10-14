@@ -11,7 +11,7 @@ import pytest
 from omegakit._core.errors import (
     ConfigSchemaError,
 )
-from omegakit._core.schema.convert import convert_plain_values, convert_value
+from omegakit._core.typecheck.convert import convert_plain_values, convert_value
 
 
 class _Color(enum.Enum):

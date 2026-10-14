@@ -1,7 +1,7 @@
 from typing import Any
 
 from .config import Config, cast_config
-from .schema import check
+from .typecheck import check
 
 
 def validate(

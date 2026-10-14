@@ -2,7 +2,7 @@ from typing import Any, TypedDict
 
 import pytest
 
-from omegakit._core.schema.annotations import (
+from omegakit._core.typecheck.annotations import (
     find_item_annotation,
     find_key_annotation,
     find_position_annotations,
