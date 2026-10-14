@@ -10,6 +10,8 @@ All notable changes to this project are documented here. The format follows
 
 - `validate`, `instantiate` and `prepare` take a plain `dict` as well as a config,
   and `validate` also a `list` or a `tuple`. They raised an `AttributeError`.
+- `is_valid(config, schema)` checks a config like `validate`, but returns `False`
+  instead of raising a `ConfigValidationError`.
 - `omegakit --version` prints the installed version, which is also
   `omegakit.__version__`.
 - `$args` gives the positional arguments of a `$target` node, as a list next to the

@@ -32,7 +32,7 @@ from .features import (
 )
 from .instantiate import instantiate, make_node, prepare
 from .load import load_config
-from .schema import validate
+from .schema import is_valid, validate
 from .utils.walk import walk
 
 __all__ = [
@@ -66,6 +66,7 @@ __all__ = [
     "ValidationMissingValueError",
     "cast_config",
     "instantiate",
+    "is_valid",
     "load_config",
     "make_node",
     "prepare",

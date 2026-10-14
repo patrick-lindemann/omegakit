@@ -19,7 +19,7 @@ from omegakit._core.errors import (
     ValidationInterpolationError,
     ValidationMissingValueError,
 )
-from omegakit._core.schema import validate
+from omegakit._core.schema import is_valid, validate
 
 
 class _Greeter(Protocol):
@@ -648,3 +648,27 @@ def test_unknown_key_names_the_fields_of_its_schema():
     with pytest.raises(ConfigSchemaError, match="scael") as error_info:
         validate(config, _Parts)
     error_info.match("`scale`")
+
+
+def test_is_valid_accepts_a_valid_config(targets: ModuleType):
+    assert is_valid({"$target": "tests.targets.Model", "depth": 2})
+    assert is_valid({"depth": 2}, targets.ModelConfig)
+
+
+@pytest.mark.parametrize(
+    "content",
+    [
+        {"depth": "???"},
+        {"depth": "deep"},
+        {"depth": 2, "width": 3},
+        {"model": {"$target": "tests.targets.Nope"}},
+    ],
+)
+def test_is_valid_rejects_an_invalid_config(targets: ModuleType, content: dict):
+    schema = None if "model" in content else targets.ModelConfig
+    assert not is_valid(content, schema)
+
+
+def test_is_valid_raises_for_a_broken_schema(targets: ModuleType):
+    with pytest.raises(SchemaDefinitionError):
+        is_valid({"model": {"$target": "tests.targets.BrokenModel"}})
