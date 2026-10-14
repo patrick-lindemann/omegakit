@@ -2,6 +2,7 @@ import dataclasses
 import enum
 import pathlib
 from collections.abc import Callable
+from dataclasses import dataclass
 from typing import Any, Literal, NotRequired, TypedDict, override
 
 from omegakit._core.configurable import Configurable
@@ -48,7 +49,7 @@ class Mode(enum.Enum):
     SLOW = "slow"
 
 
-@dataclasses.dataclass
+@dataclass
 class Optimizer:
     lr: float
     steps: int = 10
@@ -62,12 +63,12 @@ class Optimizer:
         self.total = self.lr * self.steps
 
 
-@dataclasses.dataclass
+@dataclass
 class FastOptimizer(Optimizer):
     pass
 
 
-@dataclasses.dataclass
+@dataclass
 class Scaled:
     n: int
     scale: dataclasses.InitVar[int]
@@ -96,13 +97,13 @@ class Model(Configurable):
         return cls(config, kwargs)
 
 
-@dataclasses.dataclass
+@dataclass
 class Layer(Configurable):
     width: int
     bias: bool = True
 
 
-@dataclasses.dataclass
+@dataclass
 class Experiment:
     model: Model
     optimizer: Optimizer = dataclasses.field(default_factory=lambda: Optimizer(0.1))

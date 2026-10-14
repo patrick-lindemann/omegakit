@@ -4,6 +4,7 @@ import dataclasses
 import enum
 import typing
 from collections.abc import Callable, Sequence
+from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
 from typing import Any, Literal, NotRequired, Required, TypedDict
@@ -27,7 +28,7 @@ class _Encoder:
     pass
 
 
-@dataclasses.dataclass
+@dataclass
 class _Section:
     width: int = 1
 

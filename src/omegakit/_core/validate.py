@@ -1,6 +1,7 @@
 import dataclasses
 import functools
 import types
+from dataclasses import dataclass
 from typing import Any, get_args, get_origin, is_typeddict
 
 from omegaconf import DictConfig, ListConfig, OmegaConf, TupleConfig
@@ -34,7 +35,7 @@ from .utils.describe import describe_node, get_full_key
 from .utils.read import read_value
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclass(frozen=True)
 class Call:
     node: DictConfig
     name: str
@@ -47,7 +48,7 @@ class Call:
 
 
 # A mapping, list or tuple of the config, unlike a `dict` or `list` that is a value
-@dataclasses.dataclass(frozen=True)
+@dataclass(frozen=True)
 class Items:
     items: dict[Any, Any] | list[Any] | tuple[Any, ...]
 

@@ -3,6 +3,7 @@ import functools
 import inspect
 import keyword
 import types
+from dataclasses import dataclass
 from typing import Any, NotRequired, Required, get_origin, get_type_hints, is_typeddict
 
 from omegaconf import MISSING
@@ -14,7 +15,7 @@ from omegakit._core.utils.describe import describe_error
 from .annotations import holds_objects, is_plain_value, union_members
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclass(frozen=True)
 class SchemaField:
     annotation: Any
     is_plain_value: bool
