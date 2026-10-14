@@ -1,11 +1,10 @@
-from collections.abc import Mapping
 from typing import Any, ClassVar, Self
 
 
 class Configurable:
     """A class that a config builds through `from_config`, checked by its `schema`."""
 
-    schema: ClassVar[type[Mapping[str, object]] | None] = None
+    schema: ClassVar[type | None] = None
 
     @classmethod
     def from_config(cls, config: Any, **kwargs: Any) -> Self:

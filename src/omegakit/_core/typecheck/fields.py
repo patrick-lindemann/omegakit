@@ -39,9 +39,7 @@ def find_schema(target: Any) -> type | None:
 def read_fields(schema: type) -> dict[str, SchemaField]:
     try:
         annotations = get_type_hints(schema)
-        if is_typeddict(schema):
-            required_keys = _read_required_keys(schema)
-        else:
+        if dataclasses.is_dataclass(schema):
             required_keys = {
                 field.name: (
                     field.default is dataclasses.MISSING
@@ -49,9 +47,11 @@ def read_fields(schema: type) -> dict[str, SchemaField]:
                 )
                 # `MISSING` as the default marks a required field, as in OmegaConf
                 or (isinstance(field.default, str) and field.default == MISSING)
-                for field in dataclasses.fields(schema)  # ty: ignore[invalid-argument-type]
+                for field in dataclasses.fields(schema)
                 if field.init
             }
+        else:
+            required_keys = _read_required_keys(schema)
     # Evaluating an annotation runs arbitrary code, which can raise anything
     except Exception as error:
         raise SchemaDefinitionError(

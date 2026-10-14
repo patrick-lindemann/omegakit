@@ -31,7 +31,7 @@ def validate(  # noqa: DOC502
         SchemaDefinitionError: If `schema` or the schema of a `$target` cannot check a
             config.
     """
-    check(cast_config(config), schema, allow_missing=allow_missing)  # ty: ignore[no-matching-overload]
+    check(cast_config(config), schema, allow_missing=allow_missing)
 
 
 def is_valid(  # noqa: DOC502
