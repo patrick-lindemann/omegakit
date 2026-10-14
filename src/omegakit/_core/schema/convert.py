@@ -86,11 +86,6 @@ def _escape_omegaconf_syntax(value: Any) -> Any:
 
 
 @functools.cache
-def _make_single_value_dataclass(annotation: Any) -> type:
-    return dataclasses.make_dataclass("Item", [("item", annotation)])
-
-
-@functools.cache
 def _make_plain_values_dataclass(schema: type) -> type:
     # Every field has a default, so that the given values alone make an instance
     data_fields = [
@@ -99,3 +94,8 @@ def _make_plain_values_dataclass(schema: type) -> type:
         if field.is_plain_value
     ]
     return dataclasses.make_dataclass(schema.__name__, data_fields)
+
+
+@functools.cache
+def _make_single_value_dataclass(annotation: Any) -> type:
+    return dataclasses.make_dataclass("Item", [("item", annotation)])

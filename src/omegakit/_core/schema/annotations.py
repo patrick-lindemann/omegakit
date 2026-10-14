@@ -9,6 +9,15 @@ from omegaconf import OmegaConf
 from omegaconf.errors import OmegaConfBaseException
 
 
+def union_members(annotation: Any) -> tuple[Any, ...]:
+    while isinstance(annotation, TypeAliasType):
+        annotation = annotation.__value__
+    if get_origin(annotation) not in (Union, types.UnionType):
+        return (annotation,)
+    members = [union_members(member) for member in get_args(annotation)]
+    return tuple(itertools.chain.from_iterable(members))
+
+
 def find_typed_dict(annotation: Any) -> type | None:
     for member in union_members(annotation):
         if is_typeddict(member):
@@ -44,15 +53,6 @@ def find_position_annotations(annotation: Any, length: int) -> list[Any] | None:
     if item_annotations[-1] is Ellipsis:
         return [item_annotations[0]] * length
     return list(item_annotations)
-
-
-def union_members(annotation: Any) -> tuple[Any, ...]:
-    while isinstance(annotation, TypeAliasType):
-        annotation = annotation.__value__
-    if get_origin(annotation) not in (Union, types.UnionType):
-        return (annotation,)
-    members = [union_members(member) for member in get_args(annotation)]
-    return tuple(itertools.chain.from_iterable(members))
 
 
 def is_plain_value(annotation: Any) -> bool:
