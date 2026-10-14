@@ -13,9 +13,11 @@ from .annotations import find_key_annotation
 from .fields import read_fields
 
 
-def convert_data(schema: type, values: dict[str, Any]) -> dict[str, Any]:
-    structure = _make_structure(schema)
-    escaped_values = {key: _escape_texts(value) for key, value in values.items()}
+def convert_plain_values(schema: type, values: dict[str, Any]) -> dict[str, Any]:
+    structure = _make_plain_values_dataclass(schema)
+    escaped_values = {
+        key: _escape_omegaconf_syntax(value) for key, value in values.items()
+    }
     try:
         typed_values = OmegaConf.structured(structure(**escaped_values))
         # Resolving decodes the escaped texts again
@@ -30,14 +32,16 @@ def convert_data(schema: type, values: dict[str, Any]) -> dict[str, Any]:
     return {key: converted_values[key] for key in values}
 
 
-def convert_item(annotation: Any, value: Any) -> Any:
+def convert_value(annotation: Any, value: Any) -> Any:
     try:
-        structure = _make_item_structure(annotation)
+        structure = _make_single_value_dataclass(annotation)
     # An annotation that cannot be hashed, such as `Literal[[1, 2]]`
     except TypeError:
-        structure = _make_item_structure.__wrapped__(annotation)
+        structure = _make_single_value_dataclass.__wrapped__(annotation)
     try:
-        typed_item = OmegaConf.structured(structure(item=_escape_texts(value)))
+        typed_item = OmegaConf.structured(
+            structure(item=_escape_omegaconf_syntax(value))
+        )
         converted_item: Any = OmegaConf.to_container(typed_item, resolve=True)
     except (OmegaConfBaseException, OverflowError) as error:
         raise ConfigSchemaError(
@@ -48,10 +52,10 @@ def convert_item(annotation: Any, value: Any) -> Any:
 
 def convert_keys(annotation: Any, keys: list[Any]) -> list[Any]:
     key_annotation = find_key_annotation(annotation)
-    if key_annotation is Any:
+    if key_annotation is None or key_annotation is Any:
         return keys
     try:
-        structure = _make_item_structure(dict[key_annotation, Any])
+        structure = _make_single_value_dataclass(dict[key_annotation, Any])
         typed_item = OmegaConf.structured(structure(item=dict.fromkeys(keys)))
         converted_item: Any = OmegaConf.to_container(typed_item)
     # OmegaConf asserts that the type of a key is a class
@@ -67,11 +71,11 @@ def convert_keys(annotation: Any, keys: list[Any]) -> list[Any]:
     return list(converted_item["item"])
 
 
-def _escape_texts(value: Any) -> Any:
+def _escape_omegaconf_syntax(value: Any) -> Any:
     if isinstance(value, dict):
-        return {key: _escape_texts(item) for key, item in value.items()}
+        return {key: _escape_omegaconf_syntax(item) for key, item in value.items()}
     if isinstance(value, (list, tuple)):
-        return type(value)(_escape_texts(item) for item in value)
+        return type(value)(_escape_omegaconf_syntax(item) for item in value)
     if not isinstance(value, str):
         return value
     # OmegaConf would read a resolved text as an interpolation or as `???` again
@@ -82,16 +86,16 @@ def _escape_texts(value: Any) -> Any:
 
 
 @functools.cache
-def _make_item_structure(annotation: Any) -> type:
+def _make_single_value_dataclass(annotation: Any) -> type:
     return dataclasses.make_dataclass("Item", [("item", annotation)])
 
 
 @functools.cache
-def _make_structure(schema: type) -> type:
+def _make_plain_values_dataclass(schema: type) -> type:
     # Every field has a default, so that the given values alone make an instance
     data_fields = [
         (name, field.annotation, dataclasses.field(default=MISSING))
         for name, field in read_fields(schema).items()
-        if field.is_data
+        if field.is_plain_value
     ]
     return dataclasses.make_dataclass(schema.__name__, data_fields)

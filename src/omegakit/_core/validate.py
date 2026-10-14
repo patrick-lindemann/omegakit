@@ -18,17 +18,17 @@ from .features.meta import META_KEY
 from .features.symbol import SYMBOL_KEY, import_symbol
 from .features.target import ARGS_KEY, TARGET_KEY, import_target, read_arguments
 from .schema import (
-    convert_data,
-    convert_item,
     convert_keys,
+    convert_plain_values,
+    convert_value,
     find_item_annotation,
+    find_position_annotations,
     find_schema,
-    find_section,
-    find_tuple_annotations,
-    is_data,
+    find_typed_dict,
+    is_plain_value,
     read_fields,
-    read_positions,
-    split_union,
+    read_positional_names,
+    union_members,
 )
 from .utils.describe import describe_node, get_full_key
 from .utils.read import read_value
@@ -108,7 +108,7 @@ def _check_node(
                 f"{', '.join(f'`{key}`' for key in reserved_keys)} cannot stand "
                 "here: keys that start with `$` are reserved."
             )
-        section = find_section(annotation)
+        section = find_typed_dict(annotation)
         # The keys of a dictionary of mappings or objects, which OmegaConf does not see
         converted_keys = convert_keys(annotation, keys)
     except OmegaKitBaseException as error:
@@ -132,7 +132,7 @@ def _check_items(
     annotation: Any,
     item_annotation: Any,
 ) -> Items:
-    item_annotations = find_tuple_annotations(annotation, len(node))
+    item_annotations = find_position_annotations(annotation, len(node))
     is_tuple = item_annotations is not None or not isinstance(node, ListConfig)
     if item_annotations is None:
         item_annotations = [item_annotation] * len(node)
@@ -144,14 +144,16 @@ def _check_items(
         )
     items = []
     for index, position_annotation in enumerate(item_annotations):
-        if not (is_tuple and is_data(position_annotation)):
+        if not (is_tuple and is_plain_value(position_annotation)):
             item = _check_value(node, index, active_nodes, position_annotation)
             items.append(item)
             continue
         # A plain position of a tuple is converted like a plain field
         item = _check_value(node, index, active_nodes, Any)
         try:
-            converted_item = convert_item(position_annotation, _unwrap_data(item))
+            converted_item = convert_value(
+                position_annotation, _unwrap_plain_value(item)
+            )
         except OmegaKitBaseException as error:
             if error.full_key is None:
                 error.full_key = node._get_full_key(index)
@@ -197,7 +199,7 @@ def _check_call(
             if schema is not None:
                 # A dataclass binds the items to its fields, as its constructor does
                 fields = read_fields(schema)
-                positions = read_positions(schema)
+                positions = read_positional_names(schema)
                 if len(args) > len(positions):
                     raise ConfigSchemaError(
                         f"`{schema.__qualname__}` takes {len(positions)} positional "
@@ -241,7 +243,7 @@ def _check_call(
 def _check_symbol(node: DictConfig, active_nodes: list[Config], annotation: Any) -> Any:
     try:
         value = import_symbol(node)
-        section = find_section(annotation)
+        section = find_typed_dict(annotation)
         if section is None or not isinstance(value, dict):
             return value
         # An existing `dict` is checked like a mapping that the config gives
@@ -298,15 +300,15 @@ def _check_schema(
         raise
     arguments = {}
     for key in keys:
-        annotation = Any if fields[key].is_data else fields[key].annotation
+        annotation = Any if fields[key].is_plain_value else fields[key].annotation
         arguments[key] = _check_value(node, key, active_nodes, annotation)
     try:
-        data_values = {
-            key: _unwrap_data(value)
+        plain_values = {
+            key: _unwrap_plain_value(value)
             for key, value in arguments.items()
-            if fields[key].is_data
+            if fields[key].is_plain_value
         }
-        converted_values = convert_data(schema, data_values)
+        converted_values = convert_plain_values(schema, plain_values)
     except OmegaKitBaseException as error:
         if error.full_key is None:
             error.full_key = get_full_key(node)
@@ -332,7 +334,7 @@ def _check_value(
     return typed_value
 
 
-def _unwrap_data(value: Any) -> Any:
+def _unwrap_plain_value(value: Any) -> Any:
     if isinstance(value, Call):
         raise ConfigSchemaError(
             f"`{TARGET_KEY}: {value.name}` cannot stand in a field that holds plain "
@@ -341,14 +343,14 @@ def _unwrap_data(value: Any) -> Any:
     if not isinstance(value, Items):
         return value
     if isinstance(value.items, dict):
-        return {key: _unwrap_data(item) for key, item in value.items.items()}
-    return type(value.items)(_unwrap_data(item) for item in value.items)
+        return {key: _unwrap_plain_value(item) for key, item in value.items.items()}
+    return type(value.items)(_unwrap_plain_value(item) for item in value.items)
 
 
 def _check_type(value: Any, annotation: Any) -> Any:
     if annotation is Any:
         return value
-    members = split_union(annotation)
+    members = union_members(annotation)
     # A field that is annotated with a schema takes a mapping of the config
     if any(is_typeddict(member) for member in members):
         if isinstance(value, Items) and isinstance(value.items, dict):

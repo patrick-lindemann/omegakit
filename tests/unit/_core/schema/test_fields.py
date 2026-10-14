@@ -94,8 +94,8 @@ def test_schema_of_a_configurable_must_be_a_typed_dict(schema: Any):
         Literal[[1, 2]],
     ],
 )
-def test_field_that_omegaconf_supports_is_data(annotation: Any):
-    assert read_fields(_make_schema(annotation))["value"].is_data
+def test_field_that_omegaconf_supports_is_a_plain_value(annotation: Any):
+    assert read_fields(_make_schema(annotation))["value"].is_plain_value
 
 
 @pytest.mark.parametrize(
@@ -122,9 +122,9 @@ def test_field_that_omegaconf_supports_is_data(annotation: Any):
         tuple[_LayerConfig, ...] | None,
     ],
 )
-def test_field_that_holds_objects_is_not_data(annotation: Any):
+def test_field_that_holds_objects_is_no_plain_value(annotation: Any):
     field = read_fields(_make_schema(annotation))["value"]
-    assert not field.is_data
+    assert not field.is_plain_value
     assert field.annotation == annotation
 
 
@@ -139,7 +139,9 @@ def test_field_that_holds_objects_is_not_data(annotation: Any):
         _Encoder | Literal["auto"],
     ],
 )
-def test_annotation_that_is_neither_data_nor_a_class_is_rejected(annotation: Any):
+def test_annotation_that_is_neither_a_plain_value_nor_a_class_is_rejected(
+    annotation: Any,
+):
     with pytest.raises(SchemaDefinitionError, match=r"Schema\.value"):
         read_fields(_make_schema(annotation))
 
@@ -163,21 +165,23 @@ def test_keys_of_a_typed_dict_are_required_unless_marked():
     required_keys = {key for key, field in fields.items() if field.is_required}
     assert set(fields) == {"width", "bias", "encoder", "scale", "name"}
     assert required_keys == {"width", "name"}
-    assert fields["width"].is_data
+    assert fields["width"].is_plain_value
     assert fields["bias"].annotation is bool
-    assert not fields["encoder"].is_data
+    assert not fields["encoder"].is_plain_value
 
 
-def test_field_that_holds_a_typed_dict_is_not_data():
+def test_field_that_holds_a_typed_dict_is_no_plain_value():
     fields = read_fields(_NetworkConfig)
-    assert not fields["layer"].is_data
-    assert not fields["layers"].is_data
+    assert not fields["layer"].is_plain_value
+    assert not fields["layers"].is_plain_value
 
 
 def test_union_of_two_typed_dicts_is_rejected():
     with pytest.raises(SchemaDefinitionError, match=r"Schema\.value"):
         read_fields(_make_schema(_LayerConfig | _NetworkConfig | None))
-    assert not read_fields(_make_schema(_LayerConfig | _Encoder))["value"].is_data
+    assert not read_fields(_make_schema(_LayerConfig | _Encoder))[
+        "value"
+    ].is_plain_value
 
 
 @pytest.mark.parametrize("key", ["learning-rate", "class", "2nd"])

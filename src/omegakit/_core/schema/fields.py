@@ -11,13 +11,13 @@ from omegakit._core.configurable import Configurable
 from omegakit._core.errors import SchemaDefinitionError
 from omegakit._core.utils.describe import describe_error
 
-from .annotations import is_data, is_object, split_union
+from .annotations import holds_objects, is_plain_value, union_members
 
 
 @dataclasses.dataclass(frozen=True)
 class SchemaField:
     annotation: Any
-    is_data: bool
+    is_plain_value: bool
     is_required: bool
 
 
@@ -61,9 +61,9 @@ def read_fields(schema: type) -> dict[str, SchemaField]:
     for name, is_required in required_keys.items():
         annotation = annotations[name]
         sections = [
-            member for member in split_union(annotation) if is_typeddict(member)
+            member for member in union_members(annotation) if is_typeddict(member)
         ]
-        is_plain = is_data(annotation)
+        is_plain = is_plain_value(annotation)
         if not name.isidentifier() or keyword.iskeyword(name):
             raise SchemaDefinitionError(
                 f"`{name}` of `{schema.__qualname__}` cannot be a key: a key is a "
@@ -74,7 +74,7 @@ def read_fields(schema: type) -> dict[str, SchemaField]:
                 f"`{schema.__qualname__}.{name}` is annotated with `{annotation}`, "
                 "which names several `TypedDict`s. A field takes at most one."
             )
-        if not is_plain and not is_object(annotation):
+        if not is_plain and not holds_objects(annotation):
             raise SchemaDefinitionError(
                 f"`{schema.__qualname__}.{name}` is annotated with `{annotation}`, "
                 "which is neither a type that OmegaConf supports nor a `TypedDict` or "
@@ -85,7 +85,7 @@ def read_fields(schema: type) -> dict[str, SchemaField]:
 
 
 @functools.cache
-def read_positions(schema: type) -> list[str]:
+def read_positional_names(schema: type) -> list[str]:
     parameters = inspect.signature(schema).parameters.values()
     kinds = (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD)
     return [parameter.name for parameter in parameters if parameter.kind in kinds]

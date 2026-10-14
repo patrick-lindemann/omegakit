@@ -5,9 +5,9 @@ import pytest
 from omegakit._core.schema.annotations import (
     find_item_annotation,
     find_key_annotation,
-    find_section,
-    find_tuple_annotations,
-    split_union,
+    find_position_annotations,
+    find_typed_dict,
+    union_members,
 )
 
 
@@ -19,9 +19,9 @@ type _Alias = int | str | None
 
 
 def test_union_is_split_into_its_members():
-    assert split_union(int | str) == (int, str)
-    assert split_union(_Alias) == (int, str, type(None))
-    assert split_union(int) == (int,)
+    assert union_members(int | str) == (int, str)
+    assert union_members(_Alias) == (int, str, type(None))
+    assert union_members(int) == (int,)
 
 
 @pytest.mark.parametrize(
@@ -47,7 +47,7 @@ def test_item_annotation_is_found_in_one_container(
         (dict[int, str], int),
         (dict[int, str] | None, int),
         (dict, Any),
-        (list[int], Any),
+        (list[int], None),
     ],
 )
 def test_key_annotation_is_found_in_a_dictionary(annotation: Any, key_annotation: Any):
@@ -67,9 +67,9 @@ def test_key_annotation_is_found_in_a_dictionary(annotation: Any, key_annotation
 def test_annotations_of_the_positions_of_a_tuple_are_found(
     annotation: Any, item_annotations: list[Any] | None
 ):
-    assert find_tuple_annotations(annotation, 3) == item_annotations
+    assert find_position_annotations(annotation, 3) == item_annotations
 
 
 def test_section_is_the_typed_dict_of_a_union():
-    assert find_section(_Section | None) is _Section
-    assert find_section(int) is None
+    assert find_typed_dict(_Section | None) is _Section
+    assert find_typed_dict(int) is None

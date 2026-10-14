@@ -7,7 +7,7 @@ from omegaconf import DictConfig
 from .config import cast_config
 from .errors import ConfigSchemaError, ConfigTargetError
 from .features.target import TARGET_KEY
-from .schema import read_fields, split_union
+from .schema import read_fields, union_members
 from .utils.describe import describe_node, get_full_key
 from .validate import Call, Items, check
 
@@ -92,7 +92,7 @@ def _build(value: Any) -> Any:
     except Exception as error:
         error.add_note(f"  while calling `{value.name}` at {describe_node(value.node)}")
         raise
-    members = split_union(value.result_annotation)
+    members = union_members(value.result_annotation)
     classes = tuple(
         get_origin(member) or member for member in members if not is_typeddict(member)
     )

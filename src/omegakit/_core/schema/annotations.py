@@ -9,17 +9,8 @@ from omegaconf import OmegaConf
 from omegaconf.errors import OmegaConfBaseException
 
 
-def split_union(annotation: Any) -> tuple[Any, ...]:
-    while isinstance(annotation, TypeAliasType):
-        annotation = annotation.__value__
-    if get_origin(annotation) not in (Union, types.UnionType):
-        return (annotation,)
-    members = [split_union(member) for member in get_args(annotation)]
-    return tuple(itertools.chain.from_iterable(members))
-
-
-def find_section(annotation: Any) -> type | None:
-    for member in split_union(annotation):
+def find_typed_dict(annotation: Any) -> type | None:
+    for member in union_members(annotation):
         if is_typeddict(member):
             return member
     return None
@@ -28,7 +19,7 @@ def find_section(annotation: Any) -> type | None:
 def find_item_annotation(
     annotation: Any, containers: tuple[type, ...] = (list, dict)
 ) -> Any:
-    member = _find_container(annotation, containers)
+    member = _find_single_container(annotation, containers)
     if member is None:
         return None
     item_annotations = get_args(member)
@@ -36,12 +27,15 @@ def find_item_annotation(
 
 
 def find_key_annotation(annotation: Any) -> Any:
-    key_annotations = get_args(_find_container(annotation, (dict,)))
+    member = _find_single_container(annotation, (dict,))
+    if member is None:
+        return None
+    key_annotations = get_args(member)
     return key_annotations[0] if key_annotations else Any
 
 
-def find_tuple_annotations(annotation: Any, length: int) -> list[Any] | None:
-    member = _find_container(annotation, (tuple,))
+def find_position_annotations(annotation: Any, length: int) -> list[Any] | None:
+    member = _find_single_container(annotation, (tuple,))
     if member is None:
         return None
     item_annotations = get_args(member)
@@ -52,24 +46,33 @@ def find_tuple_annotations(annotation: Any, length: int) -> list[Any] | None:
     return list(item_annotations)
 
 
-def is_data(annotation: Any) -> bool:
+def union_members(annotation: Any) -> tuple[Any, ...]:
+    while isinstance(annotation, TypeAliasType):
+        annotation = annotation.__value__
+    if get_origin(annotation) not in (Union, types.UnionType):
+        return (annotation,)
+    members = [union_members(member) for member in get_args(annotation)]
+    return tuple(itertools.chain.from_iterable(members))
+
+
+def is_plain_value(annotation: Any) -> bool:
     try:
-        return _is_data_cached(annotation)
+        return _is_plain_value_cached(annotation)
     # An annotation that cannot be hashed, such as `Literal[[1, 2]]`, is probed anew
     except TypeError:
-        return _is_data_cached.__wrapped__(annotation)
+        return _is_plain_value_cached.__wrapped__(annotation)
 
 
-def is_object(annotation: Any) -> bool:
-    for member in split_union(annotation):
+def holds_objects(annotation: Any) -> bool:
+    for member in union_members(annotation):
         item_annotation = find_item_annotation(member)
         if item_annotation is not None:
-            if not is_object(item_annotation):
+            if not holds_objects(item_annotation):
                 return False
             continue
-        tuple_annotations = find_tuple_annotations(member, 1)
-        if tuple_annotations is not None:
-            if not all(is_object(item) for item in tuple_annotations):
+        position_annotations = find_position_annotations(member, 1)
+        if position_annotations is not None:
+            if not all(holds_objects(item) for item in position_annotations):
                 return False
             continue
         cls = get_origin(member) or member
@@ -83,20 +86,20 @@ def is_object(annotation: Any) -> bool:
 
 
 @functools.cache
-def _is_data_cached(annotation: Any) -> bool:
+def _is_plain_value_cached(annotation: Any) -> bool:
     # A dataclass is an object, although OmegaConf reads it as a structured config
-    is_object = any(
+    is_built = any(
         is_typeddict(member) or dataclasses.is_dataclass(member)
-        for member in split_union(annotation)
+        for member in union_members(annotation)
     )
-    if annotation is Any or is_object:
+    if annotation is Any or is_built:
         return False
     item_annotation = find_item_annotation(annotation)
-    if item_annotation is not None and not is_data(item_annotation):
+    if item_annotation is not None and not is_plain_value(item_annotation):
         return False
-    tuple_annotations = find_tuple_annotations(annotation, 1)
-    if tuple_annotations is not None and not all(
-        is_data(item) for item in tuple_annotations
+    position_annotations = find_position_annotations(annotation, 1)
+    if position_annotations is not None and not all(
+        is_plain_value(item) for item in position_annotations
     ):
         return False
     probe = dataclasses.make_dataclass("Probe", [("value", annotation)])
@@ -109,9 +112,9 @@ def _is_data_cached(annotation: Any) -> bool:
 
 
 # The one container of an annotation such as `list[int] | None`, if it has one
-def _find_container(annotation: Any, containers: tuple[type, ...]) -> Any:
+def _find_single_container(annotation: Any, containers: tuple[type, ...]) -> Any:
     members = [
-        member for member in split_union(annotation) if member is not types.NoneType
+        member for member in union_members(annotation) if member is not types.NoneType
     ]
     if len(members) != 1 or (get_origin(members[0]) or members[0]) not in containers:
         return None
