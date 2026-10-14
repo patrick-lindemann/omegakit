@@ -9,7 +9,7 @@ def validate(  # noqa: DOC502
     config: Config | dict[Any, Any] | list[Any] | tuple[Any, ...],
     schema: type | None = None,
 ) -> None:
-    """Check a config and import its `$target`s and `$symbol`s, without calling them.
+    """Check a config and import what `$target` and `$symbol` name, without calling it.
 
     A `TypedDict` as `schema` checks a mapping, and a class checks what a `$target`
     node builds.

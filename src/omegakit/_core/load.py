@@ -22,7 +22,7 @@ def load_config(  # noqa: DOC503
 ) -> DictConfig:
     """Load a config file and assemble it.
 
-    The `~include`s are resolved first. Then `$base` and `$each` are merged, the
+    The includes are resolved first. Then `$base` and `$each` are merged, the
     overrides are applied and `$meta` is removed.
 
     Args:

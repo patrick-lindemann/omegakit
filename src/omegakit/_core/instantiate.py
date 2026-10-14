@@ -61,7 +61,7 @@ def prepare(  # noqa: DOC502
     """Build a partial of the object that a config describes.
 
     The config is checked as by `validate`, except that required arguments may be
-    left to the call of the partial. Nested `$target`s are built.
+    left to the call of the partial. Nested `$target` nodes are built.
 
     Args:
         config: A node with `$target`, or a `dict`.
