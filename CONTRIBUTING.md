@@ -28,9 +28,9 @@ uv run sphinx-build docs docs/_build
 uv run python -m http.server 8000 --directory docs/_build
 ```
 
-Assembly relies on private OmegaConf node APIs. omegakit is pinned to OmegaConf
-2.4.0 (`>=2.4.0rc1,<2.4.1`), and CI tests the lowest supported versions and the
-locked versions.
+Assembly relies on private OmegaConf node APIs. omegakit requires OmegaConf 2.4
+(`>=2.4.0,<2.5.0`), and CI tests the lowest supported versions and the locked
+versions.
 
 ## Code
 
