@@ -4,6 +4,13 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- `resolve_includes`, `merge_bases`, `apply_each`, `apply_overrides` and
+  `remove_meta` are public functions for assembling configs created in memory.
+
 ## [0.9.0] - 2026-10-15
 
 ### Added
@@ -587,6 +594,7 @@ First release. The configuration language is specified in the
   such as `omegakit.resolvers.paths`.
 - Python 3.12 is supported.
 
+[Unreleased]: https://github.com/patrick-lindemann/omegakit/compare/v0.9.0...HEAD
 [0.9.0]: https://github.com/patrick-lindemann/omegakit/releases/tag/v0.9.0
 [0.8.0]: https://github.com/patrick-lindemann/omegakit/releases/tag/v0.8.0
 [0.7.0]: https://github.com/patrick-lindemann/omegakit/releases/tag/v0.7.0

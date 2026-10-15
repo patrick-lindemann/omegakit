@@ -32,6 +32,23 @@ def apply_overrides(
     overrides: DictConfig | ListConfig | dict[str, Any] | list[Any],
     copy: bool = True,
 ) -> DictConfig | ListConfig:
+    """Apply overrides to a config.
+
+    A mapping merges into a mapping config. A list replaces the items of a list
+    config. A list of `key=value` strings applies the items in order to a mapping
+    config.
+
+    Args:
+        config: The config to override.
+        overrides: The mapping, list or `key=value` strings to apply.
+        copy: Whether to leave `config` unchanged. Defaults to `True`.
+
+    Returns:
+        The config with the overrides applied.
+
+    Raises:
+        ConfigOverrideError: If the overrides cannot be parsed or applied.
+    """
     if copy:
         config = copy_with_root(config)
     is_dict = isinstance(config, DictConfig)

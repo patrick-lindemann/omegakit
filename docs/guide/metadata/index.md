@@ -23,13 +23,16 @@ description: The baseline MLP with eight times as many hidden units.
 description: Wider than the baseline's 32 units.
 ```
 
-The first config came without `$meta`, and the second, with `keep_meta=True`, kept
-it. `walk` visited every node, parents first, and the script kept the mappings that
-hold `$meta`. So it found the description of the model node too, as a script that
-lists experiments with their titles would.
+`load_config(..., keep_meta=True)` kept the metadata, and `remove_meta` made the
+copy printed first without changing that config. `walk` visited every node, parents
+first, and the script kept the mappings that hold `$meta`. So it found the
+description of the model node too, as a script that lists experiments with their
+titles would.
 
 ## Rules
 
+- `remove_meta(config)` removes `$meta` from a config already in memory and returns
+  a copy. Pass `copy=False` to transform the config itself.
 - `$meta` is a key of a mapping, and its value can be anything. omegakit does not
   check what it holds.
 - `load_config` removes every `$meta`, unless `keep_meta=True`

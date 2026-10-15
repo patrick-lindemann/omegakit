@@ -10,6 +10,15 @@ META_KEY = "$meta"
 def remove_meta[TConfig: DictConfig | ListConfig | TupleConfig](
     config: TConfig, copy: bool = True
 ) -> TConfig:
+    """Remove every `$meta` from a config.
+
+    Args:
+        config: The config to transform.
+        copy: Whether to leave `config` unchanged. Defaults to `True`.
+
+    Returns:
+        The config without `$meta` keys.
+    """
     if copy:
         config = copy_with_root(config)
     for node in walk(config):

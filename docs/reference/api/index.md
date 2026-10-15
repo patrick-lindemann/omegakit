@@ -11,6 +11,16 @@
 .. autofunction:: omegakit.load_config
 ```
 
+## Assembly
+
+```{eval-rst}
+.. autofunction:: omegakit.resolve_includes
+.. autofunction:: omegakit.merge_bases
+.. autofunction:: omegakit.apply_each
+.. autofunction:: omegakit.apply_overrides
+.. autofunction:: omegakit.remove_meta
+```
+
 ## Building
 
 ```{eval-rst}

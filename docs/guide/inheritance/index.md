@@ -61,6 +61,8 @@ the file ends up. A `$base` may also be a list of mappings (see Rules).
 
 ## Rules
 
+- `merge_bases(config)` merges `$base` keys in a config already in memory and
+  returns a copy. Pass `copy=False` to transform the config itself.
 - `$base` is a mapping or a list of mappings, usually an `~include` or a `${…}`.
   Anything else, `null` and `???` included, raises `ConfigMergeError`, as in
   `` `$base` must be a mapping or a list of mappings, not `5`. (at `model`) ``.

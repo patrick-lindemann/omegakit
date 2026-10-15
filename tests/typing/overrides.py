@@ -1,6 +1,6 @@
 from omegaconf import DictConfig, ListConfig
 
-from omegakit._core.features.overrides import apply_overrides
+from omegakit import apply_overrides
 
 
 def check_overrides(dict_config: DictConfig, list_config: ListConfig) -> None:

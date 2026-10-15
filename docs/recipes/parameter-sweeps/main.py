@@ -6,9 +6,10 @@ import torch
 from omegaconf import OmegaConf
 from project import CONFIGS, Experiment, train
 
-from omegakit import PARTIAL_KEY, instantiate, load_config, make_node
+from omegakit import PARTIAL_KEY, apply_overrides, instantiate, load_config, make_node
 
 runs = Path(tempfile.mkdtemp())
+base_config = load_config(CONFIGS / "experiments/mlp.yaml")
 optimizers = {
     "sgd": make_node(torch.optim.SGD, lr=0.1, momentum=0.9),
     "adam": make_node(torch.optim.Adam, lr=0.01),
@@ -23,7 +24,7 @@ for hidden, (name, optimizer), seed in itertools.product(
         f"seed={seed}",
         f"run_dir={runs}/${{name}}/seed${{seed}}",
     ]
-    config = load_config(CONFIGS / "experiments/mlp.yaml", overrides=overrides)
+    config = apply_overrides(base_config, overrides)
     config.optimizer = {**optimizer, PARTIAL_KEY: True}
 
     torch.manual_seed(config.seed)

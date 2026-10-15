@@ -29,7 +29,12 @@ from .features import (
     PARTIAL_KEY,
     SYMBOL_KEY,
     TARGET_KEY,
+    apply_each,
+    apply_overrides,
     make_node,
+    merge_bases,
+    remove_meta,
+    resolve_includes,
 )
 from .instantiate import instantiate, prepare
 from .load import load_config
@@ -65,12 +70,17 @@ __all__ = [
     "SchemaDefinitionError",
     "ValidationInterpolationError",
     "ValidationMissingValueError",
+    "apply_each",
+    "apply_overrides",
     "cast_config",
     "instantiate",
     "is_valid",
     "load_config",
     "make_node",
+    "merge_bases",
     "prepare",
+    "remove_meta",
+    "resolve_includes",
     "validate",
     "walk",
 ]

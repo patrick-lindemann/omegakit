@@ -35,12 +35,31 @@ class _Assignment:
     value: Any
 
 
-def resolve_includes[TConfig: DictConfig | ListConfig | TupleConfig](
+def resolve_includes[TConfig: DictConfig | ListConfig | TupleConfig](  # noqa: DOC502
     config: TConfig,
     config_path: PathLike,
     include_root: PathLike | None = None,
     copy: bool = True,
 ) -> TConfig:
+    """Replace every `~include` value with the config node that it names.
+
+    Args:
+        config: The config to transform.
+        config_path: The path of the file that `config` represents.
+        include_root: The directory that every `~include` must stay under. Defaults to
+            `None`, in which case any file may be included.
+        copy: Whether to leave `config` unchanged. Defaults to `True`.
+
+    Returns:
+        The config with every `~include` resolved.
+
+    Raises:
+        ConfigFileNotFoundError: If an included file does not exist.
+        ConfigFilePermissionError: If an included file may not be read.
+        ConfigFileSyntaxError: If an included file is no valid YAML.
+        ConfigIncludeError: If an `~include` cannot be resolved.
+        IncludeRootError: If an included file is outside `include_root`.
+    """
     if copy:
         config = copy_with_root(config)
     config_path = resolve_path(config_path)

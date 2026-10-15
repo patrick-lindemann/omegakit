@@ -12,6 +12,18 @@ EACH_KEY = "$each"
 def apply_each[TConfig: DictConfig | ListConfig | TupleConfig](
     config: TConfig, copy: bool = True
 ) -> TConfig:
+    """Merge every `$each` under the sibling mappings beside it.
+
+    Args:
+        config: The config to transform.
+        copy: Whether to leave `config` unchanged. Defaults to `True`.
+
+    Returns:
+        The config with every `$each` merged and removed.
+
+    Raises:
+        ConfigMergeError: If an `$each` is not a mapping or cannot be merged.
+    """
     if copy:
         config = copy_with_root(config)
     for node, each in walk_mergeable(config, EACH_KEY):
