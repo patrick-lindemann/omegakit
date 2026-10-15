@@ -47,7 +47,6 @@ def merge_bases[TConfig: DictConfig | ListConfig | TupleConfig](
 def _save_reached_holders(
     node: DictConfig, bases: list[DictConfig], own_contents: dict[str, DictConfig]
 ) -> None:
-    """Save a copy of each mapping below `node` with a `$base` that `bases` reach."""
     for key in node.keys():  # noqa: SIM118
         child = node._get_node(key)
         if not isinstance(child, DictConfig):
