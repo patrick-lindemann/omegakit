@@ -1,7 +1,7 @@
 from collections.abc import Iterator
 from typing import Any, cast
 
-from omegaconf import MISSING, DictConfig, ListConfig, OmegaConf, TupleConfig
+from omegaconf import MISSING, DictConfig, ListConfig, Node, OmegaConf, TupleConfig
 from omegaconf.errors import InterpolationResolutionError, MissingMandatoryValue
 
 from omegakit._core.errors import (
@@ -9,26 +9,34 @@ from omegakit._core.errors import (
 )
 
 from .describe import describe_error, describe_node, get_full_key
-from .walk import walk
+from .walk import WalkOrder, walk
 
 
 def walk_mergeable(
-    config: DictConfig | ListConfig | TupleConfig, key: str
+    config: DictConfig | ListConfig | TupleConfig,
+    key: str,
+    is_outer_first: bool = False,
 ) -> Iterator[tuple[DictConfig, Any]]:
+    # In this order a holder comes after every holder it usually waits for
+    order: WalkOrder = "pre-order" if is_outer_first else "post-order"
     while True:
         holders = [
             node
-            for node in walk(config, "post-order")
+            for node in walk(config, order)
             if isinstance(node, DictConfig) and key in node.keys()  # noqa: SIM118
         ]
         # The consumer deletes `key` from every node it is given, or this never ends
         if not holders:
             return
         holder_ids = {id(holder) for holder in holders}
+        # The holders below a merged node, which the merge replaced by copies
+        replaced_ids: set[int] = set()
         blockers: dict[int, DictConfig] = {}
         unresolved: tuple[DictConfig, InterpolationResolutionError] | None = None
         has_progressed = False
         for node in holders:
+            if id(node) in replaced_ids:
+                continue
             try:
                 value = node[key]
                 items = list(value) if isinstance(value, ListConfig) else [value]
@@ -40,13 +48,25 @@ def walk_mergeable(
                     unresolved = (node, error)
                 continue
             enclosing_ids: set[int] = set()
+            enclosing_nodes: list[Node] = []
+            child: Node = node
             parent = node._get_parent()
             while parent is not None:
                 enclosing_ids.add(id(parent))
+                # A node inside the value of `key` is read by that merge, not
+                # changed by it
+                if not (
+                    isinstance(parent, DictConfig)
+                    and key in parent.keys()  # noqa: SIM118
+                    and parent._get_node(key) is child
+                ):
+                    enclosing_nodes.append(parent)
+                child = parent
                 parent = parent._get_parent()
             # What the merge reads: the node, each mapping of the value, and what
-            # encloses such a mapping without enclosing the node
-            read_nodes = list(walk(node))
+            # encloses such a mapping without enclosing the node. Outer first, the
+            # node waits for what encloses it instead of what it encloses.
+            read_nodes = enclosing_nodes if is_outer_first else list(walk(node))
             for item in items:
                 if not isinstance(item, DictConfig):
                     continue
@@ -66,6 +86,12 @@ def walk_mergeable(
             if pending_nodes:
                 blockers[id(node)] = pending_nodes[0]
                 continue
+            if is_outer_first:
+                replaced_ids.update(
+                    id(inner_node)
+                    for inner_node in walk(node)
+                    if inner_node is not node and id(inner_node) in holder_ids
+                )
             yield node, value
             has_progressed = True
         if has_progressed:
@@ -88,6 +114,15 @@ def walk_mergeable(
 
 def merge_under(node: DictConfig, *others: DictConfig) -> None:
     merged_config = cast(DictConfig, OmegaConf.merge(*others, node))
+    _write_back(node, merged_config)
+
+
+def merge_over(node: DictConfig, *others: DictConfig) -> None:
+    merged_config = cast(DictConfig, OmegaConf.merge(node, *others))
+    _write_back(node, merged_config)
+
+
+def _write_back(node: DictConfig, merged_config: DictConfig) -> None:
     # Written back key by key, so that `node` itself stays in its place
     for key in list(node.keys()):
         del node[key]

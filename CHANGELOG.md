@@ -142,6 +142,15 @@ All notable changes to this project are documented here. The format follows
   interpolation to a missing or unknown key as an error instead of printing `???`;
   with the new `--allow-missing` it prints `???` as before, and so does `--node` for
   a node that holds `???`.
+- **Breaking:** A `$base` is merged after the `$base` of every node that encloses
+  it, so a `${…}` base sees an enclosing node with the keys that the enclosing
+  `$base` brings in. `data.test: {$base: ${..train}}` gets the `train` keys that a
+  `$base` of `data` adds, and finds `train` also where only that base brings it; it
+  got `train` as written, and raised `Cannot resolve` where only that base brought
+  it. Precedence is unchanged: the enclosing base, then the own `$base`, then the
+  own keys. A `$base` that names a node inside its own node, where that node holds
+  a `$base`, raises ``The `$base` of these nodes wait for each other``; it was
+  merged with that node's `$base` merged first.
 - `validate` takes `schema` as its second argument by position as well. It took it
   only by keyword.
 - The API and Changelog pages of the documentation moved to `reference/api/` and

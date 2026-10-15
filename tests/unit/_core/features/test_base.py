@@ -44,7 +44,7 @@ def test_merges_bases_in_a_list_config():
     assert config == [{"depth": 2, "hidden": 32}]
 
 
-def test_a_child_is_merged_before_its_parent():
+def test_a_child_base_wins_over_its_parent_base():
     config = OmegaConf.create(
         {
             "$base": {"model": {"hidden": 32, "depth": 2}},
@@ -108,7 +108,7 @@ def test_a_reference_to_a_later_list_item():
     assert config.stages == [{"lr": 0.1, "epochs": 1}, {"lr": 0.1}]
 
 
-def test_a_reference_sees_an_enclosing_node_as_written():
+def test_a_reference_sees_an_enclosing_node_with_its_base_merged():
     config = OmegaConf.create(
         {
             "data": {
@@ -119,7 +119,46 @@ def test_a_reference_sees_an_enclosing_node_as_written():
         }
     )
     config = merge_bases(config)
-    assert config.data == {"train": {"n": 5, "noise": 0.1}, "test": {"n": 5}}
+    assert config.data == {
+        "train": {"n": 5, "noise": 0.1},
+        "test": {"n": 5, "noise": 0.1},
+    }
+
+
+def test_a_reference_finds_a_node_that_only_an_enclosing_base_brings():
+    config = OmegaConf.create(
+        {
+            "defaults": {"train": {"batch": 32, "shuffle": True}},
+            "data": {"$base": "${defaults}", "test": {"$base": "${..train}"}},
+        }
+    )
+    config = merge_bases(config)
+    assert config.data.test == {"batch": 32, "shuffle": True}
+
+
+def test_an_enclosing_base_stays_weaker_than_the_own_base_and_keys():
+    config = OmegaConf.create(
+        {
+            "$base": {"model": {"hidden": 128, "depth": 2, "bias": True}},
+            "model": {"$base": {"hidden": 32, "depth": 4}, "depth": 8},
+        }
+    )
+    config = merge_bases(config)
+    assert config.model == {"hidden": 32, "depth": 8, "bias": True}
+
+
+def test_an_enclosing_base_reached_through_an_interpolation_stays_weaker():
+    config = OmegaConf.create(
+        {
+            "template": {"train": {"batch": 32, "shuffle": True}},
+            "data": {
+                "$base": {"setup": "${template}"},
+                "setup": {"train": {"$base": {"batch": 8}}},
+            },
+        }
+    )
+    config = merge_bases(config)
+    assert config.data.setup.train == {"batch": 8, "shuffle": True}
 
 
 def test_a_base_reached_through_an_interpolation_is_merged_too():
@@ -222,6 +261,22 @@ def test_reference_that_never_resolves_is_rejected():
 def test_cycle_is_rejected():
     config = OmegaConf.create({"a": {"$base": "${b}"}, "b": {"$base": "${a}"}})
     with pytest.raises(ConfigMergeError, match="`a` -> `b` -> `a`"):
+        merge_bases(config)
+
+
+def test_a_base_that_names_a_node_inside_its_own_node_is_rejected():
+    config = OmegaConf.create(
+        {
+            "data": {
+                "$base": "${data.test}",
+                "test": {"$base": "${..train}"},
+                "train": {"n": 1},
+            }
+        }
+    )
+    with pytest.raises(
+        ConfigMergeError, match=re.escape("`data` -> `data.test` -> `data`")
+    ):
         merge_bases(config)
 
 

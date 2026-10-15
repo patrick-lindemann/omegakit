@@ -8,12 +8,12 @@ from omegaconf.errors import InterpolationResolutionError
 from omegakit._core.errors import (
     ConfigMergeError,
 )
-from omegakit._core.utils.merge import merge_under, walk_mergeable
+from omegakit._core.utils.merge import merge_over, merge_under, walk_mergeable
 
 
-def _remove_key(config: DictConfig) -> list[Any]:
+def _remove_key(config: DictConfig, is_outer_first: bool = False) -> list[Any]:
     keys = []
-    for node, _ in walk_mergeable(config, "$key"):
+    for node, _ in walk_mergeable(config, "$key", is_outer_first=is_outer_first):
         keys.append(node._key())
         del node["$key"]
     return keys
@@ -45,6 +45,12 @@ def test_merge_under_puts_the_merged_keys_first():
     config = OmegaConf.create({"seed": 0})
     merge_under(config, OmegaConf.create({"n": 256, "noise": 0.1}))
     assert list(config.keys()) == ["n", "noise", "seed"]
+
+
+def test_merge_over_lets_the_others_win():
+    config = OmegaConf.create({"model": {"hidden": 256, "bias": True}})
+    merge_over(config.model, OmegaConf.create({"hidden": 32, "depth": 2}))
+    assert config == {"model": {"hidden": 32, "bias": True, "depth": 2}}
 
 
 def test_merge_under_keeps_values_unresolved():
@@ -82,6 +88,42 @@ def test_walk_does_not_wait_for_a_node_that_encloses_the_holder():
         {"data": {"$key": {}, "train": {"n": 5}, "test": {"$key": "${..train}"}}}
     )
     assert _remove_key(config) == ["test", "data"]
+
+
+def test_walk_outer_first_yields_parents_before_children():
+    config = OmegaConf.create(
+        {"$key": "root", "model": {"$key": "model", "layers": [{"$key": "layer"}]}}
+    )
+    values = []
+    for node, value in walk_mergeable(config, "$key", is_outer_first=True):
+        values.append(value)
+        del node["$key"]
+    assert values == ["root", "model", "layer"]
+
+
+def test_walk_outer_first_yields_a_node_after_its_replaced_children():
+    config = OmegaConf.create({"data": {"$key": 1, "test": {"$key": 2}}})
+    values = []
+    for node, value in walk_mergeable(config, "$key", is_outer_first=True):
+        values.append(value)
+        del node["$key"]
+        # Replaced, as a merge replaces the children of the node it is given
+        if value == 1:
+            node.test = {"$key": 3}
+    assert values == [1, 3]
+
+
+def test_walk_outer_first_does_not_wait_for_a_node_whose_key_holds_the_holder():
+    config = OmegaConf.create({"model": {"$key": {"$key": {}, "hidden": 32}}})
+    assert _remove_key(config, is_outer_first=True) == ["$key", "model"]
+
+
+def test_walk_outer_first_rejects_a_node_that_reads_a_node_inside_it():
+    config = OmegaConf.create({"data": {"$key": "${data.test}", "test": {"$key": {}}}})
+    with pytest.raises(
+        ConfigMergeError, match=re.escape("`data` -> `data.test` -> `data`")
+    ):
+        _remove_key(config, is_outer_first=True)
 
 
 def test_walk_yields_a_reference_to_a_key_that_appears_later():

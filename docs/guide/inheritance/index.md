@@ -74,19 +74,20 @@ the file ends up. A `$base` may also be a list of mappings (see Rules).
 
 A `${…}` base is resolved while loading, and is a copy taken when it is merged:
 
-- A node's `$base` is merged once nothing that the merge reads still holds a
-  `$base`: the node, the referenced mapping, and the nodes that enclose that
-  mapping but not the node. The node so sees the referenced mapping with that
-  mapping's own `$base` merged.
-- It does not wait for the `$base` of an enclosing node. `${..train}` sees `train`
-  without the keys that a `$base` of its parent or of the root brings in. If
-  `train` exists only through such a base, loading raises ``Cannot resolve `$base`:
-  Interpolation key '..train' not found (resolved to 'data.train') (at
-  `data.test`)``.
+- A node's `$base` is merged once no node that encloses it still holds a `$base`,
+  and nothing that the merge reads does: the referenced mapping, and the nodes that
+  enclose that mapping but not the node. The node so sees the referenced mapping
+  with that mapping's own `$base` merged.
+- `${..train}` therefore sees `train` with the keys that a `$base` of its parent or
+  of the root brings in, and finds `train` also where only such a base brings it.
+- What a `$base` of an enclosing node brings to a node is weaker than the node's
+  own `$base`, which is weaker than the node's own keys.
 - In a file used as another file's `$base`, the copy is taken there, before the
   other file's keys apply. Replacing `data.train` there does not change the copy.
 - Overrides do not reach the copy: `data.train.n=100` leaves `data.test.n`
   unchanged.
 - A `${…}` that cannot be resolved raises ``ConfigMergeError: Cannot resolve
   `$base`: …``, and nodes whose `$base` refer to each other raise ``The `$base` of
-  these nodes wait for each other: `a` -> `b` -> `a`.``
+  these nodes wait for each other: `a` -> `b` -> `a`.`` So does a `$base` of `data`
+  that names `data.test` while `data.test` holds a `$base`: `data` -> `data.test`
+  -> `data`.

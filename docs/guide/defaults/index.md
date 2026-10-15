@@ -37,7 +37,7 @@ validation split also keeps its own `n`.
 - It is merged after every `$base` in the config, so an `$each` that arrives
   through a `$base` or an `~include` works. An `$each` copied through a `${…}` base
   applies at the new place too ([Inheritance](../inheritance/index.md#rules)).
-- A `${…}` value of `$each` is resolved while loading. It waits, as a `$base` does,
-  until no `$each` is left in what it reads, so it sees the referenced mapping with
-  its `$base` and `$each` merged ([Inheritance](../inheritance/index.md#rules)). One
-  that cannot be resolved raises ``ConfigMergeError: Cannot resolve `$each`: …``.
+- A `${…}` value of `$each` is resolved while loading. It waits until no `$each` is
+  left in what it reads, its own mapping included, so it sees the referenced
+  mapping with its `$base` and `$each` merged
+  ([Inheritance](../inheritance/index.md#rules)). One that cannot be resolved raises ``ConfigMergeError: Cannot resolve `$each`: …``.
