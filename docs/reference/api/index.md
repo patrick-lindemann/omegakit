@@ -43,45 +43,21 @@
 ## Special keys
 
 ```{eval-rst}
-.. py:data:: omegakit.ARGS_KEY
-   :value: "$args"
+.. autodata:: omegakit.ARGS_KEY
 
-   The key of the list of positional arguments of the `$target`.
+.. autodata:: omegakit.BASE_KEY
 
-.. py:data:: omegakit.BASE_KEY
-   :value: "$base"
+.. autodata:: omegakit.EACH_KEY
 
-   The key of a mapping, or a list of mappings, merged under its node.
+.. autodata:: omegakit.INCLUDE_KEY
 
-.. py:data:: omegakit.EACH_KEY
-   :value: "$each"
+.. autodata:: omegakit.META_KEY
 
-   The key of a mapping merged under every mapping beside it.
+.. autodata:: omegakit.PARTIAL_KEY
 
-.. py:data:: omegakit.INCLUDE_KEY
-   :value: "~include"
+.. autodata:: omegakit.SYMBOL_KEY
 
-   The prefix of a value that is replaced by a config file or one of its nodes.
-
-.. py:data:: omegakit.META_KEY
-   :value: "$meta"
-
-   The key of data about a node, which `load_config` removes.
-
-.. py:data:: omegakit.PARTIAL_KEY
-   :value: "$partial"
-
-   The key that, set to `true`, builds a partial of the `$target` instead.
-
-.. py:data:: omegakit.SYMBOL_KEY
-   :value: "$symbol"
-
-   The key of the import path of an object that replaces its node as it is.
-
-.. py:data:: omegakit.TARGET_KEY
-   :value: "$target"
-
-   The key of the import path of the class or function that builds its node.
+.. autodata:: omegakit.TARGET_KEY
 ```
 
 ## Errors
