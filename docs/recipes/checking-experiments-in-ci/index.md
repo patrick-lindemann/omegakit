@@ -6,12 +6,14 @@ file and builds nothing, and a test builds each experiment. From the example
 project's directory:
 
 ```sh
-omegakit check configs/experiments/*.yaml --schema project.Experiment --allow-module project --allow-module torch.nn --allow-module torch.optim --import-root configs
+omegakit check configs/experiments/*.yaml --schema project.Experiment --include-root configs
 ```
 
 `check` printed nothing, so every file is valid
-([check](../../command-line/check/index.md)). The test builds each experiment with
-the same limits, which also runs the constructors and every `from_config`:
+([check](../../command-line/check/index.md)). `--include-root` rejects an include
+of a file outside `configs` ([Includes](../../guide/includes/index.md#rules)). The
+test loads each experiment with the same root and builds it, which also runs the
+constructors and every `from_config`:
 
 ```{literalinclude} test_experiments.py
 :language: python
@@ -21,7 +23,7 @@ the same limits, which also runs the constructors and every `from_config`:
 In a GitHub Actions workflow, run both after installing your project:
 
 ```yaml
-- run: omegakit check configs/experiments/*.yaml --schema project.Experiment --allow-module project --allow-module torch.nn --allow-module torch.optim --import-root configs
+- run: omegakit check configs/experiments/*.yaml --schema project.Experiment --include-root configs
 - run: pytest
 ```
 
@@ -37,7 +39,7 @@ repos:
     hooks:
       - id: omegakit-check
         name: omegakit check
-        entry: omegakit check --schema project.Experiment --allow-module project --allow-module torch.nn --allow-module torch.optim
+        entry: omegakit check --schema project.Experiment --include-root configs
         language: system
         files: ^configs/experiments/.*\.yaml$
 ```

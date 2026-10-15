@@ -2,13 +2,13 @@
 
 omegakit is a small library on top of OmegaConf for experiment configs. Every
 experiment is a YAML file in git that names its base and its includes by path. You
-load it from your own `main()`, check it against a schema, and build your objects
-from it. The same file and seed give the same run. Install it with
-`pip install omegakit`, on Python 3.12 or newer. It needs OmegaConf 2.4.0, which is a
-release candidate until it is out, so uv needs `uv add omegakit --prerelease=allow`.
+load it from your own `main()` and build your objects from it, checked before
+anything is called. The same file and seed give the same run. Install it with
+`pip install omegakit`, on Python 3.12 or newer.
 
 ```yaml
 # base.yaml
+$target: experiment.Experiment
 seed: 0
 epochs: 100
 loss:
@@ -29,33 +29,46 @@ model:
 ```
 
 ```python
+# experiment.py
 from collections.abc import Callable
-from typing import TypedDict
+from dataclasses import dataclass
 
 import torch
-from omegakit import instantiate, load_config, validate
 
 
-class ExperimentConfig(TypedDict):
+@dataclass
+class Experiment:
     seed: int
     epochs: int
     loss: Callable[..., torch.Tensor]
     model: torch.nn.Module
     optimizer: Callable[..., torch.optim.Optimizer]
+```
 
+```python
+# main.py
+import torch
+from experiment import Experiment
+from omegakit import instantiate, load_config
 
 config = load_config("linear.yaml")
-validate(config, ExperimentConfig)
 torch.manual_seed(config.seed)
-model = instantiate(config.model)
-optimizer = instantiate(config.optimizer)(model.parameters())
+experiment = instantiate(config, Experiment)
+model = experiment.model
+optimizer = experiment.optimizer(model.parameters())
+x, y = torch.randn(64, 16), torch.randn(64, 1)
+for _ in range(experiment.epochs):
+    optimizer.zero_grad()
+    experiment.loss(model(x), y).backward()
+    optimizer.step()
 ```
 
 `linear.yaml` took the seed, the epochs, the loss and the optimizer from
-`base.yaml`, and added a model. `$target` names a class or function to call,
-`$symbol` passes a function as it is, and `$partial` builds the optimizer later, once
-the model's parameters exist. `validate` checks the config against the schema before
-anything is built: `epochs: many` raises an error that names the key. The
+`base.yaml`, and added a model. `$target` names a class or function to call, here
+`Experiment` at the root, `$symbol` passes a function as it is, and `$partial`
+builds the optimizer later, once the model's parameters exist. `instantiate` checks
+the config against the fields of `Experiment` before anything is built:
+`epochs: many` raises an error that names the key. The
 [documentation](https://omegakit.readthedocs.io) trains a small PyTorch model in
 every example.
 
@@ -63,7 +76,6 @@ every example.
 
 - One file per experiment, sharing a base:
   [Getting started](https://omegakit.readthedocs.io/en/latest/getting-started/)
-
 - Run one experiment for many values:
   [Parameter sweeps](https://omegakit.readthedocs.io/en/latest/recipes/parameter-sweeps/)
 - Check configs before anything runs:
@@ -80,6 +92,6 @@ only from trusted sources, and wrap secrets in `${secret:...}`. The
 [Trust model](https://omegakit.readthedocs.io/en/latest/security/trust-model/) page lists what
 runs.
 
-omegakit requires OmegaConf 2.4.0. It builds on OmegaConf but is not affiliated
+omegakit requires OmegaConf 2.4. It builds on OmegaConf but is not affiliated
 with or endorsed by the OmegaConf project.
 [Contributing](https://github.com/patrick-lindemann/omegakit/blob/main/CONTRIBUTING.md).

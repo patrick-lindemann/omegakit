@@ -36,15 +36,8 @@ SCRIPTS = sorted(
 # The tests of the pages that stages 3 to 6 of the docs rewrite have not rewritten
 # yet, with the stage that rewrites each. A stage removes the items of its pages.
 EXPECTED_FAILURES = {
-    "example/configs/base.yaml": "stage 5, renamed `$class`",
-    "example/configs/experiments/linear.yaml": "stage 5, renamed `~import`",
-    "example/configs/experiments/mlp.yaml": "stage 5, renamed `~import`",
-    "getting-started/experiment.yaml": "stage 5, renamed `$class`",
     "resolvers/torch/precision.yaml": "stage 6, renamed torch resolvers",
     "security/restricting-imports/shared-run/config.yaml": "stage 6, renamed `$class`",
-    "getting-started": "stage 5, renamed `$class`",
-    "recipes/parameter-sweeps": "stage 5, renamed `~import`",
-    "recipes/swapping-implementations": "stage 5, renamed `~import`",
     "resolvers/torch": "stage 6, renamed torch resolvers",
     "security/restricting-imports": "stage 6, removed `import_root`",
 }

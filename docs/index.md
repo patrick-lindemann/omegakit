@@ -2,15 +2,17 @@
 
 omegakit is a small library on top of [OmegaConf](https://omegaconf.readthedocs.io/)
 for experiment configs. Every experiment is a YAML file in git that names its base
-and its imports by path. You load it from your own `main()`, check it against a
-dataclass, and build your objects from it. The same file and seed give the same run.
+and its includes by path. You load it from your own `main()`, check it against a
+schema, and build your objects from it. The same file and seed give the same run.
 It was developed for machine learning, but nothing in it is specific to that. The
 examples in these pages train a small PyTorch model.
 
 omegakit adds functions to OmegaConf and leaves everything else to it. It combines
-files through imports, bases and defaults, builds objects from `$class` nodes and
-checks configs against schemas. Types, conversion, interpolation and resolvers are
-OmegaConf's, and what OmegaConf does not support, omegakit does not add.
+files with `~include`, `$base` and `$each`, and builds objects from `$target`
+nodes. Before it builds anything, it checks the config against a `TypedDict`
+schema and against the classes that the config names. Types, conversion,
+interpolation and resolvers are OmegaConf's, and what OmegaConf does not support,
+omegakit does not add.
 
 ## Where to go
 
@@ -30,9 +32,8 @@ OmegaConf's, and what OmegaConf does not support, omegakit does not add.
   [API](reference/api/index.md).
 
 Configs import and call Python code, so load them only from sources you trust.
-The Security section says [what runs](security/trust-model/index.md), how to
-[limit it](security/restricting-imports/index.md) and how to keep
-[secrets](security/secrets/index.md) out of saved configs and logs.
+The Security section says [what runs](security/trust-model/index.md) and how to
+keep [secrets](security/secrets/index.md) out of saved configs and logs.
 
 ```{toctree}
 :hidden:

@@ -1,9 +1,9 @@
-$base: ~import ../base.yaml
+$base: ~include ../base.yaml
 name: mlp
 model:
-  $class: project.MLP
+  $target: project.MLP
   hidden: 32
 optimizer:
-  $class: torch.optim.Adam
+  $target: torch.optim.Adam
   $partial: true
   lr: 0.01

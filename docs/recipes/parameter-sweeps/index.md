@@ -34,9 +34,11 @@ mlp32-adam/seed1: 0.012
 ```
 
 The `run_dir` override moves the run directories into a temporary directory. The
-optimizer is a class, not a value, so
-the sweep builds its node with `make_node` and assigns it, which replaces the whole
-node ([Swapping implementations](../swapping-implementations/index.md)).
+optimizer is a class, not a value, so the sweep builds its node with `make_node`
+and assigns it, which replaces the whole node
+([Swapping implementations](../swapping-implementations/index.md)).
+`instantiate(config, Experiment)` builds each run from the root `$target` of
+`base.yaml`.
 
 For launchers, parallel jobs or a sweeper that picks the next values, see how
 omegakit [compares with Hydra](../../comparison/index.md#hydra).

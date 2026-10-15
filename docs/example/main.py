@@ -12,7 +12,7 @@ config = load_config(experiment_file, overrides=overrides)
 
 # The model draws random initial weights, so seed before building.
 torch.manual_seed(config.seed)
-experiment = instantiate(config, schema=Experiment)
+experiment = instantiate(config, Experiment)
 
 run_dir = experiment.run_dir
 run_dir.mkdir(parents=True)

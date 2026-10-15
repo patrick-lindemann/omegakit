@@ -6,20 +6,15 @@ multilayer perceptron to noisy samples of a sine wave. The classes come from
 with `layers` hidden layers of `hidden` units, and `project.SineWave` a PyTorch
 `Dataset` of `n` noisy samples of `sin(x)`.
 
+omegakit needs Python 3.12 or newer and OmegaConf 2.4:
+
 ```sh
 pip install omegakit
 ```
 
-omegakit needs OmegaConf 2.4.0. Until it is released, only its release candidate
-exists, and uv installs it only when asked to:
-
-```sh
-uv add omegakit --prerelease=allow
-```
-
 ## 1. Build an object
 
-A config file names the classes to build with `$class`. The other keys of the node
+A config file names the class to build with `$target`. The other keys of the node
 are the arguments:
 
 ```{literalinclude} experiment.yaml
@@ -87,28 +82,33 @@ Each experiment file names that base and adds what differs:
 :caption: configs/experiments/mlp.yaml
 ```
 
-`~import` reads another file, and `$base` merges it underneath the node, so the
+`~include` reads another file, and `$base` merges it underneath the node, so the
 experiment's own keys win ([Includes](../guide/includes/index.md),
 [Inheritance](../guide/inheritance/index.md)). `name: ???` is a value each
 experiment must set ([Missing values](../guide/missing-values/index.md)), and
 `${seed}` refers to another value ([Interpolation](../guide/interpolation/index.md)).
 
-## 4. Add a schema
+## 4. Build the whole experiment
 
-A plain dataclass describes the whole experiment:
+The root of `base.yaml` names the dataclass `Experiment` with `$target`, so the
+whole experiment is one object. The datasets are grouped by the `TypedDict`
+`DataConfig`, a schema that only checks its keys
+([TypedDict schemas](../schemas/typed-dict-schemas/index.md)):
 
 ```{literalinclude} ../example/project.py
 :language: python
 :caption: project.py (excerpt)
-:start-after: "    test: Dataset"
+:start-at: "class DataConfig"
 :end-at: "batch_size: int = 32"
-:lines: 3-
 ```
 
-`instantiate(config, schema=Experiment)` checks the config against it, then builds
-every object and returns an `Experiment`. Its `loss` is
-`$ref: torch.nn.functional.mse_loss` in `base.yaml`, the function itself. A typo, or
-a value of the wrong type, raises `ConfigValidationError` before any object is
+`instantiate(config, Experiment)` checks the config against the fields of
+`Experiment`, then builds every `$target` node and returns an `Experiment`. Its
+`data` is a `dict` with the two datasets, and its `loss` is
+`$symbol: torch.nn.functional.mse_loss` in `base.yaml`, the function itself. `MLP`
+names its own schema, `MLPConfig`
+([Configurable classes](../objects/configurable-classes/index.md)), so a typo or a
+value of the wrong type raises a `ConfigValidationError` before any object is
 built:
 
 ```{literalinclude} main.py
@@ -119,15 +119,15 @@ built:
 ```{code-block} text
 :caption: Output
 
-error: Invalid config in `model.hiden` (MLPConfig): Key 'hiden' not in 'MLPConfig'. Did you mean: 'hidden'?
+ConfigSchemaError: `hiden` is not a field of `MLPConfig`. Its fields are `hidden`, `layers`, `activation`. (at `model`)
 ```
 
 ## 5. Run an experiment
 
 The project's entrypoint does the same for one experiment file and the overrides it
 is given. It seeds PyTorch before building, because the model draws random initial
-weights, trains the model, and saves the config and the weights to the run
-directory:
+weights, trains the model, and saves the config, the overrides and the weights to
+the run directory:
 
 ```{literalinclude} ../example/main.py
 :language: python
@@ -144,7 +144,19 @@ python main.py configs/experiments/mlp.yaml
 mlp: test loss 0.011
 ```
 
-The saved `config.yaml` loads like any config file, so
-`python main.py runs/mlp/seed0/config.yaml run_dir=runs/repeat` repeats the run.
+The saved `config.yaml` loads like any config file, so it repeats the run. The
+override gives the repeat a directory of its own, since `main.py` never writes
+into an existing one:
+
+```sh
+python main.py runs/mlp/seed0/config.yaml run_dir=runs/repeat
+```
+
+```{code-block} text
+:caption: Output
+
+mlp: test loss 0.011
+```
+
 From here, the Guide covers each feature, starting with
 [Loading](../guide/loading/index.md).

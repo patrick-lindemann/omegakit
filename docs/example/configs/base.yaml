@@ -1,18 +1,19 @@
+$target: project.Experiment
 seed: 0
 name: ???
 run_dir: runs/${name}/seed${seed}
 data:
   train:
-    $class: project.SineWave
+    $target: project.SineWave
     n: 256
     noise: 0.1
     seed: ${seed}
   test:
-    $class: project.SineWave
+    $target: project.SineWave
     n: 256
     noise: 0.1
     seed: 1234
 loss:
-  $ref: torch.nn.functional.mse_loss
+  $symbol: torch.nn.functional.mse_loss
 epochs: 100
 batch_size: 32

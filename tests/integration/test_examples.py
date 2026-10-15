@@ -28,39 +28,16 @@ SESSION_PAGES = {
 PROGRAMS = {"python": [sys.executable], "omegakit": [sys.executable, "-m", "omegakit"]}
 COMMAND_BLOCK = r"```sh\n(.*?)\n```\n\n"
 OUTPUT_BLOCK = r"```\{code-block\} text\n:caption: Output\n\n(.*?)```"
-# The tests that fail until stage 5 of the docs rewrite rewrites the example project
-# and its pages. Stage 5 removes this list.
-EXPECTED_FAILURES = frozenset(
-    {
-        "test_example_experiment_runs[linear]",
-        "test_example_experiment_runs[mlp]",
-        "test_example_run_repeats_from_its_saved_config",
-        "test_example_seed_changes_the_run",
-        "test_example_never_overwrites_a_run",
-        "test_page_sessions_show_real_output[getting-started]",
-        "test_page_sessions_show_real_output[command-line/check]",
-        "test_page_sessions_show_real_output[command-line/show]",
-        "test_page_sessions_show_real_output[recipes/checking-experiments-in-ci]",
-        "test_ci_recipe_test_file_passes",
-    }
-)
-
-
-@pytest.fixture(autouse=True)
-def expected_failure(request: pytest.FixtureRequest) -> None:
-    if request.node.name in EXPECTED_FAILURES:
-        request.applymarker(pytest.mark.xfail(reason="stage 5", strict=True))
 
 
 def test_readme_example_builds(tmp_path: Path) -> None:
     readme = (Path(__file__).parents[2] / "README.md").read_text()
-    for name, text in re.findall(r"```yaml\n# (\S+)\n(.*?)```", readme, re.S):
+    for name, text in re.findall(
+        r"```(?:yaml|python)\n# (\S+)\n(.*?)```", readme, re.S
+    ):
         (tmp_path / name).write_text(text)
-    code = re.search(r"```python\n(.*?)```", readme, re.S)
-    assert code is not None
-    (tmp_path / "main.py").write_text(
-        code.group(1) + "print(type(model).__name__, type(optimizer).__name__)\n"
-    )
+    with (tmp_path / "main.py").open("a") as main_file:
+        main_file.write("print(type(model).__name__, type(optimizer).__name__)\n")
     output = subprocess.run(
         [sys.executable, "main.py"],
         cwd=tmp_path,
