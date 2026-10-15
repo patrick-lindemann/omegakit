@@ -1,12 +1,17 @@
 # API
 
+```{eval-rst}
+.. py:data:: omegakit.__version__
+   :type: str
+```
+
 ## Loading
 
 ```{eval-rst}
 .. autofunction:: omegakit.load_config
 ```
 
-## Instantiation
+## Building
 
 ```{eval-rst}
 .. autofunction:: omegakit.instantiate
@@ -16,16 +21,67 @@
 .. autofunction:: omegakit.make_node
 ```
 
-## Validation
+## Checking
 
 ```{eval-rst}
 .. autofunction:: omegakit.validate
+.. autofunction:: omegakit.is_valid
 ```
 
-## Traversal
+## Nodes
 
 ```{eval-rst}
 .. autofunction:: omegakit.walk
+.. py:data:: omegakit.Config
+   :value: DictConfig | ListConfig | TupleConfig
+
+   A config node that holds other nodes: a mapping, a list or a tuple.
+
+.. autofunction:: omegakit.cast_config
+```
+
+## Special keys
+
+```{eval-rst}
+.. py:data:: omegakit.ARGS_KEY
+   :value: "$args"
+
+   The key of the list of positional arguments of the `$target`.
+
+.. py:data:: omegakit.BASE_KEY
+   :value: "$base"
+
+   The key of a mapping, or a list of mappings, merged under its node.
+
+.. py:data:: omegakit.EACH_KEY
+   :value: "$each"
+
+   The key of a mapping merged under every mapping beside it.
+
+.. py:data:: omegakit.INCLUDE_KEY
+   :value: "~include"
+
+   The prefix of a value that is replaced by a config file or one of its nodes.
+
+.. py:data:: omegakit.META_KEY
+   :value: "$meta"
+
+   The key of data about a node, which `load_config` removes.
+
+.. py:data:: omegakit.PARTIAL_KEY
+   :value: "$partial"
+
+   The key that, set to `true`, builds a partial of the `$target` instead.
+
+.. py:data:: omegakit.SYMBOL_KEY
+   :value: "$symbol"
+
+   The key of the import path of an object that replaces its node as it is.
+
+.. py:data:: omegakit.TARGET_KEY
+   :value: "$target"
+
+   The key of the import path of the class or function that builds its node.
 ```
 
 ## Errors
@@ -34,46 +90,21 @@
 .. autoexception:: omegakit.OmegaKitBaseException
 .. autoexception:: omegakit.ConfigLoadError
 .. autoexception:: omegakit.ConfigValidationError
+.. autoexception:: omegakit.ConfigFileNotFoundError
+.. autoexception:: omegakit.ConfigFilePermissionError
+.. autoexception:: omegakit.ConfigFileSyntaxError
+.. autoexception:: omegakit.QualifiedNameSyntaxError
+.. autoexception:: omegakit.QualifiedNameNotFoundError
+.. autoexception:: omegakit.ConfigMergeError
+.. autoexception:: omegakit.ConfigIncludeError
+.. autoexception:: omegakit.IncludeRootError
+.. autoexception:: omegakit.ConfigOverrideError
+.. autoexception:: omegakit.ValidationInterpolationError
+.. autoexception:: omegakit.ValidationMissingValueError
+.. autoexception:: omegakit.ConfigTargetError
+.. autoexception:: omegakit.ConfigSymbolError
+.. autoexception:: omegakit.ConfigSchemaError
 .. autoexception:: omegakit.SchemaDefinitionError
-```
-
-## Special keys
-
-```{eval-rst}
-.. py:data:: omegakit.BASE_KEY
-   :value: "$base"
-
-   A mapping, or a list of mappings, merged underneath the node.
-
-.. py:data:: omegakit.CLASS_KEY
-   :value: "$class"
-
-   Import path of the class or function a node is built with.
-
-.. py:data:: omegakit.DEFAULTS_KEY
-   :value: "$defaults"
-
-   A mapping merged underneath every dict-valued sibling.
-
-.. py:data:: omegakit.IMPORT_KEY
-   :value: "~import"
-
-   Value prefix that replaces a node with another config file or one of its nodes.
-
-.. py:data:: omegakit.META_KEY
-   :value: "$meta"
-
-   Metadata attached to a node.
-
-.. py:data:: omegakit.PARTIAL_KEY
-   :value: "$partial"
-
-   Flag that builds a `functools.partial` instead of calling the class.
-
-.. py:data:: omegakit.REF_KEY
-   :value: "$ref"
-
-   Import path of an object that replaces the node without being called.
 ```
 
 ## Resolvers
@@ -84,5 +115,7 @@
 .. automodule:: omegakit.resolvers.secrets
    :members:
 .. automodule:: omegakit.resolvers.torch
+   :members:
+.. automodule:: omegakit.resolvers.numpy
    :members:
 ```

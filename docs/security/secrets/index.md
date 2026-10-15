@@ -26,9 +26,9 @@ config.tracking.url: https://tracker.example.com/api/runs?token=tok-5f3a9c1e7b2d
 ```
 
 The config from `load_config` is not resolved, so it shows where the token comes
-from, not the token. Save and log that config. Your code still reads
-the real URL, for example to pass it to a tracking client. `omegakit show
---resolve` masks the token:
+from, not the token. Save and log that config. Your code still reads the real URL,
+for example to pass it to a tracking client. `omegakit show --resolve` masks the
+token:
 
 ```sh
 omegakit show tracked.yaml --node tracking --resolve
@@ -41,32 +41,32 @@ project: sine
 url: https://tracker.example.com/api/runs?token=***
 ```
 
-Only values from `${secret:...}` are masked (see Rules). To catch a secret committed
-by mistake, run a scanner such as
+Only values from `${secret:...}` are masked. To catch a secret committed by
+mistake, run a scanner such as
 [detect-secrets](https://github.com/Yelp/detect-secrets) or
 [gitleaks](https://github.com/gitleaks/gitleaks) as a pre-commit hook. Keep secrets
 out of arguments that your code saves, such as hyperparameters in checkpoints.
 
 ## Rules
 
-- `register_secret_resolver(*, replace=False)` from `omegakit.resolvers.secrets`
-  registers `${secret:...}`. Registration is global to OmegaConf, and a name that
-  exists raises `ValueError` unless `replace=True`
+- `register_secret_resolver(*, replace=False, use_cache=True)` from
+  `omegakit.resolvers.secrets` registers `${secret:...}`
   ([Overview](../../resolvers/overview/index.md#rules)). The `omegakit` command
   registers it itself.
-- `${secret:VALUE}` gives `VALUE` unchanged. It wraps the interpolation that gives
-  the secret, such as `${secret:${oc.env:NAME}}`
+- `${secret:<value>}` gives `<value>` unchanged. It wraps the interpolation that
+  gives the secret, such as `${secret:${oc.env:NAME}}`
   ([Environment variables](../../guide/environment-variables/index.md#rules)) or a
-  resolver of your own, which fails as it would on its own, also with
-  `allow_missing=True`. A plain value is given as written: `${secret:NAME}` gives
+  resolver of your own. A plain value is given as written: `${secret:NAME}` gives
   the text `NAME`.
+- The wrapped interpolation fails as it would on its own. An unset environment
+  variable raises `ValidationInterpolationError` in `validate`, also with
+  `allow_missing=True`.
 - A config from `load_config` holds `${secret:...}` as written.
   `OmegaConf.save` and `OmegaConf.to_yaml` write it that way, unless they resolve.
-- `omegakit show` loads the config with the real values, then resolves every
-  `${secret:...}` to `***`: with `--resolve`, and in a single value that `--node`
-  selects. The wrapped interpolation is still resolved, so it fails as it would in
-  a run. Every printed value built from a secret holds `***` in its place, also
-  one built by another resolver, such as `${oc.decode:${secret:${oc.env:PORT}}}`.
-  `--show-secrets` prints the real values.
-- Nothing else is masked. Error messages can contain values
-  ([Trust model](../trust-model/index.md)).
+- `omegakit show` resolves every `${secret:...}` to `***`: with `--resolve`, and in
+  a single value that `--node` selects. The wrapped interpolation is still
+  resolved, so it fails as it would in a run. Every printed value built from a
+  secret holds `***` in its place, also one built by another resolver, such as
+  `${oc.decode:${secret:${oc.env:PORT}}}`. `--show-secrets` prints the real values.
+- Nothing else is masked. Error messages can quote values
+  ([Trust model](../trust-model/index.md#rules)).

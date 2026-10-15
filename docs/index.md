@@ -81,6 +81,7 @@ schemas/validation/index
 resolvers/overview/index
 resolvers/paths/index
 resolvers/torch/index
+resolvers/numpy/index
 ```
 
 ```{toctree}
@@ -97,7 +98,6 @@ command-line/show/index
 :hidden:
 
 security/trust-model/index
-security/restricting-imports/index
 security/secrets/index
 ```
 

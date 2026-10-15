@@ -8,6 +8,7 @@ import pytest
 from omegaconf import OmegaConf
 
 from omegakit import TARGET_KEY, ConfigLoadError, instantiate, load_config, validate
+from omegakit.resolvers.numpy import register_numpy_resolvers
 from omegakit.resolvers.paths import register_paths_resolver
 from omegakit.resolvers.secrets import register_secret_resolver
 from omegakit.resolvers.torch import register_torch_resolvers
@@ -33,21 +34,6 @@ YAML_FILES = sorted(
 SCRIPTS = sorted(
     file_path for section_dir in SECTIONS for file_path in section_dir.rglob("main.py")
 )
-# The tests of the pages that stages 3 to 6 of the docs rewrite have not rewritten
-# yet, with the stage that rewrites each. A stage removes the items of its pages.
-EXPECTED_FAILURES = {
-    "resolvers/torch/precision.yaml": "stage 6, renamed torch resolvers",
-    "security/restricting-imports/shared-run/config.yaml": "stage 6, renamed `$class`",
-    "resolvers/torch": "stage 6, renamed torch resolvers",
-    "security/restricting-imports": "stage 6, removed `import_root`",
-}
-
-
-@pytest.fixture(autouse=True)
-def expected_failure(request: pytest.FixtureRequest) -> None:
-    reason = EXPECTED_FAILURES.get(request.node.callspec.id)
-    if reason is not None:
-        request.applymarker(pytest.mark.xfail(reason=reason, strict=True))
 
 
 @pytest.fixture(autouse=True)
@@ -63,12 +49,13 @@ def examples_importable(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_guide_yaml_loads_validates_and_builds(
     file_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    # The secrets page reads a token from the environment, and the paths page
-    # names directories through the paths resolver.
+    # The secrets page reads a token from the environment, and the resolver pages
+    # use their resolvers.
     monkeypatch.setenv("TRACKER_TOKEN", "tok-for-the-guide-tests")
     register_secret_resolver(replace=True)
     register_paths_resolver({"runs": "runs", "data": "data"}, replace=True)
     register_torch_resolvers(replace=True)
+    register_numpy_resolvers(replace=True)
     # A page's classes live next to its files, such as `models.py`.
     monkeypatch.syspath_prepend(str(file_path.parent))
     config = load_config(file_path)

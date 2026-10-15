@@ -34,6 +34,7 @@ All notable changes to this project are documented here. The format follows
 - Every `register_*` function of `omegakit.resolvers` takes `use_cache`, which
   OmegaConf uses to cache each result by its arguments. It defaults to `True`;
   results were always cached.
+- A NumPy page under Resolvers.
 
 ### Changed
 
@@ -154,6 +155,8 @@ All notable changes to this project are documented here. The format follows
   Editor support page, as OmegaConf generates no JSON Schema.
 - **Breaking:** `check_schema`. A schema that does not fit its class's constructor
   fails when the object is built, with a note that names the node.
+- The Restricting imports page, since nothing restricts imports; `include_root` is
+  on the Includes page.
 
 ### Fixed
 

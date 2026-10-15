@@ -1,0 +1,2 @@
+dtype: ${numpy.dtype:float32}
+labels_dtype: ${numpy.dtype:int64}
