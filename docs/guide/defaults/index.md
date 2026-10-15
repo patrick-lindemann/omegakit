@@ -26,6 +26,8 @@ validation split also keeps its own `n`.
 
 ## Rules
 
+- `apply_each(config)` merges `$each` keys in a config already in memory and
+  returns a copy. Pass `copy=False` to transform the config itself.
 - `$each` is a mapping, often a `${…}`. Anything else raises `ConfigMergeError`, as
   in `` `$each` must be a mapping, not `[1]`. (at `data`) ``.
 - It is merged under every key of its own mapping that holds a mapping and does not

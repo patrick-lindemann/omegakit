@@ -16,6 +16,19 @@ BASE_KEY = "$base"
 def merge_bases[TConfig: DictConfig | ListConfig | TupleConfig](
     config: TConfig, copy: bool = True
 ) -> TConfig:
+    """Merge every `$base` under the mapping that contains it.
+
+    Args:
+        config: The config to transform.
+        copy: Whether to leave `config` unchanged. Defaults to `True`.
+
+    Returns:
+        The config with every `$base` merged and removed.
+
+    Raises:
+        ConfigMergeError: If a `$base` is not a mapping or list of mappings, cannot
+            be merged, or depends on itself.
+    """
     if copy:
         config = copy_with_root(config)
     # The nodes with a `$base` that an enclosing `$base` adds keys to, by full key,

@@ -55,6 +55,9 @@ The error names the include that failed by its key and its file.
 
 ## Rules
 
+- `resolve_includes(config, config_path, include_root=None)` resolves includes in a
+  config already in memory and returns a copy. Relative include paths start at the
+  directory of `config_path`. Pass `copy=False` to transform the config itself.
 - Syntax: `~include <file>` or `~include <file>#<node>`, as the whole value of a
   mapping key or a list item. Only a value that starts with `~include` and a space
   is an include; `a ~include b.yaml` and `~included` stay text.

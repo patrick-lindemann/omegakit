@@ -10,10 +10,15 @@ def test_every_exported_name_exists():
 def test_entry_points_are_exported():
     names = {
         "Configurable",
+        "apply_each",
+        "apply_overrides",
         "instantiate",
         "load_config",
         "make_node",
+        "merge_bases",
         "prepare",
+        "remove_meta",
+        "resolve_includes",
         "validate",
     }
     assert names <= set(omegakit.__all__)

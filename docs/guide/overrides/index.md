@@ -24,15 +24,19 @@ config.optimizer.momentum: 0.9
 
 A list of `key=value` strings is what a command line gives you, so a script can pass
 its arguments straight to `load_config`. `model.hidden=64` became the integer 64. A
-nested `dict` does the same from code: the optimizer kept its `momentum` and changed
-only its learning rate. On the command line, `omegakit check` and `omegakit show`
-take the same strings as `--overrides KEY=VALUE ...`.
+nested `dict` passed to `apply_overrides` does the same for the config already in
+memory: the optimizer kept its `momentum` and changed only its learning rate. The
+function returns a copy by default, as the parameter-sweep
+[recipe](../../recipes/parameter-sweeps/index.md) uses to start every run from the
+same config. On the command line, `omegakit check` and `omegakit show` take the same
+strings as `--overrides KEY=VALUE ...`.
 
 ## Rules
 
-- Only `load_config` takes overrides, as `overrides`: a list of `key=value`
-  strings, a `dict` or a `DictConfig`. `instantiate` and `prepare` take none; change
-  a config in memory with `OmegaConf.merge`.
+- `load_config` takes overrides as a list of `key=value` strings, a `dict` or a
+  `DictConfig`. `instantiate` and `prepare` take none; change a config in memory
+  with `apply_overrides(config, overrides)`.
+- `apply_overrides` returns a copy. Pass `copy=False` to change the config itself.
 - The strings apply one at a time, in order, so a later one wins over an earlier
   one. Each value is parsed as YAML: `epochs=50` is an integer, `seeds=[0, 1]` a
   list. A dotted key adds the mappings it names, as `a.b=1` adds `a`.
@@ -41,8 +45,9 @@ take the same strings as `--overrides KEY=VALUE ...`.
   as `config.optimizer = {...}`.
 - Overrides apply after the includes, `$base` and `$each`, and win over every value
   of the files ([Precedence](../loading/index.md#rules)). A `$base` or `$each` in an
-  override stays a plain key, and an `~include` in a mapping stays text. `$meta` is
-  removed from overrides too, unless `keep_meta=True`.
+  override stays a plain key, and an `~include` in a mapping stays text. When called
+  through `load_config`, `$meta` is removed from overrides too unless
+  `keep_meta=True`; `apply_overrides` itself leaves `$meta` in place.
 - These raise `ConfigOverrideError`:
   - an item of the list that is not a string, as in ``An override in a list must be
     a `key=value` string, not `1`.``;

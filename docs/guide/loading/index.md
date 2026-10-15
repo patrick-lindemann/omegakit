@@ -51,6 +51,11 @@ given by position.
 6. Remove every `$meta` ([Metadata](../metadata/index.md)), unless
    `keep_meta=True`.
 
+For an OmegaConf config created in memory, the same steps are available separately as
+`resolve_includes`, `merge_bases`, `apply_each`, `apply_overrides` and
+`remove_meta`. Call only the steps the config needs, in the order above. Each
+returns a copy by default; pass `copy=False` to transform the config itself.
+
 No step removes `$target`, `$symbol`, `$args` or `$partial`; they are read when
 objects are built.
 
