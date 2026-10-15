@@ -84,6 +84,28 @@ branch = true
 fail_under = 90
 show_missing = true
 
+[tool.ty.src]
+include = ["src", "tests", "docs"]
+
+[tool.ty.environment]
+# The page examples import the example project, as their tests do.
+extra-paths = ["docs/example"]
+
+[tool.ty.rules]
+missing-override-decorator = "error"
+unused-ignore-comment = "error"
+unused-type-ignore-comment = "error"
+
+# PyTorch declares `nn.Module.forward` as a writable callable attribute.
+[[tool.ty.overrides]]
+include = ["docs/example/**"]
+rules = { invalid-mutable-override = "ignore" }
+
+# A `Callable` need not have a `__name__`; the page prints the loaded function's.
+[[tool.ty.overrides]]
+include = ["docs/objects/instantiation/main.py"]
+rules = { unresolved-attribute = "ignore" }
+
 [tool.ruff]
 target-version = "py312"
 line-length = 88
@@ -146,24 +168,3 @@ check-yield-types = false
 allow-init-docstring = true
 native-mode-noqa-location = "definition"
 
-[tool.ty.src]
-include = ["src", "tests", "docs"]
-
-[tool.ty.environment]
-# The page examples import the example project, as their tests do.
-extra-paths = ["docs/example"]
-
-[tool.ty.rules]
-missing-override-decorator = "error"
-unused-ignore-comment = "error"
-unused-type-ignore-comment = "error"
-
-# PyTorch declares `nn.Module.forward` as a writable callable attribute.
-[[tool.ty.overrides]]
-include = ["docs/example/**"]
-rules = { invalid-mutable-override = "ignore" }
-
-# A `Callable` need not have a `__name__`; the page prints the loaded function's.
-[[tool.ty.overrides]]
-include = ["docs/objects/instantiation/main.py"]
-rules = { unresolved-attribute = "ignore" }
