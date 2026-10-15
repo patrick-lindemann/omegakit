@@ -1,4 +1,4 @@
-# No exports here.and
+# No exports here.
 # Resolvers might depend on optional, external libraries, thus they should stay
 # encapsulated in their own modules.
 #
