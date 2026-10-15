@@ -5,6 +5,7 @@ class Configurable:
     """A class that a config builds through `from_config`, checked by its `schema`."""
 
     schema: ClassVar[type | None] = None
+    """The `TypedDict` that checks the keys of the config, or `None`."""
 
     @classmethod
     def from_config(cls, config: Any, **kwargs: Any) -> Self:
