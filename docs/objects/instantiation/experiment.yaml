@@ -1,10 +1,18 @@
+$target: experiment.Experiment
 model:
-  $class: torch.nn.Linear
-  in_features: 16
-  out_features: 1
+  $target: torch.nn.Sequential
+  $args:
+    - $target: torch.nn.Linear
+      in_features: 1
+      out_features: 16
+    - $target: torch.nn.ReLU
+    - $target: torch.nn.Linear
+      in_features: 16
+      out_features: 1
 optimizer:
-  $class: torch.optim.SGD
+  $target: torch.optim.SGD
   $partial: true
   lr: 0.1
 loss:
-  $ref: torch.nn.functional.mse_loss
+  $symbol: torch.nn.functional.mse_loss
+epochs: "50"

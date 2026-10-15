@@ -2,6 +2,6 @@ training:
   epochs: 100
   schedule: cosine
 model:
-  $class: torch.nn.Linear
+  $target: torch.nn.Linear
   in_features: 1
   out_features: 1

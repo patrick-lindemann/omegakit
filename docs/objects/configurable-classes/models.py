@@ -1,15 +1,14 @@
-from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, NotRequired, TypedDict
 
 from torch import nn
 
 from omegakit import Configurable
 
 
-@dataclass
-class MLPConfig:
+class MLPConfig(TypedDict):
     hidden: int
-    activation: Literal["relu", "tanh"] = "tanh"
+    layers: NotRequired[int]
+    activation: NotRequired[Literal["relu", "tanh"]]
 
 
 class MLP(nn.Sequential, Configurable):
@@ -17,9 +16,14 @@ class MLP(nn.Sequential, Configurable):
 
     schema = MLPConfig
 
-    def __init__(self, hidden: int, activation: Literal["relu", "tanh"] = "tanh"):
-        super().__init__(
-            nn.Linear(1, hidden),
-            nn.Tanh() if activation == "tanh" else nn.ReLU(),
-            nn.Linear(hidden, 1),
-        )
+    def __init__(
+        self,
+        hidden: int,
+        layers: int = 1,
+        activation: Literal["relu", "tanh"] = "tanh",
+    ) -> None:
+        activation_class = nn.Tanh if activation == "tanh" else nn.ReLU
+        modules: list[nn.Module] = [nn.Linear(1, hidden), activation_class()]
+        for _ in range(layers - 1):
+            modules += [nn.Linear(hidden, hidden), activation_class()]
+        super().__init__(*modules, nn.Linear(hidden, 1))

@@ -38,4 +38,4 @@ only when the partial is called. Override `$class` alone only when the new class
 takes the same settings. For a lasting swap, write an experiment file that names
 the whole node, as `mlp.yaml` does: `base.yaml` names no optimizer, so there is
 nothing to merge into. See [Instantiation](../../objects/instantiation/index.md)
-and [Dataclass schemas](../../schemas/dataclass-schemas/index.md).
+and [TypedDict schemas](../../schemas/typed-dict-schemas/index.md).

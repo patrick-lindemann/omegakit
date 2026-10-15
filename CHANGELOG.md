@@ -146,6 +146,7 @@ All notable changes to this project are documented here. The format follows
 - The API and Changelog pages of the documentation moved to `reference/api/` and
   `reference/changelog/`.
 - The Imports page of the Guide is now Includes, at `guide/includes/`.
+- Dataclass schemas is now TypedDict schemas, at `schemas/typed-dict-schemas/`.
 
 ### Removed
 

@@ -20,7 +20,7 @@ OmegaConf's, and what OmegaConf does not support, omegakit does not add.
 - **Looking up a feature:** one page per feature, in the order you meet them.
   The [Guide](guide/loading/index.md) covers how files are loaded and combined,
   [Building objects](objects/instantiation/index.md) how objects are built from
-  them, and [Schemas](schemas/dataclass-schemas/index.md) how a config is checked.
+  them, and [Schemas](schemas/typed-dict-schemas/index.md) how a config is checked.
 - **A complete pattern:** the recipes, such as
   [Parameter sweeps](recipes/parameter-sweeps/index.md) or
   [Swapping implementations](recipes/swapping-implementations/index.md).
@@ -69,7 +69,7 @@ objects/configurable-classes/index
 :caption: Schemas
 :hidden:
 
-schemas/dataclass-schemas/index
+schemas/typed-dict-schemas/index
 schemas/validation/index
 ```
 
