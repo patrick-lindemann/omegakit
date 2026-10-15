@@ -27,7 +27,7 @@ for hidden, (name, optimizer), seed in itertools.product(
     config.optimizer = {**optimizer, PARTIAL_KEY: True}
 
     torch.manual_seed(config.seed)
-    experiment = instantiate(config, schema=Experiment)
+    experiment = instantiate(config, Experiment)
     experiment.run_dir.mkdir(parents=True)
     OmegaConf.save(config, experiment.run_dir / "config.yaml")
 

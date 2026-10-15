@@ -1,2 +1,3 @@
-dtype: ${dtype:bfloat16}
-use_cuda: ${cuda_available:}
+dtype: ${torch.dtype:bfloat16}
+device: ${torch.device:cpu}
+use_cuda: ${torch.has_cuda:}

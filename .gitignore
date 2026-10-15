@@ -1,13 +1,39 @@
-.venv/
+# Bytecode / build
 __pycache__/
-.pytest_cache/
-.ruff_cache/
-.coverage
-.claude
+*.pyc
+build/
 dist/
-docs/_build/
 *.egg-info/
-plans/
-AGENTS.md
+
+# Data
+/data
+/outputs
+/specs
+
+# Env files
+.env
+
+# Virtual environments
+.venv
+
+# Pytest cache
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Clankers
+/.codex
+/.claude
 CLAUDE.md
-docs/curvefit/runs/
+AGENTS.md
+
+# Logs
+logs/
+*.log
+*.log.global
+
+# Ruff
+.ruff_cache/
+
+# Jupyter
+.ipynb_checkpoints/

@@ -1,14 +1,19 @@
-from dataclasses import dataclass
 from pathlib import Path
+from typing import TypedDict
 
 from omegaconf.errors import OmegaConfBaseException
 from torch import nn
 
-from omegakit import instantiate, load_config
+from omegakit import (
+    ConfigValidationError,
+    OmegaKitBaseException,
+    instantiate,
+    load_config,
+    validate,
+)
 
 
-@dataclass
-class Experiment:
+class ExperimentConfig(TypedDict):
     epochs: int
     model: nn.Module
 
@@ -16,11 +21,12 @@ class Experiment:
 def run(experiment_file: str, overrides: list[str]) -> None:
     try:
         config = load_config(experiment_file, overrides=overrides)
-        experiment = instantiate(config, schema=Experiment)
-        print("experiment.epochs:", experiment.epochs)
+        validate(config, ExperimentConfig)
+        model = instantiate(config.model, nn.Module)
+        print("epochs:", config.epochs, "model:", model)
     except FileNotFoundError as error:
         print("missing file:", Path(error.filename).name)
-    except OmegaConfBaseException as error:
+    except (OmegaKitBaseException, OmegaConfBaseException) as error:
         print(f"{type(error).__name__}:", error)
 
 
@@ -29,10 +35,17 @@ run("experment.yaml", [])
 run("broken.yaml", [])
 run("experiment.yaml", ["epochs=many"])
 
+config = load_config("experiment.yaml", overrides=["epochs=many"])
+try:
+    validate(config, ExperimentConfig)
+except ConfigValidationError as error:
+    print("error.message:", error.message)
+    print("error.full_key:", error.full_key)
+
 config = load_config("untitled.yaml")
 try:
     print("config.name:", config.name)
-except OmegaConfBaseException as error:
+except (OmegaKitBaseException, OmegaConfBaseException) as error:
     print(f"{type(error).__name__}:", error)
 
 try:

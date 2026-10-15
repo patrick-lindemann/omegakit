@@ -2,7 +2,7 @@ import math
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Literal, override
+from typing import Literal, NotRequired, TypedDict, override
 
 import torch
 from torch import nn
@@ -38,16 +38,16 @@ class SineWave(Dataset):
         return self.x[index], self.y[index]
 
 
-@dataclass
-class MLPConfig:
+class MLPConfig(TypedDict):
     hidden: int
-    layers: int = 2
-    activation: Literal["relu", "tanh"] = "tanh"
+    layers: NotRequired[int]
+    activation: NotRequired[Literal["relu", "tanh"]]
 
 
-class MLP(nn.Module, Configurable[MLPConfig]):
+class MLP(nn.Module, Configurable):
     """A multilayer perceptron from one input to one output."""
 
+    schema = MLPConfig
     net: nn.Sequential
 
     def __init__(
@@ -68,8 +68,7 @@ class MLP(nn.Module, Configurable[MLPConfig]):
         return self.net(x)
 
 
-@dataclass
-class Splits:
+class DataConfig(TypedDict):
     """The datasets of an experiment."""
 
     train: Dataset
@@ -83,7 +82,7 @@ class Experiment:
     name: str
     seed: int
     run_dir: Path
-    data: Splits
+    data: DataConfig
     model: nn.Module
     optimizer: Callable[..., torch.optim.Optimizer]
     loss: Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
@@ -96,13 +95,13 @@ def train(experiment: Experiment) -> float:
     model = experiment.model
     optimizer = experiment.optimizer(model.parameters())
     loader = DataLoader(
-        experiment.data.train, batch_size=experiment.batch_size, shuffle=True
+        experiment.data["train"], batch_size=experiment.batch_size, shuffle=True
     )
     for _ in range(experiment.epochs):
         for x, y in loader:
             optimizer.zero_grad()
             experiment.loss(model(x), y).backward()
             optimizer.step()
-    x, y = experiment.data.test[:]
+    x, y = experiment.data["test"][:]
     with torch.no_grad():
         return experiment.loss(model(x), y).item()

@@ -1,14 +1,14 @@
-from omegakit.utils import read_secret, register_resolver
+from omegaconf import OmegaConf
 
 
-def register_secret_resolver(*, replace: bool = False) -> None:
-    """Register `${secret:NAME}`, which gives the environment variable `NAME`.
-
-    It reads the variable when the value is resolved, as `${oc.env:NAME}` does, but
-    has no default. `omegakit show --resolve` prints every value it gave as `***`.
-    Registration is global to OmegaConf.
+def register_secret_resolver(*, replace: bool = False, use_cache: bool = True) -> None:
+    """Register `${secret:value}`, which resolves to `value` and marks it as a secret.
 
     Args:
-        replace: Replace a resolver named `secret`. Defaults to `False`.
+        replace: Whether to replace a registered resolver of the same name. Defaults
+            to `False`.
+        use_cache: Whether to cache each result by its arguments. Defaults to `True`.
     """
-    register_resolver("secret", read_secret, replace=replace)
+    OmegaConf.register_resolver(
+        "secret", lambda value: value, replace=replace, use_cache=use_cache
+    )

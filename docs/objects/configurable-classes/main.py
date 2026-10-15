@@ -1,17 +1,20 @@
 from models import MLP
 
-from omegakit import ConfigValidationError, check_schema, instantiate, make_node
+from omegakit import ConfigValidationError, instantiate, make_node, prepare
 
-model = instantiate({"$class": "models.MLP", "hidden": "64", "activation": "relu"})
+model = instantiate({"$target": "models.MLP", "hidden": "8", "activation": "relu"})
 print("model:", model)
 
 try:
-    instantiate({"$class": "models.MLP", "hidden": 64, "activation": "gelu"})
+    instantiate({"$target": "models.MLP", "hiden": 8})
 except ConfigValidationError as error:
-    print("error:", error)
+    print(f"{type(error).__name__}:", error)
 
-node = make_node(MLP, hidden=8)
-print("node:", node)
-print("instantiate(node):", instantiate(node))
+print("node:", make_node(MLP, hidden=4, layers=2))
 
-check_schema(MLP)
+make_mlp = prepare({"$target": "models.MLP", "activation": "relu"}, MLP)
+print("make_mlp(hidden=2):", make_mlp(hidden=2)[0])
+try:
+    make_mlp(layers=2)
+except ConfigValidationError as error:
+    print(f"{type(error).__name__}:", error)

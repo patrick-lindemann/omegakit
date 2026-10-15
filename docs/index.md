@@ -2,10 +2,17 @@
 
 omegakit is a small library on top of [OmegaConf](https://omegaconf.readthedocs.io/)
 for experiment configs. Every experiment is a YAML file in git that names its base
-and its imports by path. You load it from your own `main()`, check it against a
-dataclass, and build your objects from it. The same file and seed give the same run.
+and its includes by path. You load it from your own `main()`, check it against a
+schema, and build your objects from it. The same file and seed give the same run.
 It was developed for machine learning, but nothing in it is specific to that. The
 examples in these pages train a small PyTorch model.
+
+omegakit adds functions to OmegaConf and leaves everything else to it. It combines
+files with `~include`, `$base` and `$each`, and builds objects from `$target`
+nodes. Before it builds anything, it checks the config against a `TypedDict`
+schema and against the classes that the config names. Types, conversion,
+interpolation and resolvers are OmegaConf's, and what OmegaConf does not support,
+omegakit does not add.
 
 ## Where to go
 
@@ -15,19 +22,18 @@ examples in these pages train a small PyTorch model.
 - **Looking up a feature:** one page per feature, in the order you meet them.
   The [Guide](guide/loading/index.md) covers how files are loaded and combined,
   [Building objects](objects/instantiation/index.md) how objects are built from
-  them, and [Schemas](schemas/dataclass-schemas/index.md) how a config is checked.
+  them, and [Schemas](schemas/typed-dict-schemas/index.md) how a config is checked.
 - **A complete pattern:** the recipes, such as
   [Parameter sweeps](recipes/parameter-sweeps/index.md) or
   [Swapping implementations](recipes/swapping-implementations/index.md).
 - **From a terminal:** the [command line](command-line/index.md) checks and prints
   configs without a script.
 - **Reference:** the Rules section at the end of each feature page, and the
-  [API](api/index.md).
+  [API](reference/api/index.md).
 
 Configs import and call Python code, so load them only from sources you trust.
-The Security section says [what runs](security/trust-model/index.md), how to
-[limit it](security/restricting-imports/index.md) and how to keep
-[secrets](security/secrets/index.md) out of saved configs and logs.
+The Security section says [what runs](security/trust-model/index.md) and how to
+keep [secrets](security/secrets/index.md) out of saved configs and logs.
 
 ```{toctree}
 :hidden:
@@ -41,7 +47,7 @@ comparison/index
 :hidden:
 
 guide/loading/index
-guide/imports/index
+guide/includes/index
 guide/inheritance/index
 guide/defaults/index
 guide/overrides/index
@@ -64,9 +70,8 @@ objects/configurable-classes/index
 :caption: Schemas
 :hidden:
 
-schemas/dataclass-schemas/index
+schemas/typed-dict-schemas/index
 schemas/validation/index
-schemas/editor-support/index
 ```
 
 ```{toctree}
@@ -76,6 +81,7 @@ schemas/editor-support/index
 resolvers/overview/index
 resolvers/paths/index
 resolvers/torch/index
+resolvers/numpy/index
 ```
 
 ```{toctree}
@@ -85,7 +91,6 @@ resolvers/torch/index
 command-line/index
 command-line/check/index
 command-line/show/index
-command-line/export-schema/index
 ```
 
 ```{toctree}
@@ -93,7 +98,6 @@ command-line/export-schema/index
 :hidden:
 
 security/trust-model/index
-security/restricting-imports/index
 security/secrets/index
 ```
 
@@ -110,6 +114,6 @@ recipes/checking-experiments-in-ci/index
 :caption: Reference
 :hidden:
 
-api/index
-changelog/index
+reference/api/index
+reference/changelog/index
 ```

@@ -10,15 +10,15 @@ and launches no jobs.
 
 - Both build on OmegaConf and build objects from YAML: `_target_` and `_partial_`
   in Hydra's [`instantiate`](https://hydra.cc/docs/advanced/instantiate_objects/overview/),
-  `$class`, `$partial` and `$ref` in omegakit.
+  `$target`, `$partial` and `$symbol` in omegakit.
 - Composition: Hydra picks options from
   [config groups](https://hydra.cc/docs/tutorials/basic/your_first_app/config_groups/)
   through a [defaults list](https://hydra.cc/docs/advanced/defaults_list/), also
   from the command line: `db=postgresql` chooses an option, and
   [`+db=mysql`](https://hydra.cc/docs/advanced/override_grammar/basic/) adds one.
   omegakit uses explicit paths instead: an experiment file names its base with
-  `$base: ~import ../base.yaml` and its parts with `~import`, and there is one file
-  per experiment.
+  `$base: ~include ../base.yaml` and its parts with `~include`, and there is one
+  file per experiment.
 - Hydra runs your entrypoint through `@hydra.main` and does more around it:
   - [`--multirun`](https://hydra.cc/docs/tutorials/basic/running_your_app/multi-run/)
     sweeps, with launchers such as [joblib](https://hydra.cc/docs/plugins/joblib_launcher/),
@@ -40,10 +40,10 @@ and launches no jobs.
   logging management.
 - Checking: Hydra's
   [structured configs](https://hydra.cc/docs/tutorials/structured_config/intro/)
-  check types when a config is composed or changed. omegakit checks each `$class`
-  node whose class has a schema, and each object field against the class it
-  expects, before anything is built. It also generates JSON Schemas for editors,
-  and has `omegakit check` for CI.
+  check types when a config is composed or changed. omegakit checks a config
+  against a `TypedDict` schema, and each `$target` node against the fields of its
+  dataclass or the schema of its class, before anything is built, and has
+  `omegakit check` for CI.
 - Use Hydra if you want the command line to compose configs, cluster launchers or
   managed run directories.
   [hydra-zen](https://mit-ll-responsible-ai.github.io/hydra-zen/) generates Hydra
@@ -56,10 +56,10 @@ and launches no jobs.
   line and config files (YAML, JSON, TOML, Jsonnet) from type hints and
   docstrings, and builds classes from `class_path` and `init_args`. The signatures
   come first; in omegakit the config files come first.
-- [LightningCLI](https://lightning.ai/docs/pytorch/stable/cli/lightning_cli_intermediate.html)
+- [LightningCLI](https://lightning.ai/docs/pytorch/stable/cli/lightning_cli_intermediate)
   is built on jsonargparse for PyTorch Lightning. It configures the model, the data
   module and the trainer, and
-  [saves the config of each run](https://lightning.ai/docs/pytorch/stable/cli/lightning_cli_advanced.html)
+  [saves the config of each run](https://lightning.ai/docs/pytorch/stable/cli/lightning_cli_advanced)
   as `config.yaml` in its log directory. Use it when you train with Lightning.
 
 ## Fiddle, gin-config and ml_collections

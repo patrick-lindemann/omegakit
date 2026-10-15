@@ -1,6 +1,6 @@
 [project]
 name = "omegakit"
-version = "0.8.0"
+version = "0.9.0"
 description = "Composable YAML configuration and Python object construction."
 readme = "README.md"
 license = "MIT"
@@ -15,10 +15,10 @@ classifiers = [
     "Typing :: Typed",
 ]
 requires-python = ">=3.12"
-dependencies = ["omegaconf>=2.3,<2.5", "typing_extensions>=4.12"]
+dependencies = ["omegaconf>=2.4.0,<2.5.0"]
 
 [project.scripts]
-omegakit = "omegakit.cli:main"
+omegakit = "omegakit.__main__:main"
 
 [project.urls]
 Homepage = "https://github.com/patrick-lindemann/omegakit"
@@ -35,28 +35,28 @@ dev = [
     "pytest>=8.4,<10",
     "pytest-cov>=7.1,<8",
     "ruff>=0.14,<0.15",
-    "pyright>=1.1.414,<1.2",
+    "ty>=0.0.86,<0.1",
     "pydoclint>=0.9.1,<0.10",
-    "jsonschema>=4.23,<5",
 ]
 docs = [
     "furo>=2025.9",
     "myst-parser>=4,<5",
     "sphinx>=8.2,<9",
     "sphinx-autodoc-typehints>=3,<4",
-    "sphinx-reredirects>=1,<2",
     # The docs example is a PyTorch project, and PyTorch warns without NumPy.
     "numpy>=2",
     "torch>=2.9",
 ]
 # The libraries of the optional resolvers, such as `omegakit.resolvers.torch`.
-resolvers = ["torch>=2.9"]
+resolvers = ["numpy>=2", "torch>=2.9"]
 
 [tool.uv]
 default-groups = ["dev", "docs"]
 # CI runs on Linux x86_64. Without this, the lowest resolution picks a PyTorch build
 # that has only macOS wheels.
-required-environments = ["sys_platform == 'linux' and platform_machine == 'x86_64'"]
+required-environments = [
+    "sys_platform == 'linux' and platform_machine == 'x86_64'",
+]
 
 # The CPU build, which is small and runs on every platform.
 [tool.uv.sources]
@@ -69,7 +69,7 @@ explicit = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--import-mode=importlib"
+addopts = "--import-mode=importlib --strict-markers"
 markers = [
     "distribution: builds the wheel and tests it installed in a fresh environment",
     "docs: runs the docs examples, which need the docs group",
@@ -89,32 +89,81 @@ target-version = "py312"
 line-length = 88
 
 [tool.ruff.lint]
-select = ["E", "W", "F", "I", "B", "UP", "A", "D", "SIM", "RUF", "PT", "TID"]
+select = [
+    "E",
+    "W",
+    "F",
+    "I",
+    "B",
+    "UP",
+    "A",
+    "D",
+    "SIM",
+    "RUF",
+    "PT",
+    "TID",
+    "G",
+    "PGH",
+    "PLC0415",
+    "T20",
+]
 ignore = ["D100", "D104", "D105"]
+unfixable = ["F401"]
 external = ["DOC"] # pydoclint's codes, for its `# noqa` comments
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
+[tool.ruff.lint.isort]
+known-first-party = ["omegakit"]
+section-order = [
+    "future",
+    "standard-library",
+    "third-party",
+    "first-party",
+    "tests",
+    "local-folder",
+]
+
+[tool.ruff.lint.isort.sections]
+tests = ["tests"]
+
 [tool.ruff.lint.flake8-tidy-imports.banned-api]
 "typing.TYPE_CHECKING".msg = "Import at runtime; TYPE_CHECKING only when functionally necessary."
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["D"]
+"tests/**" = ["D", "T20"]
+# The command line writes its output with `print`.
+"src/omegakit/_cli/**" = ["T20"]
 # Doc scripts import what an excerpt needs next to it, so each excerpt shows its own.
-"docs/**" = ["D", "PT", "E402"]
+"docs/**" = ["D", "PT", "E402", "T20"]
 
 [tool.pydoclint]
 style = "google"
 arg-type-hints-in-docstring = false
 check-return-types = false
 check-yield-types = false
+allow-init-docstring = true
+native-mode-noqa-location = "definition"
 
-[tool.pyright]
+[tool.ty.src]
 include = ["src", "tests", "docs"]
-pythonVersion = "3.12" # the floor; development runs on 3.13
-typeCheckingMode = "standard"
-reportImplicitOverride = "error"
-reportUnnecessaryTypeIgnoreComment = "error"
+
+[tool.ty.environment]
 # The page examples import the example project, as their tests do.
-executionEnvironments = [{ root = "docs", extraPaths = ["docs/example"] }]
+extra-paths = ["docs/example"]
+
+[tool.ty.rules]
+missing-override-decorator = "error"
+unused-ignore-comment = "error"
+unused-type-ignore-comment = "error"
+
+# PyTorch declares `nn.Module.forward` as a writable callable attribute.
+[[tool.ty.overrides]]
+include = ["docs/example/**"]
+rules = { invalid-mutable-override = "ignore" }
+
+# A `Callable` need not have a `__name__`; the page prints the loaded function's.
+[[tool.ty.overrides]]
+include = ["docs/objects/instantiation/main.py"]
+rules = { unresolved-attribute = "ignore" }

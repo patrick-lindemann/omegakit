@@ -1,12 +1,12 @@
 data:
-  $class: project.SineWave
+  $target: project.SineWave
   n: 256
   noise: 0.1
   seed: 0
 model:
-  $class: project.MLP
+  $target: project.MLP
   hidden: 32
 optimizer:
-  $class: torch.optim.Adam
+  $target: torch.optim.Adam
   $partial: true
   lr: 0.01

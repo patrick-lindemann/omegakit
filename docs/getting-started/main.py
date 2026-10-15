@@ -27,6 +27,6 @@ from omegakit import ConfigValidationError
 
 config = load_config(CONFIGS / "experiments/mlp.yaml", overrides=["model.hiden=64"])
 try:
-    instantiate(config, schema=Experiment)
+    instantiate(config, Experiment)
 except ConfigValidationError as error:
-    print("error:", error)
+    print(f"{type(error).__name__}:", error)

@@ -2,7 +2,7 @@
 
 `omegakit.resolvers.paths` lets a config name directories that the machine decides.
 The same experiment runs on a laptop and on a cluster, with its runs and its data
-in different places. `register_paths_resolver` registers `${paths:<key>}`:
+in different places. `register_paths_resolver` registers `${paths:<name>}`:
 
 ```{literalinclude} cluster.yaml
 :language: yaml
@@ -29,11 +29,15 @@ your machines apart, such as the hostname or an environment variable.
 
 ## Rules
 
-- `register_paths_resolver(paths, *, replace=False)` takes a mapping from keys to
-  paths, as strings or `Path` objects.
-- The paths are copied and converted to strings when the resolver is registered.
-  Changing the mapping later has no effect. Relative paths stay relative.
-- `${paths:<key>}` gives the path registered under `<key>`, and `None` for an
-  unknown key.
-- Registering again raises `ValueError` unless `replace=True`, which replaces the
-  whole mapping ([Overview](../overview/index.md#rules)).
+- `register_paths_resolver(paths, *, replace=False, use_cache=True)` takes a
+  mapping from names to paths, as `str` or `Path`
+  ([Overview](../overview/index.md#rules)).
+- The paths are copied and converted to `str` when the resolver is registered.
+  Changing the mapping later has no effect, and relative paths stay relative.
+- `${paths:<name>}` gives the path registered under `<name>`. An unknown name
+  raises when the value is read, as OmegaConf's `InterpolationResolutionError`
+  ``KeyError raised while resolving interpolation: 'data'``, and in `validate`,
+  `instantiate` and `prepare` as ``ValidationInterpolationError: Cannot resolve the
+  value: KeyError raised while resolving interpolation: 'data' (at `data_dir`)``,
+  also with `allow_missing=True`.
+- `replace=True` replaces the whole mapping.

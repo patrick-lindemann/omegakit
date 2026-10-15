@@ -1,8 +1,9 @@
 # Configurable classes
 
-A class can carry its own schema: subclass `Configurable[TConfig]` with a dataclass
-`TConfig`. Use it for a class that cannot be a dataclass itself, such as a PyTorch
-module, or whose config differs from its constructor:
+A class can name the schema of its config: subclass `Configurable` and set `schema`
+to a `TypedDict`. omegakit then checks the keys of every `$target` node that names
+the class, before anything is built. Use it for a class that is no dataclass, such
+as a PyTorch module:
 
 ```{literalinclude} models.py
 :language: python
@@ -12,97 +13,86 @@ module, or whose config differs from its constructor:
 ```{literalinclude} main.py
 :language: python
 :caption: main.py
+:end-before: make_mlp =
 ```
 
 ```{code-block} text
 :caption: Output
 
 model: MLP(
-  (0): Linear(in_features=1, out_features=64, bias=True)
-  (1): ReLU()
-  (2): Linear(in_features=64, out_features=1, bias=True)
-)
-error: `activation` must be one of 'relu', 'tanh', but the config gives `'gelu'`.
-node: {'$class': 'models.MLP', 'hidden': 8}
-instantiate(node): MLP(
   (0): Linear(in_features=1, out_features=8, bias=True)
-  (1): Tanh()
+  (1): ReLU()
   (2): Linear(in_features=8, out_features=1, bias=True)
 )
+ConfigSchemaError: `hiden` is not a field of `MLPConfig`. Its fields are `hidden`, `layers`, `activation`. (at the root)
+node: {'$target': 'models.MLP', 'hidden': 4, 'layers': 2}
 ```
 
-The config was checked against `MLPConfig` before anything was built, so
-`hidden: "64"` became the integer 64, and `gelu` was rejected. The fields and how
-they are checked are as for any
-[dataclass schema](../../schemas/dataclass-schemas/index.md).
+The config was checked against `MLPConfig` before `MLP` was called, so
+`hidden: "8"` arrived as the integer 8, and the misspelt `hiden` was rejected. The
+keys and how they are checked are as for any
+[TypedDict schema](../../schemas/typed-dict-schemas/index.md). `MLPConfig` has no
+defaults: `layers` and `activation` are `NotRequired`, and `MLP.__init__` keeps
+their defaults.
+
+`make_node` gave the node that builds an `MLP`, for code that picks a class itself,
+such as a test or a `from_config` ([Instantiation](../instantiation/index.md#rules)).
 
 ## `from_config`
 
-`MLP` uses the default `from_config`, which passes every field of the typed config
-to the constructor. Override it when the config and the constructor differ, for
-example when a field names the subclass to build. Keep `**kwargs` in the signature,
-where arguments given to a partial arrive. A `from_config` that returns a subclass
-annotates the base class as its return type, since `Self` would claim the class it
-was called on.
+omegakit builds a `Configurable` through its class method `from_config(config,
+**kwargs)`. `config` is a `dict` of the checked, converted values, with the keys
+that the config gives, and with the objects of nested `$target` nodes already
+built. The default calls `cls(**{**config, **kwargs})`. Override it when the config
+and the constructor differ, for example when a key names the subclass to build.
+Annotate `config` with the schema, as in `config: MLPConfig`, and your type checker
+knows its keys. Keep `**kwargs` in the signature, where the arguments of a partial
+arrive.
 
-## Children that code chooses
+## Partials
 
-`make_node` creates the node for a class, so code that picks a class itself, such
-as a test or a `from_config`, gets the same checks as a config does.
+A partial may leave required keys open until it is called:
 
-## Checking the schema against the constructor
+```{literalinclude} main.py
+:language: python
+:caption: main.py
+:start-at: make_mlp =
+```
 
-`check_schema(cls)` checks that a schema fits the constructor. It runs by itself
-whenever the class is validated or built; call it in a test to catch a mismatch
-without a config, as `main.py` does for `MLP`.
+```{code-block} text
+:caption: Output
+
+make_mlp(hidden=2): Linear(in_features=1, out_features=2, bias=True)
+ConfigSchemaError: `MLPConfig` requires `hidden`. (at the root)
+```
+
+The keys of `MLPConfig` that the call gives join the config's, and a required key
+that is still open raises when the partial is called.
 
 ## Rules
 
-A class that subclasses `Configurable[TConfig]` with a dataclass `TConfig` has
-`TConfig` as its **schema**. Its config is checked against it
-([Dataclass schemas](../../schemas/dataclass-schemas/index.md#rules)) and built into
-a `TConfig` instance, the typed config, which `from_config` receives.
-
-**Schema lookup.** The `TConfig` argument is found by walking the original bases
-of the `$class` and substituting type variables, so `class Sub(Mixin[int], Model)`
-and `class Leaf(Mid[Config])` work. An unparametrized generic class uses its type
-variable's default, or has no schema. A type variable that cannot be substituted
-raises `SchemaDefinitionError`. The result is cached per class.
-
-**Building a typed node**, in order:
-
-1. Look up the schema.
-2. Run `check_schema`, unless a class in the MRO below `Configurable` overrides
-   `from_config`.
-3. Check the fields, as in
-   [Dataclass schemas](../../schemas/dataclass-schemas/index.md#rules).
-4. Build the object and `Any` fields, children first, as in
-   [Instantiation](../instantiation/index.md#rules). A plain mapping in a field
-   annotated with a dataclass is a section, built the same way. A built object's
-   type is not checked again.
-5. Call `TConfig(**fields)`, so `__post_init__` runs.
-6. Call `from_config(typed_config)`, or build a partial of it that passes
-   call-time arguments as `**kwargs`.
-
-The whole node is validated before anything configured is built, so an error never
-leaves some children built. Errors name the node path and the schema class.
-
-**`check_schema(cls)`** checks that the schema fits `__init__`, and is cached once
-it passes. Every required `__init__` parameter needs a field. Every field must be a
-keyword parameter, unless `__init__` takes `**kwargs`; a positional-only parameter
-is rejected even then. Every field's annotation must be assignable to its
-parameter's: `int` to `float`, a subclass to its base, unions member by member.
-Generic annotations are skipped, and so is each parameter whose annotation does not
-resolve. A mismatch raises `SchemaDefinitionError` naming the field or parameter. It
-passes unchecked a class without a schema, a dataclass that is its own schema, and a
-class whose MRO overrides `from_config`.
-
-**`from_config`** receives the typed config, children built, plus `**kwargs` from a
-partial or a caller. It returns `Self`, or is annotated with a base class when it
-returns a subclass. Calling it with a raw mapping works but is outside the rules.
-
-**`make_node(target, **kwargs)`** returns `{"$class": "<module>.<qualname>",
-**kwargs}` for a module-level class or function, for children that code chooses
-in `from_config`. Overrides cannot reach such children. A target defined inside a
-function or a class raises `ValueError`, because it cannot be imported by its
-path.
+- A subclass of `Configurable` names its schema in the class attribute `schema`,
+  a `TypedDict`. Anything else, also a dataclass, raises `SchemaDefinitionError`
+  when a config names the class. A subclass inherits `schema`, and `schema = None`
+  in a subclass removes it.
+- A `$target` node of a class with a schema is checked against it
+  ([TypedDict schemas](../../schemas/typed-dict-schemas/index.md#rules)): an
+  unknown key and a missing required key raise `ConfigSchemaError`, and every
+  value is checked and converted by its annotation. A class without a schema has
+  its arguments unchecked, except for the `$target` nodes inside them. A
+  `Configurable` that is a dataclass and has no `schema` is checked against its
+  fields ([Dataclass targets](../../schemas/typed-dict-schemas/index.md#dataclass-targets)).
+- Any class with a `from_config`, `Configurable` or not, is built with
+  `from_config(config)`, where `config` is a `dict` of the values that the config
+  gives, checked and converted. No instance of the schema is built. What
+  `from_config` returns is checked only against the second argument of
+  `instantiate` ([Instantiation](../instantiation/index.md#rules)).
+- A class with `from_config` takes its arguments by name: `$args` raises
+  ``ConfigTargetError: `models.MLP` takes its arguments by name, so it cannot take
+  `$args`.``
+- A partial of a class with `from_config`, from `$partial: true` or `prepare`,
+  calls `from_config` when it is called, with the call's keyword arguments as
+  `**kwargs`. For a `Configurable` with a `schema`, the keys of the schema that the
+  call gives are added to `config` instead, and a required key that neither gives
+  raises `ConfigSchemaError` at the call. An error from calling a partial gets no
+  note.

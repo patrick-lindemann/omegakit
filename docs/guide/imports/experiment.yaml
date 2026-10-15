@@ -1,4 +1,0 @@
-seed: 0
-model: ~import models.yaml#small
-optimizer:
-  lr: 0.01

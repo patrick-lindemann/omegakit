@@ -1,78 +1,83 @@
-import importlib
 from typing import Any
 
 from omegaconf import OmegaConf
 
-from omegakit.utils import register_resolver
+try:
+    import torch
+except ImportError as error:
+    raise ImportError(
+        "Torch resolvers require PyTorch. Install it on your platform first."
+    ) from error
 
 
-def _import_torch() -> Any:
-    try:
-        torch = importlib.import_module("torch")
-    except ModuleNotFoundError as error:
-        if error.name != "torch":
-            raise
-        raise ImportError(
-            "Torch resolvers require PyTorch. Install torch for your platform "
-            "before calling register_torch_resolvers()."
-        ) from error
-    return torch
-
-
-def _resolve_dtype(dtype_str: str) -> Any:
-    torch = _import_torch()
-    dtype = getattr(torch, dtype_str, None)
-    if not isinstance(dtype, torch.dtype):
-        raise ValueError(f"Invalid torch dtype `{dtype_str}`.")
-    return dtype
-
-
-def register_torch_dtype_resolver(*, replace: bool = False) -> None:
-    """Register `${dtype:float32}`, which gives the Torch dtype of that name.
+def register_torch_resolvers(*, replace: bool = False, use_cache: bool = True) -> None:
+    """Register `torch.has_cuda`, `torch.device` and `torch.dtype`.
 
     Args:
-        replace: Replace a resolver named `dtype`. Defaults to `False`.
+        replace: Whether to replace a registered resolver of the same name. Defaults
+            to `False`.
+        use_cache: Whether to cache each result by its arguments. Defaults to `True`.
+    """
+    register_torch_cuda_resolver(replace=replace, use_cache=use_cache)
+    register_torch_device_resolver(replace=replace, use_cache=use_cache)
+    register_torch_dtype_resolver(replace=replace, use_cache=use_cache)
 
-    Raises:
-        ImportError: If Torch is not installed.
-    """  # noqa: DOC502
-    _import_torch()
-    register_resolver("dtype", _resolve_dtype, replace=replace)
 
-
-def register_cuda_available_resolver(*, replace: bool = False) -> None:
-    """Register `${cuda_available:}`, which gives whether Torch can use CUDA.
+def register_torch_cuda_resolver(
+    *, replace: bool = False, use_cache: bool = True
+) -> None:
+    """Register `${torch.has_cuda:}`, which resolves to whether CUDA is available.
 
     Args:
-        replace: Replace a resolver named `cuda_available`. Defaults to `False`.
-
-    Raises:
-        ImportError: If Torch is not installed.
-    """  # noqa: DOC502
-    torch = _import_torch()
-    register_resolver(
-        "cuda_available",
-        lambda _=None: torch.cuda.is_available(),
+        replace: Whether to replace a registered resolver of the same name. Defaults
+            to `False`.
+        use_cache: Whether to cache each result by its arguments. Defaults to `True`.
+    """
+    OmegaConf.register_resolver(
+        "torch.has_cuda",
+        lambda: torch.cuda.is_available(),
         replace=replace,
+        use_cache=use_cache,
     )
 
 
-def register_torch_resolvers(*, replace: bool = False) -> None:
-    """Register `${dtype:...}` and `${cuda_available:}`.
-
-    Neither is registered if either name is taken and `replace` is `False`.
+def register_torch_device_resolver(
+    *, replace: bool = False, use_cache: bool = True
+) -> None:
+    """Register `${torch.device:name}`, which resolves to `torch.device(name)`.
 
     Args:
-        replace: Replace resolvers of the same names. Defaults to `False`.
+        replace: Whether to replace a registered resolver of the same name. Defaults
+            to `False`.
+        use_cache: Whether to cache each result by its arguments. Defaults to `True`.
+    """
+    OmegaConf.register_resolver(
+        "torch.device", _resolve_device, replace=replace, use_cache=use_cache
+    )
 
-    Raises:
-        ImportError: If Torch is not installed.
-        ValueError: If a name is taken and `replace` is `False`.
-    """  # noqa: DOC503
-    _import_torch()
-    if not replace:
-        for name in ("dtype", "cuda_available"):
-            if OmegaConf.has_resolver(name):
-                raise ValueError(f"Resolver `{name}` is already registered.")
-    register_torch_dtype_resolver(replace=replace)
-    register_cuda_available_resolver(replace=replace)
+
+def register_torch_dtype_resolver(
+    *, replace: bool = False, use_cache: bool = True
+) -> None:
+    """Register `${torch.dtype:name}`, which resolves to the dtype `torch.<name>`.
+
+    Args:
+        replace: Whether to replace a registered resolver of the same name. Defaults
+            to `False`.
+        use_cache: Whether to cache each result by its arguments. Defaults to `True`.
+    """
+    OmegaConf.register_resolver(
+        "torch.dtype", _resolve_dtype, replace=replace, use_cache=use_cache
+    )
+
+
+# OmegaConf cannot read the signature of `torch.device` itself
+def _resolve_device(name: str) -> Any:
+    return torch.device(name)
+
+
+def _resolve_dtype(name: str) -> Any:
+    dtype = getattr(torch, name, None)
+    if not isinstance(dtype, torch.dtype):
+        raise ValueError(f"Invalid torch dtype `{name}`.")
+    return dtype

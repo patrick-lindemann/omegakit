@@ -7,7 +7,8 @@ from pathlib import Path
 import pytest
 from omegaconf import OmegaConf
 
-from omegakit import ConfigLoadError, instantiate, load_config, validate
+from omegakit import TARGET_KEY, ConfigLoadError, instantiate, load_config, validate
+from omegakit.resolvers.numpy import register_numpy_resolvers
 from omegakit.resolvers.paths import register_paths_resolver
 from omegakit.resolvers.secrets import register_secret_resolver
 from omegakit.resolvers.torch import register_torch_resolvers
@@ -16,50 +17,59 @@ pytestmark = pytest.mark.docs
 
 DOCS = Path(__file__).parents[2] / "docs"
 EXAMPLE = DOCS / "example"
-# Every docs section except the ones that test_examples.py runs as a whole.
+# Every docs section except the example project, which test_examples.py runs.
 SECTIONS = [
-    path
-    for path in DOCS.iterdir()
-    if path.is_dir() and path.name not in {"_build", "example"}
+    section_dir
+    for section_dir in DOCS.iterdir()
+    if section_dir.is_dir() and section_dir.name not in {"_build", "example"}
 ]
 # Files that show an error on their page, and so must not load.
 INVALID_YAML_FILES = {DOCS / "guide" / "errors" / "broken.yaml"}
 YAML_FILES = sorted(
-    path
-    for section in SECTIONS
-    for path in section.rglob("*.yaml")
-    if path not in INVALID_YAML_FILES
+    file_path
+    for section_dir in [*SECTIONS, EXAMPLE]
+    for file_path in section_dir.rglob("*.yaml")
+    if file_path not in INVALID_YAML_FILES
 )
-SCRIPTS = sorted(path for section in SECTIONS for path in section.rglob("main.py"))
+SCRIPTS = sorted(
+    file_path for section_dir in SECTIONS for file_path in section_dir.rglob("main.py")
+)
 
 
 @pytest.fixture(autouse=True)
-def examples_importable(monkeypatch):
+def examples_importable(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.syspath_prepend(str(EXAMPLE))
 
 
 @pytest.mark.parametrize(
-    "path", YAML_FILES, ids=[str(p.relative_to(DOCS)) for p in YAML_FILES]
+    "file_path",
+    YAML_FILES,
+    ids=[str(file_path.relative_to(DOCS)) for file_path in YAML_FILES],
 )
-def test_guide_yaml_loads_validates_and_builds(path: Path, monkeypatch):
-    # The secrets page reads a token from the environment, and the paths page
-    # names directories through the paths resolver.
+def test_guide_yaml_loads_validates_and_builds(
+    file_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # The secrets page reads a token from the environment, and the resolver pages
+    # use their resolvers.
     monkeypatch.setenv("TRACKER_TOKEN", "tok-for-the-guide-tests")
-    register_secret_resolver()
-    register_paths_resolver({"runs": "runs", "data": "data"})
-    register_torch_resolvers()
+    register_secret_resolver(replace=True)
+    register_paths_resolver({"runs": "runs", "data": "data"}, replace=True)
+    register_torch_resolvers(replace=True)
+    register_numpy_resolvers(replace=True)
     # A page's classes live next to its files, such as `models.py`.
-    monkeypatch.syspath_prepend(str(path.parent))
-    config = load_config(path)
+    monkeypatch.syspath_prepend(str(file_path.parent))
+    config = load_config(file_path)
     validate(config, allow_missing=True)
-    if "$class" in config and not OmegaConf.missing_keys(config):
+    if TARGET_KEY in config and not OmegaConf.missing_keys(config):
         instantiate(config)
 
 
 @pytest.mark.parametrize(
-    "script", SCRIPTS, ids=[str(p.parent.relative_to(DOCS)) for p in SCRIPTS]
+    "script",
+    SCRIPTS,
+    ids=[str(script.parent.relative_to(DOCS)) for script in SCRIPTS],
 )
-def test_guide_script_output_is_on_its_page(script: Path):
+def test_guide_script_output_is_on_its_page(script: Path) -> None:
     output = subprocess.run(
         [sys.executable, str(script)],
         cwd=script.parent,
@@ -82,8 +92,10 @@ def test_guide_script_output_is_on_its_page(script: Path):
 
 
 @pytest.mark.parametrize(
-    "path", sorted(INVALID_YAML_FILES), ids=lambda path: str(path.relative_to(DOCS))
+    "file_path",
+    sorted(INVALID_YAML_FILES),
+    ids=lambda file_path: str(file_path.relative_to(DOCS)),
 )
-def test_guide_invalid_yaml_does_not_load(path: Path):
+def test_guide_invalid_yaml_does_not_load(file_path: Path) -> None:
     with pytest.raises(ConfigLoadError):
-        load_config(path)
+        load_config(file_path)

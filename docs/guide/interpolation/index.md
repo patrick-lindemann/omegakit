@@ -27,16 +27,17 @@ config.data.train.seed: 7
 directory and the training split. An override of `seed` does the same. In
 `${..train.n}`, `..` is the parent of `test`, so the test split takes the size of the
 training split wherever the `data` node ends up, for example after an
-[import](../imports/index.md).
+[include](../includes/index.md).
 
 ## Rules
 
 - [Loading](../loading/index.md#rules) says which few values resolve while loading.
   Every other `${…}` resolves when it is read, validated or built, against the
-  assembled config. A relative interpolation resolves at the node's final
-  position.
+  loaded config. A relative interpolation resolves at the node's final position.
 - An interpolation that cannot be resolved, or a resolver that raises, raises
-  OmegaConf's error when read, such as `InterpolationKeyError`. Validating or
-  building raises `ConfigValidationError` instead, with the full key in the
-  message, and loading raises `ConfigLoadError` for the values it resolves. Both
-  have OmegaConf's error as their `__cause__`.
+  OmegaConf's error when the value is read, such as `InterpolationKeyError`.
+  `validate`, `instantiate` and `prepare` raise `ValidationInterpolationError`
+  instead, as in ``Cannot resolve the value: Interpolation key 'size' not found (at
+  `data.test.n`)``. While loading, an `~include` value raises `ConfigIncludeError`
+  and a `$base` or `$each` raises `ConfigMergeError`. omegakit's errors have
+  OmegaConf's error as their `__cause__`.

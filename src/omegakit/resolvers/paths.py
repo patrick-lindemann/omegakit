@@ -1,20 +1,21 @@
 from collections.abc import Mapping
 from pathlib import Path
 
-from omegakit.utils import register_resolver
+from omegaconf import OmegaConf
 
 
 def register_paths_resolver(
-    paths: Mapping[str, str | Path], *, replace: bool = False
+    paths: Mapping[str, str | Path], *, replace: bool = False, use_cache: bool = True
 ) -> None:
-    """Register `${paths:key}`, which gives the path registered under `key`.
-
-    The paths are copied and converted to strings, without being resolved. An
-    unknown key gives `None`. Registration is global to OmegaConf.
+    """Register `${paths:name}`, which resolves to the path of `name` as a `str`.
 
     Args:
-        paths: The paths by key.
-        replace: Replace a resolver named `paths`. Defaults to `False`.
+        paths: The paths by name.
+        replace: Whether to replace a registered resolver of the same name. Defaults
+            to `False`.
+        use_cache: Whether to cache each result by its arguments. Defaults to `True`.
     """
     values = {key: str(value) for key, value in paths.items()}
-    register_resolver("paths", values.get, replace=replace)
+    OmegaConf.register_resolver(
+        "paths", values.__getitem__, replace=replace, use_cache=use_cache
+    )

@@ -24,8 +24,9 @@ description: Wider than the baseline's 32 units.
 ```
 
 The first config came without `$meta`, and the second, with `keep_meta=True`, kept
-it. `walk` visited every mapping, parents first, so the script found the description
-of the model node too, as a script that lists experiments with their titles would.
+it. `walk` visited every node, parents first, and the script kept the mappings that
+hold `$meta`. So it found the description of the model node too, as a script that
+lists experiments with their titles would.
 
 ## Rules
 
@@ -33,8 +34,9 @@ of the model node too, as a script that lists experiments with their titles woul
   check what it holds.
 - `load_config` removes every `$meta`, unless `keep_meta=True`
   ([Loading](../loading/index.md#rules)).
-- `validate` ignores `$meta`, and building never passes it to a constructor or to
-  `from_config`. It is allowed next to `$class` and `$ref`
-  ([Instantiation](../../objects/instantiation/index.md#rules)).
-- `walk(config)` yields every `DictConfig` in `config`, including `config` itself,
-  parents before children. It enters lists, and does not resolve interpolations.
+- `validate` ignores `$meta` in every mapping. It may stand next to `$target` and
+  `$symbol`, and building never passes it to a constructor or to `from_config`
+  ([Instantiation](../../objects/instantiation/index.md)).
+- `walk(node, order="pre-order")` yields `node` and every node below it: mappings,
+  lists and single values. In `"pre-order"` a node comes before its children, in
+  `"post-order"` after them. It does not resolve interpolations.

@@ -4,6 +4,194 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.9.0] - 2026-10-15
+
+### Added
+
+- `$args` gives the positional arguments of a `$target` node, as a list next to the
+  keyword arguments: `{$target: builtins.int, $args: ["ff"], base: 16}` calls
+  `int("ff", base=16)`. It builds targets that take arguments only by position, such
+  as `torch.nn.Sequential`. With `$partial: true` the items go into the partial; a
+  `$base` or an override replaces the list as a whole. A dataclass binds the items to
+  its fields by position and checks each like the value of that key; a class with
+  `from_config` rejects `$args`. `make_node(torch.nn.Sequential, layer_a, layer_b)`
+  writes its positional arguments to `$args`.
+- `is_valid(config, schema)` checks a config like `validate`, also with
+  `allow_missing`, but returns `False` instead of raising a `ConfigValidationError`.
+- `validate`, `instantiate` and `prepare` take a plain `dict` as well as a config,
+  and `validate` also a `list` or a `tuple`. They raised an `AttributeError`.
+- A schema may contain itself, directly or through other schemas. It raised
+  `SchemaDefinitionError`.
+- `omegakit` exports every error class, the `Config` type, `cast_config` and
+  `ARGS_KEY`, next to the functions and key names it exported before.
+- `omegakit --version` prints the installed version, which is also
+  `omegakit.__version__`.
+- `${torch.device:name}` gives `torch.device(name)`; `register_torch_device_resolver`
+  registers it, and so does `register_torch_resolvers`.
+- `omegakit.resolvers.numpy` adds `${numpy.dtype:name}`, which gives
+  `numpy.dtype(name)`; `register_numpy_resolvers` or `register_numpy_dtype_resolver`
+  registers it. Importing the module without NumPy raises `ImportError`.
+- Every `register_*` function of `omegakit.resolvers` takes `use_cache`, which
+  OmegaConf uses to cache each result by its arguments. It defaults to `True`;
+  results were always cached.
+- A NumPy page under Resolvers.
+
+### Changed
+
+- **Breaking:** omegakit requires OmegaConf 2.4, from 2.4.0 up to but not including
+  2.5.0. It accepted 2.3 as well.
+- **Breaking:** Special keys and options are renamed, without aliases:
+
+  | Old | New |
+  | --- | --- |
+  | `~import`, `IMPORT_KEY` | `~include`, `INCLUDE_KEY` |
+  | `$class`, `CLASS_KEY` | `$target`, `TARGET_KEY` |
+  | `$ref`, `REF_KEY` | `$symbol`, `SYMBOL_KEY` |
+  | `$defaults`, `DEFAULTS_KEY` | `$each`, `EACH_KEY` |
+  | `load_config(import_root=...)` | `load_config(include_root=...)` |
+  | `--import-root` of `check` and `show` | `--include-root` |
+
+  An old `$` key is rejected as a reserved key, and an `~import` value stays the
+  text it is. An include of a file outside `include_root` raises the new
+  `IncludeRootError`.
+- **Breaking:** `load_config` no longer takes `keep_targets`, and its arguments may
+  be given by position. It raises the error of the step that failed, such as
+  `ConfigFileSyntaxError` or `ConfigIncludeError`, instead of `ConfigLoadError`
+  itself. Config files load as `OmegaConf.load` gives them: a file that holds a
+  single string, such as `hello`, is the mapping `{hello: null}`; a single number,
+  a boolean or a list at the root raises `ConfigFileSyntaxError`.
+- **Breaking:** `~include file#node` and `omegakit show --node` select the node with
+  `OmegaConf.select`. The path also takes `a[0]` and follows interpolations, a node
+  that holds `???` counts as missing, and a selected single value arrives resolved.
+- **Breaking:** The errors are 18 classes under `OmegaKitBaseException`, which is no
+  longer an OmegaConf error; no error is a `TypeError` or a `ValueError` either.
+  `ConfigLoadError` is the parent of every error that `load_config` raises,
+  `ConfigValidationError` of every error that `validate`, `instantiate` and
+  `prepare` raise about the config, and `SchemaDefinitionError` reports a wrong
+  schema. `ConfigFileNotFoundError` is still a `FileNotFoundError`,
+  `ConfigFilePermissionError` a `PermissionError` and `QualifiedNameNotFoundError`
+  an `ImportError`. A reserved `$` key raises `ConfigValidationError` wherever it
+  stands.
+- **Breaking:** An error names its place in its text, as in ``The value is `???`.
+  (at `model.depth`)``, and holds it in `full_key` and `file_path`. The place used
+  to be a note, which `str(error)` and logging dropped. A place is a full key such as
+  `items[0].model` or `model.$target`, and an error from an included file names the
+  include that failed, with notes for the includes that led to it. The messages share
+  one style (keys in backticks, "mapping", "Cannot …") and say more about the fix,
+  such as the fields of the schema for an unknown key or the files of an include
+  cycle.
+- **Breaking:** A schema is a `TypedDict`, named after its values, as in
+  `ModelConfig`, and only checks: it has no defaults, and a key is required unless it
+  is `NotRequired` or its `TypedDict` has `total=False`. A `Configurable` names it in
+  the class attribute `schema` instead of a type argument: replace
+  `class Model(Configurable[ModelConfig])` with `class Model(Configurable)` and
+  `schema = ModelConfig`. `from_config` takes `config: Any` and receives the checked
+  values as a `dict` with the keys that the config gives. omegakit no longer depends
+  on `typing_extensions`.
+- **Breaking:** A dataclass is a class that `$target` builds, never a schema. A field
+  annotated with a dataclass holds an object and takes a `$target` or a `$symbol`;
+  a mapping without `$target` there raises ``Expected `Data`, but the config gives a
+  mapping.`` A field annotated with a `TypedDict` holds a plain `dict`, takes at most
+  one `TypedDict` (a union of two raises `SchemaDefinitionError`), and checks a
+  `$symbol` to a `dict` like a mapping of the config.
+- **Breaking:** OmegaConf checks and converts the data fields of a schema, and its
+  rules replace omegakit's own: a `Literal` needs its exact value, a union no longer
+  converts the items of a list, a tuple cannot hold `???`, and `Sequence`, `Mapping`
+  and `set` raise `SchemaDefinitionError`. The same rules apply to the keys of every
+  dictionary and to each position of a tuple, also where the items are objects or
+  mappings: the key `FAST` of `models: dict[Mode, Model]` arrives as `Mode.FAST`, and
+  `pair: tuple[nn.Module, float]` checks its first item by class. A wrong number of
+  tuple items raises `ConfigSchemaError`. A field annotated `type[X]` takes only a
+  subclass of `X`.
+- **Breaking:** The second argument of `instantiate` and `prepare`, given by position
+  or as `schema=` (it could be given only as `schema=`), is the class of the result,
+  and what was built is checked against it with `isinstance`, as is the result of a
+  function that `$target` names in a field annotated with a class. A schema is
+  accepted only by `validate`. Only a mapping with `$target` is instantiated, and
+  `prepare` raises `ConfigSchemaError` for a root whose `$target` is a function.
+- **Breaking:** A node with `$partial: true`, and the root of `prepare`, may leave
+  required keys of its schema open, to be given as keyword arguments when the
+  partial is called. Such an argument replaces the value of the config in the `dict`
+  that `from_config` receives; a required key that is still open raises
+  `ConfigSchemaError` at the call.
+- **Breaking:** `validate`, `instantiate` and `prepare` no longer take
+  `allowed_modules`, and `omegakit check` no longer has `--allow-module`: nothing
+  limits the modules that `$target` and `$symbol` import. `instantiate` and `prepare`
+  no longer take `overrides`; apply them with the `overrides` of `load_config`, or
+  with `OmegaConf.merge` for a config in memory.
+- **Breaking:** `walk(node, order="pre-order")` yields every node, value nodes, lists
+  and tuples included, and with `order="post-order"` the children before their
+  parent. `walk(config)` yielded only the mappings, parents first.
+- **Breaking:** `${secret:...}` wraps the interpolation that gives the secret, such
+  as `${secret:${oc.env:TOKEN}}`; replace every `${secret:NAME}` with
+  `${secret:${oc.env:NAME}}`. `omegakit show --resolve` prints `${secret:...}` and
+  every value built from it as `***`, without reading the secret.
+- **Breaking:** The torch resolvers are `${torch.dtype:...}` and `${torch.has_cuda:}`,
+  and `register_cuda_available_resolver` is `register_torch_cuda_resolver`: replace
+  `${dtype:bfloat16}` with `${torch.dtype:bfloat16}` and `${cuda_available:}` with
+  `${torch.has_cuda:}`. `register_torch_resolvers` registers its resolvers one after
+  the other, so a taken name raises after the ones before it are registered; with
+  `replace=False` it registered none if a name was taken.
+- **Breaking:** Importing `omegakit.resolvers.torch` without PyTorch raises
+  `ImportError`. It was raised when a resolver was registered.
+- **Breaking:** `omegakit check` and `omegakit show` take overrides as
+  `--overrides KEY=VALUE ...`, and every other argument is a config file: replace
+  `omegakit show app.yaml seed=3` with `omegakit show app.yaml --overrides seed=3`.
+  `check` exits with 2 for a `--schema` that is not a class, before it reads a file;
+  it reported the error for each file and exited with 1. `show --resolve` reports an
+  interpolation to a missing or unknown key as an error instead of printing `???`;
+  with the new `--allow-missing` it prints `???` as before, and so does `--node` for
+  a node that holds `???`.
+- **Breaking:** A `$base` is merged after the `$base` of every node that encloses
+  it, so a `${…}` base sees an enclosing node with the keys that the enclosing
+  `$base` brings in. `data.test: {$base: ${..train}}` gets the `train` keys that a
+  `$base` of `data` adds, and finds `train` also where only that base brings it; it
+  got `train` as written, and raised `Cannot resolve` where only that base brought
+  it. Precedence is unchanged: the enclosing base, then the own `$base`, then the
+  own keys. A `$base` that names a node inside its own node, where that node holds
+  a `$base`, raises ``The `$base` of these nodes wait for each other``; it was
+  merged with that node's `$base` merged first.
+- `validate` takes `schema` as its second argument by position as well. It took it
+  only by keyword.
+- The API and Changelog pages of the documentation moved to `reference/api/` and
+  `reference/changelog/`.
+- The Imports page of the Guide is now Includes, at `guide/includes/`.
+- Dataclass schemas is now TypedDict schemas, at `schemas/typed-dict-schemas/`.
+
+### Removed
+
+- **Breaking:** `generate_json_schema`, the `omegakit export-schema` command and the
+  Editor support page, as OmegaConf generates no JSON Schema.
+- **Breaking:** `check_schema`. A schema that does not fit its class's constructor
+  fails when the object is built, with a note that names the node.
+- The Restricting imports page, since nothing restricts imports; `include_root` is
+  on the Includes page.
+
+### Fixed
+
+- An override that is no `key=value`, whose value is an include, or that is not a
+  string raises `ConfigOverrideError`. `seed` set `seed` to `None`, `=5` created the
+  key `''`, `layers[0]=1` replaced the list with a mapping, and an include stayed
+  text. An override that cannot be applied is named in the message.
+- `omegakit check` and `omegakit show` print failures to stderr, with their notes.
+  They printed only the first line, to stdout.
+- A `$symbol` or `$target` may name a submodule that is not imported yet, such as
+  `concurrent.futures`, and an error that a module raises on import gets a note that
+  names the node.
+- `make_node` raises `ConfigTargetError` for a callable without a name, such as a
+  `functools.partial`. It raised an `AttributeError`.
+- A schema annotation that fails to evaluate, or a key annotation that OmegaConf does
+  not support, raises `SchemaDefinitionError` instead of a `TypeError`, a
+  `SyntaxError` or an `AttributeError`. A bare `tuple` field holds a `tuple`, not a
+  `list`, and `$meta` in the mapping of a data field is ignored.
+- An `OSError` while a config file is read passes through. It was reported as
+  `ConfigFileSyntaxError`.
+- An included text that ends up as a backslash before `${`, such as `\\${x}`, stays
+  that text.
+- The error for a cycle of `$base` or `$each` references names only the nodes on the
+  cycle.
+- `${paths:name}` raises for a name that was not registered. It resolved to `None`.
+
 ## [0.8.0] - 2026-09-28
 
 ### Added
@@ -371,7 +559,7 @@ All notable changes to this project are documented here. The format follows
 ## [0.1.0] - 2026-09-23
 
 First release. The configuration language is specified in the
-[configuration contracts](https://omegakit.readthedocs.io/en/latest/contracts.html).
+[configuration contracts](https://github.com/patrick-lindemann/omegakit/blob/v0.1.0/docs/contracts.md).
 
 ### Changed compared with the pre-release version
 
@@ -399,6 +587,7 @@ First release. The configuration language is specified in the
   such as `omegakit.resolvers.paths`.
 - Python 3.12 is supported.
 
+[0.9.0]: https://github.com/patrick-lindemann/omegakit/releases/tag/v0.9.0
 [0.8.0]: https://github.com/patrick-lindemann/omegakit/releases/tag/v0.8.0
 [0.7.0]: https://github.com/patrick-lindemann/omegakit/releases/tag/v0.7.0
 [0.6.1]: https://github.com/patrick-lindemann/omegakit/releases/tag/v0.6.1

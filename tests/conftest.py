@@ -1,26 +1,24 @@
-import functools
-from collections.abc import Callable
-from pathlib import Path
-from textwrap import dedent
+import importlib
+import importlib.util
+import sys
+from types import ModuleType
 
 import pytest
-from omegaconf import OmegaConf
 
-
-@pytest.fixture(autouse=True)
-def clear_resolvers():
-    OmegaConf.clear_resolvers()
-    yield
-    OmegaConf.clear_resolvers()
+# Pytest imports a module even when its marker deselects every test in it, so a module
+# that imports a library of an optional group is left out where that group is missing.
+collect_ignore = [
+    file_name
+    for file_name, libraries in (
+        ("integration/test_guide_examples.py", ("numpy", "torch")),
+        ("unit/resolvers/test_numpy.py", ("numpy",)),
+        ("unit/resolvers/test_torch.py", ("torch",)),
+    )
+    if any(importlib.util.find_spec(library) is None for library in libraries)
+]
 
 
 @pytest.fixture
-def write_yaml(tmp_path: Path) -> Callable[[str, str], Path]:
-    return functools.partial(_write_yaml, tmp_path)
-
-
-def _write_yaml(directory: Path, name: str, text: str) -> Path:
-    path = directory / name
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(dedent(text))
-    return path
+def targets(monkeypatch: pytest.MonkeyPatch) -> ModuleType:
+    monkeypatch.delitem(sys.modules, "tests.targets", raising=False)
+    return importlib.import_module("tests.targets")

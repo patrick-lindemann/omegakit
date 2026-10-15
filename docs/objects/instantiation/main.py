@@ -1,38 +1,22 @@
-from collections.abc import Callable
-from dataclasses import dataclass
-
-import torch
+from experiment import Experiment
 
 from omegakit import ConfigValidationError, instantiate, load_config, prepare
 
-
-@dataclass
-class Experiment:
-    model: torch.nn.Module
-    optimizer: Callable[..., torch.optim.Optimizer]
-    loss: Callable[..., torch.Tensor]
-
-
 config = load_config("experiment.yaml")
-experiment = instantiate(config, schema=Experiment)
-print("experiment.model:", experiment.model)
-print("experiment.loss:", experiment.loss.__name__)
+experiment = instantiate(config, Experiment)
+print("model:", experiment.model)
+print("loss:", experiment.loss.__name__)
+print("epochs:", repr(experiment.epochs), "batch_size:", experiment.batch_size)
 
 optimizer = experiment.optimizer(experiment.model.parameters())
-print("optimizer:", type(optimizer).__name__)
-print("lr:", optimizer.param_groups[0]["lr"])
+print("optimizer:", type(optimizer).__name__, optimizer.defaults["lr"])
 optimizer = experiment.optimizer(experiment.model.parameters(), lr=0.01)
-print("lr:", optimizer.param_groups[0]["lr"])
+print("optimizer:", type(optimizer).__name__, optimizer.defaults["lr"])
 
-make_model = prepare(config.model)
-print("make_model(out_features=3):", make_model(out_features=3))
+make_experiment = prepare(config, Experiment)
+print("epochs:", make_experiment(epochs=5).epochs)
 
 try:
-    instantiate(
-        config,
-        schema=Experiment,
-        overrides=["model.$class=subprocess.Popen"],
-        allowed_modules=["torch.nn", "torch.optim"],
-    )
+    instantiate(config.loss)
 except ConfigValidationError as error:
-    print("error:", error)
+    print(f"{type(error).__name__}:", error)

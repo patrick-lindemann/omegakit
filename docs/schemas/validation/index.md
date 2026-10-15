@@ -1,7 +1,7 @@
 # Validation
 
-`validate` checks a loaded config against its schemas, and raises
-`ConfigValidationError` at the first problem, naming the key:
+`validate` checks a loaded config against a schema without building anything, and
+raises a `ConfigValidationError` at the first problem, placed at its key:
 
 ```{literalinclude} experiment.yaml
 :language: yaml
@@ -17,15 +17,16 @@
 ```{code-block} text
 :caption: Output
 
-error: Invalid config in `training.epochs` (Experiment): Value 'many' of type 'str' could not be converted to Integer
-error: `training.schedule` must be one of 'constant', 'cosine', but the config gives `'linear'`.
-error: `model` expects Module, but the config gives `$class: torch.optim.SGD`.
+ConfigSchemaError: The value does not match `TrainingConfig`: Value 'many' of type 'str' could not be converted to Integer (at `training.epochs`)
+ConfigSchemaError: The value does not match `TrainingConfig`: Invalid value 'linear', expected one of ['constant', 'cosine'] (at `training.schedule`)
+ConfigSchemaError: Expected `Module`, but the config gives `$target: torch.optim.SGD`. (at `model`)
 ```
 
 The file itself is valid. Each override broke one check: a value that does not
-convert, a value outside its `Literal`, and a `$class` of the wrong class for the
-`model: nn.Module` field, caught before anything was built. How fields are checked
-is on [Dataclass schemas](../dataclass-schemas/index.md).
+convert to an `int`, a value outside its `Literal`, and a `$target` of a class that
+is no `nn.Module`. `torch.optim.SGD` was imported to check its class, but not
+called. How each key is checked is on
+[TypedDict schemas](../typed-dict-schemas/index.md).
 
 ## Files that are incomplete on purpose
 
@@ -43,53 +44,64 @@ accepts what is missing and still checks every value the file gives:
 :start-at: incomplete.yaml
 ```
 
+```{code-block} text
+:caption: Output
+
+is_valid: False
+allow_missing: True
+ConfigSchemaError: The value does not match `TrainingConfig`: Invalid value 'linear', expected one of ['constant', 'cosine'] (at `training.schedule`)
+```
+
+`is_valid` takes the arguments of `validate` and returns `False` where `validate`
+raises a `ConfigValidationError`. With `allow_missing=True`, the `???` of `epochs`
+and the `model` that the file does not give passed, while the wrong `schedule` of
+the override did not.
+
 To check files from a terminal, a pre-commit hook or CI, use
-[`omegakit check`](../../command-line/check/index.md).
+[`omegakit check`](../../command-line/check/index.md), which loads each file with
+`load_config` and checks it with `validate`. Its `--allow-missing` is the
+`allow_missing` of `validate`.
 
 ## Rules
 
-`validate(config, *, schema=None, allow_missing=False, allowed_modules=None)`
-checks an assembled config, or any node of it, and raises `ConfigValidationError`
-at the first problem. `load_config` checks no schema. `instantiate` and `prepare`
-run this check, with their own `schema`, before building.
+`validate(config, schema=None, *, allow_missing=False)` checks a config, a `dict`,
+a `list` or a `tuple`, returns `None`, and raises at the first problem.
+`is_valid(config, schema=None, *, allow_missing=False)` returns `False` for a
+`ConfigValidationError` instead. Neither catches a `SchemaDefinitionError`.
+`load_config` checks no schema, and `instantiate` and `prepare` run this check
+before they call anything ([Instantiation](../../objects/instantiation/index.md#rules)).
 
-- The config is resolved first. A failing interpolation or a `???` is invalid
-  unless `allow_missing`. The error names the full key.
-- Every `$class` node is checked against its class's schema. Nested `$class`
-  nodes are checked before their parent. The class is imported, not called. A
-  class without a schema has only its children checked. A class whose schema is
-  not supported, or does not fit its `__init__`, raises `SchemaDefinitionError`
-  ([Dataclass schemas](../dataclass-schemas/index.md#rules)).
-- `schema` says what the root must match. A root with `$class` must name
-  `schema` or a subclass. A root without `$class` is checked against the schema
-  of `schema`: a dataclass is its own, and a `Configurable` has its `TConfig`. A
-  class without one raises. Anything that is not a class raises `TypeError`.
-  Without `schema`, only the `$class` nodes are checked.
-- `allow_missing=True` accepts `???`, required fields that are not given, and
-  interpolations to missing or unknown keys. Given values are still checked.
-- An object field accepts a `$class` node of the annotated class or a subclass, a
-  `$ref` to an instance, or `null` if optional. It accepts a plain mapping only if
-  the annotation is a dataclass (a section). The class check is skipped for
-  functions, for `$partial: true`, and for annotations that are not plain classes
-  or unions of them, such as `Callable` and `Protocol`. Reserved keys and nested
-  nodes are still checked. Any other value raises `ConfigValidationError` naming
-  the field, the expected class and what the config gives.
-- Reserved keys are checked ([Instantiation](../../objects/instantiation/index.md#rules)).
-  What `from_config` returns is not checked.
-- `$class` or `$ref` raises `ConfigValidationError`, naming the node, when it is
-  not a string or not a dotted path, or names a missing module (or parent package)
-  or attribute. The `ImportError` is its `__cause__`. So does
-  a `$class` target that is neither callable nor has `from_config`; `$ref` accepts
-  any object. An `ImportError` raised by the named module itself, such as for a
-  missing dependency, propagates.
-- Plain values are checked as `instantiate` converts them: `"64"` is a valid
-  `int`. The config is not changed.
-- `allowed_modules` limits which modules `$class` and `$ref` may name
-  ([Restricting imports](../../security/restricting-imports/index.md#rules)).
+**What it checks.**
 
-**What runs.** No `$class` target, `from_config` or schema dataclass is called;
-their `__post_init__` runs once, when building. But the modules named by `$class`
-and `$ref` are imported, resolvers run, the `__instancecheck__` and
-`__subclasscheck__` of imported classes run, and every `default_factory` runs,
-possibly several times and also for fields the config sets. A factory's exception
-propagates.
+- `schema` is the type that the root must give: a `TypedDict` for a root without
+  `$target`, a class for a root with `$target`, which must name the class or a
+  subclass. A `schema` that is no class raises `SchemaDefinitionError`. Without
+  `schema`, the config itself is checked.
+- Every `$target` node is checked against the schema of its class, nested nodes
+  first: the `schema` of a `Configurable`, or the fields of a dataclass
+  ([TypedDict schemas](../typed-dict-schemas/index.md#rules)). A class without
+  either has only the nodes inside its arguments checked.
+- The class or object that every `$target` and `$symbol` names is imported, and
+  none is called. A path that cannot be imported raises
+  `QualifiedNameNotFoundError` or `QualifiedNameSyntaxError`.
+- Every key that starts with `$` where it is not allowed raises
+  `ConfigValidationError` ([Instantiation](../../objects/instantiation/index.md#rules)).
+- Interpolations are resolved as the values are read. One that cannot be resolved
+  raises `ValidationInterpolationError`, and a `???` raises ``ValidationMissingValueError:
+  The value is `???`. Set it in the config or with an override. (at
+  `training.epochs`)``.
+- The config is not changed.
+
+**`allow_missing=True`** accepts a `???`, also a root that is `???`, a required key
+that is not given, and an interpolation to a missing or unknown key. Such a missing
+value fits every annotation and is not converted, nor is a list, tuple or mapping
+of data that holds one. Every other value is still checked. The special keys still
+need their values: a `$target`, `$symbol`, `$args` or `$partial` that is missing
+raises. An interpolation that fails for another reason, such as an unset
+environment variable, raises as well. `instantiate` and `prepare` have no
+`allow_missing`.
+
+**What runs.** The top-level code of the modules that `$target` and `$symbol`
+name, the resolvers of the config, and the `__instancecheck__` and
+`__subclasscheck__` of the classes in a schema. No target, `from_config`,
+`default_factory` or `__post_init__` of your classes is called.

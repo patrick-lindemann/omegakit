@@ -1,7 +1,0 @@
-model:
-  $class: subprocess.run
-  args: [sh, -c, echo this could run any command]
-optimizer:
-  $class: torch.optim.Adam
-  $partial: true
-  lr: 0.01

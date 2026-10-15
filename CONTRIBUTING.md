@@ -8,7 +8,7 @@ uv run pytest
 uv run ruff check
 uv run ruff format --check
 uv run pydoclint src
-uv run pyright
+uv run ty check
 uv run sphinx-build -W docs docs/_build
 uv build
 ```
@@ -28,9 +28,9 @@ uv run sphinx-build docs docs/_build
 uv run python -m http.server 8000 --directory docs/_build
 ```
 
-Assembly relies on private OmegaConf node APIs. The supported OmegaConf range is
-`>=2.3,<2.5`, and CI tests the lowest supported versions, the locked versions and
-the newest OmegaConf pre-release in that range.
+Assembly relies on private OmegaConf node APIs. omegakit requires OmegaConf 2.4
+(`>=2.4.0,<2.5.0`), and CI tests the lowest supported versions and the locked
+versions.
 
 ## Code
 
@@ -56,7 +56,7 @@ the newest OmegaConf pre-release in that range.
 Dependabot proposes dependency and GitHub Actions updates weekly against `develop`,
 and they are reviewed and merged by hand. Actions are pinned to commit SHAs, so read the upstream
 changes before merging a bump. The runtime bounds in `pyproject.toml` are changed by
-hand, when the `test-omegaconf-next` job shows that a new version works.
+hand, when every check passes on the new version.
 
 ## Branches
 
