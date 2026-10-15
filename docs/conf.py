@@ -1,10 +1,12 @@
 import importlib
 import importlib.metadata
 import pkgutil
-from typing import Any
+from typing import Any, TypeAliasType
 
 from sphinx.application import Sphinx
+from sphinx.config import Config as SphinxConfig
 from sphinx.pycode import ModuleAnalyzer
+from sphinx_autodoc_typehints import format_annotation
 
 import omegakit
 
@@ -31,10 +33,22 @@ napoleon_numpy_docstring = False
 autodoc_member_order = "bysource"
 html_theme = "furo"
 html_title = "omegakit"
+# `typehints_formatter` is a function, which Sphinx cannot cache.
+suppress_warnings = ["config.cache"]
 
 
 def setup(app: Sphinx) -> None:
     app.connect("autodoc-process-docstring", _use_source_docstring)
+
+
+def typehints_formatter(annotation: Any, config: SphinxConfig) -> str | None:
+    # A type alias is shown by its name if `omegakit` exports it, else by its value,
+    # since the extension shows every alias as `TypeAliasType`.
+    if not isinstance(annotation, TypeAliasType):
+        return None
+    if getattr(omegakit, annotation.__name__, None) is annotation:
+        return f":py:data:`~omegakit.{annotation.__name__}`"
+    return format_annotation(annotation.__value__, config, short_literals=True)
 
 
 def _use_source_docstring(
