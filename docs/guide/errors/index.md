@@ -1,14 +1,15 @@
 # Handling errors
 
-omegakit's errors derive from OmegaConf's, so one handler around loading and
-building a config catches omegakit's errors and OmegaConf's. What your own classes
-raise passes through unchanged.
+Every error that omegakit raises about a config is an `OmegaKitBaseException`, and
+its class says what is wrong. One handler around loading and building a config
+catches them, together with OmegaConf's errors. What your own classes raise passes
+through unchanged.
 
 ## One handler for the config
 
-`run` loads an experiment and builds it. The script runs it on a valid file, a
-missing file, a file whose `$base` lacks its `~import`, and a value of the wrong
-type:
+`run` loads an experiment, checks it and builds its model. The script runs it on a
+valid file, a missing file, a file whose `$base` lacks its `~include`, and a value
+of the wrong type:
 
 ```{literalinclude} experiment.yaml
 :language: yaml
@@ -29,22 +30,47 @@ type:
 ```{code-block} text
 :caption: Output
 
-experiment.epochs: 50
+epochs: 50 model: Linear(in_features=1, out_features=1, bias=True)
 missing file: experment.yaml
-ConfigLoadError: `$base` in `<root>` is not a mapping or a list of mappings.
-ConfigValidationError: Invalid config in `epochs` (Experiment): Value 'many' of type 'str' could not be converted to Integer
+ConfigMergeError: `$base` must be a mapping or a list of mappings, not `'experiment.yaml'`. (at the root)
+ConfigSchemaError: The value does not match `ExperimentConfig`: Value 'many' of type 'str' could not be converted to Integer (at `epochs`)
 ```
 
-- `OmegaConfBaseException` catches every error that omegakit raises about a config,
-  and every error of OmegaConf. Import it from `omegaconf.errors`; the top-level
-  `omegaconf` package does not export it.
-- `OmegaKitBaseException` catches only omegakit's errors. Below it,
-  `ConfigLoadError` means a file, an import, a `$base`, a `$defaults` or an
-  override is invalid: fix the file or the override. `ConfigValidationError` means
-  the values do not match the schema: fix the values. `SchemaDefinitionError` means
-  a class cannot serve as a schema: fix the class.
-- A missing experiment file is not a config error. It raises `FileNotFoundError`,
-  which `run` catches separately.
+- `OmegaKitBaseException` catches every error of omegakit, and
+  `OmegaConfBaseException` every error of OmegaConf. Import the second from
+  `omegaconf.errors`; the top-level `omegaconf` package does not export it.
+- Below `OmegaKitBaseException`, `ConfigLoadError` means that a file, an include,
+  a `$base`, an `$each` or an override is invalid: fix the file or the override.
+  `ConfigValidationError` means that the values do not fit their schema or cannot
+  be built: fix the values. `SchemaDefinitionError` means that a class cannot serve
+  as a schema: fix the class. `ConfigMergeError` and `ConfigSchemaError` are two of
+  their subclasses; the [API](../../reference/api/index.md) lists all.
+- A missing file raises `ConfigFileNotFoundError`, a `ConfigLoadError` that is also
+  a `FileNotFoundError`. `run` catches it as the builtin error and reads the file
+  from `filename`.
+
+## The place of an error
+
+`str(error)` is the message followed by its place, and the error also holds the
+place as data:
+
+```{literalinclude} main.py
+:language: python
+:start-after: run("experiment.yaml", ["epochs=many"])
+:end-at: print("error.full_key:", error.full_key)
+```
+
+```{code-block} text
+:caption: Output
+
+error.message: The value does not match `ExperimentConfig`: Value 'many' of type 'str' could not be converted to Integer
+error.full_key: epochs
+```
+
+`full_key` is the key of the node at fault, such as `items[0].model`, `""` for the
+root, and `None` where the error concerns no node. `file_path` is the config file
+at fault, set by an error of an [include](../includes/index.md#rules), and `None`
+elsewhere.
 
 ## Errors when you read the config
 
@@ -70,12 +96,14 @@ MissingMandatoryValue: Missing mandatory value: name
     object_type=dict
 ```
 
-
+`validate`, `instantiate` and `prepare` report the same value as
+``ValidationMissingValueError: The value is `???`. Set it in the config or with an
+override. (at `name`)`` ([Missing values](../missing-values/index.md#rules)).
 
 ## Errors from constructors
 
 `torch.nn.Linear` has no schema, so a key it does not take reaches its `__init__`.
-The `TypeError` propagates as it is, with a note that names the node:
+The `TypeError` passes through `run` as it is, with a note that names the node:
 
 ```{literalinclude} main.py
 :language: python
@@ -87,36 +115,39 @@ The `TypeError` propagates as it is, with a note that names the node:
 :caption: Output
 
 error: Linear.__init__() got an unexpected keyword argument 'hidden'
-error.__notes__: ['while instantiating model (torch.nn.Linear)']
+error.__notes__: ['  while calling `torch.nn.Linear` at `model`']
 ```
 
-A class with a schema rejects a key like this with `ConfigValidationError` before
+A class with a schema rejects a key like this with a `ConfigSchemaError` before
 anything is built ([Configurable classes](../../objects/configurable-classes/index.md)).
 
 ## Rules
 
-- omegakit's errors form this hierarchy:
+- omegakit's errors form three families:
 
   ```text
-  omegaconf.errors.OmegaConfBaseException
+  Exception
   └── omegakit.OmegaKitBaseException
-      ├── omegakit.ConfigLoadError
-      ├── omegakit.ConfigValidationError   (also omegaconf.errors.ValidationError)
-      └── omegakit.SchemaDefinitionError
+      ├── omegakit.ConfigLoadError         load_config
+      ├── omegakit.ConfigValidationError   validate, instantiate, prepare
+      └── omegakit.SchemaDefinitionError   a schema that cannot check a config
   ```
 
-- `ConfigLoadError`, `ConfigValidationError` and `SchemaDefinitionError` are
-  `ValueError`s. `OmegaKitBaseException` is not.
-- The class says what is wrong, not which function raised it: an invalid override
-  is a `ConfigLoadError` in every function, and a class that cannot serve as a
-  schema is a `SchemaDefinitionError` wherever it is reached.
-- An error of omegakit carries its message, with OmegaConf's error or another cause
-  as `__cause__` where there is one.
-- A message names a node by its path from the root, with keys and list indices
-  joined by dots, such as `items.0.model`, and the root as `<root>`. The part of a
-  message that quotes OmegaConf's error keeps OmegaConf's form, such as
-  `items[0].model`.
-- Errors that are not omegakit's keep their type: `FileNotFoundError` for a missing
-  file, `TypeError` for API misuse, OmegaConf's errors when a loaded config is read,
-  and exceptions from constructors. The Rules of each feature page say which errors
-  it raises.
+  `OmegaKitBaseException` is no OmegaConf error, `ValueError` or `TypeError`.
+  `ConfigFileNotFoundError` is also a `FileNotFoundError`,
+  `ConfigFilePermissionError` a `PermissionError`, and
+  `QualifiedNameNotFoundError`, for a `$target` or `$symbol` that cannot be
+  imported, an `ImportError`.
+- The class says what is wrong, not which function raised it: a schema that cannot
+  check a config is a `SchemaDefinitionError` wherever it is reached.
+- `str(error)` is `error.message` followed by the place: ``(at `model.depth`)``,
+  ``(at the root)``, or with the file of an include, ``(at `model` in
+  `…/large.yaml`)``. A key keeps the brackets of a list index, as in
+  `items[0].model`. Where an error has a cause, such as OmegaConf's error, it is the
+  `__cause__`.
+- Errors that are not omegakit's keep their type: OmegaConf's errors when a loaded
+  config is read, an `OSError` while a file is read, and what a constructor or
+  `from_config` raises. omegakit adds a note to the last, as in ``while calling
+  `torch.nn.Linear` at `model` ``, and to an error that a module raises while
+  `$target` or `$symbol` imports it, as in ``at `model` ``. The Rules of each
+  feature page say which errors it raises.

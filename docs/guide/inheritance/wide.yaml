@@ -1,4 +1,4 @@
-$base: ~import base.yaml
+$base: ~include base.yaml
 model:
   hidden: 256
 epochs: 200

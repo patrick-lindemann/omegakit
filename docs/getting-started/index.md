@@ -88,7 +88,7 @@ Each experiment file names that base and adds what differs:
 ```
 
 `~import` reads another file, and `$base` merges it underneath the node, so the
-experiment's own keys win ([Imports](../guide/imports/index.md),
+experiment's own keys win ([Includes](../guide/includes/index.md),
 [Inheritance](../guide/inheritance/index.md)). `name: ???` is a value each
 experiment must set ([Missing values](../guide/missing-values/index.md)), and
 `${seed}` refers to another value ([Interpolation](../guide/interpolation/index.md)).

@@ -46,7 +46,7 @@ comparison/index
 :hidden:
 
 guide/loading/index
-guide/imports/index
+guide/includes/index
 guide/inheritance/index
 guide/defaults/index
 guide/overrides/index

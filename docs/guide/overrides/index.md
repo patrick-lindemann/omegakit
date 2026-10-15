@@ -25,24 +25,34 @@ config.optimizer.momentum: 0.9
 A list of `key=value` strings is what a command line gives you, so a script can pass
 its arguments straight to `load_config`. `model.hidden=64` became the integer 64. A
 nested `dict` does the same from code: the optimizer kept its `momentum` and changed
-only its learning rate. `instantiate` and `prepare` take `overrides=` too.
+only its learning rate. On the command line, `omegakit check` and `omegakit show`
+take the same strings as `--overrides KEY=VALUE ...`.
 
 ## Rules
 
-- `overrides` is a `DictConfig`, a `dict`, or a list of `key=value` strings. Any
-  other type, including a `ListConfig`, raises `TypeError`, and so does a list item
-  that is not a string.
-- Each value in a list is parsed as YAML: `epochs=50` is an integer,
-  `seeds=[0, 1]` a list. A string without `=`, such as `a`, sets `a` to `null`.
-- An override that does not parse, has a value OmegaConf does not support, or is
-  rejected by a struct config raises `ConfigLoadError` from `load_config`,
-  `instantiate` and `prepare`, naming the override or its key.
-- Overrides are merged after assembly. An `~import`, `$base` or `$defaults` in an
-  override stays literal. `$meta`, and with `keep_targets=False` also `$class`,
-  `$ref` and `$partial`, are stripped from overrides too.
-- A mapping merges into the node it names: its keys replace those of the node, and
-  the node's other keys stay. To replace a whole node, assign it in code, such as
-  `config.optimizer = {...}`.
-- Overrides win over every value from the files
-  ([Precedence](../loading/index.md#rules)). `instantiate` and `prepare` merge
-  theirs into a copy of the node and leave the config passed in unchanged.
+- Only `load_config` takes overrides, as `overrides`: a list of `key=value`
+  strings, a `dict` or a `DictConfig`. `instantiate` and `prepare` take none; change
+  a config in memory with `OmegaConf.merge`.
+- The strings apply one at a time, in order, so a later one wins over an earlier
+  one. Each value is parsed as YAML: `epochs=50` is an integer, `seeds=[0, 1]` a
+  list. A dotted key adds the mappings it names, as `a.b=1` adds `a`.
+- A mapping merges into the config: its keys replace those of the node they name,
+  and the node's other keys stay. To replace a whole node, assign it in code, such
+  as `config.optimizer = {...}`.
+- Overrides apply after the includes, `$base` and `$each`, and win over every value
+  of the files ([Precedence](../loading/index.md#rules)). A `$base` or `$each` in an
+  override stays a plain key, and an `~include` in a mapping stays text. `$meta` is
+  removed from overrides too, unless `keep_meta=True`.
+- These raise `ConfigOverrideError`:
+  - an item of the list that is not a string, as in ``An override in a list must be
+    a `key=value` string, not `1`.``;
+  - an item without `=` or without a key, as in `` `seed` is not an override:
+    write it as `key=value`. ``;
+  - a key with `[`, such as `layers[0]=1`: give the whole list instead;
+  - a value that cannot be parsed, as in ``Cannot parse `seeds=[0`: …``;
+  - a value that is an `~include`, which arrives after the includes are resolved;
+  - overrides of another type, a `ListConfig` included, as in ``Cannot override a
+    `DictConfig` with a `ListConfig`.``;
+  - an override that cannot be applied, named in the message, as in ``Cannot apply
+    `seeds.first=0`: Cannot merge incompatible container types`` where `seeds` is
+    a list.

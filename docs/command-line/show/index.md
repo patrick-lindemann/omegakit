@@ -98,7 +98,7 @@ that `load_config` removes ([Metadata](../../guide/metadata/index.md)).
   `load_config`, and takes its arguments as `check` does
   ([check](../check/index.md#rules)).
 - `--node` selects a node with `OmegaConf.select`, as `~import file#node` does
-  ([Imports](../../guide/imports/index.md#rules)): `items.0.name`,
+  ([Includes](../../guide/includes/index.md#rules)): `items.0.name`,
   `items[0].name`, `items.-1`. A node that does not exist exits with 1, and so
   does a node that holds `???`, unless `--allow-missing` is given.
 - Without `--resolve`, a mapping or a list prints as written: `${…}`, `???`,
