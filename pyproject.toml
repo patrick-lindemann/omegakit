@@ -48,7 +48,7 @@ docs = [
     "torch>=2.9",
 ]
 # The libraries of the optional resolvers, such as `omegakit.resolvers.torch`.
-resolvers = ["torch>=2.9"]
+resolvers = ["numpy>=2", "torch>=2.9"]
 
 [tool.uv]
 default-groups = ["dev", "docs"]
