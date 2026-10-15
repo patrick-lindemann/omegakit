@@ -4,7 +4,7 @@ try:
     import numpy
 except ImportError as error:
     raise ImportError(
-        "Numpy resolvers require NumPy. Install it on your platform first."
+        "NumPy resolvers require NumPy. Install it on your platform first."
     ) from error
 
 
