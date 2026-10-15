@@ -15,10 +15,10 @@ from .walk import WalkOrder, walk
 def walk_mergeable(
     config: DictConfig | ListConfig | TupleConfig,
     key: str,
-    is_outer_first: bool = False,
+    outer_first: bool = False,
 ) -> Iterator[tuple[DictConfig, Any]]:
     # In this order a holder comes after every holder it usually waits for
-    order: WalkOrder = "pre-order" if is_outer_first else "post-order"
+    order: WalkOrder = "pre-order" if outer_first else "post-order"
     while True:
         holders = [
             node
@@ -66,7 +66,7 @@ def walk_mergeable(
             # What the merge reads: the node, each mapping of the value, and what
             # encloses such a mapping without enclosing the node. Outer first, the
             # node waits for what encloses it instead of what it encloses.
-            read_nodes = enclosing_nodes if is_outer_first else list(walk(node))
+            read_nodes = enclosing_nodes if outer_first else list(walk(node))
             for item in items:
                 if not isinstance(item, DictConfig):
                     continue
@@ -86,7 +86,7 @@ def walk_mergeable(
             if pending_nodes:
                 blockers[id(node)] = pending_nodes[0]
                 continue
-            if is_outer_first:
+            if outer_first:
                 replaced_ids.update(
                     id(inner_node)
                     for inner_node in walk(node)

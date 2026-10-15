@@ -21,7 +21,7 @@ def merge_bases[TConfig: DictConfig | ListConfig | TupleConfig](
     # The nodes with a `$base` that an enclosing `$base` adds keys to, by full key,
     # as written
     own_contents: dict[str, DictConfig] = {}
-    for node, base in walk_mergeable(config, BASE_KEY, is_outer_first=True):
+    for node, base in walk_mergeable(config, BASE_KEY, outer_first=True):
         bases = list(base) if isinstance(base, ListConfig) else [base]
         if not all(isinstance(item, DictConfig) for item in bases):
             raise ConfigMergeError(

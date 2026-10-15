@@ -11,9 +11,9 @@ from omegakit._core.errors import (
 from omegakit._core.utils.merge import merge_over, merge_under, walk_mergeable
 
 
-def _remove_key(config: DictConfig, is_outer_first: bool = False) -> list[Any]:
+def _remove_key(config: DictConfig, outer_first: bool = False) -> list[Any]:
     keys = []
-    for node, _ in walk_mergeable(config, "$key", is_outer_first=is_outer_first):
+    for node, _ in walk_mergeable(config, "$key", outer_first=outer_first):
         keys.append(node._key())
         del node["$key"]
     return keys
@@ -95,7 +95,7 @@ def test_walk_outer_first_yields_parents_before_children():
         {"$key": "root", "model": {"$key": "model", "layers": [{"$key": "layer"}]}}
     )
     values = []
-    for node, value in walk_mergeable(config, "$key", is_outer_first=True):
+    for node, value in walk_mergeable(config, "$key", outer_first=True):
         values.append(value)
         del node["$key"]
     assert values == ["root", "model", "layer"]
@@ -104,7 +104,7 @@ def test_walk_outer_first_yields_parents_before_children():
 def test_walk_outer_first_yields_a_node_after_its_replaced_children():
     config = OmegaConf.create({"data": {"$key": 1, "test": {"$key": 2}}})
     values = []
-    for node, value in walk_mergeable(config, "$key", is_outer_first=True):
+    for node, value in walk_mergeable(config, "$key", outer_first=True):
         values.append(value)
         del node["$key"]
         # Replaced, as a merge replaces the children of the node it is given
@@ -115,7 +115,7 @@ def test_walk_outer_first_yields_a_node_after_its_replaced_children():
 
 def test_walk_outer_first_does_not_wait_for_a_node_whose_key_holds_the_holder():
     config = OmegaConf.create({"model": {"$key": {"$key": {}, "hidden": 32}}})
-    assert _remove_key(config, is_outer_first=True) == ["$key", "model"]
+    assert _remove_key(config, outer_first=True) == ["$key", "model"]
 
 
 def test_walk_outer_first_rejects_a_node_that_reads_a_node_inside_it():
@@ -123,7 +123,7 @@ def test_walk_outer_first_rejects_a_node_that_reads_a_node_inside_it():
     with pytest.raises(
         ConfigMergeError, match=re.escape("`data` -> `data.test` -> `data`")
     ):
-        _remove_key(config, is_outer_first=True)
+        _remove_key(config, outer_first=True)
 
 
 def test_walk_yields_a_reference_to_a_key_that_appears_later():
