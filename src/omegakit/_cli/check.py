@@ -7,13 +7,10 @@ from omegakit._core.load import load_config
 from omegakit._core.schema import validate
 from omegakit._core.utils.locate import locate
 
-from ._args import Arguments
-from ._routine import Routine
+from ._routine import Arguments, Routine
 
 
 class CheckArguments(Arguments):
-    """The parsed arguments of the `check` command."""
-
     configs: list[Path]
     overrides: list[str] | None
     schema: str | None
@@ -22,7 +19,7 @@ class CheckArguments(Arguments):
 
 
 class CheckRoutine(Routine[CheckArguments]):
-    """The `check` command, which loads and validates config files."""
+    """Load and validate config files."""
 
     name = "check"
     help = "load and validate config files"

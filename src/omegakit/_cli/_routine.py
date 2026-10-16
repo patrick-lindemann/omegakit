@@ -1,13 +1,15 @@
 import sys
 from abc import ABC, abstractmethod
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
-from ._args import Arguments
+
+class Arguments(Namespace, ABC):
+    pass
 
 
 class Routine[TArgs: Arguments](ABC):
-    """A command of the `omegakit` command line."""
+    """A command-line routine."""
 
     name: str
     help: str
