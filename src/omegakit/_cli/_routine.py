@@ -9,10 +9,10 @@ class Arguments(Namespace, ABC):
     pass
 
 
-_TArgs = TypeVar("_TArgs", bound=Arguments)
+TArgs = TypeVar("TArgs", bound=Arguments)
 
 
-class Routine(ABC, Generic[_TArgs]):
+class Routine(ABC, Generic[TArgs]):
     """A command-line routine."""
 
     name: str
@@ -23,7 +23,7 @@ class Routine(ABC, Generic[_TArgs]):
     def add_arguments(self, parser: ArgumentParser) -> None: ...
 
     @abstractmethod
-    def run(self, args: _TArgs) -> None: ...
+    def run(self, args: TArgs) -> None: ...
 
     def report_failure(self, path: Path, error: BaseException) -> None:
         message = str(error).splitlines()[0] if str(error) else ""

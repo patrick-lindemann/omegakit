@@ -12,11 +12,11 @@ from .typecheck import Call, Container, check, read_fields, union_members
 from .utils.describe import describe_node, get_full_key
 from .utils.notes import add_note
 
-_T = TypeVar("_T")
+T = TypeVar("T")
 
 
 @overload
-def instantiate(config: DictConfig | dict[str, Any], schema: type[_T]) -> _T: ...
+def instantiate(config: DictConfig | dict[str, Any], schema: type[T]) -> T: ...
 
 
 @overload
@@ -49,8 +49,8 @@ def instantiate(config: DictConfig | dict[str, Any], schema: type | None = None)
 
 @overload
 def prepare(
-    config: DictConfig | dict[str, Any], schema: type[_T]
-) -> functools.partial[_T]: ...
+    config: DictConfig | dict[str, Any], schema: type[T]
+) -> functools.partial[T]: ...
 
 
 @overload

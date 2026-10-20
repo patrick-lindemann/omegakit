@@ -13,10 +13,10 @@ from omegakit._core.utils.merge import merge_over, merge_under, walk_mergeable
 BASE_KEY = "$base"
 """The key of a mapping, or a list of mappings, merged under its node."""
 
-_TConfig = TypeVar("_TConfig", bound=DictConfig | ListConfig | TupleConfig)
+TConfig = TypeVar("TConfig", bound=DictConfig | ListConfig | TupleConfig)
 
 
-def merge_bases(config: _TConfig, copy: bool = True) -> _TConfig:
+def merge_bases(config: TConfig, copy: bool = True) -> TConfig:
     """Merge every `$base` under the mapping that contains it.
 
     Args:

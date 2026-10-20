@@ -10,10 +10,10 @@ from omegakit._core.utils.merge import merge_under, walk_mergeable
 EACH_KEY = "$each"
 """The key of a mapping merged under every mapping beside it."""
 
-_TConfig = TypeVar("_TConfig", bound=DictConfig | ListConfig | TupleConfig)
+TConfig = TypeVar("TConfig", bound=DictConfig | ListConfig | TupleConfig)
 
 
-def apply_each(config: _TConfig, copy: bool = True) -> _TConfig:
+def apply_each(config: TConfig, copy: bool = True) -> TConfig:
     """Merge every `$each` under the sibling mappings beside it.
 
     Args:

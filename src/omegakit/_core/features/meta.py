@@ -8,10 +8,10 @@ from omegakit._core.utils.walk import walk
 META_KEY = "$meta"
 """The key of data about a node, which `load_config` removes."""
 
-_TConfig = TypeVar("_TConfig", bound=DictConfig | ListConfig | TupleConfig)
+TConfig = TypeVar("TConfig", bound=DictConfig | ListConfig | TupleConfig)
 
 
-def remove_meta(config: _TConfig, copy: bool = True) -> _TConfig:
+def remove_meta(config: TConfig, copy: bool = True) -> TConfig:
     """Remove every `$meta` from a config.
 
     Args:

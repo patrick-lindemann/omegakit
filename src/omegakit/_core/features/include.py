@@ -28,7 +28,7 @@ INCLUDE_KEY = "~include"
 _INCLUDE_PATTERN = re.compile(rf"{INCLUDE_KEY}(\s|$)")
 _NOT_FOUND = object()
 
-_TConfig = TypeVar("_TConfig", bound=DictConfig | ListConfig | TupleConfig)
+TConfig = TypeVar("TConfig", bound=DictConfig | ListConfig | TupleConfig)
 
 
 @dataclass(frozen=True)
@@ -39,11 +39,11 @@ class _Assignment:
 
 
 def resolve_includes(  # noqa: DOC502
-    config: _TConfig,
+    config: TConfig,
     config_path: PathLike,
     include_root: PathLike | None = None,
     copy: bool = True,
-) -> _TConfig:
+) -> TConfig:
     """Replace every `~include` value with the config node that it names.
 
     Args:
