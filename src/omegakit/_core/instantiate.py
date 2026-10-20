@@ -1,18 +1,22 @@
 import dataclasses
 import functools
-from typing import Any, get_origin, is_typeddict, overload
+from typing import Any, TypeVar, get_origin, overload
 
 from omegaconf import DictConfig
+from typing_extensions import is_typeddict
 
 from .config import cast_config
 from .errors import ConfigSchemaError, ConfigTargetError
 from .features import TARGET_KEY
 from .typecheck import Call, Container, check, read_fields, union_members
 from .utils.describe import describe_node, get_full_key
+from .utils.notes import add_note
+
+_T = TypeVar("_T")
 
 
 @overload
-def instantiate[T](config: DictConfig | dict[str, Any], schema: type[T]) -> T: ...
+def instantiate(config: DictConfig | dict[str, Any], schema: type[_T]) -> _T: ...
 
 
 @overload
@@ -44,9 +48,9 @@ def instantiate(config: DictConfig | dict[str, Any], schema: type | None = None)
 
 
 @overload
-def prepare[T](
-    config: DictConfig | dict[str, Any], schema: type[T]
-) -> functools.partial[T]: ...
+def prepare(
+    config: DictConfig | dict[str, Any], schema: type[_T]
+) -> functools.partial[_T]: ...
 
 
 @overload
@@ -130,7 +134,9 @@ def _build(value: Any) -> Any:
         else:
             return functools.partial(_call_from_config, value, value.schema, arguments)
     except Exception as error:
-        error.add_note(f"  while calling `{value.name}` at {describe_node(value.node)}")
+        add_note(
+            error, f"  while calling `{value.name}` at {describe_node(value.node)}"
+        )
         raise
     members = union_members(value.result_annotation)
     classes = tuple(

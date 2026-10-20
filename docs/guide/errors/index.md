@@ -149,5 +149,6 @@ anything is built ([Configurable classes](../../objects/configurable-classes/ind
   config is read, an `OSError` while a file is read, and what a constructor or
   `from_config` raises. omegakit adds a note to the last, as in ``while calling
   `torch.nn.Linear` at `model` ``, and to an error that a module raises while
-  `$target` or `$symbol` imports it, as in ``at `model` ``. The Rules of each
+  `$target` or `$symbol` imports it, as in ``at `model` ``. On Python 3.10, a
+  traceback leaves the notes out, but `__notes__` holds them. The Rules of each
   feature page say which errors it raises.

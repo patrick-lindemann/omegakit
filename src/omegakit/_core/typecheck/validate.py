@@ -2,9 +2,10 @@ import dataclasses
 import functools
 import types
 from dataclasses import dataclass
-from typing import Any, get_args, get_origin, is_typeddict
+from typing import Any, get_args, get_origin
 
 from omegaconf import DictConfig, ListConfig, OmegaConf, TupleConfig
+from typing_extensions import is_typeddict
 
 from omegakit._core.config import Config
 from omegakit._core.errors import (
@@ -25,6 +26,7 @@ from omegakit._core.features import (
     read_arguments,
 )
 from omegakit._core.utils.describe import describe_node, get_full_key
+from omegakit._core.utils.notes import add_note
 from omegakit._core.utils.read import MISSING_VALUE, read_value
 
 from .annotations import (
@@ -199,7 +201,7 @@ def _check_call(
         raise
     # A module can raise anything while it is imported
     except Exception as error:
-        error.add_note(f"  at {describe_node(node)}")
+        add_note(error, f"  at {describe_node(node)}")
         raise
     positional_arguments: list[Any] | tuple[Any, ...] = ()
     positional_keys: list[str] = []
@@ -279,7 +281,7 @@ def _check_symbol(
         raise
     # A module can raise anything while it is imported
     except Exception as error:
-        error.add_note(f"  at {describe_node(node)}")
+        add_note(error, f"  at {describe_node(node)}")
         raise
     return Container(arguments)
 

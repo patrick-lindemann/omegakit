@@ -1,16 +1,27 @@
 import dataclasses
 import functools
 import itertools
+import sys
 import types
+import typing
 from collections.abc import Callable
-from typing import Any, TypeAliasType, Union, get_args, get_origin, is_typeddict
+from typing import Any, Union, get_args, get_origin
 
+import typing_extensions
 from omegaconf import OmegaConf
 from omegaconf.errors import OmegaConfBaseException
+from typing_extensions import is_typeddict
+
+if sys.version_info >= (3, 12):
+    # A `type` statement makes a `typing.TypeAliasType`, which can be another class than
+    # that of `typing_extensions`
+    _TYPE_ALIAS_TYPES = (typing.TypeAliasType, typing_extensions.TypeAliasType)
+else:
+    _TYPE_ALIAS_TYPES = (typing_extensions.TypeAliasType,)
 
 
 def union_members(annotation: Any) -> tuple[Any, ...]:
-    while isinstance(annotation, TypeAliasType):
+    while isinstance(annotation, _TYPE_ALIAS_TYPES):
         annotation = annotation.__value__
     if get_origin(annotation) not in (Union, types.UnionType):
         return (annotation,)
@@ -76,7 +87,8 @@ def holds_objects(annotation: Any) -> bool:
                 return False
             continue
         cls = get_origin(member) or member
-        if (
+        # `Any` is a class only from Python 3.11 on
+        if cls is not Any and (
             not isinstance(cls, type)
             or cls in (set, frozenset)
             or (cls.__module__ == "collections.abc" and cls is not Callable)

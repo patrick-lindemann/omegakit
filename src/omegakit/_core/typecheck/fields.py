@@ -2,11 +2,11 @@ import dataclasses
 import functools
 import inspect
 import keyword
-import types
 from dataclasses import dataclass
-from typing import Any, NotRequired, Required, get_origin, get_type_hints, is_typeddict
+from typing import Any, get_origin
 
 from omegaconf import MISSING
+from typing_extensions import NotRequired, Required, get_type_hints, is_typeddict
 
 from omegakit._core.configurable import Configurable
 from omegakit._core.errors import SchemaDefinitionError
@@ -93,16 +93,12 @@ def read_positional_names(schema: type) -> list[str]:
 
 
 def _read_required_keys(schema: type) -> dict[str, bool]:
-    required_keys: dict[str, bool] = {}
-    for base in types.get_original_bases(schema):
-        if is_typeddict(base):
-            required_keys |= _read_required_keys(base)
-    # `__required_keys__` is wrong where the annotations are written as text
+    # `__required_keys__` misses a `Required` or `NotRequired` written as text
     annotations = get_type_hints(schema, include_extras=True)
+    required_keys: dict[str, bool] = {}
     for name, annotation in annotations.items():
-        if name not in required_keys:
-            origin = get_origin(annotation)
-            required_keys[name] = origin is Required or (
-                origin is not NotRequired and schema.__total__  # ty: ignore[unresolved-attribute]
-            )
+        origin = get_origin(annotation)
+        required_keys[name] = origin is Required or (
+            origin is not NotRequired and name in schema.__required_keys__  # ty: ignore[unresolved-attribute]
+        )
     return required_keys

@@ -1,7 +1,7 @@
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, TypeVar
 
 from omegaconf import DictConfig, ListConfig, Node, OmegaConf, TupleConfig
 from omegaconf.errors import (
@@ -17,6 +17,7 @@ from omegakit._core.errors import (
 )
 from omegakit._core.utils.copy import copy_with_root
 from omegakit._core.utils.describe import describe_error
+from omegakit._core.utils.notes import add_note
 from omegakit._core.utils.path import PathLike, resolve_path
 from omegakit._core.utils.walk import walk
 from omegakit._core.utils.yaml import load_yaml
@@ -27,6 +28,8 @@ INCLUDE_KEY = "~include"
 _INCLUDE_PATTERN = re.compile(rf"{INCLUDE_KEY}(\s|$)")
 _NOT_FOUND = object()
 
+_TConfig = TypeVar("_TConfig", bound=DictConfig | ListConfig | TupleConfig)
+
 
 @dataclass(frozen=True)
 class _Assignment:
@@ -35,12 +38,12 @@ class _Assignment:
     value: Any
 
 
-def resolve_includes[TConfig: DictConfig | ListConfig | TupleConfig](  # noqa: DOC502
-    config: TConfig,
+def resolve_includes(  # noqa: DOC502
+    config: _TConfig,
     config_path: PathLike,
     include_root: PathLike | None = None,
     copy: bool = True,
-) -> TConfig:
+) -> _TConfig:
     """Replace every `~include` value with the config node that it names.
 
     Args:
@@ -97,9 +100,10 @@ def _resolve_includes(
                 error.full_key = node._get_full_key(None)
                 error.file_path = config_path
             else:
-                error.add_note(
+                add_note(
+                    error,
                     f"  from `{value}` at `{node._get_full_key(None)}` in "
-                    f"`{config_path}`"
+                    f"`{config_path}`",
                 )
             raise
         included_values.append(_Assignment(parent, node._key(), included_value))

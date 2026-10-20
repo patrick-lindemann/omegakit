@@ -3,7 +3,9 @@ import enum
 import pathlib
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Literal, NotRequired, TypedDict, override
+from typing import Any, Literal, TypedDict
+
+from typing_extensions import NotRequired, override
 
 from omegakit._core.configurable import Configurable
 

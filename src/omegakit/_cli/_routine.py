@@ -2,13 +2,17 @@ import sys
 from abc import ABC, abstractmethod
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
+from typing import Generic, TypeVar
 
 
 class Arguments(Namespace, ABC):
     pass
 
 
-class Routine[TArgs: Arguments](ABC):
+_TArgs = TypeVar("_TArgs", bound=Arguments)
+
+
+class Routine(ABC, Generic[_TArgs]):
     """A command-line routine."""
 
     name: str
@@ -19,7 +23,7 @@ class Routine[TArgs: Arguments](ABC):
     def add_arguments(self, parser: ArgumentParser) -> None: ...
 
     @abstractmethod
-    def run(self, args: TArgs) -> None: ...
+    def run(self, args: _TArgs) -> None: ...
 
     def report_failure(self, path: Path, error: BaseException) -> None:
         message = str(error).splitlines()[0] if str(error) else ""

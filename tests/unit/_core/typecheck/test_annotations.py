@@ -1,6 +1,9 @@
+import sys
+import typing
 from typing import Any, TypedDict
 
 import pytest
+import typing_extensions
 
 from omegakit._core.typecheck.annotations import (
     find_item_annotation,
@@ -15,13 +18,22 @@ class _Section(TypedDict):
     width: int
 
 
-type _Alias = int | str | None
+_BackportedAlias = typing_extensions.TypeAliasType("_BackportedAlias", int | str | None)
+_ALIASES: dict[str, Any] = {"typing_extensions": _BackportedAlias}
+if sys.version_info >= (3, 12):
+    # The class of an alias that a `type` statement makes
+    _Alias = typing.TypeAliasType("_Alias", int | str | None)
+    _ALIASES["typing"] = _Alias
 
 
 def test_union_is_split_into_its_members():
     assert union_members(int | str) == (int, str)
-    assert union_members(_Alias) == (int, str, type(None))
     assert union_members(int) == (int,)
+
+
+@pytest.mark.parametrize("alias", _ALIASES.values(), ids=_ALIASES.keys())
+def test_alias_is_split_into_the_members_of_its_value(alias: Any):
+    assert union_members(alias) == (int, str, type(None))
 
 
 @pytest.mark.parametrize(

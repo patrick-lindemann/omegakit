@@ -1,6 +1,8 @@
 from pathlib import Path
 
-type PathLike = Path | str
+from typing_extensions import TypeAliasType
+
+PathLike = TypeAliasType("PathLike", Path | str)
 
 
 def cast_path(path: PathLike) -> Path:
