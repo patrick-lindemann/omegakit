@@ -7,10 +7,12 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Literal, NotRequired, Required, TypedDict
+from typing import Any, Literal, TypedDict
 
 import pytest
+import typing_extensions
 from omegaconf import MISSING
+from typing_extensions import NotRequired, Required
 
 from omegakit._core.configurable import Configurable
 from omegakit._core.errors import (
@@ -28,6 +30,9 @@ class _Encoder:
     pass
 
 
+_Size = typing_extensions.TypeAliasType("_Size", int)
+
+
 @dataclass
 class _Section:
     width: int = 1
@@ -40,6 +45,17 @@ class _LayerConfig(TypedDict):
 
 
 class _WideLayerConfig(_LayerConfig, total=False):
+    scale: float
+    name: Required[str]
+
+
+class _BackportedLayerConfig(typing_extensions.TypedDict):
+    width: int
+    bias: NotRequired[bool]
+    encoder: NotRequired[_Encoder | None]
+
+
+class _BackportedWideLayerConfig(_BackportedLayerConfig, total=False):
     scale: float
     name: Required[str]
 
@@ -64,6 +80,11 @@ def test_configurable_names_its_schema(targets: ModuleType):
 
 def test_configurable_that_is_a_dataclass_is_its_own_schema(targets: ModuleType):
     assert find_schema(targets.Layer) is targets.Layer
+
+
+def test_configurable_may_name_a_typed_dict_of_typing_extensions():
+    model = type("Model", (Configurable,), {"schema": _BackportedLayerConfig})
+    assert find_schema(model) is _BackportedLayerConfig
 
 
 @pytest.mark.parametrize("target", [_Encoder, len, "builtins.dict", None])
@@ -93,6 +114,8 @@ def test_schema_of_a_configurable_must_be_a_typed_dict(schema: Any):
         tuple[int, str],
         list[int] | None,
         Literal[[1, 2]],  # ty: ignore[invalid-type-form]
+        _Size,
+        list[_Size] | None,
     ],
 )
 def test_field_that_omegaconf_supports_is_a_plain_value(annotation: Any):
@@ -161,8 +184,13 @@ def test_fields_are_the_arguments_of_the_constructor(targets: ModuleType):
     assert not read_fields(targets.Experiment)["optimizer"].is_required
 
 
-def test_keys_of_a_typed_dict_are_required_unless_marked():
-    fields = read_fields(_WideLayerConfig)
+@pytest.mark.parametrize(
+    "schema",
+    [_WideLayerConfig, _BackportedWideLayerConfig],
+    ids=["typing", "typing_extensions"],
+)
+def test_keys_of_a_typed_dict_are_required_unless_marked(schema: type):
+    fields = read_fields(schema)
     required_keys = {key for key, field in fields.items() if field.is_required}
     assert set(fields) == {"width", "bias", "encoder", "scale", "name"}
     assert required_keys == {"width", "name"}

@@ -1,14 +1,14 @@
 import copy
-from typing import cast
+from typing import TypeVar, cast
 
 from omegaconf import DictConfig, ListConfig, TupleConfig
 
 from .walk import walk
 
+TConfig = TypeVar("TConfig", bound=DictConfig | ListConfig | TupleConfig)
 
-def copy_with_root[TConfig: DictConfig | ListConfig | TupleConfig](
-    config: TConfig,
-) -> TConfig:
+
+def copy_with_root(config: TConfig) -> TConfig:
     # A copy of `config` alone would still resolve its interpolations in the
     # original root
     root = config._get_root()

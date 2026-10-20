@@ -4,6 +4,24 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- omegakit runs on Python 3.10 and 3.11. It required Python 3.12. On Python 3.10, a
+  traceback leaves out the notes that omegakit adds to an error, which `__notes__`
+  holds as on later versions.
+- A schema may be a `typing_extensions.TypedDict`. It raised `SchemaDefinitionError`.
+- A field may be annotated with a `typing_extensions.TypeAliasType`, which Python 3.10
+  and 3.11 need in place of a `type` statement. OmegaConf checks and converts its value
+  as that of a `type` statement, except where a type parameter is a `TypeVarTuple`, a
+  `ParamSpec` or has a default. It raised `SchemaDefinitionError`.
+
+### Changed
+
+- omegakit depends on `typing-extensions` 4.14 or newer, for the typing features that
+  Python 3.10 and 3.11 lack.
+
 ## [0.10.0] - 2026-10-15
 
 ### Added

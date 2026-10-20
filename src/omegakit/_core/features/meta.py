@@ -1,3 +1,5 @@
+from typing import TypeVar
+
 from omegaconf import DictConfig, ListConfig, TupleConfig
 
 from omegakit._core.utils.copy import copy_with_root
@@ -6,10 +8,10 @@ from omegakit._core.utils.walk import walk
 META_KEY = "$meta"
 """The key of data about a node, which `load_config` removes."""
 
+TConfig = TypeVar("TConfig", bound=DictConfig | ListConfig | TupleConfig)
 
-def remove_meta[TConfig: DictConfig | ListConfig | TupleConfig](
-    config: TConfig, copy: bool = True
-) -> TConfig:
+
+def remove_meta(config: TConfig, copy: bool = True) -> TConfig:
     """Remove every `$meta` from a config.
 
     Args:

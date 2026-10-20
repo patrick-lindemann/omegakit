@@ -6,7 +6,9 @@ multilayer perceptron to noisy samples of a sine wave. The classes come from
 with `layers` hidden layers of `hidden` units, and `project.SineWave` a PyTorch
 `Dataset` of `n` noisy samples of `sin(x)`.
 
-omegakit needs Python 3.12 or newer and OmegaConf 2.4:
+omegakit needs Python 3.10 or newer and OmegaConf 2.4. The examples import
+`NotRequired` and `override` from `typing_extensions`, since `typing` has them only
+from Python 3.11 and 3.12 on. Install omegakit with:
 
 ```sh
 pip install omegakit

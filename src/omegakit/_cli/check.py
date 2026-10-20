@@ -1,6 +1,7 @@
 from argparse import ArgumentError, ArgumentParser
 from pathlib import Path
-from typing import override
+
+from typing_extensions import override
 
 from omegakit._core.errors import QualifiedNameSyntaxError
 from omegakit._core.load import load_config

@@ -1,7 +1,8 @@
 from pathlib import Path
-from typing import NotRequired, TypedDict
+from typing import TypedDict
 
 from torch import nn
+from typing_extensions import NotRequired
 
 from omegakit import ConfigValidationError, load_config, validate
 

@@ -1,3 +1,5 @@
+from typing import TypeVar
+
 from omegaconf import DictConfig, ListConfig, TupleConfig
 
 from omegakit._core.errors import ConfigMergeError
@@ -8,10 +10,10 @@ from omegakit._core.utils.merge import merge_under, walk_mergeable
 EACH_KEY = "$each"
 """The key of a mapping merged under every mapping beside it."""
 
+TConfig = TypeVar("TConfig", bound=DictConfig | ListConfig | TupleConfig)
 
-def apply_each[TConfig: DictConfig | ListConfig | TupleConfig](
-    config: TConfig, copy: bool = True
-) -> TConfig:
+
+def apply_each(config: TConfig, copy: bool = True) -> TConfig:
     """Merge every `$each` under the sibling mappings beside it.
 
     Args:

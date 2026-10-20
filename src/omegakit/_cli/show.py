@@ -1,7 +1,7 @@
 import sys
 from argparse import ArgumentError, ArgumentParser
 from pathlib import Path
-from typing import Any, override
+from typing import Any
 
 from omegaconf import MISSING, DictConfig, ListConfig, OmegaConf
 from omegaconf.errors import (
@@ -9,6 +9,7 @@ from omegaconf.errors import (
     InterpolationToMissingValueError,
     MissingMandatoryValue,
 )
+from typing_extensions import override
 
 from omegakit._core.load import load_config
 

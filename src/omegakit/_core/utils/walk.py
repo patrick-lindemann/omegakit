@@ -2,8 +2,9 @@ from collections.abc import Iterator
 from typing import Literal, cast
 
 from omegaconf import DictConfig, ListConfig, Node, TupleConfig
+from typing_extensions import TypeAliasType
 
-type WalkOrder = Literal["pre-order", "post-order"]
+WalkOrder = TypeAliasType("WalkOrder", Literal["pre-order", "post-order"])
 
 
 def walk(node: Node, order: WalkOrder = "pre-order") -> Iterator[Node]:

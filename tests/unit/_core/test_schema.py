@@ -8,6 +8,7 @@ from typing import Any, Literal, Protocol, TypedDict
 
 import pytest
 from omegaconf import DictConfig, OmegaConf
+from typing_extensions import TypeAliasType
 
 from omegakit._core.errors import (
     ConfigSchemaError,
@@ -26,7 +27,7 @@ class _Greeter(Protocol):
     name: str
 
 
-type _Mapping = dict[str, Any] | None
+_Mapping = TypeAliasType("_Mapping", dict[str, Any] | None)
 
 
 class _Parts(TypedDict, total=False):

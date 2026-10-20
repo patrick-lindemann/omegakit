@@ -2,11 +2,12 @@ import math
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Literal, NotRequired, TypedDict, override
+from typing import Literal, TypedDict
 
 import torch
 from torch import nn
 from torch.utils.data import DataLoader, Dataset
+from typing_extensions import NotRequired, override
 
 from omegakit import Configurable
 
