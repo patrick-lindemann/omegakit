@@ -30,6 +30,9 @@ class _Encoder:
     pass
 
 
+_Size = typing_extensions.TypeAliasType("_Size", int)
+
+
 @dataclass
 class _Section:
     width: int = 1
@@ -111,6 +114,8 @@ def test_schema_of_a_configurable_must_be_a_typed_dict(schema: Any):
         tuple[int, str],
         list[int] | None,
         Literal[[1, 2]],  # ty: ignore[invalid-type-form]
+        _Size,
+        list[_Size] | None,
     ],
 )
 def test_field_that_omegaconf_supports_is_a_plain_value(annotation: Any):

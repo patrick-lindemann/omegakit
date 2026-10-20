@@ -1,11 +1,12 @@
 import dataclasses
 import functools
 import itertools
+import operator
 import sys
 import types
 import typing
 from collections.abc import Callable
-from typing import Any, Union, get_args, get_origin
+from typing import Any, Literal, TypeVar, Union, get_args, get_origin
 
 import typing_extensions
 from omegaconf import OmegaConf
@@ -13,20 +14,44 @@ from omegaconf.errors import OmegaConfBaseException
 from typing_extensions import is_typeddict
 
 if sys.version_info >= (3, 12):
-    # A `type` statement makes a `typing.TypeAliasType`, which can be another class than
-    # that of `typing_extensions`
-    _TYPE_ALIAS_TYPES = (typing.TypeAliasType, typing_extensions.TypeAliasType)
+    # A `type` statement makes a `typing.TypeAliasType`, which OmegaConf resolves, and
+    # which can be another class than that of `typing_extensions`
+    _OMEGACONF_ALIAS_TYPES = (typing.TypeAliasType,)
 else:
-    _TYPE_ALIAS_TYPES = (typing_extensions.TypeAliasType,)
+    _OMEGACONF_ALIAS_TYPES = ()
+_TYPE_ALIAS_TYPES = (*_OMEGACONF_ALIAS_TYPES, typing_extensions.TypeAliasType)
 
 
 def union_members(annotation: Any) -> tuple[Any, ...]:
-    while isinstance(annotation, _TYPE_ALIAS_TYPES):
+    while _is_bare_alias(annotation, _TYPE_ALIAS_TYPES):
         annotation = annotation.__value__
     if get_origin(annotation) not in (Union, types.UnionType):
         return (annotation,)
     members = [union_members(member) for member in get_args(annotation)]
     return tuple(itertools.chain.from_iterable(members))
+
+
+def resolve_aliases(annotation: Any) -> Any:
+    if _is_alias_unknown_to_omegaconf(annotation):
+        return resolve_aliases(annotation.__value__)
+    origin = get_origin(annotation)
+    if _is_alias_unknown_to_omegaconf(origin):
+        value = _substitute_type_parameters(annotation)
+        return annotation if value is annotation else resolve_aliases(value)
+    arguments = get_args(annotation)
+    if origin is None or origin is Literal or not arguments:
+        return annotation
+    resolved_arguments = tuple(resolve_aliases(argument) for argument in arguments)
+    pairs = zip(resolved_arguments, arguments, strict=True)
+    if all(resolved is argument for resolved, argument in pairs):
+        return annotation
+    try:
+        if origin is types.UnionType:
+            return functools.reduce(operator.or_, resolved_arguments)
+        return origin[resolved_arguments]
+    # Not every annotation can be made again of new arguments
+    except TypeError:
+        return annotation
 
 
 def find_typed_dict(annotation: Any) -> type | None:
@@ -114,7 +139,9 @@ def _is_plain_value_cached(annotation: Any) -> bool:
         is_plain_value(item) for item in position_annotations
     ):
         return False
-    probe = dataclasses.make_dataclass("Probe", [("value", annotation)])
+    probe = dataclasses.make_dataclass(
+        "Probe", [("value", resolve_aliases(annotation))]
+    )
     try:
         OmegaConf.structured(probe)
     # OmegaConf asserts that the type of a key is a class
@@ -130,3 +157,35 @@ def _find_single_container(annotation: Any, containers: tuple[type, ...]) -> Any
     if len(members) != 1 or (get_origin(members[0]) or members[0]) not in containers:
         return None
     return members[0]
+
+
+def _is_alias_unknown_to_omegaconf(annotation: Any) -> bool:
+    return _is_bare_alias(
+        annotation, (typing_extensions.TypeAliasType,)
+    ) and not isinstance(annotation, _OMEGACONF_ALIAS_TYPES)
+
+
+def _is_bare_alias(annotation: Any, alias_types: tuple[type, ...]) -> bool:
+    # On Python 3.10, an alias with arguments passes for an instance of its class
+    return isinstance(annotation, alias_types) and get_origin(annotation) is None
+
+
+def _substitute_type_parameters(annotation: Any) -> Any:
+    alias = get_origin(annotation)
+    arguments = get_args(annotation)
+    parameters = alias.__type_params__
+    # A `TypeVarTuple`, a `ParamSpec` or a default needs more than a substitution
+    if len(arguments) != len(parameters) or not all(
+        isinstance(parameter, TypeVar) for parameter in parameters
+    ):
+        return annotation
+    value = alias.__value__
+    value_parameters = getattr(value, "__parameters__", ())
+    if not value_parameters:
+        return value
+    substitutions = dict(zip(parameters, arguments, strict=True))
+    try:
+        return value[tuple(substitutions[parameter] for parameter in value_parameters)]
+    # The value has a parameter that the alias does not declare, or takes none
+    except (KeyError, TypeError):
+        return annotation

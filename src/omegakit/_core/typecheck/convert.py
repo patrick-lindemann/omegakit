@@ -9,7 +9,7 @@ from omegaconf.errors import OmegaConfBaseException
 from omegakit._core.errors import ConfigSchemaError, SchemaDefinitionError
 from omegakit._core.utils.describe import describe_error
 
-from .annotations import find_key_annotation
+from .annotations import find_key_annotation, resolve_aliases
 from .fields import read_fields
 
 
@@ -95,7 +95,7 @@ def _escape_omegaconf_syntax(value: Any) -> Any:
 def _make_plain_values_dataclass(schema: type) -> type:
     # Every field has a default, so that the given values alone make an instance
     data_fields = [
-        (name, field.annotation, dataclasses.field(default=MISSING))
+        (name, resolve_aliases(field.annotation), dataclasses.field(default=MISSING))
         for name, field in read_fields(schema).items()
         if field.is_plain_value
     ]
@@ -104,4 +104,4 @@ def _make_plain_values_dataclass(schema: type) -> type:
 
 @functools.cache
 def _make_single_value_dataclass(annotation: Any) -> type:
-    return dataclasses.make_dataclass("Item", [("item", annotation)])
+    return dataclasses.make_dataclass("Item", [("item", resolve_aliases(annotation))])

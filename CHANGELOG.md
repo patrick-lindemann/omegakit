@@ -12,6 +12,10 @@ All notable changes to this project are documented here. The format follows
   traceback leaves out the notes that omegakit adds to an error, which `__notes__`
   holds as on later versions.
 - A schema may be a `typing_extensions.TypedDict`. It raised `SchemaDefinitionError`.
+- A field may be annotated with a `typing_extensions.TypeAliasType`, which Python 3.10
+  and 3.11 need in place of a `type` statement. OmegaConf checks and converts its value
+  as that of a `type` statement, except where a type parameter is a `TypeVarTuple`, a
+  `ParamSpec` or has a default. It raised `SchemaDefinitionError`.
 
 ### Changed
 

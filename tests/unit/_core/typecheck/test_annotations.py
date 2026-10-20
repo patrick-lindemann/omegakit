@@ -1,6 +1,6 @@
 import sys
 import typing
-from typing import Any, TypedDict
+from typing import Any, Literal, TypedDict, TypeVar
 
 import pytest
 import typing_extensions
@@ -10,8 +10,11 @@ from omegakit._core.typecheck.annotations import (
     find_key_annotation,
     find_position_annotations,
     find_typed_dict,
+    resolve_aliases,
     union_members,
 )
+
+T = TypeVar("T")
 
 
 class _Section(TypedDict):
@@ -19,6 +22,8 @@ class _Section(TypedDict):
 
 
 _BackportedAlias = typing_extensions.TypeAliasType("_BackportedAlias", int | str | None)
+_Size = typing_extensions.TypeAliasType("_Size", int)
+_Pair = typing_extensions.TypeAliasType("_Pair", tuple[T, T], type_params=(T,))
 _ALIASES: dict[str, Any] = {"typing_extensions": _BackportedAlias}
 if sys.version_info >= (3, 12):
     # The class of an alias that a `type` statement makes
@@ -34,6 +39,34 @@ def test_union_is_split_into_its_members():
 @pytest.mark.parametrize("alias", _ALIASES.values(), ids=_ALIASES.keys())
 def test_alias_is_split_into_the_members_of_its_value(alias: Any):
     assert union_members(alias) == (int, str, type(None))
+
+
+def test_alias_with_arguments_is_one_member():
+    assert union_members(_Pair[int]) == (_Pair[int],)
+
+
+@pytest.mark.parametrize(
+    ("annotation", "resolved"),
+    [
+        (_Size, int),
+        (list[_Size], list[int]),
+        (dict[str, _Size] | None, dict[str, int] | None),
+        (_Size | None, int | None),
+        (_Pair[int], tuple[int, int]),
+        (list[_Pair[_Size]], list[tuple[int, int]]),
+        (Literal["a", "b"], Literal["a", "b"]),
+    ],
+)
+def test_alias_of_typing_extensions_is_resolved_into_its_value(
+    annotation: Any, resolved: Any
+):
+    assert resolve_aliases(annotation) == resolved
+
+
+@pytest.mark.skipif(sys.version_info < (3, 12), reason="needs a `type` statement")
+def test_alias_of_a_type_statement_is_left_to_omegaconf():
+    alias = _ALIASES["typing"]
+    assert resolve_aliases(list[alias]) == list[alias]
 
 
 @pytest.mark.parametrize(
