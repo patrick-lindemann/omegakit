@@ -1,8 +1,9 @@
 from typing import Any, overload
 
 from omegaconf import DictConfig, ListConfig, OmegaConf, TupleConfig
+from typing_extensions import TypeAliasType
 
-type Config = DictConfig | ListConfig | TupleConfig
+Config = TypeAliasType("Config", DictConfig | ListConfig | TupleConfig)
 """A config node that holds other nodes: a mapping, a list or a tuple."""
 
 

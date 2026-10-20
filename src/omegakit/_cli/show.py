@@ -1,7 +1,7 @@
 import sys
 from argparse import ArgumentError, ArgumentParser
 from pathlib import Path
-from typing import Any, override
+from typing import Any
 
 from omegaconf import MISSING, DictConfig, ListConfig, OmegaConf
 from omegaconf.errors import (
@@ -9,11 +9,11 @@ from omegaconf.errors import (
     InterpolationToMissingValueError,
     MissingMandatoryValue,
 )
+from typing_extensions import override
 
 from omegakit._core.load import load_config
 
-from ._args import Arguments
-from ._routine import Routine
+from ._routine import Arguments, Routine
 
 _NOT_FOUND = object()
 
@@ -26,8 +26,6 @@ _MISSING_ERRORS = (
 
 
 class ShowArguments(Arguments):
-    """The parsed arguments of the `show` command."""
-
     config: Path
     overrides: list[str] | None
     node: str | None
@@ -39,7 +37,7 @@ class ShowArguments(Arguments):
 
 
 class ShowRoutine(Routine[ShowArguments]):
-    """The `show` command, which prints a config as `load_config` assembles it."""
+    """Show the config as assembled by `load_config`."""
 
     name = "show"
     help = "print a config as assembled by load_config"

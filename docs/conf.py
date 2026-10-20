@@ -1,12 +1,13 @@
 import importlib
 import importlib.metadata
 import pkgutil
-from typing import Any, TypeAliasType
+from typing import Any
 
 from sphinx.application import Sphinx
 from sphinx.config import Config as SphinxConfig
 from sphinx.pycode import ModuleAnalyzer
 from sphinx_autodoc_typehints import format_annotation
+from typing_extensions import TypeAliasType
 
 import omegakit
 
@@ -35,6 +36,8 @@ html_theme = "furo"
 html_title = "omegakit"
 # `typehints_formatter` is a function, which Sphinx cannot cache.
 suppress_warnings = ["config.cache"]
+# An alias of `typing_extensions` and `|` make a `Union`, which is shown with `|` too.
+always_use_bars_union = True
 
 
 def setup(app: Sphinx) -> None:

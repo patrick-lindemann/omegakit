@@ -7,6 +7,7 @@ from types import ModuleType
 from typing import Any
 
 import pytest
+from typing_extensions import TypeAliasType
 
 from omegakit._core.errors import (
     ConfigSchemaError,
@@ -17,6 +18,9 @@ from omegakit._core.typecheck.convert import convert_plain_values, convert_value
 class _Color(enum.Enum):
     RED = "red"
     BLUE = "blue"
+
+
+_Size = TypeAliasType("_Size", int)
 
 
 def test_plain_values_are_converted_as_omegaconf_converts_them(targets: ModuleType):
@@ -84,6 +88,14 @@ def test_item_is_converted_as_its_annotation():
     assert convert_value(_Color, "RED") is _Color.RED
     with pytest.raises(ConfigSchemaError):
         convert_value(float, "high")
+
+
+def test_alias_of_typing_extensions_is_converted_as_its_value():
+    schema = dataclasses.make_dataclass("Schema", [("size", _Size)])
+    assert convert_plain_values(schema, {"size": "3"}, "") == {"size": 3}
+    assert convert_value(list[_Size], ["1", 2]) == [1, 2]
+    with pytest.raises(ConfigSchemaError):
+        convert_value(_Size, "big")
 
 
 def test_number_that_is_too_large_is_rejected(targets: ModuleType):
