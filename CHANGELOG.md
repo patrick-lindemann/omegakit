@@ -39,6 +39,8 @@ All notable changes to this project are documented here. The format follows
   of `X`. Any class passed.
 - Each member of a union is checked on its own, so `type[Model] | type` takes any
   class. It rejected every class that is no subclass of `Model`.
+- The error for a `$target` in a key of plain values names the node of the `$target`,
+  as in `data.sizes[1]`. It named the mapping that holds the key.
 - `tuple[()]` takes no items. It took any number of items, and `typing.Tuple[()]`
   raised `SchemaDefinitionError` on Python 3.10.
 - On Python 3.10, a parametrized class such as `list[ModelConfig]` as the `schema` of

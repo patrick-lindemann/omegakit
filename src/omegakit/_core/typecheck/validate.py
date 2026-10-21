@@ -473,7 +473,8 @@ def _unwrap_plain_value(value: Any) -> Any:
     if isinstance(value, Call):
         raise ConfigSchemaError(
             f"`{TARGET_KEY}: {value.name}` cannot stand in a field that holds plain "
-            "values."
+            "values.",
+            get_full_key(value.node),
         )
     if not isinstance(value, Container):
         return value

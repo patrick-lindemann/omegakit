@@ -723,6 +723,26 @@ def test_empty_tuple_takes_no_items(annotation: Any):
         _validate_value(annotation, [1, 2])
 
 
+_ITEM = {"$target": "tests.targets.Item"}
+
+
+@pytest.mark.parametrize(
+    ("annotation", "value", "full_key"),
+    [
+        (int, _ITEM, "value"),
+        (list[int], [1, _ITEM], "value[1]"),
+        (dict[str, int], {"a": 1, "b": _ITEM}, "value.b"),
+        (tuple[int, Any], [_ITEM, 1], "value[0]"),
+    ],
+)
+def test_target_in_plain_values_names_its_node(
+    annotation: Any, value: Any, full_key: str
+):
+    with pytest.raises(ConfigSchemaError, match="holds plain values") as error_info:
+        _validate_value(annotation, value)
+    error_info.match(re.escape(f"at `{full_key}`"))
+
+
 def test_container_in_a_union_takes_the_other_members():
     _validate_value(list[_Square] | int, 3)
     with pytest.raises(ConfigSchemaError, match="Expected"):
