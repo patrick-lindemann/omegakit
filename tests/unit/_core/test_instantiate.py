@@ -673,6 +673,18 @@ def test_result_of_a_function_is_checked_in_a_field(targets: ModuleType):
     error_info.match(re.escape("at `optimizer`"))
 
 
+def test_class_that_a_function_returns_is_checked_against_its_bound(
+    targets: ModuleType,
+):
+    config = {"$target": "tests.targets.ItemMaker"}
+    made_class = {"$target": "tests.targets.make_item_class"}
+    maker = instantiate(OmegaConf.create({**config, "kind": made_class}))
+    assert maker.kind is targets.SmallItem
+    made_class = {"$target": "tests.targets.make_number_class"}
+    with pytest.raises(ConfigSchemaError, match=r"returned `<class 'int'>`.*at `kind`"):
+        instantiate(OmegaConf.create({**config, "kind": made_class}))
+
+
 def test_prepare_cannot_check_the_result_of_a_function(targets: ModuleType):
     config = OmegaConf.create({"$target": "tests.targets.make_item"})
     assert type(prepare(config)()) is targets.Item

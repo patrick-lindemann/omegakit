@@ -33,6 +33,7 @@ from .annotations import (
     find_item_annotation,
     find_position_annotations,
     find_typed_dicts,
+    is_instance,
     is_plain_value,
     union_members,
 )
@@ -493,20 +494,12 @@ def _check_type(value: Any, annotation: Any) -> Any:
         members = tuple(member for member in members if not is_typeddict(member))
     # A parametrized class, such as `list[X]`, is checked as the class alone
     classes = tuple(get_origin(member) or member for member in members)
-    # `type[X]` takes a subclass of `X`
-    bounds = tuple(
-        get_args(member)[0]
-        for member in members
-        if get_origin(member) is type and get_args(member)[0] is not Any
-    )
     try:
-        if not classes:
-            is_valid = False
-        elif not isinstance(value, Call):
+        if not isinstance(value, Call):
             given_value = value.items if isinstance(value, Container) else value
-            is_valid = isinstance(given_value, classes)
-            if is_valid and bounds and isinstance(given_value, type):
-                is_valid = issubclass(given_value, bounds)
+            is_valid = is_instance(given_value, annotation)
+        elif not classes:
+            is_valid = False
         elif value.is_partial:
             is_valid = issubclass(functools.partial, classes)
         elif not isinstance(value.target, type):

@@ -40,6 +40,31 @@ def union_members(annotation: Any) -> tuple[Any, ...]:
     return tuple(itertools.chain.from_iterable(members))
 
 
+def is_instance(value: Any, annotation: Any) -> bool:
+    # Each member is checked on its own, so that `type[Model] | type` takes any class
+    for member in union_members(annotation):
+        if member is Any:
+            return True
+        if is_typeddict(member):
+            continue
+        # A parametrized class, such as `list[X]`, is checked as the class alone
+        cls = get_origin(member) or member
+        try:
+            if not isinstance(value, cls):
+                continue
+            # `type[X]` takes a subclass of `X`
+            arguments = get_args(member) if cls is type else ()
+            bounds = union_members(arguments[0]) if arguments else ()
+            if bounds and Any not in bounds and not issubclass(value, bounds):
+                continue
+        # Not every annotation can be checked, such as a `Literal` or a `Protocol`
+        # that is not runtime-checkable
+        except TypeError:
+            return True
+        return True
+    return False
+
+
 def find_required_mark(annotation: Any) -> bool | None:
     # `Required` and `NotRequired` may stand inside `Annotated` or `ReadOnly`
     while get_origin(annotation) in _QUALIFIERS:

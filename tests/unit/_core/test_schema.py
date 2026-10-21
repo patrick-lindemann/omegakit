@@ -38,6 +38,7 @@ class _Parts(TypedDict, total=False):
     alias: _Mapping
     factory: Callable[..., Any] | None
     kind: type[int] | None
+    any_kind: type[fractions.Fraction] | type
     plain: list | None
     options: dict[str, dict[str, int]] | None
     scale: float | fractions.Fraction
@@ -860,6 +861,9 @@ def test_annotation_that_cannot_be_checked_takes_any_object():
         ({"kind": {"$symbol": "builtins.bool"}}, True),
         ({"kind": {"$symbol": "builtins.str"}}, False),
         ({"kind": {"$target": "builtins.bool"}}, False),
+        ({"any_kind": {"$symbol": "builtins.str"}}, True),
+        ({"any_kind": {"$symbol": "fractions.Fraction"}}, True),
+        ({"any_kind": {"$symbol": "math.pi"}}, False),
         ({"plain": [{"$target": "fractions.Fraction"}]}, True),
         ({"plain": {"first": 1}}, False),
         ({"plain": (1, 2)}, False),

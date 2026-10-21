@@ -2,6 +2,7 @@ from .annotations import (
     find_item_annotation,
     find_position_annotations,
     find_typed_dicts,
+    is_instance,
     is_plain_value,
     union_members,
 )
@@ -21,6 +22,7 @@ __all__ = [
     "find_position_annotations",
     "find_schema",
     "find_typed_dicts",
+    "is_instance",
     "is_plain_value",
     "read_fields",
     "read_positional_names",

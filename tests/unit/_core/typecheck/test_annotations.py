@@ -11,6 +11,7 @@ from omegakit._core.typecheck.annotations import (
     find_key_annotation,
     find_position_annotations,
     find_typed_dicts,
+    is_instance,
     resolve_aliases,
     union_members,
 )
@@ -157,6 +158,44 @@ def test_annotations_of_the_positions_of_a_tuple_are_found(
     annotation: Any, item_annotations: list[Any] | None
 ):
     assert find_position_annotations(annotation, 3) == item_annotations
+
+
+class _Base:
+    pass
+
+
+class _Derived(_Base):
+    pass
+
+
+class _Named(typing.Protocol):
+    name: str
+
+
+@pytest.mark.parametrize(
+    ("value", "annotation", "expected"),
+    [
+        (_Derived, type[_Base], True),
+        (int, type[_Base], False),
+        (int, type[_Base] | type, True),
+        (int, type[_Base] | typing.Type, True),  # noqa: UP006
+        (int, type[_Base] | type[Any], True),
+        (int, type[_Base | int], True),
+        (int, type[typing.Union[_Base, int]], True),  # noqa: UP007
+        (int, type[_Base] | int, False),
+        (_Derived(), _Base, True),
+        (5, _Base | str, False),
+        (5, Any, True),
+        (5, _Named | str, True),
+        (5, Literal[1], True),
+        ({}, _Section, False),
+        ([1], list[str] | None, True),
+    ],
+)
+def test_value_is_checked_by_each_member_of_a_union(
+    value: Any, annotation: Any, expected: bool
+):
+    assert is_instance(value, annotation) is expected
 
 
 def test_sections_are_the_typed_dicts_of_a_union():

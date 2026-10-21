@@ -33,6 +33,10 @@ All notable changes to this project are documented here. The format follows
   of its field, as in `list[ModelConfig]` or `dict[str, Model]`, and its items are
   converted. Only a `dict` in a field annotated with a `TypedDict` was checked, so
   wrong items passed.
+- A class that a `$target` function returns into a `type[X]` field must be a subclass
+  of `X`. Any class passed.
+- Each member of a union is checked on its own, so `type[Model] | type` takes any
+  class. It rejected every class that is no subclass of `Model`.
 
 ## [0.11.0] - 2026-10-20
 

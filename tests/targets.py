@@ -176,5 +176,18 @@ def make_item(**kwargs):
     return Item(**kwargs)
 
 
+def make_item_class():
+    return SmallItem
+
+
+def make_number_class():
+    return int
+
+
+@dataclass
+class ItemMaker:
+    kind: type[Item]
+
+
 ITEM = Item()
 CALLS.clear()
