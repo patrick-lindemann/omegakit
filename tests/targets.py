@@ -96,9 +96,7 @@ class ModelConfig(TypedDict):
     encoder: NotRequired[Item | None]
 
 
-class Model(Configurable):
-    schema = ModelConfig
-
+class Model(Configurable, schema=ModelConfig):
     def __init__(self, config, kwargs):
         self.config = config
         self.kwargs = kwargs
@@ -113,6 +111,22 @@ class Model(Configurable):
 class Layer(Configurable):
     width: int
     bias: bool = True
+
+
+class SpanConfig(TypedDict):
+    start: int
+    length: int
+
+
+@dataclass
+class Span(Configurable, schema=SpanConfig):
+    start: int
+    stop: int
+
+    @classmethod
+    @override
+    def from_config(cls, config, **kwargs):
+        return cls(config["start"], config["start"] + config["length"])
 
 
 @dataclass
@@ -131,8 +145,12 @@ class Experiment:
     phases: tuple[ModelConfig, ...] = ()
 
 
-class BrokenModel(Model):
-    schema = dict
+class BrokenModelConfig(TypedDict):
+    tags: set[int]
+
+
+class BrokenModel(Model, schema=BrokenModelConfig):
+    pass
 
 
 def _make_collection_config(typed_dict: Any) -> Any:
@@ -164,12 +182,12 @@ BackportedCollectionConfig = _make_collection_config(typing_extensions.TypedDict
 URL_SOURCE = {"url": "https://example.com", "retries": "2"}
 
 
-class Collection(Model):
-    schema = CollectionConfig
+class Collection(Model, schema=CollectionConfig):
+    pass
 
 
-class BackportedCollection(Model):
-    schema = BackportedCollectionConfig
+class BackportedCollection(Model, schema=BackportedCollectionConfig):
+    pass
 
 
 def make_item(**kwargs):

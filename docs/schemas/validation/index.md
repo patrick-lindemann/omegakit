@@ -78,7 +78,7 @@ before they call anything ([Instantiation](../../objects/instantiation/index.md#
   subclass. A `schema` that is no class raises `SchemaDefinitionError`. Without
   `schema`, the config itself is checked.
 - Every `$target` node is checked against the schema of its class, nested nodes
-  first: the `schema` of a `Configurable`, or the fields of a dataclass
+  first: the schema of a `Configurable`, or the fields of a dataclass
   ([TypedDict schemas](../typed-dict-schemas/index.md#rules)). A class without
   either has only the nodes inside its arguments checked.
 - The class or object that every `$target` and `$symbol` names is imported, and

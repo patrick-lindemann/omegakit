@@ -724,6 +724,17 @@ def test_configurable_that_is_a_dataclass_is_checked_as_one(targets: ModuleType)
         instantiate(config)
 
 
+def test_dataclass_with_a_schema_is_checked_against_the_schema(targets: ModuleType):
+    config = OmegaConf.create(
+        {"$target": "tests.targets.Span", "start": 2, "length": "3"}
+    )
+    assert instantiate(config) == targets.Span(2, 5)
+    with pytest.raises(
+        ConfigSchemaError, match="`stop` is not a field of `SpanConfig`"
+    ):
+        instantiate(OmegaConf.create({"$target": "tests.targets.Span", "stop": 5}))
+
+
 @pytest.mark.parametrize("text", ["${depth}", "a \\${depth}", "${unbalanced"])
 def test_text_is_not_read_as_an_interpolation_again(targets: ModuleType, text: str):
     OmegaConf.register_resolver("test_text", lambda: text, replace=True)

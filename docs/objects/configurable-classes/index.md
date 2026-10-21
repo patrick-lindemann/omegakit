@@ -1,9 +1,9 @@
 # Configurable classes
 
-A class can name the schema of its config: subclass `Configurable` and set `schema`
-to a `TypedDict`. omegakit then checks the keys of every `$target` node that names
-the class, before anything is built. Use it for a class that is no dataclass, such
-as a PyTorch module:
+A class can name the schema of its config: subclass `Configurable` and pass a
+`TypedDict` as the class keyword `schema`. omegakit then checks the keys of every
+`$target` node that names the class, before anything is built. Use it for a class
+that is no dataclass, such as a PyTorch module:
 
 ```{literalinclude} models.py
 :language: python
@@ -71,17 +71,25 @@ that is still open raises when the partial is called.
 
 ## Rules
 
-- A subclass of `Configurable` names its schema in the class attribute `schema`,
-  a `TypedDict`. Anything else, also a dataclass, raises `SchemaDefinitionError`
-  when a config names the class. A subclass inherits `schema`, and `schema = None`
-  in a subclass removes it.
+- A subclass of `Configurable` names its schema in the class keyword `schema`, a
+  `TypedDict`, as in `class MLP(nn.Sequential, Configurable, schema=MLPConfig)`.
+  Anything else, also a dataclass, raises `SchemaDefinitionError` when the class is
+  defined, and a misspelt keyword raises `TypeError` there; type checkers report
+  both. A subclass inherits the schema, and `schema=None` removes it. A `schema`
+  attribute in the class body is no schema.
+- `Configurable` takes no class keyword but `schema`. A base class that takes class
+  keywords of its own comes before it, as in
+  `class MLP(Registered, Configurable, name="mlp", schema=MLPConfig)`, and passes
+  `schema` on.
 - A `$target` node of a class with a schema is checked against it
   ([TypedDict schemas](../../schemas/typed-dict-schemas/index.md#rules)): an
   unknown key and a missing required key raise `ConfigSchemaError`, and every
   value is checked and converted by its annotation. A class without a schema has
   its arguments unchecked, except for the `$target` nodes inside them. A
-  `Configurable` that is a dataclass and has no `schema` is checked against its
-  fields ([Dataclass targets](../../schemas/typed-dict-schemas/index.md#dataclass-targets)).
+  `Configurable` that is a dataclass and has no schema is checked against its
+  fields ([Dataclass targets](../../schemas/typed-dict-schemas/index.md#dataclass-targets)),
+  so a dataclass whose `from_config` takes other keys than its fields names them in
+  a schema.
 - Any class with a `from_config`, `Configurable` or not, is built with
   `from_config(config)`, where `config` is a `dict` of the values that the config
   gives, checked and converted. No instance of the schema is built. What
@@ -92,7 +100,7 @@ that is still open raises when the partial is called.
   `$args`.``
 - A partial of a class with `from_config`, from `$partial: true` or `prepare`,
   calls `from_config` when it is called, with the call's keyword arguments as
-  `**kwargs`. For a `Configurable` with a `schema`, the keys of the schema that the
+  `**kwargs`. For a `Configurable` with a schema, the keys of the schema that the
   call gives are added to `config` instead, and a required key that neither gives
   raises `ConfigSchemaError` at the call. An error from calling a partial gets no
   note.

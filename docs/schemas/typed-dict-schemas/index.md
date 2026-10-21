@@ -35,7 +35,8 @@ them.
 
 - `validate(config, ExperimentConfig)` checks a root without `$target`
   ([Validation](../validation/index.md)).
-- `Configurable.schema` checks the keys of every `$target` node of its class
+- The `schema` class keyword of a `Configurable` subclass checks the keys of every
+  `$target` node of its class
   ([Configurable classes](../../objects/configurable-classes/index.md)).
 - A key annotated with a schema, such as `data: DataConfig`, holds a mapping that
   stays a `dict` when it is built, or a `$symbol` to a `dict`, which is checked
@@ -109,8 +110,9 @@ in `children: NotRequired[list[Node]]`.
 
 **Unsupported schemas** raise `SchemaDefinitionError` wherever they are reached:
 
-- a `schema` argument that is no class, and a `Configurable.schema` that is no
-  `TypedDict`;
+- a `schema` argument that is no class, and a `schema` class keyword of a
+  `Configurable` subclass that is no `TypedDict`, which raises when the class is
+  defined;
 - annotations that cannot be read, such as a name imported only under
   `TYPE_CHECKING`;
 - a key that is no Python identifier;

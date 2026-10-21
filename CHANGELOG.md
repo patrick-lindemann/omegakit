@@ -6,6 +6,17 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking:** A `Configurable` names its schema in the class keyword `schema`:
+  replace `schema = ModelConfig` in the class body with
+  `class Model(Configurable, schema=ModelConfig)`. Type checkers report a misspelt
+  keyword, and Python raises `TypeError` for it when the class is defined. A schema
+  that is no `TypedDict` raises `SchemaDefinitionError` when the class is defined,
+  instead of when a config names the class. A `schema` attribute in the class body
+  is no longer read, and a base class with class keywords of its own comes before
+  `Configurable`.
+
 ### Fixed
 
 - A key may be annotated with a union of several `TypedDict`s, also as the item of a

@@ -111,8 +111,45 @@ def test_configurable_that_is_a_dataclass_is_its_own_schema(targets: ModuleType)
 
 
 def test_configurable_may_name_a_typed_dict_of_typing_extensions():
-    model = type("Model", (Configurable,), {"schema": _BackportedLayerConfig})
-    assert find_schema(model) is _BackportedLayerConfig
+    class Model(Configurable, schema=_BackportedLayerConfig):
+        pass
+
+    assert find_schema(Model) is _BackportedLayerConfig
+
+
+def test_subclass_of_a_configurable_inherits_its_schema(targets: ModuleType):
+    class Subclass(targets.Model):
+        pass
+
+    assert find_schema(Subclass) is targets.ModelConfig
+
+
+def test_schema_none_removes_the_schema_of_the_parent(targets: ModuleType):
+    class Subclass(targets.Model, schema=None):
+        pass
+
+    assert find_schema(Subclass) is None
+
+
+def test_dataclass_without_schema_is_its_own_schema_again():
+    @dataclass
+    class Layer(Configurable, schema=_LayerConfig):
+        width: int
+
+    @dataclass
+    class Plain(Layer, schema=None):
+        pass
+
+    assert find_schema(Plain) is Plain
+
+
+def test_dataclass_with_slots_keeps_its_schema():
+    # `slots=True` makes a new class, which calls `__init_subclass__` without keywords
+    @dataclass(frozen=True, slots=True)
+    class Layer(Configurable, schema=_LayerConfig):
+        width: int
+
+    assert find_schema(Layer) is _LayerConfig
 
 
 @pytest.mark.parametrize(
@@ -120,13 +157,6 @@ def test_configurable_may_name_a_typed_dict_of_typing_extensions():
 )
 def test_other_targets_have_no_schema(target: Any):
     assert find_schema(target) is None
-
-
-@pytest.mark.parametrize("schema", [dict, _Section, _Section()])
-def test_schema_of_a_configurable_must_be_a_typed_dict(schema: Any):
-    broken = type("Broken", (Configurable,), {"schema": schema})
-    with pytest.raises(SchemaDefinitionError, match="Broken"):
-        find_schema(broken)
 
 
 @pytest.mark.parametrize(

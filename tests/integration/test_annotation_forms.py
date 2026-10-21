@@ -136,7 +136,7 @@ def _make_config(
 ) -> Any:
     # A new class per annotation, which `$target` reaches through this module
     schema = TypedDict("schema", {"value": annotation})  # noqa: UP013
-    target = type("Target", (Holder,), {"schema": schema})
+    target = type("Target", (Holder,), {}, schema=schema)
     monkeypatch.setattr(sys.modules[__name__], "TARGET", target, raising=False)
     if given == "symbol":
         monkeypatch.setattr(sys.modules[__name__], "VALUE", value)

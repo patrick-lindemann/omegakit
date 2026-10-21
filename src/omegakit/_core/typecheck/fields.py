@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from omegaconf import MISSING
-from typing_extensions import get_type_hints, is_typeddict
+from typing_extensions import get_type_hints
 
 from omegakit._core.configurable import Configurable
 from omegakit._core.errors import SchemaDefinitionError
@@ -31,21 +31,15 @@ def find_schema(target: Any) -> type | None:
         target: The class or function.
 
     Returns:
-        The `schema` of a `Configurable`, `target` itself if it is a dataclass, or
+        The schema of a `Configurable`, `target` itself if it is a dataclass, or
         `None`.
-
-    Raises:
-        SchemaDefinitionError: If the `schema` of `target` is not a `TypedDict`.
     """
     if not is_class(target):
         return None
-    schema = target.schema if issubclass(target, Configurable) else None
+    # `Configurable.__init_subclass__` has checked that it is a `TypedDict`
+    schema = target._schema if issubclass(target, Configurable) else None
     if schema is None:
         return target if dataclasses.is_dataclass(target) else None
-    if not is_typeddict(schema):
-        raise SchemaDefinitionError(
-            f"`{target.__qualname__}.schema` must be a `TypedDict`, not `{schema!r}`."
-        )
     return schema
 
 
