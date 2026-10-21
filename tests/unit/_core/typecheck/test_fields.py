@@ -7,12 +7,12 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Literal, TypedDict
+from typing import Annotated, Any, Literal, TypedDict
 
 import pytest
 import typing_extensions
 from omegaconf import MISSING
-from typing_extensions import NotRequired, Required
+from typing_extensions import NotRequired, ReadOnly, Required
 
 from omegakit._core.configurable import Configurable
 from omegakit._core.errors import (
@@ -63,6 +63,34 @@ class _BackportedWideLayerConfig(_BackportedLayerConfig, total=False):
 class _NetworkConfig(TypedDict):
     layer: _LayerConfig
     layers: list[_LayerConfig]
+
+
+class _WrappedMarksConfig(TypedDict, total=False):
+    width: Annotated[Required[int], "doc"]
+    depth: ReadOnly[Required[int]]
+    bias: Annotated[NotRequired[bool], "doc"]
+    scale: float
+
+
+class _BackportedWrappedMarksConfig(typing_extensions.TypedDict, total=False):
+    width: Annotated[Required[int], "doc"]
+    depth: ReadOnly[Required[int]]
+    bias: Annotated[NotRequired[bool], "doc"]
+    scale: float
+
+
+class _WrappedOptionalMarksConfig(TypedDict):
+    width: Annotated[NotRequired[int], "doc"]
+    depth: ReadOnly[NotRequired[int]]
+    bias: Annotated[ReadOnly[NotRequired[bool]], "doc"]
+    name: Annotated[str, "doc"]
+
+
+class _BackportedWrappedOptionalMarksConfig(typing_extensions.TypedDict):
+    width: Annotated[NotRequired[int], "doc"]
+    depth: ReadOnly[NotRequired[int]]
+    bias: Annotated[ReadOnly[NotRequired[bool]], "doc"]
+    name: Annotated[str, "doc"]
 
 
 def _make_schema(annotation: Any) -> type:
@@ -197,6 +225,30 @@ def test_keys_of_a_typed_dict_are_required_unless_marked(schema: type):
     assert fields["width"].is_plain_value
     assert fields["bias"].annotation is bool
     assert not fields["encoder"].is_plain_value
+
+
+@pytest.mark.parametrize(
+    ("schema", "required_keys"),
+    [
+        (_WrappedMarksConfig, {"width", "depth"}),
+        (_BackportedWrappedMarksConfig, {"width", "depth"}),
+        (_WrappedOptionalMarksConfig, {"name"}),
+        (_BackportedWrappedOptionalMarksConfig, {"name"}),
+    ],
+    ids=[
+        "typing",
+        "typing_extensions",
+        "typing-optional",
+        "typing_extensions-optional",
+    ],
+)
+def test_mark_inside_annotated_or_read_only_decides_whether_a_key_is_required(
+    schema: type, required_keys: set[str]
+):
+    fields = read_fields(schema)
+    assert {key for key, field in fields.items() if field.is_required} == required_keys
+    assert fields["width"].annotation is int
+    assert fields["bias"].annotation is bool
 
 
 def test_field_that_holds_a_typed_dict_is_no_plain_value():

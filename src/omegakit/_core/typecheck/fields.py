@@ -3,16 +3,16 @@ import functools
 import inspect
 import keyword
 from dataclasses import dataclass
-from typing import Any, get_origin
+from typing import Any
 
 from omegaconf import MISSING
-from typing_extensions import NotRequired, Required, get_type_hints, is_typeddict
+from typing_extensions import get_type_hints, is_typeddict
 
 from omegakit._core.configurable import Configurable
 from omegakit._core.errors import SchemaDefinitionError
 from omegakit._core.utils.describe import describe_error
 
-from .annotations import holds_objects, is_plain_value
+from .annotations import find_required_mark, holds_objects, is_plain_value
 
 
 @dataclass(frozen=True)
@@ -89,8 +89,10 @@ def _read_required_keys(schema: type) -> dict[str, bool]:
     annotations = get_type_hints(schema, include_extras=True)
     required_keys: dict[str, bool] = {}
     for name, annotation in annotations.items():
-        origin = get_origin(annotation)
-        required_keys[name] = origin is Required or (
-            origin is not NotRequired and name in schema.__required_keys__  # ty: ignore[unresolved-attribute]
+        mark = find_required_mark(annotation)
+        required_keys[name] = (
+            name in schema.__required_keys__  # ty: ignore[unresolved-attribute]
+            if mark is None
+            else mark
         )
     return required_keys

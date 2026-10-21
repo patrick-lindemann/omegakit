@@ -22,12 +22,12 @@ else:
 _TYPE_ALIAS_TYPES = (*_OMEGACONF_ALIAS_TYPES, typing_extensions.TypeAliasType)
 # The forms that wrap a type without changing it, of `typing` and of
 # `typing_extensions`, which can differ on older Pythons
-_QUALIFIERS = frozenset(
-    getattr(module, name)
+_QUALIFIERS = {
+    getattr(module, name): name
     for module in (typing, typing_extensions)
     for name in ("Annotated", "Required", "NotRequired", "ReadOnly")
     if hasattr(module, name)
-)
+}
 
 
 def union_members(annotation: Any) -> tuple[Any, ...]:
@@ -36,6 +36,16 @@ def union_members(annotation: Any) -> tuple[Any, ...]:
         return (annotation,)
     members = [union_members(member) for member in get_args(annotation)]
     return tuple(itertools.chain.from_iterable(members))
+
+
+def find_required_mark(annotation: Any) -> bool | None:
+    # `Required` and `NotRequired` may stand inside `Annotated` or `ReadOnly`
+    while get_origin(annotation) in _QUALIFIERS:
+        name = _QUALIFIERS[get_origin(annotation)]
+        if name in ("Required", "NotRequired"):
+            return name == "Required"
+        annotation = get_args(annotation)[0]
+    return None
 
 
 def unwrap(annotation: Any) -> Any:

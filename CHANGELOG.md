@@ -18,6 +18,10 @@ All notable changes to this project are documented here. The format follows
   `Annotated`, is checked. OmegaConf took the mapping as a plain `dict`, so unknown
   keys and wrong values passed, and an `Annotated` alias of a `type` statement raised
   `SchemaDefinitionError`.
+- `Required` and `NotRequired` decide whether a key is required also inside
+  `Annotated` or `ReadOnly`, as in `Annotated[Required[int], "doc"]`. Under
+  `from __future__ import annotations`, and with `typing.TypedDict` on Python 3.10,
+  such a key followed the totality of its `TypedDict` instead.
 
 ## [0.11.0] - 2026-10-20
 

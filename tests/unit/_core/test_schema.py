@@ -9,8 +9,9 @@ from types import ModuleType
 from typing import Annotated, Any, Literal, Protocol, TypedDict, TypeVar
 
 import pytest
+import typing_extensions
 from omegaconf import DictConfig, OmegaConf
-from typing_extensions import TypeAliasType
+from typing_extensions import NotRequired, Required, TypeAliasType
 
 from omegakit._core.errors import (
     ConfigSchemaError,
@@ -647,6 +648,40 @@ if sys.version_info >= (3, 12):
     _StatementSquares = typing.TypeAliasType("_StatementSquares", list[_Square])
     _SQUARE_FORMS.append(_StatementSquare)
     _SQUARE_LIST_FORMS.append(_StatementSquares)
+
+
+class _Marks(TypedDict, total=False):
+    width: Annotated[Required[int], "doc"]
+    depth: int
+
+
+class _BackportedMarks(typing_extensions.TypedDict, total=False):
+    width: Annotated[Required[int], "doc"]
+    depth: int
+
+
+class _OptionalMarks(TypedDict):
+    width: Annotated[NotRequired[int], "doc"]
+    depth: int
+
+
+class _BackportedOptionalMarks(typing_extensions.TypedDict):
+    width: Annotated[NotRequired[int], "doc"]
+    depth: int
+
+
+@pytest.mark.parametrize(
+    ("schema", "optional_schema"),
+    [(_Marks, _OptionalMarks), (_BackportedMarks, _BackportedOptionalMarks)],
+    ids=["typing", "typing_extensions"],
+)
+def test_mark_inside_annotated_decides_whether_a_key_is_required(
+    schema: type, optional_schema: type
+):
+    config = OmegaConf.create({"depth": 1})
+    validate(config, optional_schema)
+    with pytest.raises(ConfigSchemaError, match="requires `width`"):
+        validate(config, schema)
 
 
 def _validate_value(annotation: Any, value: Any, **kwargs: Any) -> None:
