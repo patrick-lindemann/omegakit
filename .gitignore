@@ -7,8 +7,6 @@ dist/
 *.egg-info/
 
 # Data
-/data
-/outputs
 /specs
 
 # Env files
