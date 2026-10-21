@@ -54,7 +54,8 @@ versions.
 ## Dependencies
 
 Dependabot proposes dependency and GitHub Actions updates weekly against `develop`,
-and they are reviewed and merged by hand. Actions are pinned to commit SHAs, so read the upstream
+and they are reviewed and merged by hand once their pull request has passed every
+CI job. Actions are pinned to commit SHAs, so read the upstream
 changes before merging a bump. The runtime bounds in `pyproject.toml` are changed by
 hand, when every check passes on the new version.
 

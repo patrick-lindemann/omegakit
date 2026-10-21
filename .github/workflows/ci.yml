@@ -1,13 +1,13 @@
 name: CI
 
-# A pull request into main and a release candidate run every job. Pushes run
-# nothing; on any branch, CI started by hand runs the quick jobs (lint, docs, the
+# A pull request into main or develop, such as one from Dependabot, and a release
+# candidate run every job. Pushes run nothing; on any branch, CI started by hand runs the quick jobs (lint, docs, the
 # resolvers and the tests on one Python version) or, if asked, every job. The
 # tests of the library install neither the docs group nor the resolvers group:
 # the docs job runs the docs examples, and test-resolvers the optional resolvers.
 on:
   pull_request:
-    branches: [main]
+    branches: [main, develop]
   workflow_dispatch:
     inputs:
       full:
