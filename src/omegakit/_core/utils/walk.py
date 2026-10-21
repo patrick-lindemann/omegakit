@@ -32,12 +32,28 @@ def walk(node: Node, order: WalkOrder = "pre-order") -> Iterator[Node]:
 
 
 def walk_pre_order(node: Node) -> Iterator[Node]:
+    """Iterate over a node and every node below it, each before its children.
+
+    Args:
+        node: The node to start at.
+
+    Yields:
+        Each node, `node` included.
+    """
     yield node
     for child in _get_children(node):
         yield from walk_pre_order(child)
 
 
 def walk_post_order(node: Node) -> Iterator[Node]:
+    """Iterate over a node and every node below it, each after its children.
+
+    Args:
+        node: The node to start at.
+
+    Yields:
+        Each node, `node` included.
+    """
     for child in _get_children(node):
         yield from walk_post_order(child)
     yield node

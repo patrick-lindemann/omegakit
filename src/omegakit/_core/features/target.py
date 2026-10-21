@@ -21,12 +21,29 @@ ARGS_KEY = "$args"
 
 @dataclass(frozen=True)
 class TargetArguments:
+    """The keys of a `$target` node besides `$target`.
+
+    These are the argument keys, `$partial`, and whether `$args` is given.
+    """
+
     is_partial: bool
     keys: list[Any]
     has_args: bool
 
 
 def import_target(node: DictConfig) -> Any:
+    """Import the class or function that a `$target` node names.
+
+    Args:
+        node: The node.
+
+    Returns:
+        The class or function.
+
+    Raises:
+        ConfigTargetError: If the node has no `$target`, its `$target` is no `str`,
+            or the object is neither callable nor has `from_config`.
+    """
     if TARGET_KEY not in node.keys():  # noqa: SIM118
         raise ConfigTargetError(f"The node has no `{TARGET_KEY}`.")
     qualified_name = read_value(node, TARGET_KEY)
@@ -45,6 +62,18 @@ def import_target(node: DictConfig) -> Any:
 
 
 def read_arguments(node: DictConfig) -> TargetArguments:
+    """Read and check the arguments of a `$target` node.
+
+    Args:
+        node: The node.
+
+    Returns:
+        The arguments.
+
+    Raises:
+        ConfigValidationError: If an argument key starts with `$`.
+        ConfigTargetError: If `$partial` is not a `bool`.
+    """
     node_keys = list(node.keys())
     keys = [
         key

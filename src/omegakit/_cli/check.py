@@ -12,6 +12,8 @@ from ._routine import Arguments, Routine
 
 
 class CheckArguments(Arguments):
+    """The parsed arguments of `omegakit check`."""
+
     configs: list[Path]
     overrides: list[str] | None
     schema: str | None
@@ -28,6 +30,11 @@ class CheckRoutine(Routine[CheckArguments]):
 
     @override
     def add_arguments(self, parser: ArgumentParser) -> None:
+        """Add the `check` arguments to its parser.
+
+        Args:
+            parser: The parser of `check`.
+        """
         parser.add_argument(
             "configs",
             nargs="+",
@@ -62,6 +69,16 @@ class CheckRoutine(Routine[CheckArguments]):
 
     @override
     def run(self, args: CheckArguments) -> None:
+        """Load and validate each config file named in `args`.
+
+        Args:
+            args: The parsed `check` arguments.
+
+        Raises:
+            ArgumentError: If `--include-root` is not a directory, or `--schema`
+                cannot be imported or is not a class.
+            SystemExit: With status 1 if a config file is invalid.
+        """
         if args.include_root is not None and not args.include_root.is_dir():
             raise ArgumentError(
                 None, f"--include-root {args.include_root} is not a directory"

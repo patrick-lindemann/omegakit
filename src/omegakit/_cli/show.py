@@ -26,6 +26,8 @@ _MISSING_ERRORS = (
 
 
 class ShowArguments(Arguments):
+    """The parsed arguments of `omegakit show`."""
+
     config: Path
     overrides: list[str] | None
     node: str | None
@@ -45,6 +47,11 @@ class ShowRoutine(Routine[ShowArguments]):
 
     @override
     def add_arguments(self, parser: ArgumentParser) -> None:
+        """Add the `show` arguments to its parser.
+
+        Args:
+            parser: The parser of `show`.
+        """
         parser.add_argument(
             "config",
             type=Path,

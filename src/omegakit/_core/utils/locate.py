@@ -10,6 +10,20 @@ _NOT_FOUND = object()
 
 
 def locate(qualified_name: str) -> Any:
+    """Import the object at an import path.
+
+    Args:
+        qualified_name: The import path, such as `package.module.Name`.
+
+    Returns:
+        The object.
+
+    Raises:
+        QualifiedNameSyntaxError: If `qualified_name` is not of the form
+            `package.module.Name`.
+        QualifiedNameNotFoundError: If the module or the attribute does not exist.
+        ModuleNotFoundError: If a module that the target's module imports is missing.
+    """
     module_path, _, attr_name = qualified_name.rpartition(".")
     if not all(qualified_name.split(".")) or not module_path:
         raise QualifiedNameSyntaxError(

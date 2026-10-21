@@ -45,6 +45,8 @@ from .fields import find_schema, read_fields, read_positional_names
 
 @dataclass(frozen=True)
 class Call:
+    """A checked `$target` node, which `instantiate` calls."""
+
     node: DictConfig
     name: str
     target: Any
@@ -55,9 +57,14 @@ class Call:
     positional_arguments: list[Any] | tuple[Any, ...] = ()
 
 
-# A mapping, list or tuple of the config, unlike a `dict` or `list` that is a value
 @dataclass(frozen=True)
 class Container:
+    """The checked items of a mapping, list or tuple node.
+
+    `instantiate` builds them item by item. A plain `dict` or `list` in a checked
+    config is a converted value instead, which is used as it is.
+    """
+
     items: dict[Any, Any] | list[Any] | tuple[Any, ...]
 
 
@@ -67,6 +74,27 @@ def check(
     is_deferred: bool = False,
     allow_missing: bool = False,
 ) -> Any:
+    """Check a config against a schema and convert its values.
+
+    Args:
+        config: The config.
+        schema: The class that the config must give. Defaults to `None`, in which
+            case only the config itself is checked.
+        is_deferred: Whether the root `$target` may leave required keys open, as for
+            `prepare`. Defaults to `False`.
+        allow_missing: Whether to accept missing values, as `validate` does. Defaults
+            to `False`.
+
+    Returns:
+        The checked root: a `Call` for a `$target` node, a `Container` for another
+        mapping, list or tuple, or `MISSING_VALUE` for an allowed `???`.
+
+    Raises:
+        ValidationMissingValueError: If the root is `???` and `allow_missing` is
+            `False`.
+        SchemaDefinitionError: If `schema` is not a class.
+        ConfigSchemaError: If the root does not give an instance of `schema`.
+    """
     # The root is not read through a parent, which is where a `???` raises
     if config._is_missing():
         if allow_missing:

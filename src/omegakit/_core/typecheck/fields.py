@@ -17,12 +17,26 @@ from .annotations import find_required_mark, holds_objects, is_class, is_plain_v
 
 @dataclass(frozen=True)
 class SchemaField:
+    """A field of a `TypedDict` or dataclass schema."""
+
     annotation: Any
     is_plain_value: bool
     is_required: bool
 
 
 def find_schema(target: Any) -> type | None:
+    """Find the schema that checks the arguments of a `$target`.
+
+    Args:
+        target: The class or function.
+
+    Returns:
+        The `schema` of a `Configurable`, `target` itself if it is a dataclass, or
+        `None`.
+
+    Raises:
+        SchemaDefinitionError: If the `schema` of `target` is not a `TypedDict`.
+    """
     if not is_class(target):
         return None
     schema = target.schema if issubclass(target, Configurable) else None
@@ -37,6 +51,18 @@ def find_schema(target: Any) -> type | None:
 
 @functools.cache
 def read_fields(schema: type) -> dict[str, SchemaField]:
+    """Read and check the fields of a schema.
+
+    Args:
+        schema: The `TypedDict` or dataclass.
+
+    Returns:
+        The fields, by name.
+
+    Raises:
+        SchemaDefinitionError: If an annotation cannot be read, a name is no Python
+            identifier, or an annotation cannot be checked.
+    """
     try:
         annotations = get_type_hints(schema)
         if dataclasses.is_dataclass(schema):
@@ -79,6 +105,14 @@ def read_fields(schema: type) -> dict[str, SchemaField]:
 
 @functools.cache
 def read_positional_names(schema: type) -> list[str]:
+    """Read the names of the parameters that can be given by position.
+
+    Args:
+        schema: The class or function.
+
+    Returns:
+        The names, in order.
+    """
     parameters = inspect.signature(schema).parameters.values()
     kinds = (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD)
     return [parameter.name for parameter in parameters if parameter.kind in kinds]

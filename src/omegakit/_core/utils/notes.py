@@ -2,6 +2,12 @@ import sys
 
 
 def add_note(error: BaseException, note: str) -> None:
+    """Add a note to an error, also on Python 3.10.
+
+    Args:
+        error: The error.
+        note: The note.
+    """
     if sys.version_info >= (3, 11):
         error.add_note(note)
     else:

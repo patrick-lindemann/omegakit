@@ -17,6 +17,25 @@ def walk_mergeable(
     key: str,
     outer_first: bool = False,
 ) -> Iterator[tuple[DictConfig, Any]]:
+    """Yield each mapping that holds a key, in an order in which they can be merged.
+
+    A mapping comes after every other mapping with `key` that its merge reads, such as
+    a `$base` that holds a `$base` itself. The caller deletes `key` from every mapping
+    it is given, or this never ends.
+
+    Args:
+        config: The config to search.
+        key: The key, such as `$base`.
+        outer_first: Whether an enclosing mapping is merged before the mappings inside
+            it, as `$base` is. Defaults to `False`.
+
+    Yields:
+        Each mapping and the value of its `key`.
+
+    Raises:
+        ConfigMergeError: If a value cannot be resolved, or mappings wait for each
+            other.
+    """
     # In this order a holder comes after every holder it usually waits for
     order: WalkOrder = "pre-order" if outer_first else "post-order"
     while True:
@@ -25,7 +44,6 @@ def walk_mergeable(
             for node in walk(config, order)
             if isinstance(node, DictConfig) and key in node.keys()  # noqa: SIM118
         ]
-        # The consumer deletes `key` from every node it is given, or this never ends
         if not holders:
             return
         holder_ids = {id(holder) for holder in holders}
@@ -113,11 +131,23 @@ def walk_mergeable(
 
 
 def merge_under(node: DictConfig, *others: DictConfig) -> None:
+    """Merge mappings into a node in place, where the values of the node win.
+
+    Args:
+        node: The node.
+        *others: The mappings.
+    """
     merged_config = cast(DictConfig, OmegaConf.merge(*others, node))
     _write_back(node, merged_config)
 
 
 def merge_over(node: DictConfig, *others: DictConfig) -> None:
+    """Merge mappings into a node in place, where the values of the mappings win.
+
+    Args:
+        node: The node.
+        *others: The mappings.
+    """
     merged_config = cast(DictConfig, OmegaConf.merge(node, *others))
     _write_back(node, merged_config)
 
