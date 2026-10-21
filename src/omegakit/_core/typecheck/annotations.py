@@ -13,6 +13,8 @@ from omegaconf import OmegaConf
 from omegaconf.errors import OmegaConfBaseException
 from typing_extensions import is_typeddict
 
+from omegakit._core.errors import SchemaDefinitionError
+
 if sys.version_info >= (3, 12):
     # A `type` statement makes a `typing.TypeAliasType`, which OmegaConf resolves, and
     # which can be another class than that of `typing_extensions`
@@ -155,21 +157,21 @@ def holds_objects(annotation: Any) -> bool:
 
 @functools.cache
 def _is_plain_value_cached(annotation: Any) -> bool:
-    # A dataclass is an object, although OmegaConf reads it as a structured config
-    is_built = any(
-        is_typeddict(member) or dataclasses.is_dataclass(member)
-        for member in union_members(annotation)
-    )
-    if annotation is Any or is_built:
+    if annotation is Any:
         return False
-    item_annotation = find_item_annotation(annotation)
-    if item_annotation is not None and not is_plain_value(item_annotation):
-        return False
-    position_annotations = find_position_annotations(annotation, 1)
-    if position_annotations is not None and not all(
-        is_plain_value(item) for item in position_annotations
-    ):
-        return False
+    # Every member counts, also a container in a union such as `list[Model] | int`
+    for member in union_members(annotation):
+        # A dataclass is an object, although OmegaConf reads it as a structured config
+        if is_typeddict(member) or dataclasses.is_dataclass(member):
+            return False
+        item_annotation = find_item_annotation(member)
+        if item_annotation is not None and not is_plain_value(item_annotation):
+            return False
+        position_annotations = find_position_annotations(member, 1)
+        if position_annotations is not None and not all(
+            is_plain_value(item) for item in position_annotations
+        ):
+            return False
     probe = dataclasses.make_dataclass(
         "Probe", [("value", resolve_aliases(annotation))]
     )
@@ -182,12 +184,19 @@ def _is_plain_value_cached(annotation: Any) -> bool:
 
 
 def _find_single_container(annotation: Any, containers: tuple[type, ...]) -> Any:
+    # A node is a list, a mapping or a tuple, which names the member it is checked by
     members = [
-        member for member in union_members(annotation) if member is not types.NoneType
+        member
+        for member in union_members(annotation)
+        if (get_origin(member) or member) in containers
     ]
-    if len(members) != 1 or (get_origin(members[0]) or members[0]) not in containers:
-        return None
-    return members[0]
+    if len(members) > 1:
+        kind = (get_origin(members[0]) or members[0]).__name__
+        raise SchemaDefinitionError(
+            f"`{annotation}` holds several `{kind}`s, whose items cannot be told "
+            f"apart. Write one `{kind}` of a union, as in `list[A | B]`."
+        )
+    return members[0] if members else None
 
 
 def _is_alias_unknown_to_omegaconf(annotation: Any) -> bool:

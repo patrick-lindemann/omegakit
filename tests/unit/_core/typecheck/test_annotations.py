@@ -5,6 +5,7 @@ from typing import Annotated, Any, Literal, TypedDict, TypeVar
 import pytest
 import typing_extensions
 
+from omegakit._core.errors import SchemaDefinitionError
 from omegakit._core.typecheck.annotations import (
     find_item_annotation,
     find_key_annotation,
@@ -104,13 +105,29 @@ def test_alias_of_a_type_statement_is_left_to_omegaconf():
         (dict[str, float], float),
         (list, Any),
         (int, None),
-        (list[int] | dict[str, int], None),
+        (list[_Section] | int, _Section),
+        (list[_Section] | _Section, _Section),
+        (_Optional[list[_Section]], _Section),
     ],
 )
 def test_item_annotation_is_found_in_one_container(
     annotation: Any, item_annotation: Any
 ):
     assert find_item_annotation(annotation) == item_annotation
+
+
+def test_kind_of_the_node_names_the_container_of_a_union():
+    annotation = list[int] | dict[str, float]
+    assert find_item_annotation(annotation, (list,)) is int
+    assert find_item_annotation(annotation, (dict,)) is float
+
+
+@pytest.mark.parametrize(
+    "annotation", [list[_Section] | list[int], dict[str, int] | dict[str, _Section]]
+)
+def test_several_containers_of_one_kind_are_rejected(annotation: Any):
+    with pytest.raises(SchemaDefinitionError, match="holds several"):
+        find_item_annotation(annotation, (list, dict))
 
 
 @pytest.mark.parametrize(

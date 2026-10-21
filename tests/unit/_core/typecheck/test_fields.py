@@ -258,7 +258,16 @@ def test_field_that_holds_a_typed_dict_is_no_plain_value():
 
 
 @pytest.mark.parametrize(
-    "annotation", [_LayerConfig | _NetworkConfig | None, _LayerConfig | _Encoder]
+    "annotation",
+    [
+        _LayerConfig | _NetworkConfig | None,
+        _LayerConfig | _Encoder,
+        list[_LayerConfig] | int,
+        dict[str, _LayerConfig] | int,
+        tuple[_LayerConfig, int] | int,
+        list[_Encoder] | _Encoder,
+        list[_LayerConfig] | list[_NetworkConfig],
+    ],
 )
 def test_field_that_holds_a_union_with_a_typed_dict_is_no_plain_value(
     annotation: Any,

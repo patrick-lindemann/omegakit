@@ -650,6 +650,64 @@ if sys.version_info >= (3, 12):
     _SQUARE_LIST_FORMS.append(_StatementSquares)
 
 
+_SQUARE = {"kind": "square", "side": "2"}
+_BAD_SQUARE = {"kind": "square", "side": 2, "typo": 1}
+
+
+@pytest.mark.parametrize(
+    ("annotation", "value", "bad_value", "full_key"),
+    [
+        (list[_Square] | int, [_SQUARE], [_BAD_SQUARE], "value[0]"),
+        (dict[str, _Square] | int, {"a": _SQUARE}, {"a": _BAD_SQUARE}, "value.a"),
+        (tuple[_Square, ...] | int, [_SQUARE], [_BAD_SQUARE], "value[0]"),
+        (list[_Square] | _Square, [_SQUARE], [_BAD_SQUARE], "value[0]"),
+        (list[_Square] | _Square, _SQUARE, _BAD_SQUARE, "value"),
+        (list[_Circle | _Square] | None, [_SQUARE], [_BAD_SQUARE], "value[0]"),
+    ],
+)
+def test_container_in_a_union_checks_its_items(
+    annotation: Any, value: Any, bad_value: Any, full_key: str
+):
+    _validate_value(annotation, value)
+    with pytest.raises(ConfigSchemaError, match=rf"`typo`.*at `{re.escape(full_key)}`"):
+        _validate_value(annotation, bad_value)
+
+
+def test_container_in_a_union_takes_the_other_members():
+    _validate_value(list[_Square] | int, 3)
+    with pytest.raises(ConfigSchemaError, match="Expected"):
+        _validate_value(list[_Square] | int, _SQUARE)
+
+
+def test_list_in_a_union_with_its_item_class_checks_its_items(targets: ModuleType):
+    annotation = list[targets.Item] | targets.Item
+    _validate_value(annotation, [{"$target": "tests.targets.SmallItem"}])
+    with pytest.raises(ConfigSchemaError, match=r"Expected `Item`.*at `value\[0\]`"):
+        _validate_value(annotation, [1])
+
+
+def test_mapping_that_fits_no_schema_is_checked_by_the_dict_of_its_union():
+    annotation = _Square | dict[str, int]
+    _validate_value(annotation, {"kind": "square", "side": "2"})
+    _validate_value(annotation, {"width": 2})
+    with pytest.raises(ConfigSchemaError, match=r"Expected `int`.*at `value.width`"):
+        _validate_value(annotation, {"width": "wide"})
+
+
+@pytest.mark.parametrize(
+    ("annotation", "value"),
+    [
+        (list[_Square] | list[_Circle], [_SQUARE]),
+        (dict[str, _Square] | dict[str, int], {"a": 1}),
+    ],
+)
+def test_several_containers_of_one_kind_in_a_union_are_rejected(
+    annotation: Any, value: Any
+):
+    with pytest.raises(SchemaDefinitionError, match=r"holds several.*at `value`"):
+        _validate_value(annotation, value)
+
+
 class _Marks(TypedDict, total=False):
     width: Annotated[Required[int], "doc"]
     depth: int

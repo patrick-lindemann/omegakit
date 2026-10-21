@@ -96,7 +96,13 @@ def _check_node(
         raise ConfigValidationError(f"The config contains itself: {cycle}.")
     active_nodes = [*active_nodes, node]
     containers = (dict,) if isinstance(node, DictConfig) else (list,)
-    item_annotation = find_item_annotation(annotation, containers) or Any
+    try:
+        container_item_annotation = find_item_annotation(annotation, containers)
+    except OmegaKitBaseException as error:
+        if error.full_key is None:
+            error.full_key = get_full_key(node)
+        raise
+    item_annotation = container_item_annotation or Any
     if not isinstance(node, DictConfig):
         return _check_items(
             node, active_nodes, allow_missing, annotation, item_annotation
@@ -114,8 +120,12 @@ def _check_node(
                 "here: keys that start with `$` are reserved."
             )
         sections = find_typed_dicts(annotation)
+        # A union such as `ModelConfig | dict[str, Model]` has a `dict` to fall back to
+        has_dict = container_item_annotation is not None
         section = (
-            _select_section(node, sections, keys, allow_missing) if sections else None
+            _select_section(node, sections, keys, allow_missing, has_dict)
+            if sections
+            else None
         )
         # The keys of a dictionary of mappings or objects, which OmegaConf does not see
         converted_keys = convert_keys(annotation, keys)
@@ -143,7 +153,12 @@ def _check_items(
     annotation: Any,
     item_annotation: Any,
 ) -> Container:
-    item_annotations = find_position_annotations(annotation, len(node))
+    try:
+        item_annotations = find_position_annotations(annotation, len(node))
+    except OmegaKitBaseException as error:
+        if error.full_key is None:
+            error.full_key = get_full_key(node)
+        raise
     is_tuple = item_annotations is not None or not isinstance(node, ListConfig)
     if item_annotations is None:
         item_annotations = [item_annotation] * len(node)
@@ -276,6 +291,8 @@ def _check_symbol(
         mapping = OmegaConf.create(value, flags={"allow_objects": True})
         keys = list(mapping.keys())
         section = _select_section(mapping, sections, keys, allow_missing)
+        if section is None:
+            return value
         arguments = _check_schema(
             mapping, section, keys, active_nodes, allow_missing, False
         )
@@ -291,9 +308,13 @@ def _check_symbol(
 
 
 def _select_section(
-    node: DictConfig, sections: tuple[type, ...], keys: list[Any], allow_missing: bool
-) -> type:
-    if len(sections) == 1:
+    node: DictConfig,
+    sections: tuple[type, ...],
+    keys: list[Any],
+    allow_missing: bool,
+    has_dict: bool = False,
+) -> type | None:
+    if len(sections) == 1 and not has_dict:
         return sections[0]
     # A mapping is checked against the first schema of a union that it fits
     mismatches = []
@@ -302,6 +323,8 @@ def _select_section(
         if mismatch is None:
             return section
         mismatches.append(mismatch)
+    if has_dict:
+        return None
     names = ", ".join(f"`{section.__qualname__}`" for section in sections)
     raise ConfigSchemaError(
         f"The mapping fits none of {names}: {'; '.join(mismatches)}."

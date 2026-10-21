@@ -80,7 +80,9 @@ keys, before the dataclass is called:
   first one it fits: each of its keys is a field, each required field is given,
   and each `Literal` field, such as a `type` tag, holds one of its values. A
   mapping that fits none raises ``ConfigSchemaError: The mapping fits none of
-  `FileConfig`, `UrlConfig`: …``, placed at the mapping.
+  `FileConfig`, `UrlConfig`: …``, placed at the mapping. Where the union also has
+  a `dict`, as in `FileConfig | dict[str, str]`, such a mapping is checked as the
+  `dict` instead.
 - **Object**: a class, a union, `list`, `dict` or tuple of classes, `Callable` or
   `Any`. `Any` takes every value; the others are checked by class: a `$target` node must name the class or a
   subclass; a function's result is checked when it returns; a `$partial` node must
@@ -94,6 +96,9 @@ keys, before the dataclass is called:
 annotation, and the keys of every dictionary are converted by OmegaConf. Each
 position of a tuple follows the rule of its own annotation, and a wrong number of
 items raises ``ConfigSchemaError: Expected 2 items, but the config gives 1.``
+In a union, the container of the kind that the config gives checks the items: a
+list in `list[DataConfig] | DataConfig` is checked by `list[DataConfig]`, and a
+number in `list[DataConfig] | int` by `int`.
 
 **Recursion.** A schema may contain itself, directly or through other schemas, as
 in `children: NotRequired[list[Node]]`.
@@ -106,4 +111,7 @@ in `children: NotRequired[list[Node]]`.
   `TYPE_CHECKING`;
 - a key that is no Python identifier;
 - an annotation of none of the three kinds, such as `set[int]` or `Sequence[int]`;
+- two containers of one kind that hold objects or mappings, as in
+  `list[DataConfig] | list[SplitsConfig]`, where `list[DataConfig | SplitsConfig]`
+  says which items a list may hold;
 - a dictionary whose key type OmegaConf does not support, such as `dict[tuple, int]`.

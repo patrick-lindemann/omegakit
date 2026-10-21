@@ -22,6 +22,13 @@ All notable changes to this project are documented here. The format follows
   `Annotated` or `ReadOnly`, as in `Annotated[Required[int], "doc"]`. Under
   `from __future__ import annotations`, and with `typing.TypedDict` on Python 3.10,
   such a key followed the totality of its `TypedDict` instead.
+- The items of a container in a union with other members, as in
+  `list[ModelConfig] | int` or `list[Model] | Model`, are checked. OmegaConf read the
+  first as plain data, which rejected valid lists on Python 3.11 and newer and
+  accepted invalid items on Python 3.10, and the items of the second were not checked.
+  A mapping that fits no `TypedDict` of a union with a `dict` is checked as the `dict`.
+  Two containers of one kind, as in `list[ModelConfig] | list[DataConfig]`, raise
+  `SchemaDefinitionError`.
 
 ## [0.11.0] - 2026-10-20
 
