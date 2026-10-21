@@ -16,6 +16,9 @@ def register_paths_resolver(
         use_cache: Whether to cache each result by its arguments. Defaults to `True`.
     """
     values = {key: str(value) for key, value in paths.items()}
-    OmegaConf.register_resolver(
-        "paths", values.__getitem__, replace=replace, use_cache=use_cache
-    )
+
+    # OmegaConf cannot read the signature of `dict.__getitem__` before Python 3.12
+    def resolve(name: str) -> str:
+        return values[name]
+
+    OmegaConf.register_resolver("paths", resolve, replace=replace, use_cache=use_cache)

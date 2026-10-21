@@ -1,3 +1,5 @@
+from typing import Any
+
 from omegaconf import OmegaConf
 
 try:
@@ -30,5 +32,10 @@ def register_numpy_dtype_resolver(
         use_cache: Whether to cache each result by its arguments. Defaults to `True`.
     """
     OmegaConf.register_resolver(
-        "numpy.dtype", numpy.dtype, replace=replace, use_cache=use_cache
+        "numpy.dtype", _resolve_dtype, replace=replace, use_cache=use_cache
     )
+
+
+# OmegaConf cannot read the signature of `numpy.dtype` itself
+def _resolve_dtype(name: str) -> Any:
+    return numpy.dtype(name)

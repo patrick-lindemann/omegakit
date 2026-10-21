@@ -1,3 +1,5 @@
+import warnings
+
 import numpy
 import pytest
 from omegaconf import OmegaConf
@@ -12,6 +14,12 @@ def test_resolver_gives_a_dtype():
     register_numpy_resolvers(replace=True)
     config = OmegaConf.create({"dtype": "${numpy.dtype:float32}"})
     assert config.dtype == numpy.dtype("float32")
+
+
+def test_registration_does_not_warn():
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        register_numpy_resolvers(replace=True)
 
 
 def test_unknown_dtype_is_rejected():
