@@ -152,6 +152,9 @@ def test_key_annotation_is_found_in_a_dictionary(annotation: Any, key_annotation
         (tuple[int, str], [int, str]),
         (tuple[int, ...], [int, int, int]),
         (tuple, [Any, Any, Any]),
+        (typing.Tuple, [Any, Any, Any]),  # noqa: UP006
+        (tuple[()], []),
+        (typing.Tuple[()], []),  # noqa: UP006
         (tuple[int, str] | None, [int, str]),
         (list[int], None),
     ],

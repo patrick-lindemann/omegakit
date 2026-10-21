@@ -164,9 +164,13 @@ def find_position_annotations(annotation: Any, length: int) -> list[Any] | None:
     member = _find_single_container(annotation, (tuple,))
     if member is None:
         return None
-    item_annotations = get_args(member)
-    if not item_annotations:
+    # A bare `tuple` has no arguments, unlike `tuple[()]`
+    if not hasattr(member, "__args__"):
         return [Any] * length
+    item_annotations = get_args(member)
+    # On Python 3.10, `typing.Tuple[()]` has the arguments `((),)`
+    if item_annotations in ((), ((),)):
+        return []
     if item_annotations[-1] is Ellipsis:
         return [item_annotations[0]] * length
     return list(item_annotations)

@@ -39,6 +39,8 @@ All notable changes to this project are documented here. The format follows
   of `X`. Any class passed.
 - Each member of a union is checked on its own, so `type[Model] | type` takes any
   class. It rejected every class that is no subclass of `Model`.
+- `tuple[()]` takes no items. It took any number of items, and `typing.Tuple[()]`
+  raised `SchemaDefinitionError` on Python 3.10.
 - On Python 3.10, a parametrized class such as `list[ModelConfig]` as the `schema` of
   `validate` or `instantiate` raises `SchemaDefinitionError`, as on later Pythons. It
   was taken as the class of the result, and an error named `type[Model]` as `type`.

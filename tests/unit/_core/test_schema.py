@@ -713,6 +713,16 @@ def test_container_in_a_union_checks_its_items(
         _validate_value(annotation, bad_value)
 
 
+@pytest.mark.parametrize(
+    "annotation",
+    [tuple[()], typing.Tuple[()], tuple[()] | _Square],  # noqa: UP006
+)
+def test_empty_tuple_takes_no_items(annotation: Any):
+    _validate_value(annotation, [])
+    with pytest.raises(ConfigSchemaError, match=r"length 2 .* 0|Expected 0 items"):
+        _validate_value(annotation, [1, 2])
+
+
 def test_container_in_a_union_takes_the_other_members():
     _validate_value(list[_Square] | int, 3)
     with pytest.raises(ConfigSchemaError, match="Expected"):
