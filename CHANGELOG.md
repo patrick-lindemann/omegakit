@@ -4,6 +4,15 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- `register_paths_resolver` and `register_numpy_resolvers` no longer warn
+  "Resolver ... cannot be inspected for annotation validation". The paths resolver
+  warned on Python 3.10 and 3.11, the NumPy one with NumPy before 2.4. OmegaConf now
+  checks that the argument of `${paths:name}` and `${numpy.dtype:name}` is a `str`.
+
 ## [0.12.0] - 2026-10-21
 
 ### Changed
