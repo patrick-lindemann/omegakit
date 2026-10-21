@@ -61,7 +61,8 @@ hand, when every check passes on the new version.
 ## Branches
 
 - Work happens on `develop`. A push there runs the quick CI jobs: lint, docs, the
-  resolvers and the tests on Python 3.14.
+  resolvers and the tests on Python 3.14. On another branch, start CI by hand
+  under Actions → CI → "Run workflow", optionally with every job.
 - `main` holds released versions only. It moves only by merging a release pull
   request from `develop`, after the pull request has passed every CI job.
 
