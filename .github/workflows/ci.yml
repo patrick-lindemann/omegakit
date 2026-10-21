@@ -1,15 +1,11 @@
 name: CI
 
-# A push to develop runs the quick jobs: lint, docs, the resolvers and the tests
-# on one Python version. A pull request into main and a release candidate run
-# everything. Other branches run CI only when it is started by hand. The tests of
-# the library install neither the docs group nor the resolvers group: the docs job
-# runs the docs examples, and test-resolvers the optional resolvers.
+# A pull request into main and a release candidate run every job. Pushes run
+# nothing; on any branch, CI started by hand runs the quick jobs (lint, docs, the
+# resolvers and the tests on one Python version) or, if asked, every job. The
+# tests of the library install neither the docs group nor the resolvers group:
+# the docs job runs the docs examples, and test-resolvers the optional resolvers.
 on:
-  push:
-    # main moves only by merging a release pull request, which ran every job, and
-    # tags run CI through the release candidate workflow.
-    branches: [develop]
   pull_request:
     branches: [main]
   workflow_dispatch:
