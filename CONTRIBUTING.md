@@ -54,16 +54,18 @@ versions.
 ## Dependencies
 
 Dependabot proposes dependency and GitHub Actions updates weekly against `develop`,
-and they are reviewed and merged by hand. Actions are pinned to commit SHAs, so read the upstream
+and they are reviewed and merged by hand once their pull request has passed every
+CI job. Actions are pinned to commit SHAs, so read the upstream
 changes before merging a bump. The runtime bounds in `pyproject.toml` are changed by
 hand, when every check passes on the new version.
 
 ## Branches
 
-- Work happens on `develop`. A push there runs the quick CI jobs: lint, docs, the
-  resolvers and the tests on Python 3.14.
-- `main` holds released versions only. It moves only by merging a release pull
-  request from `develop`, after the pull request has passed every CI job.
+- Work happens on `develop`. A push runs no CI; start it by hand under Actions →
+  CI → "Run workflow" on any branch. It runs the quick jobs (lint, docs, the
+  resolvers and the tests on Python 3.14) or, if asked, every job.
+- `main` moves only by merging a pull request from `develop`, after the pull
+  request has passed every CI job. Only a release pull request releases a version.
 
 ## Releases
 

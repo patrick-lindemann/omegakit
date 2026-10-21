@@ -1,16 +1,19 @@
 name: CI
 
-# A push to any branch, such as develop, runs the quick jobs: lint, docs, the
-# resolvers and the tests on one Python version. A pull request into main and a
-# release candidate run everything. The tests of the library install neither the
-# docs group nor the resolvers group: the docs job runs the docs examples, and
-# test-resolvers the optional resolvers.
+# A pull request into main or develop, such as one from Dependabot, and a release
+# candidate run every job. Pushes run nothing; on any branch, CI started by hand runs the quick jobs (lint, docs, the
+# resolvers and the tests on one Python version) or, if asked, every job. The
+# tests of the library install neither the docs group nor the resolvers group:
+# the docs job runs the docs examples, and test-resolvers the optional resolvers.
 on:
-  push:
-    # Tags run CI through the release candidate workflow instead.
-    branches: ["**"]
   pull_request:
-    branches: [main]
+    branches: [main, develop]
+  workflow_dispatch:
+    inputs:
+      full:
+        description: Run every job, not only the quick ones.
+        type: boolean
+        default: false
   workflow_call:
     inputs:
       full:
@@ -90,11 +93,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # On 3.10, Python and the locked NumPy expose fewer signatures to OmegaConf.
+        # Each Python version locks its own NumPy, and older Pythons and NumPys
+        # expose fewer signatures to OmegaConf.
         python-version: >-
           ${{ fromJSON(
             (github.event_name == 'pull_request' || inputs.full)
-            && '["3.10", "3.14"]' || '["3.14"]'
+            && '["3.10", "3.11", "3.12", "3.13", "3.14"]' || '["3.14"]'
           ) }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
