@@ -12,7 +12,7 @@ from omegakit._core.configurable import Configurable
 from omegakit._core.errors import SchemaDefinitionError
 from omegakit._core.utils.describe import describe_error
 
-from .annotations import find_required_mark, holds_objects, is_plain_value
+from .annotations import find_required_mark, holds_objects, is_class, is_plain_value
 
 
 @dataclass(frozen=True)
@@ -23,7 +23,7 @@ class SchemaField:
 
 
 def find_schema(target: Any) -> type | None:
-    if not isinstance(target, type):
+    if not is_class(target):
         return None
     schema = target.schema if issubclass(target, Configurable) else None
     if schema is None:

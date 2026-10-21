@@ -12,6 +12,7 @@ from omegakit._core.typecheck.annotations import (
     find_literal_values,
     find_position_annotations,
     find_typed_dicts,
+    is_class,
     is_instance,
     resolve_aliases,
     union_members,
@@ -197,6 +198,14 @@ def test_value_is_checked_by_each_member_of_a_union(
     value: Any, annotation: Any, expected: bool
 ):
     assert is_instance(value, annotation) is expected
+
+
+@pytest.mark.parametrize(
+    ("annotation", "expected"),
+    [(int, True), (_Base, True), (list[int], False), (type[int], False), (1, False)],
+)
+def test_class_is_no_parametrized_class(annotation: Any, expected: bool):
+    assert is_class(annotation) is expected
 
 
 _Tag = typing_extensions.TypeAliasType("_Tag", Literal["a", "b"])

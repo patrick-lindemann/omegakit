@@ -115,7 +115,9 @@ def test_configurable_may_name_a_typed_dict_of_typing_extensions():
     assert find_schema(model) is _BackportedLayerConfig
 
 
-@pytest.mark.parametrize("target", [_Encoder, len, "builtins.dict", None])
+@pytest.mark.parametrize(
+    "target", [_Encoder, len, "builtins.dict", None, list[int], type[_Encoder]]
+)
 def test_other_targets_have_no_schema(target: Any):
     assert find_schema(target) is None
 

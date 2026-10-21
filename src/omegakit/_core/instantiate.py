@@ -7,7 +7,7 @@ from omegaconf import DictConfig
 from .config import cast_config
 from .errors import ConfigSchemaError, ConfigTargetError
 from .features import TARGET_KEY
-from .typecheck import Call, Container, check, is_instance, read_fields
+from .typecheck import Call, Container, check, is_class, is_instance, read_fields
 from .utils.describe import describe_node, get_full_key
 from .utils.notes import add_note
 
@@ -139,9 +139,7 @@ def _build(value: Any) -> Any:
         raise
     if not is_instance(instance, value.result_annotation):
         annotation = value.result_annotation
-        expected = (
-            annotation.__qualname__ if isinstance(annotation, type) else annotation
-        )
+        expected = annotation.__qualname__ if is_class(annotation) else annotation
         raise ConfigSchemaError(
             f"Expected `{expected}`, but `{value.name}` returned `{instance!r}`.",
             get_full_key(value.node),

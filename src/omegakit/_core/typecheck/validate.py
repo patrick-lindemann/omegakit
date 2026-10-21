@@ -34,6 +34,7 @@ from .annotations import (
     find_literal_values,
     find_position_annotations,
     find_typed_dicts,
+    is_class,
     is_instance,
     is_plain_value,
     union_members,
@@ -71,7 +72,7 @@ def check(
         if allow_missing:
             return MISSING_VALUE
         raise ValidationMissingValueError("The config is `???`.")
-    if schema is not None and not isinstance(schema, type):
+    if schema is not None and not is_class(schema):
         raise SchemaDefinitionError(f"`schema` must be a class, not `{schema!r}`.")
     annotation = Any if schema is None else schema
     checked_config = _check_node(config, [], allow_missing, annotation, is_deferred)
@@ -530,5 +531,5 @@ def _check_type(value: Any, annotation: Any) -> Any:
         given = f"a {type(value.items).__name__}"
     else:
         given = f"`{value!r}`"
-    expected = annotation.__qualname__ if isinstance(annotation, type) else annotation
+    expected = annotation.__qualname__ if is_class(annotation) else annotation
     raise ConfigSchemaError(f"Expected `{expected}`, but the config gives {given}.")

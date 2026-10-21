@@ -978,10 +978,17 @@ def test_reserved_keys_keep_their_meaning_in_plain_values(
         validate(config, _Parts)
 
 
-@pytest.mark.parametrize("schema", ["builtins.dict", _Parts()])
+@pytest.mark.parametrize(
+    "schema", ["builtins.dict", _Parts(), list[_Parts], dict[str, int], type[int]]
+)
 def test_schema_that_is_not_a_class_is_rejected(schema: Any):
     with pytest.raises(SchemaDefinitionError, match="must be a class"):
         validate(OmegaConf.create({}), schema)
+
+
+def test_error_of_a_parametrized_class_names_its_arguments():
+    with pytest.raises(ConfigSchemaError, match=r"Expected `type\[int\]`"):
+        _validate_value(type[int], {"$symbol": "builtins.str"})
 
 
 def test_class_without_schema_takes_any_arguments(targets: ModuleType):

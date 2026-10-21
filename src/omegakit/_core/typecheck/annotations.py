@@ -40,6 +40,13 @@ def union_members(annotation: Any) -> tuple[Any, ...]:
     return tuple(itertools.chain.from_iterable(members))
 
 
+def is_class(annotation: Any) -> bool:
+    # On Python 3.10, a parametrized class such as `list[int]` passes for a class
+    return isinstance(annotation, type) and not isinstance(
+        annotation, types.GenericAlias
+    )
+
+
 def is_instance(value: Any, annotation: Any) -> bool:
     # Each member is checked on its own, so that `type[Model] | type` takes any class
     for member in union_members(annotation):
