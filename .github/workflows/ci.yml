@@ -97,11 +97,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # On 3.10, Python and the locked NumPy expose fewer signatures to OmegaConf.
+        # Each Python version locks its own NumPy, and older Pythons and NumPys
+        # expose fewer signatures to OmegaConf.
         python-version: >-
           ${{ fromJSON(
             (github.event_name == 'pull_request' || inputs.full)
-            && '["3.10", "3.14"]' || '["3.14"]'
+            && '["3.10", "3.11", "3.12", "3.13", "3.14"]' || '["3.14"]'
           ) }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
