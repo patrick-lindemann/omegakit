@@ -28,6 +28,9 @@ htmlcov/
 CLAUDE.md
 AGENTS.md
 
+# Editors
+/.vscode
+
 # Logs
 logs/
 *.log
