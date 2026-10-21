@@ -29,6 +29,10 @@ All notable changes to this project are documented here. The format follows
   A mapping that fits no `TypedDict` of a union with a `dict` is checked as the `dict`.
   Two containers of one kind, as in `list[ModelConfig] | list[DataConfig]`, raise
   `SchemaDefinitionError`.
+- A `$symbol` that names a `list`, `tuple` or `dict` is checked by the item annotation
+  of its field, as in `list[ModelConfig]` or `dict[str, Model]`, and its items are
+  converted. Only a `dict` in a field annotated with a `TypedDict` was checked, so
+  wrong items passed.
 
 ## [0.11.0] - 2026-10-20
 

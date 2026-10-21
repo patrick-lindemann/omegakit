@@ -284,27 +284,40 @@ def _check_symbol(
 ) -> Any:
     try:
         value = import_symbol(node)
-        sections = find_typed_dicts(annotation)
-        if not sections or not isinstance(value, dict):
+        if not _has_checked_items(annotation, value):
             return value
-        # An existing `dict` is checked like a mapping that the config gives
-        mapping = OmegaConf.create(value, flags={"allow_objects": True})
-        keys = list(mapping.keys())
-        section = _select_section(mapping, sections, keys, allow_missing)
-        if section is None:
-            return value
-        arguments = _check_schema(
-            mapping, section, keys, active_nodes, allow_missing, False
+        # An existing `dict`, `list` or `tuple` is checked like one that the config
+        # gives
+        symbol_node = OmegaConf.create(value, flags={"allow_objects": True})
+        checked_value = _check_node(
+            symbol_node, active_nodes, allow_missing, annotation
         )
     except OmegaKitBaseException as error:
-        # A mapping behind `$symbol` is not part of the config, so its keys name nothing
+        # A value behind `$symbol` is not part of the config, so its keys name nothing
         error.full_key = get_full_key(node)
         raise
     # A module can raise anything while it is imported
     except Exception as error:
         add_note(error, f"  at {describe_node(node)}")
         raise
-    return Container(arguments)
+    return checked_value
+
+
+def _has_checked_items(annotation: Any, value: Any) -> bool:
+    if isinstance(value, dict):
+        if find_typed_dicts(annotation):
+            return True
+        item_annotations = [find_item_annotation(annotation, (dict,))]
+    elif isinstance(value, (list, tuple)):
+        position_annotations = find_position_annotations(annotation, len(value))
+        item_annotations = [
+            find_item_annotation(annotation, (list,)),
+            *(position_annotations or []),
+        ]
+    else:
+        return False
+    # Items that are not checked are taken as they are, also with keys such as `$target`
+    return any(item is not None and item is not Any for item in item_annotations)
 
 
 def _select_section(

@@ -14,6 +14,14 @@ from omegakit._core.configurable import Configurable
 CALLS = []
 SETTINGS = {"seed": 0}
 BACKBONE = {"depth": "3"}
+BACKBONES = [{"depth": "3"}]
+NAMED_BACKBONES = {"small": {"depth": "3"}}
+BACKBONE_PAIR = ({"depth": "3"}, {"depth": 4})
+WRONG_BACKBONES = [{"depth": 3, "width": 2}]
+NAMED_WRONG_BACKBONES = {"small": {"depth": 3, "width": 2}}
+WRONG_BACKBONE_PAIR = ({"depth": 3}, {"depth": "deep"})
+NUMBERS = [1, 2]
+RAW_NODES = [{"$target": "tests.targets.nowhere"}]
 
 
 class Item:

@@ -454,6 +454,32 @@ def test_dict_of_a_symbol_is_checked_against_the_schema(targets: ModuleType):
     assert targets.BACKBONE == {"depth": "3"}
 
 
+def test_tuple_of_a_symbol_is_converted_by_its_items(targets: ModuleType):
+    config = OmegaConf.create(
+        {
+            "$target": "tests.targets.Experiment",
+            "model": {"$target": "tests.targets.Model", "depth": 2},
+            "phases": {"$symbol": "tests.targets.BACKBONE_PAIR"},
+        }
+    )
+    experiment = instantiate(config)
+    assert experiment.phases == ({"depth": 3}, {"depth": 4})
+    assert targets.BACKBONE_PAIR == ({"depth": "3"}, {"depth": 4})
+
+
+def test_symbol_of_items_that_are_not_checked_is_the_same_object(
+    targets: ModuleType,
+):
+    config = OmegaConf.create(
+        {
+            "$target": "tests.targets.Experiment",
+            "model": {"$target": "tests.targets.Model", "depth": 2},
+            "extra": {"$symbol": "tests.targets.RAW_NODES"},
+        }
+    )
+    assert instantiate(config).extra is targets.RAW_NODES
+
+
 def test_target_that_names_a_schema_is_rejected(targets: ModuleType):
     config = OmegaConf.create({"$target": "tests.targets.ModelConfig", "depth": 3})
     with pytest.raises(ConfigSchemaError, match="ModelConfig"):

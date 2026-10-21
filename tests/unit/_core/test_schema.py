@@ -613,6 +613,45 @@ def test_allow_missing_accepts_a_union_of_schemas_without_required_keys(
     validate(config, targets.CollectionConfig, allow_missing=True)
 
 
+@pytest.mark.parametrize(
+    ("make_annotation", "symbol", "wrong_symbol"),
+    [
+        (lambda item: list[item], "BACKBONES", "WRONG_BACKBONES"),
+        (lambda item: dict[str, item], "NAMED_BACKBONES", "NAMED_WRONG_BACKBONES"),
+        (lambda item: tuple[item, ...], "BACKBONE_PAIR", "WRONG_BACKBONE_PAIR"),
+    ],
+    ids=["list", "dict", "tuple"],
+)
+def test_symbol_of_a_container_is_checked_by_its_items(
+    targets: ModuleType,
+    make_annotation: Callable[[type], Any],
+    symbol: str,
+    wrong_symbol: str,
+):
+    annotation = make_annotation(targets.ModelConfig)
+    _validate_value(annotation, {"$symbol": f"tests.targets.{symbol}"})
+    with pytest.raises(ConfigSchemaError, match=r"ModelConfig.*at `value`"):
+        _validate_value(annotation, {"$symbol": f"tests.targets.{wrong_symbol}"})
+
+
+def test_symbol_of_a_list_of_objects_is_checked_by_its_items(targets: ModuleType):
+    annotation = list[targets.Item] | None
+    with pytest.raises(ConfigSchemaError, match=r"Expected `Item`.*at `value`"):
+        _validate_value(annotation, {"$symbol": "tests.targets.NUMBERS"})
+
+
+def test_symbol_of_another_container_is_rejected(targets: ModuleType):
+    with pytest.raises(ConfigSchemaError, match=r"gives a tuple.*at `value`"):
+        _validate_value(
+            list[targets.ModelConfig], {"$symbol": "tests.targets.BACKBONE_PAIR"}
+        )
+
+
+@pytest.mark.parametrize("annotation", [list[Any], list, Any, object])
+def test_symbol_of_items_that_are_not_checked_is_taken_as_it_is(annotation: Any):
+    _validate_value(annotation, {"$symbol": "tests.targets.RAW_NODES"})
+
+
 class _Square(TypedDict):
     kind: Literal["square"]
     side: int

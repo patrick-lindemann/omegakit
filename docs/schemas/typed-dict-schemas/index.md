@@ -96,6 +96,9 @@ keys, before the dataclass is called:
 annotation, and the keys of every dictionary are converted by OmegaConf. Each
 position of a tuple follows the rule of its own annotation, and a wrong number of
 items raises ``ConfigSchemaError: Expected 2 items, but the config gives 1.``
+A `$symbol` to a `list`, `tuple` or `dict` is checked and converted like one that
+the config gives, wherever the annotation checks its items, as in
+`list[DataConfig]` or `dict[str, Module]`; elsewhere it stays the object it names.
 In a union, the container of the kind that the config gives checks the items: a
 list in `list[DataConfig] | DataConfig` is checked by `list[DataConfig]`, and a
 number in `list[DataConfig] | int` by `int`.
