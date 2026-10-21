@@ -2,16 +2,16 @@
 __pycache__/
 *.pyc
 build/
+docs/_build/
 dist/
 *.egg-info/
 
 # Data
-/data
-/outputs
 /specs
 
 # Env files
 .env
+.env.local
 
 # Virtual environments
 .venv
@@ -26,6 +26,10 @@ htmlcov/
 /.claude
 CLAUDE.md
 AGENTS.md
+
+# Editors
+/.idea
+/.vscode
 
 # Logs
 logs/

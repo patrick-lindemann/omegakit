@@ -1,10 +1,12 @@
 import dataclasses
 import enum
 import pathlib
+import typing
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Literal, TypedDict
 
+import typing_extensions
 from typing_extensions import NotRequired, override
 
 from omegakit._core.configurable import Configurable
@@ -12,6 +14,14 @@ from omegakit._core.configurable import Configurable
 CALLS = []
 SETTINGS = {"seed": 0}
 BACKBONE = {"depth": "3"}
+BACKBONES = [{"depth": "3"}]
+NAMED_BACKBONES = {"small": {"depth": "3"}}
+BACKBONE_PAIR = ({"depth": "3"}, {"depth": 4})
+WRONG_BACKBONES = [{"depth": 3, "width": 2}]
+NAMED_WRONG_BACKBONES = {"small": {"depth": 3, "width": 2}}
+WRONG_BACKBONE_PAIR = ({"depth": 3}, {"depth": "deep"})
+NUMBERS = [1, 2]
+RAW_NODES = [{"$target": "tests.targets.nowhere"}]
 
 
 class Item:
@@ -86,9 +96,7 @@ class ModelConfig(TypedDict):
     encoder: NotRequired[Item | None]
 
 
-class Model(Configurable):
-    schema = ModelConfig
-
+class Model(Configurable, schema=ModelConfig):
     def __init__(self, config, kwargs):
         self.config = config
         self.kwargs = kwargs
@@ -103,6 +111,22 @@ class Model(Configurable):
 class Layer(Configurable):
     width: int
     bias: bool = True
+
+
+class SpanConfig(TypedDict):
+    start: int
+    length: int
+
+
+@dataclass
+class Span(Configurable, schema=SpanConfig):
+    start: int
+    stop: int
+
+    @classmethod
+    @override
+    def from_config(cls, config, **kwargs):
+        return cls(config["start"], config["start"] + config["length"])
 
 
 @dataclass
@@ -121,12 +145,66 @@ class Experiment:
     phases: tuple[ModelConfig, ...] = ()
 
 
-class BrokenModel(Model):
-    schema = dict
+class BrokenModelConfig(TypedDict):
+    tags: set[int]
+
+
+class BrokenModel(Model, schema=BrokenModelConfig):
+    pass
+
+
+def _make_collection_config(typed_dict: Any) -> Any:
+    select_config = typed_dict("SelectFilterConfig", {"select": list[str]})
+    match_config = typed_dict("MatchFilterConfig", {"match": str})
+    file_config = typed_dict(
+        "FileSourceConfig",
+        {
+            "type": Literal["file"],
+            "path": str,
+            "filter": NotRequired[select_config | match_config],
+        },
+    )
+    directory_config = typed_dict(
+        "DirectorySourceConfig",
+        {"type": Literal["directory"], "path": str, "depth": NotRequired[int]},
+    )
+    url_config = typed_dict(
+        "UrlSourceConfig", {"url": str, "retries": NotRequired[int]}
+    )
+    return typed_dict(
+        "CollectionConfig",
+        {"sources": list[file_config | directory_config | url_config]},
+    )
+
+
+CollectionConfig = _make_collection_config(typing.TypedDict)
+BackportedCollectionConfig = _make_collection_config(typing_extensions.TypedDict)
+URL_SOURCE = {"url": "https://example.com", "retries": "2"}
+
+
+class Collection(Model, schema=CollectionConfig):
+    pass
+
+
+class BackportedCollection(Model, schema=BackportedCollectionConfig):
+    pass
 
 
 def make_item(**kwargs):
     return Item(**kwargs)
+
+
+def make_item_class():
+    return SmallItem
+
+
+def make_number_class():
+    return int
+
+
+@dataclass
+class ItemMaker:
+    kind: type[Item]
 
 
 ITEM = Item()

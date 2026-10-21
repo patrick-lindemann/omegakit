@@ -1,14 +1,17 @@
 import enum
 import fractions
 import re
+import sys
+import typing
 from collections.abc import Callable
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Literal, Protocol, TypedDict
+from typing import Annotated, Any, Literal, Protocol, TypedDict, TypeVar
 
 import pytest
+import typing_extensions
 from omegaconf import DictConfig, OmegaConf
-from typing_extensions import TypeAliasType
+from typing_extensions import NotRequired, Required, TypeAliasType
 
 from omegakit._core.errors import (
     ConfigSchemaError,
@@ -35,6 +38,7 @@ class _Parts(TypedDict, total=False):
     alias: _Mapping
     factory: Callable[..., Any] | None
     kind: type[int] | None
+    any_kind: type[fractions.Fraction] | type
     plain: list | None
     options: dict[str, dict[str, int]] | None
     scale: float | fractions.Fraction
@@ -538,6 +542,346 @@ def test_field_that_is_annotated_with_a_schema_rejects_what_is_no_such_mapping(
     assert targets.CALLS == []
 
 
+@pytest.mark.parametrize("schema", ["CollectionConfig", "BackportedCollectionConfig"])
+def test_mapping_in_a_union_of_schemas_is_checked_against_the_one_it_fits(
+    targets: ModuleType, schema: str
+):
+    sources = [
+        {"type": "file", "path": "a.yaml", "filter": {"select": ["cube"]}},
+        {"type": "file", "path": "b.yaml", "filter": {"match": "c.*"}},
+        {"type": "file", "path": "c.yaml"},
+        {"type": "directory", "path": "c", "depth": "2"},
+        {"url": "https://example.com"},
+        {"$symbol": "tests.targets.URL_SOURCE"},
+    ]
+    validate(OmegaConf.create({"sources": sources}), getattr(targets, schema))
+
+
+@pytest.mark.parametrize("schema", ["CollectionConfig", "BackportedCollectionConfig"])
+@pytest.mark.parametrize(
+    ("source", "full_key", "message"),
+    [
+        (
+            {"type": "file", "path": "a.yaml", "depth": 2},
+            "sources[0]",
+            "The mapping fits none of `FileSourceConfig`, `DirectorySourceConfig`, "
+            "`UrlSourceConfig`: `depth` is not a field of `FileSourceConfig`; "
+            "`DirectorySourceConfig.type` takes `'directory'`; `type`, `path`, "
+            "`depth` is not a field of `UrlSourceConfig`.",
+        ),
+        ({"type": "link", "path": "a"}, "sources[0]", "`FileSourceConfig.type` takes"),
+        (
+            {"type": "directory"},
+            "sources[0]",
+            "`DirectorySourceConfig` requires `path`",
+        ),
+        ({"retries": 2}, "sources[0]", "`UrlSourceConfig` requires `url`"),
+        (
+            {"type": "directory", "path": "a", "depth": "deep"},
+            "sources[0].depth",
+            "does not match `DirectorySourceConfig`",
+        ),
+        (
+            {"type": "file", "path": "a", "filter": {"pattern": "c.*"}},
+            "sources[0].filter",
+            "fits none of `SelectFilterConfig`, `MatchFilterConfig`",
+        ),
+        (
+            {"type": "file", "path": "a", "filter": {"select": "cube"}},
+            "sources[0].filter.select",
+            "does not match `SelectFilterConfig`",
+        ),
+    ],
+)
+def test_mapping_that_fits_no_schema_of_a_union_is_rejected(
+    targets: ModuleType,
+    schema: str,
+    source: dict[str, Any],
+    full_key: str,
+    message: str,
+):
+    config = OmegaConf.create({"sources": [source]})
+    with pytest.raises(ConfigSchemaError) as error_info:
+        validate(config, getattr(targets, schema))
+    error_info.match(re.escape(message))
+    error_info.match(re.escape(f"at `{full_key}`"))
+
+
+def test_allow_missing_accepts_a_union_of_schemas_without_required_keys(
+    targets: ModuleType,
+):
+    config = OmegaConf.create({"sources": [{"type": "directory"}]})
+    validate(config, targets.CollectionConfig, allow_missing=True)
+
+
+@pytest.mark.parametrize(
+    ("make_annotation", "symbol", "wrong_symbol"),
+    [
+        (lambda item: list[item], "BACKBONES", "WRONG_BACKBONES"),
+        (lambda item: dict[str, item], "NAMED_BACKBONES", "NAMED_WRONG_BACKBONES"),
+        (lambda item: tuple[item, ...], "BACKBONE_PAIR", "WRONG_BACKBONE_PAIR"),
+    ],
+    ids=["list", "dict", "tuple"],
+)
+def test_symbol_of_a_container_is_checked_by_its_items(
+    targets: ModuleType,
+    make_annotation: Callable[[type], Any],
+    symbol: str,
+    wrong_symbol: str,
+):
+    annotation = make_annotation(targets.ModelConfig)
+    _validate_value(annotation, {"$symbol": f"tests.targets.{symbol}"})
+    with pytest.raises(ConfigSchemaError, match=r"ModelConfig.*at `value`"):
+        _validate_value(annotation, {"$symbol": f"tests.targets.{wrong_symbol}"})
+
+
+def test_symbol_of_a_list_of_objects_is_checked_by_its_items(targets: ModuleType):
+    annotation = list[targets.Item] | None
+    with pytest.raises(ConfigSchemaError, match=r"Expected `Item`.*at `value`"):
+        _validate_value(annotation, {"$symbol": "tests.targets.NUMBERS"})
+
+
+def test_symbol_of_another_container_is_rejected(targets: ModuleType):
+    with pytest.raises(ConfigSchemaError, match=r"gives a tuple.*at `value`"):
+        _validate_value(
+            list[targets.ModelConfig], {"$symbol": "tests.targets.BACKBONE_PAIR"}
+        )
+
+
+@pytest.mark.parametrize("annotation", [list[Any], list, Any, object])
+def test_symbol_of_items_that_are_not_checked_is_taken_as_it_is(annotation: Any):
+    _validate_value(annotation, {"$symbol": "tests.targets.RAW_NODES"})
+
+
+class _Square(TypedDict):
+    kind: Literal["square"]
+    side: int
+
+
+class _Circle(TypedDict):
+    kind: Literal["circle"]
+    radius: int
+
+
+T = TypeVar("T")
+_Optional = TypeAliasType("_Optional", T | None, type_params=(T,))
+_ListOf = TypeAliasType("_ListOf", list[T], type_params=(T,))
+_AnnotatedSquare = TypeAliasType("_AnnotatedSquare", Annotated[_Square, "doc"])
+_Shape = TypeAliasType("_Shape", Annotated[_Square, "doc"] | _Circle)
+_SQUARE_FORMS: list[Any] = [
+    _Optional[_Square],
+    _AnnotatedSquare,
+    Annotated[_Square, "doc"],
+    _Optional[_Square | _Circle],
+    _Shape,
+]
+_SQUARE_LIST_FORMS: list[Any] = [
+    _ListOf[_Square],
+    list[_AnnotatedSquare],
+    _ListOf[_Optional[_Square]],
+]
+if sys.version_info >= (3, 12):
+    # The aliases that a `type` statement makes
+    _StatementSquare = typing.TypeAliasType(
+        "_StatementSquare", Annotated[_Square, "doc"]
+    )
+    _StatementSquares = typing.TypeAliasType("_StatementSquares", list[_Square])
+    _SQUARE_FORMS.append(_StatementSquare)
+    _SQUARE_LIST_FORMS.append(_StatementSquares)
+
+
+_SQUARE = {"kind": "square", "side": "2"}
+_BAD_SQUARE = {"kind": "square", "side": 2, "typo": 1}
+
+
+@pytest.mark.parametrize(
+    ("annotation", "value", "bad_value", "full_key"),
+    [
+        (list[_Square] | int, [_SQUARE], [_BAD_SQUARE], "value[0]"),
+        (dict[str, _Square] | int, {"a": _SQUARE}, {"a": _BAD_SQUARE}, "value.a"),
+        (tuple[_Square, ...] | int, [_SQUARE], [_BAD_SQUARE], "value[0]"),
+        (list[_Square] | _Square, [_SQUARE], [_BAD_SQUARE], "value[0]"),
+        (list[_Square] | _Square, _SQUARE, _BAD_SQUARE, "value"),
+        (list[_Circle | _Square] | None, [_SQUARE], [_BAD_SQUARE], "value[0]"),
+    ],
+)
+def test_container_in_a_union_checks_its_items(
+    annotation: Any, value: Any, bad_value: Any, full_key: str
+):
+    _validate_value(annotation, value)
+    with pytest.raises(ConfigSchemaError, match=rf"`typo`.*at `{re.escape(full_key)}`"):
+        _validate_value(annotation, bad_value)
+
+
+@pytest.mark.parametrize(
+    "annotation",
+    [tuple[()], typing.Tuple[()], tuple[()] | _Square],  # noqa: UP006
+)
+def test_empty_tuple_takes_no_items(annotation: Any):
+    _validate_value(annotation, [])
+    with pytest.raises(ConfigSchemaError, match=r"length 2 .* 0|Expected 0 items"):
+        _validate_value(annotation, [1, 2])
+
+
+_ITEM = {"$target": "tests.targets.Item"}
+
+
+@pytest.mark.parametrize(
+    ("annotation", "value", "full_key"),
+    [
+        (int, _ITEM, "value"),
+        (list[int], [1, _ITEM], "value[1]"),
+        (dict[str, int], {"a": 1, "b": _ITEM}, "value.b"),
+        (tuple[int, Any], [_ITEM, 1], "value[0]"),
+    ],
+)
+def test_target_in_plain_values_names_its_node(
+    annotation: Any, value: Any, full_key: str
+):
+    with pytest.raises(ConfigSchemaError, match="holds plain values") as error_info:
+        _validate_value(annotation, value)
+    error_info.match(re.escape(f"at `{full_key}`"))
+
+
+def test_container_in_a_union_takes_the_other_members():
+    _validate_value(list[_Square] | int, 3)
+    with pytest.raises(ConfigSchemaError, match="Expected"):
+        _validate_value(list[_Square] | int, _SQUARE)
+
+
+def test_list_in_a_union_with_its_item_class_checks_its_items(targets: ModuleType):
+    annotation = list[targets.Item] | targets.Item
+    _validate_value(annotation, [{"$target": "tests.targets.SmallItem"}])
+    with pytest.raises(ConfigSchemaError, match=r"Expected `Item`.*at `value\[0\]`"):
+        _validate_value(annotation, [1])
+
+
+def test_mapping_that_fits_no_schema_is_checked_by_the_dict_of_its_union():
+    annotation = _Square | dict[str, int]
+    _validate_value(annotation, {"kind": "square", "side": "2"})
+    _validate_value(annotation, {"width": 2})
+    with pytest.raises(ConfigSchemaError, match=r"Expected `int`.*at `value.width`"):
+        _validate_value(annotation, {"width": "wide"})
+
+
+@pytest.mark.parametrize(
+    ("annotation", "value"),
+    [
+        (list[_Square] | list[_Circle], [_SQUARE]),
+        (dict[str, _Square] | dict[str, int], {"a": 1}),
+    ],
+)
+def test_several_containers_of_one_kind_in_a_union_are_rejected(
+    annotation: Any, value: Any
+):
+    with pytest.raises(SchemaDefinitionError, match=r"holds several.*at `value`"):
+        _validate_value(annotation, value)
+
+
+_SquareTag = TypeAliasType("_SquareTag", Literal["square"])
+
+
+class _TaggedSquare(TypedDict):
+    kind: _SquareTag
+    side: int
+
+
+class _TaggedRectangle(TypedDict):
+    kind: Literal["rectangle"] | None
+    side: int
+
+
+class _One(TypedDict):
+    value: Literal[1]
+
+
+class _Flag(TypedDict):
+    value: Literal[True]
+
+
+@pytest.mark.parametrize(
+    ("annotation", "value"),
+    [
+        (_TaggedSquare | _TaggedRectangle, {"kind": "rectangle", "side": 1}),
+        (_TaggedSquare | _TaggedRectangle, {"kind": None, "side": 1}),
+        (_TaggedRectangle | _TaggedSquare, {"kind": "square", "side": 1}),
+        (_One | _Flag, {"value": True}),
+        (_Flag | _One, {"value": 1}),
+    ],
+)
+def test_tag_behind_an_alias_or_a_union_selects_its_schema(
+    annotation: Any, value: dict[str, Any]
+):
+    _validate_value(annotation, value)
+
+
+def test_value_that_matches_no_tag_names_the_tags():
+    with pytest.raises(
+        ConfigSchemaError,
+        match=re.escape(
+            "`_TaggedSquare.kind` takes `'square'`; `_TaggedRectangle.kind` takes "
+            "`'rectangle'`, `None`."
+        ),
+    ):
+        _validate_value(
+            _TaggedSquare | _TaggedRectangle, {"kind": "triangle", "side": 1}
+        )
+
+
+class _Marks(TypedDict, total=False):
+    width: Annotated[Required[int], "doc"]
+    depth: int
+
+
+class _BackportedMarks(typing_extensions.TypedDict, total=False):
+    width: Annotated[Required[int], "doc"]
+    depth: int
+
+
+class _OptionalMarks(TypedDict):
+    width: Annotated[NotRequired[int], "doc"]
+    depth: int
+
+
+class _BackportedOptionalMarks(typing_extensions.TypedDict):
+    width: Annotated[NotRequired[int], "doc"]
+    depth: int
+
+
+@pytest.mark.parametrize(
+    ("schema", "optional_schema"),
+    [(_Marks, _OptionalMarks), (_BackportedMarks, _BackportedOptionalMarks)],
+    ids=["typing", "typing_extensions"],
+)
+def test_mark_inside_annotated_decides_whether_a_key_is_required(
+    schema: type, optional_schema: type
+):
+    config = OmegaConf.create({"depth": 1})
+    validate(config, optional_schema)
+    with pytest.raises(ConfigSchemaError, match="requires `width`"):
+        validate(config, schema)
+
+
+def _validate_value(annotation: Any, value: Any, **kwargs: Any) -> None:
+    # The annotation is a parameter, which the class syntax cannot take
+    holder = TypedDict("holder", {"value": annotation})  # noqa: UP013
+    validate(OmegaConf.create({"value": value}), holder, **kwargs)
+
+
+@pytest.mark.parametrize("annotation", _SQUARE_FORMS)
+def test_schema_behind_an_alias_or_annotated_is_checked(annotation: Any):
+    _validate_value(annotation, {"kind": "square", "side": "2"})
+    with pytest.raises(ConfigSchemaError, match=r"`typo`.*at `value`"):
+        _validate_value(annotation, {"kind": "square", "side": 2, "typo": 1})
+
+
+@pytest.mark.parametrize("annotation", _SQUARE_LIST_FORMS)
+def test_list_of_schemas_behind_an_alias_is_checked(annotation: Any):
+    _validate_value(annotation, [{"kind": "square", "side": "2"}])
+    with pytest.raises(ConfigSchemaError, match=r"`typo`.*at `value\[0\]`"):
+        _validate_value(annotation, [{"kind": "square", "side": 2, "typo": 1}])
+
+
 def test_result_of_a_function_is_not_known_before_it_is_called(targets: ModuleType):
     validate(_make_experiment(model={"$target": "tests.targets.make_item"}))
     assert targets.CALLS == []
@@ -597,6 +941,9 @@ def test_annotation_that_cannot_be_checked_takes_any_object():
         ({"kind": {"$symbol": "builtins.bool"}}, True),
         ({"kind": {"$symbol": "builtins.str"}}, False),
         ({"kind": {"$target": "builtins.bool"}}, False),
+        ({"any_kind": {"$symbol": "builtins.str"}}, True),
+        ({"any_kind": {"$symbol": "fractions.Fraction"}}, True),
+        ({"any_kind": {"$symbol": "math.pi"}}, False),
         ({"plain": [{"$target": "fractions.Fraction"}]}, True),
         ({"plain": {"first": 1}}, False),
         ({"plain": (1, 2)}, False),
@@ -661,10 +1008,17 @@ def test_reserved_keys_keep_their_meaning_in_plain_values(
         validate(config, _Parts)
 
 
-@pytest.mark.parametrize("schema", ["builtins.dict", _Parts()])
+@pytest.mark.parametrize(
+    "schema", ["builtins.dict", _Parts(), list[_Parts], dict[str, int], type[int]]
+)
 def test_schema_that_is_not_a_class_is_rejected(schema: Any):
     with pytest.raises(SchemaDefinitionError, match="must be a class"):
         validate(OmegaConf.create({}), schema)
+
+
+def test_error_of_a_parametrized_class_names_its_arguments():
+    with pytest.raises(ConfigSchemaError, match=r"Expected `type\[int\]`"):
+        _validate_value(type[int], {"$symbol": "builtins.str"})
 
 
 def test_class_without_schema_takes_any_arguments(targets: ModuleType):

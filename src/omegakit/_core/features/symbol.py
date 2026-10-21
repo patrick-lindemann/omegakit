@@ -15,6 +15,18 @@ SYMBOL_KEY = "$symbol"
 
 
 def import_symbol(node: DictConfig) -> Any:
+    """Import the object that a `$symbol` node names.
+
+    Args:
+        node: The node.
+
+    Returns:
+        The object.
+
+    Raises:
+        ConfigSymbolError: If the node has no `$symbol`, has other keys, or its
+            `$symbol` is no `str`.
+    """
     if SYMBOL_KEY not in node.keys():  # noqa: SIM118
         raise ConfigSymbolError(f"The node has no `{SYMBOL_KEY}`.")
     other_keys = [key for key in node.keys() if key not in (SYMBOL_KEY, META_KEY)]  # noqa: SIM118

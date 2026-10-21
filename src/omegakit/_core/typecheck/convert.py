@@ -16,6 +16,19 @@ from .fields import read_fields
 def convert_plain_values(
     schema: type, values: dict[str, Any], full_key: str
 ) -> dict[str, Any]:
+    """Convert the values of the plain-value fields of a schema with OmegaConf.
+
+    Args:
+        schema: The `TypedDict` or dataclass.
+        values: The values of its plain-value fields, by name.
+        full_key: The full key of the mapping, for errors.
+
+    Returns:
+        The converted values, by name.
+
+    Raises:
+        ConfigSchemaError: If a value does not match its field.
+    """
     structure = _make_plain_values_dataclass(schema)
     escaped_values = {
         key: _escape_omegaconf_syntax(value) for key, value in values.items()
@@ -39,6 +52,18 @@ def convert_plain_values(
 
 
 def convert_value(annotation: Any, value: Any) -> Any:
+    """Convert a value to an annotation with OmegaConf.
+
+    Args:
+        annotation: The annotation, which `is_plain_value` accepts.
+        value: The value.
+
+    Returns:
+        The converted value.
+
+    Raises:
+        ConfigSchemaError: If `value` does not match `annotation`.
+    """
     try:
         structure = _make_single_value_dataclass(annotation)
     # An annotation that cannot be hashed, such as `Literal[[1, 2]]`
@@ -57,6 +82,19 @@ def convert_value(annotation: Any, value: Any) -> Any:
 
 
 def convert_keys(annotation: Any, keys: list[Any]) -> list[Any]:
+    """Convert the keys of a mapping to the key annotation of its `dict`.
+
+    Args:
+        annotation: The annotation of the mapping.
+        keys: The keys.
+
+    Returns:
+        The converted keys, or `keys` itself if `annotation` has no key annotation.
+
+    Raises:
+        SchemaDefinitionError: If OmegaConf does not support the key annotation.
+        ConfigSchemaError: If a key does not match the key annotation.
+    """
     key_annotation = find_key_annotation(annotation)
     if key_annotation is None or key_annotation is Any:
         return keys

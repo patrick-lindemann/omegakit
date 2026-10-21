@@ -454,6 +454,32 @@ def test_dict_of_a_symbol_is_checked_against_the_schema(targets: ModuleType):
     assert targets.BACKBONE == {"depth": "3"}
 
 
+def test_tuple_of_a_symbol_is_converted_by_its_items(targets: ModuleType):
+    config = OmegaConf.create(
+        {
+            "$target": "tests.targets.Experiment",
+            "model": {"$target": "tests.targets.Model", "depth": 2},
+            "phases": {"$symbol": "tests.targets.BACKBONE_PAIR"},
+        }
+    )
+    experiment = instantiate(config)
+    assert experiment.phases == ({"depth": 3}, {"depth": 4})
+    assert targets.BACKBONE_PAIR == ({"depth": "3"}, {"depth": 4})
+
+
+def test_symbol_of_items_that_are_not_checked_is_the_same_object(
+    targets: ModuleType,
+):
+    config = OmegaConf.create(
+        {
+            "$target": "tests.targets.Experiment",
+            "model": {"$target": "tests.targets.Model", "depth": 2},
+            "extra": {"$symbol": "tests.targets.RAW_NODES"},
+        }
+    )
+    assert instantiate(config).extra is targets.RAW_NODES
+
+
 def test_target_that_names_a_schema_is_rejected(targets: ModuleType):
     config = OmegaConf.create({"$target": "tests.targets.ModelConfig", "depth": 3})
     with pytest.raises(ConfigSchemaError, match="ModelConfig"):
@@ -508,6 +534,27 @@ def test_interpolation_reads_the_config_as_it_is_written(targets: ModuleType):
     model = instantiate(config)
     assert model.config["depth"] == 4
     assert model.config["encoder"].kwargs["depth"] == "4"
+
+
+@pytest.mark.parametrize("target", ["Collection", "BackportedCollection"])
+def test_mapping_in_a_union_of_schemas_is_converted_by_the_one_it_fits(
+    targets: ModuleType, target: str
+):
+    sources = [
+        {"type": "file", "path": "a.yaml", "filter": {"select": ["cube"]}},
+        {"type": "directory", "path": "c", "depth": "2"},
+        {"url": "https://example.com", "retries": "3"},
+    ]
+    config = {"$target": f"tests.targets.{target}", "sources": sources}
+    collection = instantiate(OmegaConf.create(config))
+    assert type(collection) is getattr(targets, target)
+    assert collection.config == {
+        "sources": [
+            sources[0],
+            {**sources[1], "depth": 2},
+            {**sources[2], "retries": 3},
+        ]
+    }
 
 
 def test_prepare_defers_a_node_with_a_schema(targets: ModuleType):
@@ -626,6 +673,18 @@ def test_result_of_a_function_is_checked_in_a_field(targets: ModuleType):
     error_info.match(re.escape("at `optimizer`"))
 
 
+def test_class_that_a_function_returns_is_checked_against_its_bound(
+    targets: ModuleType,
+):
+    config = {"$target": "tests.targets.ItemMaker"}
+    made_class = {"$target": "tests.targets.make_item_class"}
+    maker = instantiate(OmegaConf.create({**config, "kind": made_class}))
+    assert maker.kind is targets.SmallItem
+    made_class = {"$target": "tests.targets.make_number_class"}
+    with pytest.raises(ConfigSchemaError, match=r"returned `<class 'int'>`.*at `kind`"):
+        instantiate(OmegaConf.create({**config, "kind": made_class}))
+
+
 def test_prepare_cannot_check_the_result_of_a_function(targets: ModuleType):
     config = OmegaConf.create({"$target": "tests.targets.make_item"})
     assert type(prepare(config)()) is targets.Item
@@ -663,6 +722,17 @@ def test_configurable_that_is_a_dataclass_is_checked_as_one(targets: ModuleType)
     config.width = "wide"
     with pytest.raises(ConfigSchemaError):
         instantiate(config)
+
+
+def test_dataclass_with_a_schema_is_checked_against_the_schema(targets: ModuleType):
+    config = OmegaConf.create(
+        {"$target": "tests.targets.Span", "start": 2, "length": "3"}
+    )
+    assert instantiate(config) == targets.Span(2, 5)
+    with pytest.raises(
+        ConfigSchemaError, match="`stop` is not a field of `SpanConfig`"
+    ):
+        instantiate(OmegaConf.create({"$target": "tests.targets.Span", "stop": 5}))
 
 
 @pytest.mark.parametrize("text", ["${depth}", "a \\${depth}", "${unbalanced"])

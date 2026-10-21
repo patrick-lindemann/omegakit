@@ -22,6 +22,21 @@ MISSING_VALUE: Any = object()
 def read_value(
     parent: DictConfig | ListConfig | TupleConfig, key: Any, allow_missing: bool = False
 ) -> Any:
+    """Read and resolve a value of a config.
+
+    Args:
+        parent: The config that holds the value.
+        key: The key of the value.
+        allow_missing: Whether to accept a `???` and an interpolation to a missing or
+            unknown key. Defaults to `False`.
+
+    Returns:
+        The value, or `MISSING_VALUE` for a missing value that is allowed.
+
+    Raises:
+        ValidationMissingValueError: If the value is `???` and not allowed.
+        ValidationInterpolationError: If the value cannot be resolved.
+    """
     try:
         # Resolves an interpolation, as in `$target: ${model}`
         return parent[key]

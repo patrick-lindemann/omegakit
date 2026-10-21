@@ -12,7 +12,21 @@ from omegakit._core.errors import (
 from .describe import describe_error
 
 
-def load_yaml(file_path: Path) -> DictConfig | ListConfig:
+def load_yaml(file_path: Path) -> DictConfig | ListConfig:  # noqa: DOC503
+    """Load a YAML file as a config, without assembling it.
+
+    Args:
+        file_path: The file.
+
+    Returns:
+        The config.
+
+    Raises:
+        ConfigFileNotFoundError: If `file_path` is not a file.
+        ConfigFilePermissionError: If the file may not be read.
+        OSError: If reading the file fails otherwise.
+        ConfigFileSyntaxError: If the file cannot be parsed.
+    """
     if not os.path.isfile(file_path):
         not_found_error = ConfigFileNotFoundError(f"`{file_path}` is not a file.")
         # Handlers of a builtin `OSError` read the file from `filename`

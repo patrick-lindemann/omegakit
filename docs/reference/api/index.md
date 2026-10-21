@@ -27,7 +27,7 @@
 .. autofunction:: omegakit.instantiate
 .. autofunction:: omegakit.prepare
 .. autoclass:: omegakit.Configurable
-   :members: schema, from_config
+   :members: from_config
 .. autofunction:: omegakit.make_node
 ```
 

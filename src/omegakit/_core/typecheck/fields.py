@@ -3,40 +3,60 @@ import functools
 import inspect
 import keyword
 from dataclasses import dataclass
-from typing import Any, get_origin
+from typing import Any
 
 from omegaconf import MISSING
-from typing_extensions import NotRequired, Required, get_type_hints, is_typeddict
+from typing_extensions import get_type_hints
 
 from omegakit._core.configurable import Configurable
 from omegakit._core.errors import SchemaDefinitionError
 from omegakit._core.utils.describe import describe_error
 
-from .annotations import holds_objects, is_plain_value, union_members
+from .annotations import find_required_mark, holds_objects, is_class, is_plain_value
 
 
 @dataclass(frozen=True)
 class SchemaField:
+    """A field of a `TypedDict` or dataclass schema."""
+
     annotation: Any
     is_plain_value: bool
     is_required: bool
 
 
 def find_schema(target: Any) -> type | None:
-    if not isinstance(target, type):
+    """Find the schema that checks the arguments of a `$target`.
+
+    Args:
+        target: The class or function.
+
+    Returns:
+        The schema of a `Configurable`, `target` itself if it is a dataclass, or
+        `None`.
+    """
+    if not is_class(target):
         return None
-    schema = target.schema if issubclass(target, Configurable) else None
+    # `Configurable.__init_subclass__` has checked that it is a `TypedDict`
+    schema = target._schema if issubclass(target, Configurable) else None
     if schema is None:
         return target if dataclasses.is_dataclass(target) else None
-    if not is_typeddict(schema):
-        raise SchemaDefinitionError(
-            f"`{target.__qualname__}.schema` must be a `TypedDict`, not `{schema!r}`."
-        )
     return schema
 
 
 @functools.cache
 def read_fields(schema: type) -> dict[str, SchemaField]:
+    """Read and check the fields of a schema.
+
+    Args:
+        schema: The `TypedDict` or dataclass.
+
+    Returns:
+        The fields, by name.
+
+    Raises:
+        SchemaDefinitionError: If an annotation cannot be read, a name is no Python
+            identifier, or an annotation cannot be checked.
+    """
     try:
         annotations = get_type_hints(schema)
         if dataclasses.is_dataclass(schema):
@@ -61,19 +81,11 @@ def read_fields(schema: type) -> dict[str, SchemaField]:
     fields = {}
     for name, is_required in required_keys.items():
         annotation = annotations[name]
-        sections = [
-            member for member in union_members(annotation) if is_typeddict(member)
-        ]
         is_plain = is_plain_value(annotation)
         if not name.isidentifier() or keyword.iskeyword(name):
             raise SchemaDefinitionError(
                 f"`{name}` of `{schema.__qualname__}` cannot be a key: a key is a "
                 "Python identifier."
-            )
-        if len(sections) > 1:
-            raise SchemaDefinitionError(
-                f"`{schema.__qualname__}.{name}` is annotated with `{annotation}`, "
-                "which names several `TypedDict`s. A field takes at most one."
             )
         if not is_plain and not holds_objects(annotation):
             raise SchemaDefinitionError(
@@ -87,6 +99,14 @@ def read_fields(schema: type) -> dict[str, SchemaField]:
 
 @functools.cache
 def read_positional_names(schema: type) -> list[str]:
+    """Read the names of the parameters that can be given by position.
+
+    Args:
+        schema: The class or function.
+
+    Returns:
+        The names, in order.
+    """
     parameters = inspect.signature(schema).parameters.values()
     kinds = (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD)
     return [parameter.name for parameter in parameters if parameter.kind in kinds]
@@ -97,8 +117,10 @@ def _read_required_keys(schema: type) -> dict[str, bool]:
     annotations = get_type_hints(schema, include_extras=True)
     required_keys: dict[str, bool] = {}
     for name, annotation in annotations.items():
-        origin = get_origin(annotation)
-        required_keys[name] = origin is Required or (
-            origin is not NotRequired and name in schema.__required_keys__  # ty: ignore[unresolved-attribute]
+        mark = find_required_mark(annotation)
+        required_keys[name] = (
+            name in schema.__required_keys__  # ty: ignore[unresolved-attribute]
+            if mark is None
+            else mark
         )
     return required_keys

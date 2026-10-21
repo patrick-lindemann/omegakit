@@ -7,12 +7,12 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Literal, TypedDict
+from typing import Annotated, Any, Literal, TypedDict
 
 import pytest
 import typing_extensions
 from omegaconf import MISSING
-from typing_extensions import NotRequired, Required
+from typing_extensions import NotRequired, ReadOnly, Required
 
 from omegakit._core.configurable import Configurable
 from omegakit._core.errors import (
@@ -65,6 +65,34 @@ class _NetworkConfig(TypedDict):
     layers: list[_LayerConfig]
 
 
+class _WrappedMarksConfig(TypedDict, total=False):
+    width: Annotated[Required[int], "doc"]
+    depth: ReadOnly[Required[int]]
+    bias: Annotated[NotRequired[bool], "doc"]
+    scale: float
+
+
+class _BackportedWrappedMarksConfig(typing_extensions.TypedDict, total=False):
+    width: Annotated[Required[int], "doc"]
+    depth: ReadOnly[Required[int]]
+    bias: Annotated[NotRequired[bool], "doc"]
+    scale: float
+
+
+class _WrappedOptionalMarksConfig(TypedDict):
+    width: Annotated[NotRequired[int], "doc"]
+    depth: ReadOnly[NotRequired[int]]
+    bias: Annotated[ReadOnly[NotRequired[bool]], "doc"]
+    name: Annotated[str, "doc"]
+
+
+class _BackportedWrappedOptionalMarksConfig(typing_extensions.TypedDict):
+    width: Annotated[NotRequired[int], "doc"]
+    depth: ReadOnly[NotRequired[int]]
+    bias: Annotated[ReadOnly[NotRequired[bool]], "doc"]
+    name: Annotated[str, "doc"]
+
+
 def _make_schema(annotation: Any) -> type:
     return dataclasses.make_dataclass("Schema", [("value", annotation)])
 
@@ -83,20 +111,52 @@ def test_configurable_that_is_a_dataclass_is_its_own_schema(targets: ModuleType)
 
 
 def test_configurable_may_name_a_typed_dict_of_typing_extensions():
-    model = type("Model", (Configurable,), {"schema": _BackportedLayerConfig})
-    assert find_schema(model) is _BackportedLayerConfig
+    class Model(Configurable, schema=_BackportedLayerConfig):
+        pass
+
+    assert find_schema(Model) is _BackportedLayerConfig
 
 
-@pytest.mark.parametrize("target", [_Encoder, len, "builtins.dict", None])
+def test_subclass_of_a_configurable_inherits_its_schema(targets: ModuleType):
+    class Subclass(targets.Model):
+        pass
+
+    assert find_schema(Subclass) is targets.ModelConfig
+
+
+def test_schema_none_removes_the_schema_of_the_parent(targets: ModuleType):
+    class Subclass(targets.Model, schema=None):
+        pass
+
+    assert find_schema(Subclass) is None
+
+
+def test_dataclass_without_schema_is_its_own_schema_again():
+    @dataclass
+    class Layer(Configurable, schema=_LayerConfig):
+        width: int
+
+    @dataclass
+    class Plain(Layer, schema=None):
+        pass
+
+    assert find_schema(Plain) is Plain
+
+
+def test_dataclass_with_slots_keeps_its_schema():
+    # `slots=True` makes a new class, which calls `__init_subclass__` without keywords
+    @dataclass(frozen=True, slots=True)
+    class Layer(Configurable, schema=_LayerConfig):
+        width: int
+
+    assert find_schema(Layer) is _LayerConfig
+
+
+@pytest.mark.parametrize(
+    "target", [_Encoder, len, "builtins.dict", None, list[int], type[_Encoder]]
+)
 def test_other_targets_have_no_schema(target: Any):
     assert find_schema(target) is None
-
-
-@pytest.mark.parametrize("schema", [dict, _Section, _Section()])
-def test_schema_of_a_configurable_must_be_a_typed_dict(schema: Any):
-    broken = type("Broken", (Configurable,), {"schema": schema})
-    with pytest.raises(SchemaDefinitionError, match="Broken"):
-        find_schema(broken)
 
 
 @pytest.mark.parametrize(
@@ -199,18 +259,52 @@ def test_keys_of_a_typed_dict_are_required_unless_marked(schema: type):
     assert not fields["encoder"].is_plain_value
 
 
+@pytest.mark.parametrize(
+    ("schema", "required_keys"),
+    [
+        (_WrappedMarksConfig, {"width", "depth"}),
+        (_BackportedWrappedMarksConfig, {"width", "depth"}),
+        (_WrappedOptionalMarksConfig, {"name"}),
+        (_BackportedWrappedOptionalMarksConfig, {"name"}),
+    ],
+    ids=[
+        "typing",
+        "typing_extensions",
+        "typing-optional",
+        "typing_extensions-optional",
+    ],
+)
+def test_mark_inside_annotated_or_read_only_decides_whether_a_key_is_required(
+    schema: type, required_keys: set[str]
+):
+    fields = read_fields(schema)
+    assert {key for key, field in fields.items() if field.is_required} == required_keys
+    assert fields["width"].annotation is int
+    assert fields["bias"].annotation is bool
+
+
 def test_field_that_holds_a_typed_dict_is_no_plain_value():
     fields = read_fields(_NetworkConfig)
     assert not fields["layer"].is_plain_value
     assert not fields["layers"].is_plain_value
 
 
-def test_union_of_two_typed_dicts_is_rejected():
-    with pytest.raises(SchemaDefinitionError, match=r"Schema\.value"):
-        read_fields(_make_schema(_LayerConfig | _NetworkConfig | None))
-    assert not read_fields(_make_schema(_LayerConfig | _Encoder))[
-        "value"
-    ].is_plain_value
+@pytest.mark.parametrize(
+    "annotation",
+    [
+        _LayerConfig | _NetworkConfig | None,
+        _LayerConfig | _Encoder,
+        list[_LayerConfig] | int,
+        dict[str, _LayerConfig] | int,
+        tuple[_LayerConfig, int] | int,
+        list[_Encoder] | _Encoder,
+        list[_LayerConfig] | list[_NetworkConfig],
+    ],
+)
+def test_field_that_holds_a_union_with_a_typed_dict_is_no_plain_value(
+    annotation: Any,
+):
+    assert not read_fields(_make_schema(annotation))["value"].is_plain_value
 
 
 @pytest.mark.parametrize("key", ["learning-rate", "class", "2nd"])

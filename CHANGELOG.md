@@ -4,6 +4,60 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.12.0] - 2026-10-21
+
+### Changed
+
+- **Breaking:** A `Configurable` names its schema in the class keyword `schema`:
+  replace `schema = ModelConfig` in the class body with
+  `class Model(Configurable, schema=ModelConfig)`. Type checkers report a misspelt
+  keyword, and Python raises `TypeError` for it when the class is defined. A schema
+  that is no `TypedDict` raises `SchemaDefinitionError` when the class is defined,
+  instead of when a config names the class. A `schema` attribute in the class body
+  is no longer read, and a base class with class keywords of its own comes before
+  `Configurable`.
+
+### Fixed
+
+- A key may be annotated with a union of several `TypedDict`s, also as the item of a
+  `list` or `dict`. A mapping is checked against the first member it fits by its keys
+  and its `Literal` values, and one that fits none raises `ConfigSchemaError` naming
+  every member. A `Literal` field counts as a tag also behind a type alias or in a
+  union with `None`, and its value must have the type of a listed value, so `true`
+  does not match `Literal[1]`. A union in a key raised `SchemaDefinitionError`, and a
+  union in a `list` or `dict` checked every item against its first member.
+- A `TypedDict` behind a type alias with arguments, such as `Optional[ModelConfig]`
+  for `Optional = TypeAliasType("Optional", T | None, type_params=(T,))`, or behind
+  `Annotated`, is checked. OmegaConf took the mapping as a plain `dict`, so unknown
+  keys and wrong values passed, and an `Annotated` alias of a `type` statement raised
+  `SchemaDefinitionError`.
+- `Required` and `NotRequired` decide whether a key is required also inside
+  `Annotated` or `ReadOnly`, as in `Annotated[Required[int], "doc"]`. Under
+  `from __future__ import annotations`, and with `typing.TypedDict` on Python 3.10,
+  such a key followed the totality of its `TypedDict` instead.
+- The items of a container in a union with other members, as in
+  `list[ModelConfig] | int` or `list[Model] | Model`, are checked. OmegaConf read the
+  first as plain data, which rejected valid lists on Python 3.11 and newer and
+  accepted invalid items on Python 3.10, and the items of the second were not checked.
+  A mapping that fits no `TypedDict` of a union with a `dict` is checked as the `dict`.
+  Two containers of one kind, as in `list[ModelConfig] | list[DataConfig]`, raise
+  `SchemaDefinitionError`.
+- A `$symbol` that names a `list`, `tuple` or `dict` is checked by the item annotation
+  of its field, as in `list[ModelConfig]` or `dict[str, Model]`, and its items are
+  converted. Only a `dict` in a field annotated with a `TypedDict` was checked, so
+  wrong items passed.
+- A class that a `$target` function returns into a `type[X]` field must be a subclass
+  of `X`. Any class passed.
+- Each member of a union is checked on its own, so `type[Model] | type` takes any
+  class. It rejected every class that is no subclass of `Model`.
+- The error for a `$target` in a key of plain values names the node of the `$target`,
+  as in `data.sizes[1]`. It named the mapping that holds the key.
+- `tuple[()]` takes no items. It took any number of items, and `typing.Tuple[()]`
+  raised `SchemaDefinitionError` on Python 3.10.
+- On Python 3.10, a parametrized class such as `list[ModelConfig]` as the `schema` of
+  `validate` or `instantiate` raises `SchemaDefinitionError`, as on later Pythons. It
+  was taken as the class of the result, and an error named `type[Model]` as `type`.
+
 ## [0.11.0] - 2026-10-20
 
 ### Added
@@ -612,6 +666,8 @@ First release. The configuration language is specified in the
   such as `omegakit.resolvers.paths`.
 - Python 3.12 is supported.
 
+[Unreleased]: https://github.com/patrick-lindemann/omegakit/compare/v0.12.0...HEAD
+[0.12.0]: https://github.com/patrick-lindemann/omegakit/releases/tag/v0.12.0
 [0.11.0]: https://github.com/patrick-lindemann/omegakit/releases/tag/v0.11.0
 [0.10.0]: https://github.com/patrick-lindemann/omegakit/releases/tag/v0.10.0
 [0.9.0]: https://github.com/patrick-lindemann/omegakit/releases/tag/v0.9.0

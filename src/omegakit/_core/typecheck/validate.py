@@ -2,7 +2,7 @@ import dataclasses
 import functools
 import types
 from dataclasses import dataclass
-from typing import Any, get_args, get_origin
+from typing import Any, get_origin
 
 from omegaconf import DictConfig, ListConfig, OmegaConf, TupleConfig
 from typing_extensions import is_typeddict
@@ -31,8 +31,11 @@ from omegakit._core.utils.read import MISSING_VALUE, read_value
 
 from .annotations import (
     find_item_annotation,
+    find_literal_values,
     find_position_annotations,
-    find_typed_dict,
+    find_typed_dicts,
+    is_class,
+    is_instance,
     is_plain_value,
     union_members,
 )
@@ -42,6 +45,8 @@ from .fields import find_schema, read_fields, read_positional_names
 
 @dataclass(frozen=True)
 class Call:
+    """A checked `$target` node, which `instantiate` calls."""
+
     node: DictConfig
     name: str
     target: Any
@@ -52,9 +57,14 @@ class Call:
     positional_arguments: list[Any] | tuple[Any, ...] = ()
 
 
-# A mapping, list or tuple of the config, unlike a `dict` or `list` that is a value
 @dataclass(frozen=True)
 class Container:
+    """The checked items of a mapping, list or tuple node.
+
+    `instantiate` builds them item by item. A plain `dict` or `list` in a checked
+    config is a converted value instead, which is used as it is.
+    """
+
     items: dict[Any, Any] | list[Any] | tuple[Any, ...]
 
 
@@ -64,12 +74,33 @@ def check(
     is_deferred: bool = False,
     allow_missing: bool = False,
 ) -> Any:
+    """Check a config against a schema and convert its values.
+
+    Args:
+        config: The config.
+        schema: The class that the config must give. Defaults to `None`, in which
+            case only the config itself is checked.
+        is_deferred: Whether the root `$target` may leave required keys open, as for
+            `prepare`. Defaults to `False`.
+        allow_missing: Whether to accept missing values, as `validate` does. Defaults
+            to `False`.
+
+    Returns:
+        The checked root: a `Call` for a `$target` node, a `Container` for another
+        mapping, list or tuple, or `MISSING_VALUE` for an allowed `???`.
+
+    Raises:
+        ValidationMissingValueError: If the root is `???` and `allow_missing` is
+            `False`.
+        SchemaDefinitionError: If `schema` is not a class.
+        ConfigSchemaError: If the root does not give an instance of `schema`.
+    """
     # The root is not read through a parent, which is where a `???` raises
     if config._is_missing():
         if allow_missing:
             return MISSING_VALUE
         raise ValidationMissingValueError("The config is `???`.")
-    if schema is not None and not isinstance(schema, type):
+    if schema is not None and not is_class(schema):
         raise SchemaDefinitionError(f"`schema` must be a class, not `{schema!r}`.")
     annotation = Any if schema is None else schema
     checked_config = _check_node(config, [], allow_missing, annotation, is_deferred)
@@ -96,7 +127,13 @@ def _check_node(
         raise ConfigValidationError(f"The config contains itself: {cycle}.")
     active_nodes = [*active_nodes, node]
     containers = (dict,) if isinstance(node, DictConfig) else (list,)
-    item_annotation = find_item_annotation(annotation, containers) or Any
+    try:
+        container_item_annotation = find_item_annotation(annotation, containers)
+    except OmegaKitBaseException as error:
+        if error.full_key is None:
+            error.full_key = get_full_key(node)
+        raise
+    item_annotation = container_item_annotation or Any
     if not isinstance(node, DictConfig):
         return _check_items(
             node, active_nodes, allow_missing, annotation, item_annotation
@@ -113,7 +150,14 @@ def _check_node(
                 f"{', '.join(f'`{key}`' for key in reserved_keys)} cannot stand "
                 "here: keys that start with `$` are reserved."
             )
-        section = find_typed_dict(annotation)
+        sections = find_typed_dicts(annotation)
+        # A union such as `ModelConfig | dict[str, Model]` has a `dict` to fall back to
+        has_dict = container_item_annotation is not None
+        section = (
+            _select_section(node, sections, keys, allow_missing, has_dict)
+            if sections
+            else None
+        )
         # The keys of a dictionary of mappings or objects, which OmegaConf does not see
         converted_keys = convert_keys(annotation, keys)
     except OmegaKitBaseException as error:
@@ -140,7 +184,12 @@ def _check_items(
     annotation: Any,
     item_annotation: Any,
 ) -> Container:
-    item_annotations = find_position_annotations(annotation, len(node))
+    try:
+        item_annotations = find_position_annotations(annotation, len(node))
+    except OmegaKitBaseException as error:
+        if error.full_key is None:
+            error.full_key = get_full_key(node)
+        raise
     is_tuple = item_annotations is not None or not isinstance(node, ListConfig)
     if item_annotations is None:
         item_annotations = [item_annotation] * len(node)
@@ -266,24 +315,100 @@ def _check_symbol(
 ) -> Any:
     try:
         value = import_symbol(node)
-        section = find_typed_dict(annotation)
-        if section is None or not isinstance(value, dict):
+        if not _has_checked_items(annotation, value):
             return value
-        # An existing `dict` is checked like a mapping that the config gives
-        mapping = OmegaConf.create(value, flags={"allow_objects": True})
-        keys = list(mapping.keys())
-        arguments = _check_schema(
-            mapping, section, keys, active_nodes, allow_missing, False
+        # An existing `dict`, `list` or `tuple` is checked like one that the config
+        # gives
+        symbol_node = OmegaConf.create(value, flags={"allow_objects": True})
+        checked_value = _check_node(
+            symbol_node, active_nodes, allow_missing, annotation
         )
     except OmegaKitBaseException as error:
-        # A mapping behind `$symbol` is not part of the config, so its keys name nothing
+        # A value behind `$symbol` is not part of the config, so its keys name nothing
         error.full_key = get_full_key(node)
         raise
     # A module can raise anything while it is imported
     except Exception as error:
         add_note(error, f"  at {describe_node(node)}")
         raise
-    return Container(arguments)
+    return checked_value
+
+
+def _has_checked_items(annotation: Any, value: Any) -> bool:
+    if isinstance(value, dict):
+        if find_typed_dicts(annotation):
+            return True
+        item_annotations = [find_item_annotation(annotation, (dict,))]
+    elif isinstance(value, (list, tuple)):
+        position_annotations = find_position_annotations(annotation, len(value))
+        item_annotations = [
+            find_item_annotation(annotation, (list,)),
+            *(position_annotations or []),
+        ]
+    else:
+        return False
+    # Items that are not checked are taken as they are, also with keys such as `$target`
+    return any(item is not None and item is not Any for item in item_annotations)
+
+
+def _select_section(
+    node: DictConfig,
+    sections: tuple[type, ...],
+    keys: list[Any],
+    allow_missing: bool,
+    has_dict: bool = False,
+) -> type | None:
+    if len(sections) == 1 and not has_dict:
+        return sections[0]
+    # A mapping is checked against the first schema of a union that it fits
+    mismatches = []
+    for section in sections:
+        mismatch = _find_mismatch(node, section, keys, allow_missing)
+        if mismatch is None:
+            return section
+        mismatches.append(mismatch)
+    if has_dict:
+        return None
+    names = ", ".join(f"`{section.__qualname__}`" for section in sections)
+    raise ConfigSchemaError(
+        f"The mapping fits none of {names}: {'; '.join(mismatches)}."
+    )
+
+
+def _find_mismatch(
+    node: DictConfig, section: type, keys: list[Any], allow_missing: bool
+) -> str | None:
+    # Only the keys and the `Literal` values of the mapping itself are compared, so
+    # that a mapping is read once however deep the unions are nested
+    fields = read_fields(section)
+    name = section.__qualname__
+    for key in keys:
+        literal_values = (
+            find_literal_values(fields[key].annotation) if key in fields else None
+        )
+        if literal_values is None:
+            continue
+        value = read_value(node, key, allow_missing)
+        # As in OmegaConf, `True` is no `1`
+        is_listed = any(
+            type(value) is type(literal_value) and value == literal_value
+            for literal_value in literal_values
+        )
+        if value is not MISSING_VALUE and not is_listed:
+            described_values = ", ".join(f"`{item!r}`" for item in literal_values)
+            return f"`{name}.{key}` takes {described_values}"
+    unknown_keys = [key for key in keys if key not in fields]
+    if unknown_keys:
+        return (
+            f"{', '.join(f'`{key}`' for key in unknown_keys)} is not a field of "
+            f"`{name}`"
+        )
+    missing_keys = [
+        key for key, field in fields.items() if field.is_required and key not in keys
+    ]
+    if missing_keys and not allow_missing:
+        return f"`{name}` requires {', '.join(f'`{key}`' for key in missing_keys)}"
+    return None
 
 
 def _check_schema(
@@ -376,7 +501,8 @@ def _unwrap_plain_value(value: Any) -> Any:
     if isinstance(value, Call):
         raise ConfigSchemaError(
             f"`{TARGET_KEY}: {value.name}` cannot stand in a field that holds plain "
-            "values."
+            "values.",
+            get_full_key(value.node),
         )
     if not isinstance(value, Container):
         return value
@@ -405,20 +531,12 @@ def _check_type(value: Any, annotation: Any) -> Any:
         members = tuple(member for member in members if not is_typeddict(member))
     # A parametrized class, such as `list[X]`, is checked as the class alone
     classes = tuple(get_origin(member) or member for member in members)
-    # `type[X]` takes a subclass of `X`
-    bounds = tuple(
-        get_args(member)[0]
-        for member in members
-        if get_origin(member) is type and get_args(member)[0] is not Any
-    )
     try:
-        if not classes:
-            is_valid = False
-        elif not isinstance(value, Call):
+        if not isinstance(value, Call):
             given_value = value.items if isinstance(value, Container) else value
-            is_valid = isinstance(given_value, classes)
-            if is_valid and bounds and isinstance(given_value, type):
-                is_valid = issubclass(given_value, bounds)
+            is_valid = is_instance(given_value, annotation)
+        elif not classes:
+            is_valid = False
         elif value.is_partial:
             is_valid = issubclass(functools.partial, classes)
         elif not isinstance(value.target, type):
@@ -442,5 +560,5 @@ def _check_type(value: Any, annotation: Any) -> Any:
         given = f"a {type(value.items).__name__}"
     else:
         given = f"`{value!r}`"
-    expected = annotation.__qualname__ if isinstance(annotation, type) else annotation
+    expected = annotation.__qualname__ if is_class(annotation) else annotation
     raise ConfigSchemaError(f"Expected `{expected}`, but the config gives {given}.")

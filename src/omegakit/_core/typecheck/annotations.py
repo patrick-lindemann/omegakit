@@ -13,6 +13,8 @@ from omegaconf import OmegaConf
 from omegaconf.errors import OmegaConfBaseException
 from typing_extensions import is_typeddict
 
+from omegakit._core.errors import SchemaDefinitionError
+
 if sys.version_info >= (3, 12):
     # A `type` statement makes a `typing.TypeAliasType`, which OmegaConf resolves, and
     # which can be another class than that of `typing_extensions`
@@ -20,18 +22,172 @@ if sys.version_info >= (3, 12):
 else:
     _OMEGACONF_ALIAS_TYPES = ()
 _TYPE_ALIAS_TYPES = (*_OMEGACONF_ALIAS_TYPES, typing_extensions.TypeAliasType)
+# The forms that wrap a type without changing it, of `typing` and of
+# `typing_extensions`, which can differ on older Pythons
+_QUALIFIERS = {
+    getattr(module, name): name
+    for module in (typing, typing_extensions)
+    for name in ("Annotated", "Required", "NotRequired", "ReadOnly")
+    if hasattr(module, name)
+}
 
 
 def union_members(annotation: Any) -> tuple[Any, ...]:
-    while _is_bare_alias(annotation, _TYPE_ALIAS_TYPES):
-        annotation = annotation.__value__
+    """List the members of a union.
+
+    Qualifiers such as `Annotated`, and type aliases, are stripped first, also from
+    each member, so that `Annotated[A | B, "doc"]` gives `(A, B)`.
+
+    Args:
+        annotation: The annotation.
+
+    Returns:
+        The members, or `(annotation,)` for an annotation that is no union.
+    """
+    annotation = unwrap(annotation)
     if get_origin(annotation) not in (Union, types.UnionType):
         return (annotation,)
     members = [union_members(member) for member in get_args(annotation)]
     return tuple(itertools.chain.from_iterable(members))
 
 
+def is_class(annotation: Any) -> bool:
+    """Check whether an annotation is a class.
+
+    On Python 3.10, a parametrized class such as `list[int]` passes
+    `isinstance(annotation, type)`, which is why this check is used instead.
+
+    Args:
+        annotation: The annotation.
+
+    Returns:
+        `True` if `annotation` is a class.
+    """
+    return isinstance(annotation, type) and not isinstance(
+        annotation, types.GenericAlias
+    )
+
+
+def is_instance(value: Any, annotation: Any) -> bool:
+    """Check whether a value is an instance of an annotation.
+
+    Each member of a union is checked on its own. A `TypedDict` takes no value, and a
+    member that `isinstance` cannot check, such as a `Literal`, takes any value.
+
+    Args:
+        value: The value.
+        annotation: The annotation.
+
+    Returns:
+        `True` if a member of `annotation` takes `value`.
+    """
+    # Each member is checked on its own, so that `type[Model] | type` takes any class
+    for member in union_members(annotation):
+        if member is Any:
+            return True
+        if is_typeddict(member):
+            continue
+        # A parametrized class, such as `list[X]`, is checked as the class alone
+        cls = get_origin(member) or member
+        try:
+            if not isinstance(value, cls):
+                continue
+            # `type[X]` takes a subclass of `X`
+            arguments = get_args(member) if cls is type else ()
+            bounds = union_members(arguments[0]) if arguments else ()
+            if bounds and Any not in bounds and not issubclass(value, bounds):
+                continue
+        except TypeError:
+            return True
+        return True
+    return False
+
+
+def find_literal_values(annotation: Any) -> tuple[Any, ...] | None:
+    """Find the values of a tag field, which tells the `TypedDict`s of a union apart.
+
+    A tag is annotated with `Literal`s and possibly `None`, such as
+    `kind: Literal["a", "b"]`.
+
+    Args:
+        annotation: The annotation.
+
+    Returns:
+        The values, or `None` if a member of `annotation` is neither a `Literal` nor
+        `None`.
+    """
+    members = union_members(annotation)
+    if not any(get_origin(member) is Literal for member in members):
+        return None
+    values = []
+    for member in members:
+        if member is types.NoneType:
+            values.append(None)
+        elif get_origin(member) is Literal:
+            values.extend(get_args(member))
+        else:
+            return None
+    return tuple(values)
+
+
+def find_required_mark(annotation: Any) -> bool | None:
+    """Find the `Required` or `NotRequired` mark of a field annotation.
+
+    Args:
+        annotation: The annotation of a `TypedDict` field.
+
+    Returns:
+        `True` for `Required`, `False` for `NotRequired`, or `None` for neither.
+    """
+    # `Required` and `NotRequired` may stand inside `Annotated` or `ReadOnly`
+    while get_origin(annotation) in _QUALIFIERS:
+        name = _QUALIFIERS[get_origin(annotation)]
+        if name in ("Required", "NotRequired"):
+            return name == "Required"
+        annotation = get_args(annotation)[0]
+    return None
+
+
+def unwrap(annotation: Any) -> Any:
+    """Strip qualifiers such as `Annotated`, and type aliases, off an annotation.
+
+    Only the outermost annotation is stripped: `list[Annotated[int, "doc"]]` stays as
+    it is.
+
+    Args:
+        annotation: The annotation.
+
+    Returns:
+        The annotation without them, such as `int` for `Annotated[int, "doc"]`.
+    """
+    # Only the outermost type is unwrapped, so that a recursive alias ends
+    while True:
+        origin = get_origin(annotation)
+        if origin in _QUALIFIERS:
+            annotation = get_args(annotation)[0]
+        elif _is_bare_alias(annotation, _TYPE_ALIAS_TYPES):
+            annotation = annotation.__value__
+        elif isinstance(origin, _TYPE_ALIAS_TYPES):
+            value = _substitute_type_parameters(annotation)
+            if value is annotation:
+                return annotation
+            annotation = value
+        else:
+            return annotation
+
+
 def resolve_aliases(annotation: Any) -> Any:
+    """Replace each `typing_extensions.TypeAliasType`, which OmegaConf cannot read.
+
+    Unlike `unwrap`, this also replaces aliases nested inside other annotations, such
+    as in `list[Alias]`, and leaves `Annotated` as it is.
+
+    Args:
+        annotation: The annotation.
+
+    Returns:
+        The annotation without such aliases, or `annotation` itself if it has none.
+    """
     if _is_alias_unknown_to_omegaconf(annotation):
         return resolve_aliases(annotation.__value__)
     origin = get_origin(annotation)
@@ -54,16 +210,31 @@ def resolve_aliases(annotation: Any) -> Any:
         return annotation
 
 
-def find_typed_dict(annotation: Any) -> type | None:
-    for member in union_members(annotation):
-        if is_typeddict(member):
-            return member
-    return None
+def find_typed_dicts(annotation: Any) -> tuple[type, ...]:
+    """Find the `TypedDict` members of an annotation.
+
+    Args:
+        annotation: The annotation.
+
+    Returns:
+        The `TypedDict`s, in order.
+    """
+    return tuple(member for member in union_members(annotation) if is_typeddict(member))
 
 
 def find_item_annotation(
     annotation: Any, containers: tuple[type, ...] = (list, dict)
 ) -> Any:
+    """Find the item annotation of the container member of an annotation.
+
+    Args:
+        annotation: The annotation.
+        containers: The container classes to look for. Defaults to `(list, dict)`.
+
+    Returns:
+        The item annotation, `Any` for a bare container, or `None` if no member is
+        one of `containers`.
+    """
     member = _find_single_container(annotation, containers)
     if member is None:
         return None
@@ -72,6 +243,15 @@ def find_item_annotation(
 
 
 def find_key_annotation(annotation: Any) -> Any:
+    """Find the key annotation of the `dict` member of an annotation.
+
+    Args:
+        annotation: The annotation.
+
+    Returns:
+        The key annotation, `Any` for a bare `dict`, or `None` if no member is a
+        `dict`.
+    """
     member = _find_single_container(annotation, (dict,))
     if member is None:
         return None
@@ -80,18 +260,42 @@ def find_key_annotation(annotation: Any) -> Any:
 
 
 def find_position_annotations(annotation: Any, length: int) -> list[Any] | None:
+    """Find the annotation of each item of the `tuple` member of an annotation.
+
+    Args:
+        annotation: The annotation.
+        length: The number of items, for a bare `tuple` or `tuple[X, ...]`.
+
+    Returns:
+        One annotation per position, or `None` if no member is a `tuple`.
+    """
     member = _find_single_container(annotation, (tuple,))
     if member is None:
         return None
-    item_annotations = get_args(member)
-    if not item_annotations:
+    # A bare `tuple` has no arguments, unlike `tuple[()]`
+    if not hasattr(member, "__args__"):
         return [Any] * length
+    item_annotations = get_args(member)
+    # On Python 3.10, `typing.Tuple[()]` has the arguments `((),)`
+    if item_annotations in ((), ((),)):
+        return []
     if item_annotations[-1] is Ellipsis:
         return [item_annotations[0]] * length
     return list(item_annotations)
 
 
 def is_plain_value(annotation: Any) -> bool:
+    """Check whether OmegaConf can check and convert the values of an annotation.
+
+    omegakit checks every other annotation itself, such as a `TypedDict`, a dataclass,
+    or a class that a `$target` builds.
+
+    Args:
+        annotation: The annotation.
+
+    Returns:
+        `True` for plain data, such as `int`, `list[str]` or `Literal["a"]`.
+    """
     try:
         return _is_plain_value_cached(annotation)
     # An annotation that cannot be hashed, such as `Literal[[1, 2]]`, is probed anew
@@ -100,6 +304,17 @@ def is_plain_value(annotation: Any) -> bool:
 
 
 def holds_objects(annotation: Any) -> bool:
+    """Check whether omegakit can check the values of an annotation itself.
+
+    This decides for an annotation that `is_plain_value` rejects.
+
+    Args:
+        annotation: The annotation.
+
+    Returns:
+        `True` if each member is a class, or a `list`, `dict` or `tuple` of such. A
+        `set` or an abstract collection such as `Sequence` is not.
+    """
     for member in union_members(annotation):
         item_annotation = find_item_annotation(member)
         if item_annotation is not None:
@@ -124,21 +339,21 @@ def holds_objects(annotation: Any) -> bool:
 
 @functools.cache
 def _is_plain_value_cached(annotation: Any) -> bool:
-    # A dataclass is an object, although OmegaConf reads it as a structured config
-    is_built = any(
-        is_typeddict(member) or dataclasses.is_dataclass(member)
-        for member in union_members(annotation)
-    )
-    if annotation is Any or is_built:
+    if annotation is Any:
         return False
-    item_annotation = find_item_annotation(annotation)
-    if item_annotation is not None and not is_plain_value(item_annotation):
-        return False
-    position_annotations = find_position_annotations(annotation, 1)
-    if position_annotations is not None and not all(
-        is_plain_value(item) for item in position_annotations
-    ):
-        return False
+    # Every member counts, also a container in a union such as `list[Model] | int`
+    for member in union_members(annotation):
+        # A dataclass is an object, although OmegaConf reads it as a structured config
+        if is_typeddict(member) or dataclasses.is_dataclass(member):
+            return False
+        item_annotation = find_item_annotation(member)
+        if item_annotation is not None and not is_plain_value(item_annotation):
+            return False
+        position_annotations = find_position_annotations(member, 1)
+        if position_annotations is not None and not all(
+            is_plain_value(item) for item in position_annotations
+        ):
+            return False
     probe = dataclasses.make_dataclass(
         "Probe", [("value", resolve_aliases(annotation))]
     )
@@ -151,12 +366,19 @@ def _is_plain_value_cached(annotation: Any) -> bool:
 
 
 def _find_single_container(annotation: Any, containers: tuple[type, ...]) -> Any:
+    # A node is a list, a mapping or a tuple, which names the member it is checked by
     members = [
-        member for member in union_members(annotation) if member is not types.NoneType
+        member
+        for member in union_members(annotation)
+        if (get_origin(member) or member) in containers
     ]
-    if len(members) != 1 or (get_origin(members[0]) or members[0]) not in containers:
-        return None
-    return members[0]
+    if len(members) > 1:
+        kind = (get_origin(members[0]) or members[0]).__name__
+        raise SchemaDefinitionError(
+            f"`{annotation}` holds several `{kind}`s, whose items cannot be told "
+            f"apart. Write one `{kind}` of a union, as in `list[A | B]`."
+        )
+    return members[0] if members else None
 
 
 def _is_alias_unknown_to_omegaconf(annotation: Any) -> bool:

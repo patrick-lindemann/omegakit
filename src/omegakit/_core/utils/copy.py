@@ -9,8 +9,14 @@ TConfig = TypeVar("TConfig", bound=DictConfig | ListConfig | TupleConfig)
 
 
 def copy_with_root(config: TConfig) -> TConfig:
-    # A copy of `config` alone would still resolve its interpolations in the
-    # original root
+    """Copy a config with its root, so that its interpolations resolve in the copy.
+
+    Args:
+        config: The config.
+
+    Returns:
+        The copy of `config` within the copy of its root.
+    """
     root = config._get_root()
     root_copy = copy.deepcopy(root)
     index = [node is config for node in walk(root)].index(True)

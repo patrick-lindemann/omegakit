@@ -35,7 +35,8 @@ them.
 
 - `validate(config, ExperimentConfig)` checks a root without `$target`
   ([Validation](../validation/index.md)).
-- `Configurable.schema` checks the keys of every `$target` node of its class
+- The `schema` class keyword of a `Configurable` subclass checks the keys of every
+  `$target` node of its class
   ([Configurable classes](../../objects/configurable-classes/index.md)).
 - A key annotated with a schema, such as `data: DataConfig`, holds a mapping that
   stays a `dict` when it is built, or a `$symbol` to a `dict`, which is checked
@@ -74,8 +75,16 @@ keys, before the dataclass is called:
   do, so `"64"` is a valid `int`, and a value that does not fit raises
   ``ConfigSchemaError: The value does not match `DataConfig`: …``, placed at the
   value. A `$target` node in a data key raises `ConfigSchemaError`.
-- **Mapping**: a `TypedDict`, at most one in a key, also in a union such as
-  `DataConfig | None`. It takes a mapping without `$target`, checked against it.
+- **Mapping**: a `TypedDict`, also in a union such as `DataConfig | None`. It
+  takes a mapping without `$target`, checked against it. In a union of several
+  `TypedDict`s, as in `FileConfig | UrlConfig`, the mapping is checked against the
+  first one it fits: each of its keys is a field, each required field is given,
+  and each `Literal` field, such as a `type` tag, holds one of its values, of the
+  same type: `true` is no `1`. A tag may stand behind an alias or with `None`. A
+  mapping that fits none raises ``ConfigSchemaError: The mapping fits none of
+  `FileConfig`, `UrlConfig`: …``, placed at the mapping. Where the union also has
+  a `dict`, as in `FileConfig | dict[str, str]`, such a mapping is checked as the
+  `dict` instead.
 - **Object**: a class, a union, `list`, `dict` or tuple of classes, `Callable` or
   `Any`. `Any` takes every value; the others are checked by class: a `$target` node must name the class or a
   subclass; a function's result is checked when it returns; a `$partial` node must
@@ -89,17 +98,26 @@ keys, before the dataclass is called:
 annotation, and the keys of every dictionary are converted by OmegaConf. Each
 position of a tuple follows the rule of its own annotation, and a wrong number of
 items raises ``ConfigSchemaError: Expected 2 items, but the config gives 1.``
+A `$symbol` to a `list`, `tuple` or `dict` is checked and converted like one that
+the config gives, wherever the annotation checks its items, as in
+`list[DataConfig]` or `dict[str, Module]`; elsewhere it stays the object it names.
+In a union, the container of the kind that the config gives checks the items: a
+list in `list[DataConfig] | DataConfig` is checked by `list[DataConfig]`, and a
+number in `list[DataConfig] | int` by `int`.
 
 **Recursion.** A schema may contain itself, directly or through other schemas, as
 in `children: NotRequired[list[Node]]`.
 
 **Unsupported schemas** raise `SchemaDefinitionError` wherever they are reached:
 
-- a `schema` argument that is no class, and a `Configurable.schema` that is no
-  `TypedDict`;
+- a `schema` argument that is no class, and a `schema` class keyword of a
+  `Configurable` subclass that is no `TypedDict`, which raises when the class is
+  defined;
 - annotations that cannot be read, such as a name imported only under
   `TYPE_CHECKING`;
 - a key that is no Python identifier;
-- two `TypedDict`s in one key, as in `DataConfig | SplitsConfig`;
 - an annotation of none of the three kinds, such as `set[int]` or `Sequence[int]`;
+- two containers of one kind that hold objects or mappings, as in
+  `list[DataConfig] | list[SplitsConfig]`, where `list[DataConfig | SplitsConfig]`
+  says which items a list may hold;
 - a dictionary whose key type OmegaConf does not support, such as `dict[tuple, int]`.

@@ -1,14 +1,13 @@
 import dataclasses
 import functools
-from typing import Any, TypeVar, get_origin, overload
+from typing import Any, TypeVar, overload
 
 from omegaconf import DictConfig
-from typing_extensions import is_typeddict
 
 from .config import cast_config
 from .errors import ConfigSchemaError, ConfigTargetError
 from .features import TARGET_KEY
-from .typecheck import Call, Container, check, read_fields, union_members
+from .typecheck import Call, Container, check, is_class, is_instance, read_fields
 from .utils.describe import describe_node, get_full_key
 from .utils.notes import add_note
 
@@ -138,20 +137,9 @@ def _build(value: Any) -> Any:
             error, f"  while calling `{value.name}` at {describe_node(value.node)}"
         )
         raise
-    members = union_members(value.result_annotation)
-    classes = tuple(
-        get_origin(member) or member for member in members if not is_typeddict(member)
-    )
-    try:
-        is_valid = value.result_annotation is Any or isinstance(instance, classes)
-    # Not every annotation can be checked, as where the config is checked
-    except TypeError:
-        return instance
-    if not is_valid:
+    if not is_instance(instance, value.result_annotation):
         annotation = value.result_annotation
-        expected = (
-            annotation.__qualname__ if isinstance(annotation, type) else annotation
-        )
+        expected = annotation.__qualname__ if is_class(annotation) else annotation
         raise ConfigSchemaError(
             f"Expected `{expected}`, but `{value.name}` returned `{instance!r}`.",
             get_full_key(value.node),

@@ -61,7 +61,7 @@ hand, when every check passes on the new version.
 ## Branches
 
 - Work happens on `develop`. A push there runs the quick CI jobs: lint, docs, the
-  resolvers and the tests on Python 3.13.
+  resolvers and the tests on Python 3.14.
 - `main` holds released versions only. It moves only by merging a release pull
   request from `develop`, after the pull request has passed every CI job.
 

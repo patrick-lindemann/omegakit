@@ -45,10 +45,9 @@ class MLPConfig(TypedDict):
     activation: NotRequired[Literal["relu", "tanh"]]
 
 
-class MLP(nn.Module, Configurable):
+class MLP(nn.Module, Configurable, schema=MLPConfig):
     """A multilayer perceptron from one input to one output."""
 
-    schema = MLPConfig
     net: nn.Sequential
 
     def __init__(
