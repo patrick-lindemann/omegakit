@@ -13,6 +13,11 @@ All notable changes to this project are documented here. The format follows
   and its `Literal` values, and one that fits none raises `ConfigSchemaError` naming
   every member. A union in a key raised `SchemaDefinitionError`, and a union in a
   `list` or `dict` checked every item against its first member.
+- A `TypedDict` behind a type alias with arguments, such as `Optional[ModelConfig]`
+  for `Optional = TypeAliasType("Optional", T | None, type_params=(T,))`, or behind
+  `Annotated`, is checked. OmegaConf took the mapping as a plain `dict`, so unknown
+  keys and wrong values passed, and an `Annotated` alias of a `type` statement raised
+  `SchemaDefinitionError`.
 
 ## [0.11.0] - 2026-10-20
 

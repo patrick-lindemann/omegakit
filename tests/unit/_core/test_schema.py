@@ -1,10 +1,12 @@
 import enum
 import fractions
 import re
+import sys
+import typing
 from collections.abc import Callable
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Literal, Protocol, TypedDict
+from typing import Annotated, Any, Literal, Protocol, TypedDict, TypeVar
 
 import pytest
 from omegaconf import DictConfig, OmegaConf
@@ -608,6 +610,63 @@ def test_allow_missing_accepts_a_union_of_schemas_without_required_keys(
 ):
     config = OmegaConf.create({"sources": [{"type": "directory"}]})
     validate(config, targets.CollectionConfig, allow_missing=True)
+
+
+class _Square(TypedDict):
+    kind: Literal["square"]
+    side: int
+
+
+class _Circle(TypedDict):
+    kind: Literal["circle"]
+    radius: int
+
+
+T = TypeVar("T")
+_Optional = TypeAliasType("_Optional", T | None, type_params=(T,))
+_ListOf = TypeAliasType("_ListOf", list[T], type_params=(T,))
+_AnnotatedSquare = TypeAliasType("_AnnotatedSquare", Annotated[_Square, "doc"])
+_Shape = TypeAliasType("_Shape", Annotated[_Square, "doc"] | _Circle)
+_SQUARE_FORMS: list[Any] = [
+    _Optional[_Square],
+    _AnnotatedSquare,
+    Annotated[_Square, "doc"],
+    _Optional[_Square | _Circle],
+    _Shape,
+]
+_SQUARE_LIST_FORMS: list[Any] = [
+    _ListOf[_Square],
+    list[_AnnotatedSquare],
+    _ListOf[_Optional[_Square]],
+]
+if sys.version_info >= (3, 12):
+    # The aliases that a `type` statement makes
+    _StatementSquare = typing.TypeAliasType(
+        "_StatementSquare", Annotated[_Square, "doc"]
+    )
+    _StatementSquares = typing.TypeAliasType("_StatementSquares", list[_Square])
+    _SQUARE_FORMS.append(_StatementSquare)
+    _SQUARE_LIST_FORMS.append(_StatementSquares)
+
+
+def _validate_value(annotation: Any, value: Any, **kwargs: Any) -> None:
+    # The annotation is a parameter, which the class syntax cannot take
+    holder = TypedDict("holder", {"value": annotation})  # noqa: UP013
+    validate(OmegaConf.create({"value": value}), holder, **kwargs)
+
+
+@pytest.mark.parametrize("annotation", _SQUARE_FORMS)
+def test_schema_behind_an_alias_or_annotated_is_checked(annotation: Any):
+    _validate_value(annotation, {"kind": "square", "side": "2"})
+    with pytest.raises(ConfigSchemaError, match=r"`typo`.*at `value`"):
+        _validate_value(annotation, {"kind": "square", "side": 2, "typo": 1})
+
+
+@pytest.mark.parametrize("annotation", _SQUARE_LIST_FORMS)
+def test_list_of_schemas_behind_an_alias_is_checked(annotation: Any):
+    _validate_value(annotation, [{"kind": "square", "side": "2"}])
+    with pytest.raises(ConfigSchemaError, match=r"`typo`.*at `value\[0\]`"):
+        _validate_value(annotation, [{"kind": "square", "side": 2, "typo": 1}])
 
 
 def test_result_of_a_function_is_not_known_before_it_is_called(targets: ModuleType):

@@ -20,15 +20,39 @@ if sys.version_info >= (3, 12):
 else:
     _OMEGACONF_ALIAS_TYPES = ()
 _TYPE_ALIAS_TYPES = (*_OMEGACONF_ALIAS_TYPES, typing_extensions.TypeAliasType)
+# The forms that wrap a type without changing it, of `typing` and of
+# `typing_extensions`, which can differ on older Pythons
+_QUALIFIERS = frozenset(
+    getattr(module, name)
+    for module in (typing, typing_extensions)
+    for name in ("Annotated", "Required", "NotRequired", "ReadOnly")
+    if hasattr(module, name)
+)
 
 
 def union_members(annotation: Any) -> tuple[Any, ...]:
-    while _is_bare_alias(annotation, _TYPE_ALIAS_TYPES):
-        annotation = annotation.__value__
+    annotation = unwrap(annotation)
     if get_origin(annotation) not in (Union, types.UnionType):
         return (annotation,)
     members = [union_members(member) for member in get_args(annotation)]
     return tuple(itertools.chain.from_iterable(members))
+
+
+def unwrap(annotation: Any) -> Any:
+    # Only the outermost type is unwrapped, so that a recursive alias ends
+    while True:
+        origin = get_origin(annotation)
+        if origin in _QUALIFIERS:
+            annotation = get_args(annotation)[0]
+        elif _is_bare_alias(annotation, _TYPE_ALIAS_TYPES):
+            annotation = annotation.__value__
+        elif isinstance(origin, _TYPE_ALIAS_TYPES):
+            value = _substitute_type_parameters(annotation)
+            if value is annotation:
+                return annotation
+            annotation = value
+        else:
+            return annotation
 
 
 def resolve_aliases(annotation: Any) -> Any:

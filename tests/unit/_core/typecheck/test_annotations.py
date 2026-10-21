@@ -1,6 +1,6 @@
 import sys
 import typing
-from typing import Any, Literal, TypedDict, TypeVar
+from typing import Annotated, Any, Literal, TypedDict, TypeVar
 
 import pytest
 import typing_extensions
@@ -28,6 +28,9 @@ class _OtherSection(TypedDict):
 _BackportedAlias = typing_extensions.TypeAliasType("_BackportedAlias", int | str | None)
 _Size = typing_extensions.TypeAliasType("_Size", int)
 _Pair = typing_extensions.TypeAliasType("_Pair", tuple[T, T], type_params=(T,))
+_Optional = typing_extensions.TypeAliasType("_Optional", T | None, type_params=(T,))
+_Tree = typing_extensions.TypeAliasType("_Tree", int | list["_Tree"])
+_Wrapped = typing_extensions.TypeAliasType("_Wrapped", Annotated[_Section, "doc"] | int)
 _ALIASES: dict[str, Any] = {"typing_extensions": _BackportedAlias}
 if sys.version_info >= (3, 12):
     # The class of an alias that a `type` statement makes
@@ -45,8 +48,28 @@ def test_alias_is_split_into_the_members_of_its_value(alias: Any):
     assert union_members(alias) == (int, str, type(None))
 
 
-def test_alias_with_arguments_is_one_member():
-    assert union_members(_Pair[int]) == (_Pair[int],)
+def test_alias_with_arguments_is_split_into_the_members_of_its_value():
+    assert union_members(_Pair[int]) == (tuple[int, int],)
+    assert union_members(_Optional[_Section]) == (_Section, type(None))
+
+
+@pytest.mark.parametrize(
+    "annotation",
+    [
+        Annotated[_Section | int, "doc"],
+        Annotated[_Section, "doc"] | int,
+        _Wrapped,
+        typing_extensions.Required[_Section | int],
+        typing_extensions.NotRequired[_Section | int],
+        typing_extensions.ReadOnly[_Section | int],
+    ],
+)
+def test_qualifier_is_not_a_member(annotation: Any):
+    assert union_members(annotation) == (_Section, int)
+
+
+def test_recursive_alias_is_unwrapped_once():
+    assert union_members(_Tree) == (int, list["_Tree"])
 
 
 @pytest.mark.parametrize(
