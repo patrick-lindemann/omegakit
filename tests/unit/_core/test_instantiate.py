@@ -510,6 +510,27 @@ def test_interpolation_reads_the_config_as_it_is_written(targets: ModuleType):
     assert model.config["encoder"].kwargs["depth"] == "4"
 
 
+@pytest.mark.parametrize("target", ["Collection", "BackportedCollection"])
+def test_mapping_in_a_union_of_schemas_is_converted_by_the_one_it_fits(
+    targets: ModuleType, target: str
+):
+    sources = [
+        {"type": "file", "path": "a.yaml", "filter": {"select": ["cube"]}},
+        {"type": "directory", "path": "c", "depth": "2"},
+        {"url": "https://example.com", "retries": "3"},
+    ]
+    config = {"$target": f"tests.targets.{target}", "sources": sources}
+    collection = instantiate(OmegaConf.create(config))
+    assert type(collection) is getattr(targets, target)
+    assert collection.config == {
+        "sources": [
+            sources[0],
+            {**sources[1], "depth": 2},
+            {**sources[2], "retries": 3},
+        ]
+    }
+
+
 def test_prepare_defers_a_node_with_a_schema(targets: ModuleType):
     config = OmegaConf.create({"$target": "tests.targets.Model", "depth": "4"})
     make_model = prepare(config)

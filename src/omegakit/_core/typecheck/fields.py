@@ -12,7 +12,7 @@ from omegakit._core.configurable import Configurable
 from omegakit._core.errors import SchemaDefinitionError
 from omegakit._core.utils.describe import describe_error
 
-from .annotations import holds_objects, is_plain_value, union_members
+from .annotations import holds_objects, is_plain_value
 
 
 @dataclass(frozen=True)
@@ -61,19 +61,11 @@ def read_fields(schema: type) -> dict[str, SchemaField]:
     fields = {}
     for name, is_required in required_keys.items():
         annotation = annotations[name]
-        sections = [
-            member for member in union_members(annotation) if is_typeddict(member)
-        ]
         is_plain = is_plain_value(annotation)
         if not name.isidentifier() or keyword.iskeyword(name):
             raise SchemaDefinitionError(
                 f"`{name}` of `{schema.__qualname__}` cannot be a key: a key is a "
                 "Python identifier."
-            )
-        if len(sections) > 1:
-            raise SchemaDefinitionError(
-                f"`{schema.__qualname__}.{name}` is annotated with `{annotation}`, "
-                "which names several `TypedDict`s. A field takes at most one."
             )
         if not is_plain and not holds_objects(annotation):
             raise SchemaDefinitionError(

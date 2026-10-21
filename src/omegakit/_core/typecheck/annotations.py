@@ -54,11 +54,8 @@ def resolve_aliases(annotation: Any) -> Any:
         return annotation
 
 
-def find_typed_dict(annotation: Any) -> type | None:
-    for member in union_members(annotation):
-        if is_typeddict(member):
-            return member
-    return None
+def find_typed_dicts(annotation: Any) -> tuple[type, ...]:
+    return tuple(member for member in union_members(annotation) if is_typeddict(member))
 
 
 def find_item_annotation(

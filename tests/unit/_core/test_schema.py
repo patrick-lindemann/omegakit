@@ -538,6 +538,78 @@ def test_field_that_is_annotated_with_a_schema_rejects_what_is_no_such_mapping(
     assert targets.CALLS == []
 
 
+@pytest.mark.parametrize("schema", ["CollectionConfig", "BackportedCollectionConfig"])
+def test_mapping_in_a_union_of_schemas_is_checked_against_the_one_it_fits(
+    targets: ModuleType, schema: str
+):
+    sources = [
+        {"type": "file", "path": "a.yaml", "filter": {"select": ["cube"]}},
+        {"type": "file", "path": "b.yaml", "filter": {"match": "c.*"}},
+        {"type": "file", "path": "c.yaml"},
+        {"type": "directory", "path": "c", "depth": "2"},
+        {"url": "https://example.com"},
+        {"$symbol": "tests.targets.URL_SOURCE"},
+    ]
+    validate(OmegaConf.create({"sources": sources}), getattr(targets, schema))
+
+
+@pytest.mark.parametrize("schema", ["CollectionConfig", "BackportedCollectionConfig"])
+@pytest.mark.parametrize(
+    ("source", "full_key", "message"),
+    [
+        (
+            {"type": "file", "path": "a.yaml", "depth": 2},
+            "sources[0]",
+            "The mapping fits none of `FileSourceConfig`, `DirectorySourceConfig`, "
+            "`UrlSourceConfig`: `depth` is not a field of `FileSourceConfig`; "
+            "`DirectorySourceConfig.type` takes `'directory'`; `type`, `path`, "
+            "`depth` is not a field of `UrlSourceConfig`.",
+        ),
+        ({"type": "link", "path": "a"}, "sources[0]", "`FileSourceConfig.type` takes"),
+        (
+            {"type": "directory"},
+            "sources[0]",
+            "`DirectorySourceConfig` requires `path`",
+        ),
+        ({"retries": 2}, "sources[0]", "`UrlSourceConfig` requires `url`"),
+        (
+            {"type": "directory", "path": "a", "depth": "deep"},
+            "sources[0].depth",
+            "does not match `DirectorySourceConfig`",
+        ),
+        (
+            {"type": "file", "path": "a", "filter": {"pattern": "c.*"}},
+            "sources[0].filter",
+            "fits none of `SelectFilterConfig`, `MatchFilterConfig`",
+        ),
+        (
+            {"type": "file", "path": "a", "filter": {"select": "cube"}},
+            "sources[0].filter.select",
+            "does not match `SelectFilterConfig`",
+        ),
+    ],
+)
+def test_mapping_that_fits_no_schema_of_a_union_is_rejected(
+    targets: ModuleType,
+    schema: str,
+    source: dict[str, Any],
+    full_key: str,
+    message: str,
+):
+    config = OmegaConf.create({"sources": [source]})
+    with pytest.raises(ConfigSchemaError) as error_info:
+        validate(config, getattr(targets, schema))
+    error_info.match(re.escape(message))
+    error_info.match(re.escape(f"at `{full_key}`"))
+
+
+def test_allow_missing_accepts_a_union_of_schemas_without_required_keys(
+    targets: ModuleType,
+):
+    config = OmegaConf.create({"sources": [{"type": "directory"}]})
+    validate(config, targets.CollectionConfig, allow_missing=True)
+
+
 def test_result_of_a_function_is_not_known_before_it_is_called(targets: ModuleType):
     validate(_make_experiment(model={"$target": "tests.targets.make_item"}))
     assert targets.CALLS == []

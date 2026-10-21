@@ -4,6 +4,16 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- A key may be annotated with a union of several `TypedDict`s, also as the item of a
+  `list` or `dict`. A mapping is checked against the first member it fits by its keys
+  and its `Literal` values, and one that fits none raises `ConfigSchemaError` naming
+  every member. A union in a key raised `SchemaDefinitionError`, and a union in a
+  `list` or `dict` checked every item against its first member.
+
 ## [0.11.0] - 2026-10-20
 
 ### Added
@@ -612,6 +622,7 @@ First release. The configuration language is specified in the
   such as `omegakit.resolvers.paths`.
 - Python 3.12 is supported.
 
+[Unreleased]: https://github.com/patrick-lindemann/omegakit/compare/v0.11.0...HEAD
 [0.11.0]: https://github.com/patrick-lindemann/omegakit/releases/tag/v0.11.0
 [0.10.0]: https://github.com/patrick-lindemann/omegakit/releases/tag/v0.10.0
 [0.9.0]: https://github.com/patrick-lindemann/omegakit/releases/tag/v0.9.0

@@ -1,10 +1,12 @@
 import dataclasses
 import enum
 import pathlib
+import typing
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Literal, TypedDict
 
+import typing_extensions
 from typing_extensions import NotRequired, override
 
 from omegakit._core.configurable import Configurable
@@ -123,6 +125,43 @@ class Experiment:
 
 class BrokenModel(Model):
     schema = dict
+
+
+def _make_collection_config(typed_dict: Any) -> Any:
+    select_config = typed_dict("SelectFilterConfig", {"select": list[str]})
+    match_config = typed_dict("MatchFilterConfig", {"match": str})
+    file_config = typed_dict(
+        "FileSourceConfig",
+        {
+            "type": Literal["file"],
+            "path": str,
+            "filter": NotRequired[select_config | match_config],
+        },
+    )
+    directory_config = typed_dict(
+        "DirectorySourceConfig",
+        {"type": Literal["directory"], "path": str, "depth": NotRequired[int]},
+    )
+    url_config = typed_dict(
+        "UrlSourceConfig", {"url": str, "retries": NotRequired[int]}
+    )
+    return typed_dict(
+        "CollectionConfig",
+        {"sources": list[file_config | directory_config | url_config]},
+    )
+
+
+CollectionConfig = _make_collection_config(typing.TypedDict)
+BackportedCollectionConfig = _make_collection_config(typing_extensions.TypedDict)
+URL_SOURCE = {"url": "https://example.com", "retries": "2"}
+
+
+class Collection(Model):
+    schema = CollectionConfig
+
+
+class BackportedCollection(Model):
+    schema = BackportedCollectionConfig
 
 
 def make_item(**kwargs):

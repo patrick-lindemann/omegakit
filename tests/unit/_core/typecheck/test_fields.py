@@ -205,12 +205,13 @@ def test_field_that_holds_a_typed_dict_is_no_plain_value():
     assert not fields["layers"].is_plain_value
 
 
-def test_union_of_two_typed_dicts_is_rejected():
-    with pytest.raises(SchemaDefinitionError, match=r"Schema\.value"):
-        read_fields(_make_schema(_LayerConfig | _NetworkConfig | None))
-    assert not read_fields(_make_schema(_LayerConfig | _Encoder))[
-        "value"
-    ].is_plain_value
+@pytest.mark.parametrize(
+    "annotation", [_LayerConfig | _NetworkConfig | None, _LayerConfig | _Encoder]
+)
+def test_field_that_holds_a_union_with_a_typed_dict_is_no_plain_value(
+    annotation: Any,
+):
+    assert not read_fields(_make_schema(annotation))["value"].is_plain_value
 
 
 @pytest.mark.parametrize("key", ["learning-rate", "class", "2nd"])

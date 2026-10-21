@@ -74,8 +74,13 @@ keys, before the dataclass is called:
   do, so `"64"` is a valid `int`, and a value that does not fit raises
   ``ConfigSchemaError: The value does not match `DataConfig`: …``, placed at the
   value. A `$target` node in a data key raises `ConfigSchemaError`.
-- **Mapping**: a `TypedDict`, at most one in a key, also in a union such as
-  `DataConfig | None`. It takes a mapping without `$target`, checked against it.
+- **Mapping**: a `TypedDict`, also in a union such as `DataConfig | None`. It
+  takes a mapping without `$target`, checked against it. In a union of several
+  `TypedDict`s, as in `FileConfig | UrlConfig`, the mapping is checked against the
+  first one it fits: each of its keys is a field, each required field is given,
+  and each `Literal` field, such as a `type` tag, holds one of its values. A
+  mapping that fits none raises ``ConfigSchemaError: The mapping fits none of
+  `FileConfig`, `UrlConfig`: …``, placed at the mapping.
 - **Object**: a class, a union, `list`, `dict` or tuple of classes, `Callable` or
   `Any`. `Any` takes every value; the others are checked by class: a `$target` node must name the class or a
   subclass; a function's result is checked when it returns; a `$partial` node must
@@ -100,6 +105,5 @@ in `children: NotRequired[list[Node]]`.
 - annotations that cannot be read, such as a name imported only under
   `TYPE_CHECKING`;
 - a key that is no Python identifier;
-- two `TypedDict`s in one key, as in `DataConfig | SplitsConfig`;
 - an annotation of none of the three kinds, such as `set[int]` or `Sequence[int]`;
 - a dictionary whose key type OmegaConf does not support, such as `dict[tuple, int]`.

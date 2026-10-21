@@ -2,7 +2,7 @@ import dataclasses
 import functools
 import types
 from dataclasses import dataclass
-from typing import Any, get_args, get_origin
+from typing import Any, Literal, get_args, get_origin
 
 from omegaconf import DictConfig, ListConfig, OmegaConf, TupleConfig
 from typing_extensions import is_typeddict
@@ -32,7 +32,7 @@ from omegakit._core.utils.read import MISSING_VALUE, read_value
 from .annotations import (
     find_item_annotation,
     find_position_annotations,
-    find_typed_dict,
+    find_typed_dicts,
     is_plain_value,
     union_members,
 )
@@ -113,7 +113,10 @@ def _check_node(
                 f"{', '.join(f'`{key}`' for key in reserved_keys)} cannot stand "
                 "here: keys that start with `$` are reserved."
             )
-        section = find_typed_dict(annotation)
+        sections = find_typed_dicts(annotation)
+        section = (
+            _select_section(node, sections, keys, allow_missing) if sections else None
+        )
         # The keys of a dictionary of mappings or objects, which OmegaConf does not see
         converted_keys = convert_keys(annotation, keys)
     except OmegaKitBaseException as error:
@@ -266,12 +269,13 @@ def _check_symbol(
 ) -> Any:
     try:
         value = import_symbol(node)
-        section = find_typed_dict(annotation)
-        if section is None or not isinstance(value, dict):
+        sections = find_typed_dicts(annotation)
+        if not sections or not isinstance(value, dict):
             return value
         # An existing `dict` is checked like a mapping that the config gives
         mapping = OmegaConf.create(value, flags={"allow_objects": True})
         keys = list(mapping.keys())
+        section = _select_section(mapping, sections, keys, allow_missing)
         arguments = _check_schema(
             mapping, section, keys, active_nodes, allow_missing, False
         )
@@ -284,6 +288,54 @@ def _check_symbol(
         add_note(error, f"  at {describe_node(node)}")
         raise
     return Container(arguments)
+
+
+def _select_section(
+    node: DictConfig, sections: tuple[type, ...], keys: list[Any], allow_missing: bool
+) -> type:
+    if len(sections) == 1:
+        return sections[0]
+    # A mapping is checked against the first schema of a union that it fits
+    mismatches = []
+    for section in sections:
+        mismatch = _find_mismatch(node, section, keys, allow_missing)
+        if mismatch is None:
+            return section
+        mismatches.append(mismatch)
+    names = ", ".join(f"`{section.__qualname__}`" for section in sections)
+    raise ConfigSchemaError(
+        f"The mapping fits none of {names}: {'; '.join(mismatches)}."
+    )
+
+
+def _find_mismatch(
+    node: DictConfig, section: type, keys: list[Any], allow_missing: bool
+) -> str | None:
+    # Only the keys and the `Literal` values of the mapping itself are compared, so
+    # that a mapping is read once however deep the unions are nested
+    fields = read_fields(section)
+    name = section.__qualname__
+    for key in keys:
+        annotation = fields[key].annotation if key in fields else None
+        if get_origin(annotation) is not Literal:
+            continue
+        value = read_value(node, key, allow_missing)
+        literal_values = get_args(annotation)
+        if value is not MISSING_VALUE and value not in literal_values:
+            described_values = ", ".join(f"`{item!r}`" for item in literal_values)
+            return f"`{name}.{key}` takes {described_values}"
+    unknown_keys = [key for key in keys if key not in fields]
+    if unknown_keys:
+        return (
+            f"{', '.join(f'`{key}`' for key in unknown_keys)} is not a field of "
+            f"`{name}`"
+        )
+    missing_keys = [
+        key for key, field in fields.items() if field.is_required and key not in keys
+    ]
+    if missing_keys and not allow_missing:
+        return f"`{name}` requires {', '.join(f'`{key}`' for key in missing_keys)}"
+    return None
 
 
 def _check_schema(

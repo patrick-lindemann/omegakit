@@ -9,7 +9,7 @@ from omegakit._core.typecheck.annotations import (
     find_item_annotation,
     find_key_annotation,
     find_position_annotations,
-    find_typed_dict,
+    find_typed_dicts,
     resolve_aliases,
     union_members,
 )
@@ -19,6 +19,10 @@ T = TypeVar("T")
 
 class _Section(TypedDict):
     width: int
+
+
+class _OtherSection(TypedDict):
+    depth: int
 
 
 _BackportedAlias = typing_extensions.TypeAliasType("_BackportedAlias", int | str | None)
@@ -115,6 +119,7 @@ def test_annotations_of_the_positions_of_a_tuple_are_found(
     assert find_position_annotations(annotation, 3) == item_annotations
 
 
-def test_section_is_the_typed_dict_of_a_union():
-    assert find_typed_dict(_Section | None) is _Section
-    assert find_typed_dict(int) is None
+def test_sections_are_the_typed_dicts_of_a_union():
+    assert find_typed_dicts(_Section | None) == (_Section,)
+    assert find_typed_dicts(_Section | int | _OtherSection) == (_Section, _OtherSection)
+    assert find_typed_dicts(int) == ()
