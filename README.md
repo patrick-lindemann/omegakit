@@ -1,5 +1,11 @@
 # omegakit
 
+[![PyPI](https://img.shields.io/pypi/v/omegakit)](https://pypi.org/project/omegakit/)
+[![Python](https://img.shields.io/pypi/pyversions/omegakit)](https://pypi.org/project/omegakit/)
+[![License](https://img.shields.io/pypi/l/omegakit)](https://github.com/patrick-lindemann/omegakit/blob/main/LICENSE)
+[![Docs](https://img.shields.io/readthedocs/omegakit)](https://omegakit.readthedocs.io/)
+[![CI](https://github.com/patrick-lindemann/omegakit/actions/workflows/ci.yml/badge.svg?event=pull_request)](https://github.com/patrick-lindemann/omegakit/actions/workflows/ci.yml)
+
 omegakit is a small library on top of OmegaConf for experiment configs. Every
 experiment is a YAML file in git that names its base and its includes by path. You
 load it from your own `main()` and build your objects from it, checked before
