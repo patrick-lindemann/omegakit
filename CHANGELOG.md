@@ -11,8 +11,10 @@ All notable changes to this project are documented here. The format follows
 - A key may be annotated with a union of several `TypedDict`s, also as the item of a
   `list` or `dict`. A mapping is checked against the first member it fits by its keys
   and its `Literal` values, and one that fits none raises `ConfigSchemaError` naming
-  every member. A union in a key raised `SchemaDefinitionError`, and a union in a
-  `list` or `dict` checked every item against its first member.
+  every member. A `Literal` field counts as a tag also behind a type alias or in a
+  union with `None`, and its value must have the type of a listed value, so `true`
+  does not match `Literal[1]`. A union in a key raised `SchemaDefinitionError`, and a
+  union in a `list` or `dict` checked every item against its first member.
 - A `TypedDict` behind a type alias with arguments, such as `Optional[ModelConfig]`
   for `Optional = TypeAliasType("Optional", T | None, type_params=(T,))`, or behind
   `Annotated`, is checked. OmegaConf took the mapping as a plain `dict`, so unknown

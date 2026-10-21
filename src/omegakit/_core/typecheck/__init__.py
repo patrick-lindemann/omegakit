@@ -1,5 +1,6 @@
 from .annotations import (
     find_item_annotation,
+    find_literal_values,
     find_position_annotations,
     find_typed_dicts,
     is_instance,
@@ -19,6 +20,7 @@ __all__ = [
     "convert_plain_values",
     "convert_value",
     "find_item_annotation",
+    "find_literal_values",
     "find_position_annotations",
     "find_schema",
     "find_typed_dicts",

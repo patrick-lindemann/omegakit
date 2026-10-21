@@ -2,7 +2,7 @@ import dataclasses
 import functools
 import types
 from dataclasses import dataclass
-from typing import Any, Literal, get_args, get_origin
+from typing import Any, get_origin
 
 from omegaconf import DictConfig, ListConfig, OmegaConf, TupleConfig
 from typing_extensions import is_typeddict
@@ -31,6 +31,7 @@ from omegakit._core.utils.read import MISSING_VALUE, read_value
 
 from .annotations import (
     find_item_annotation,
+    find_literal_values,
     find_position_annotations,
     find_typed_dicts,
     is_instance,
@@ -353,12 +354,18 @@ def _find_mismatch(
     fields = read_fields(section)
     name = section.__qualname__
     for key in keys:
-        annotation = fields[key].annotation if key in fields else None
-        if get_origin(annotation) is not Literal:
+        literal_values = (
+            find_literal_values(fields[key].annotation) if key in fields else None
+        )
+        if literal_values is None:
             continue
         value = read_value(node, key, allow_missing)
-        literal_values = get_args(annotation)
-        if value is not MISSING_VALUE and value not in literal_values:
+        # As in OmegaConf, `True` is no `1`
+        is_listed = any(
+            type(value) is type(literal_value) and value == literal_value
+            for literal_value in literal_values
+        )
+        if value is not MISSING_VALUE and not is_listed:
             described_values = ", ".join(f"`{item!r}`" for item in literal_values)
             return f"`{name}.{key}` takes {described_values}"
     unknown_keys = [key for key in keys if key not in fields]

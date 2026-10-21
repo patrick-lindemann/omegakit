@@ -78,7 +78,8 @@ keys, before the dataclass is called:
   takes a mapping without `$target`, checked against it. In a union of several
   `TypedDict`s, as in `FileConfig | UrlConfig`, the mapping is checked against the
   first one it fits: each of its keys is a field, each required field is given,
-  and each `Literal` field, such as a `type` tag, holds one of its values. A
+  and each `Literal` field, such as a `type` tag, holds one of its values, of the
+  same type: `true` is no `1`. A tag may stand behind an alias or with `None`. A
   mapping that fits none raises ``ConfigSchemaError: The mapping fits none of
   `FileConfig`, `UrlConfig`: …``, placed at the mapping. Where the union also has
   a `dict`, as in `FileConfig | dict[str, str]`, such a mapping is checked as the

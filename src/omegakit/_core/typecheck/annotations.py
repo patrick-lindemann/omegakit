@@ -65,6 +65,22 @@ def is_instance(value: Any, annotation: Any) -> bool:
     return False
 
 
+def find_literal_values(annotation: Any) -> tuple[Any, ...] | None:
+    # A tag, such as `Literal["a", "b"] | None`, also behind an alias
+    members = union_members(annotation)
+    if not any(get_origin(member) is Literal for member in members):
+        return None
+    values = []
+    for member in members:
+        if member is types.NoneType:
+            values.append(None)
+        elif get_origin(member) is Literal:
+            values.extend(get_args(member))
+        else:
+            return None
+    return tuple(values)
+
+
 def find_required_mark(annotation: Any) -> bool | None:
     # `Required` and `NotRequired` may stand inside `Annotated` or `ReadOnly`
     while get_origin(annotation) in _QUALIFIERS:

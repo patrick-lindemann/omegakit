@@ -748,6 +748,56 @@ def test_several_containers_of_one_kind_in_a_union_are_rejected(
         _validate_value(annotation, value)
 
 
+_SquareTag = TypeAliasType("_SquareTag", Literal["square"])
+
+
+class _TaggedSquare(TypedDict):
+    kind: _SquareTag
+    side: int
+
+
+class _TaggedRectangle(TypedDict):
+    kind: Literal["rectangle"] | None
+    side: int
+
+
+class _One(TypedDict):
+    value: Literal[1]
+
+
+class _Flag(TypedDict):
+    value: Literal[True]
+
+
+@pytest.mark.parametrize(
+    ("annotation", "value"),
+    [
+        (_TaggedSquare | _TaggedRectangle, {"kind": "rectangle", "side": 1}),
+        (_TaggedSquare | _TaggedRectangle, {"kind": None, "side": 1}),
+        (_TaggedRectangle | _TaggedSquare, {"kind": "square", "side": 1}),
+        (_One | _Flag, {"value": True}),
+        (_Flag | _One, {"value": 1}),
+    ],
+)
+def test_tag_behind_an_alias_or_a_union_selects_its_schema(
+    annotation: Any, value: dict[str, Any]
+):
+    _validate_value(annotation, value)
+
+
+def test_value_that_matches_no_tag_names_the_tags():
+    with pytest.raises(
+        ConfigSchemaError,
+        match=re.escape(
+            "`_TaggedSquare.kind` takes `'square'`; `_TaggedRectangle.kind` takes "
+            "`'rectangle'`, `None`."
+        ),
+    ):
+        _validate_value(
+            _TaggedSquare | _TaggedRectangle, {"kind": "triangle", "side": 1}
+        )
+
+
 class _Marks(TypedDict, total=False):
     width: Annotated[Required[int], "doc"]
     depth: int

@@ -9,6 +9,7 @@ from omegakit._core.errors import SchemaDefinitionError
 from omegakit._core.typecheck.annotations import (
     find_item_annotation,
     find_key_annotation,
+    find_literal_values,
     find_position_annotations,
     find_typed_dicts,
     is_instance,
@@ -196,6 +197,26 @@ def test_value_is_checked_by_each_member_of_a_union(
     value: Any, annotation: Any, expected: bool
 ):
     assert is_instance(value, annotation) is expected
+
+
+_Tag = typing_extensions.TypeAliasType("_Tag", Literal["a", "b"])
+
+
+@pytest.mark.parametrize(
+    ("annotation", "values"),
+    [
+        (Literal["a", "b"], ("a", "b")),
+        (Literal["a"] | Literal[1], ("a", 1)),
+        (Literal["a"] | None, ("a", None)),
+        (_Tag, ("a", "b")),
+        (Annotated[_Tag | None, "doc"], ("a", "b", None)),
+        (Literal["a"] | int, None),
+        (str, None),
+        (type(None), None),
+    ],
+)
+def test_values_of_a_tag_are_found(annotation: Any, values: tuple[Any, ...] | None):
+    assert find_literal_values(annotation) == values
 
 
 def test_sections_are_the_typed_dicts_of_a_union():
